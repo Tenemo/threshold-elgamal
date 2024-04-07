@@ -31,16 +31,14 @@ const getGroup = (
  * @param {bigint} prime - The prime modulus.
  * @returns {bigint} The result of the polynomial evaluation.
  */
-const evaluatePolynomial = (
+export const evaluatePolynomial = (
     polynomial: bigint[],
     x: number,
     prime: bigint,
 ): bigint => {
     let result = 0n;
     for (let i = 0; i < polynomial.length; i++) {
-        result =
-            (result + polynomial[i] * modPow(BigInt(x), BigInt(i), prime)) %
-            prime;
+        result = (result + polynomial[i] * BigInt(x) ** BigInt(i)) % prime;
     }
     return result;
 };
@@ -66,7 +64,10 @@ export const generateKeyShares = (
     const keyShares = [];
 
     for (let i = 1; i <= n; i++) {
-        const privateKeyShare = evaluatePolynomial(polynomial, i, prime);
+        let privateKeyShare = evaluatePolynomial(polynomial, i, prime);
+        while (privateKeyShare === 0n) {
+            privateKeyShare = evaluatePolynomial(polynomial, i + n, prime);
+        }
         const publicKeyShare = modPow(generator, privateKeyShare, prime);
         keyShares.push({ privateKeyShare, publicKeyShare });
     }
