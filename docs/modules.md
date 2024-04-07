@@ -40,7 +40,7 @@
 
 #### Defined in
 
-[types.ts:1](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/types.ts#L1)
+[types.ts:1](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/types.ts#L1)
 
 ___
 
@@ -57,7 +57,7 @@ ___
 
 #### Defined in
 
-[types.ts:13](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/types.ts#L13)
+[types.ts:13](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/types.ts#L13)
 
 ___
 
@@ -76,7 +76,7 @@ ___
 
 #### Defined in
 
-[types.ts:6](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/types.ts#L6)
+[types.ts:6](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/types.ts#L6)
 
 ___
 
@@ -93,7 +93,7 @@ ___
 
 #### Defined in
 
-[types.ts:18](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/types.ts#L18)
+[types.ts:18](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/types.ts#L18)
 
 ## Functions
 
@@ -118,7 +118,7 @@ The combined decryption factor.
 
 #### Defined in
 
-[thresholdElgamal.ts:129](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/thresholdElgamal.ts#L129)
+[thresholdElgamal.ts:129](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/thresholdElgamal.ts#L129)
 
 ___
 
@@ -143,7 +143,7 @@ The combined public key.
 
 #### Defined in
 
-[thresholdElgamal.ts:103](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/thresholdElgamal.ts#L103)
+[thresholdElgamal.ts:103](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/thresholdElgamal.ts#L103)
 
 ___
 
@@ -169,7 +169,7 @@ The result of the partial decryption.
 
 #### Defined in
 
-[thresholdElgamal.ts:116](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/thresholdElgamal.ts#L116)
+[thresholdElgamal.ts:116](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/thresholdElgamal.ts#L116)
 
 ___
 
@@ -195,7 +195,7 @@ The decrypted secret as an integer.
 
 #### Defined in
 
-[elgamal.ts:77](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/elgamal.ts#L77)
+[elgamal.ts:77](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/elgamal.ts#L77)
 
 ___
 
@@ -222,7 +222,7 @@ The encrypted secret, consisting of two BigIntegers (c1 and c2).
 
 #### Defined in
 
-[elgamal.ts:51](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/elgamal.ts#L51)
+[elgamal.ts:51](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/elgamal.ts#L51)
 
 ___
 
@@ -248,7 +248,7 @@ An array of key shares, each containing a private and public key share.
 
 #### Defined in
 
-[thresholdElgamal.ts:83](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/thresholdElgamal.ts#L83)
+[thresholdElgamal.ts:83](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/thresholdElgamal.ts#L83)
 
 ___
 
@@ -273,7 +273,7 @@ The generated parameters including the prime, generator, publicKey, and privateK
 
 #### Defined in
 
-[elgamal.ts:14](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/elgamal.ts#L14)
+[elgamal.ts:14](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/elgamal.ts#L14)
 
 ___
 
@@ -299,7 +299,7 @@ The key share containing a private and public key share for the participant.
 
 #### Defined in
 
-[thresholdElgamal.ts:56](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/thresholdElgamal.ts#L56)
+[thresholdElgamal.ts:56](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/thresholdElgamal.ts#L56)
 
 ___
 
@@ -324,7 +324,7 @@ A random bigint within the specified range.
 
 #### Defined in
 
-[utils.ts:11](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/utils.ts#L11)
+[utils.ts:11](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/utils.ts#L11)
 
 ___
 
@@ -350,7 +350,7 @@ The result of the multiplication, as a new encrypted message.
 
 #### Defined in
 
-[utils.ts:33](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/utils.ts#L33)
+[utils.ts:33](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/utils.ts#L33)
 
 ___
 
@@ -378,4 +378,4 @@ The decrypted secret, assuming it was small enough to be directly encrypted.
 
 #### Defined in
 
-[thresholdElgamal.ts:148](https://github.com/Tenemo/threshold-elgamal/blob/98d4211fb6cc0b5a15985b31552dd22e03523cf3/src/thresholdElgamal.ts#L148)
+[thresholdElgamal.ts:148](https://github.com/Tenemo/threshold-elgamal/blob/fc2a22a1ff8f83d6af5a428644410ebc8517f4e1/src/thresholdElgamal.ts#L148)

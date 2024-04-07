@@ -25,7 +25,9 @@
         "test": "vitest --watch=false --reporter=verbose",
         "test:watch": "vitest --watch=true --reporter=verbose",
         "pretypedoc": "rimraf docs",
-        "typedoc": "typedoc --plugin typedoc-plugin-markdown src --out docs"
+        "typedoc": "typedoc --plugin typedoc-plugin-markdown src --out docs",
+        "prepublish": "npm run prebuild && npm run typedoc && npm version patch",
+        "publish": "npm publish"
     },
     "engines": {
         "node": ">=20.11.0"
