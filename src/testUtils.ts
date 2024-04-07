@@ -34,6 +34,43 @@ export const thresholdSetup = (
     return { keyShares, combinedPublicKey, prime, generator };
 };
 
+export const testSecureEncryptionAndDecryption = (
+    participantsCount: number,
+    threshold: number,
+    message: number,
+): void => {
+    const { keyShares, combinedPublicKey, prime, generator } = thresholdSetup(
+        participantsCount,
+        threshold,
+    );
+
+    const encryptedMessage = encrypt(
+        message,
+        prime,
+        generator,
+        combinedPublicKey,
+    );
+
+    const partialDecryptions = keyShares
+        .slice(0, threshold)
+        .map((keyShare) =>
+            partialDecrypt(encryptedMessage, keyShare.privateKeyShare, prime),
+        );
+
+    const combinedPartialDecryptions = combinePartialDecryptions(
+        partialDecryptions,
+        prime,
+    );
+
+    const decryptedMessage = thresholdDecrypt(
+        encryptedMessage,
+        combinedPartialDecryptions,
+        prime,
+    );
+
+    expect(decryptedMessage).toBe(message);
+};
+
 export const homomorphicMultiplicationTest = (
     participantsCount: number,
     threshold: number,

@@ -17,8 +17,8 @@
         "eslint": "eslint . -c eslint.config.js",
         "eslint:fix": "eslint . --fix -c eslint.config.js",
         "tsc": "tsc",
-        "test": "vitest --watch=false",
-        "test:watch": "vitest --watch=true"
+        "test": "vitest --watch=false --reporter=verbose",
+        "test:watch": "vitest --watch=true --reporter=verbose"
     },
     "engines": {
         "node": ">=20.11.0"

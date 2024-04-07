@@ -139,8 +139,5 @@ export const thresholdDecrypt = (
     );
     const plaintext: bigint =
         (encryptedMessage.c2 * combinedDecryptionInverse) % prime;
-    if (plaintext > Number.MAX_SAFE_INTEGER) {
-        throw new Error('Decrypted message is too large');
-    }
     return Number(plaintext);
 };

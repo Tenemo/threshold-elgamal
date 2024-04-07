@@ -5,6 +5,7 @@ import {
     thresholdSetup,
     homomorphicMultiplicationTest,
     getRandomScore,
+    testSecureEncryptionAndDecryption,
 } from './testUtils';
 import {
     partialDecrypt,
@@ -14,43 +15,38 @@ import {
 import { multiplyEncryptedValues } from './utils';
 
 describe('Threshold ElGamal', () => {
-    it('allows for secure encryption and decryption', () => {
-        const threshold = 2;
-        const { keyShares, combinedPublicKey, prime, generator } =
-            thresholdSetup(3, threshold);
-        const message = 42;
-        const encryptedMessage = encrypt(
-            message,
-            prime,
-            generator,
-            combinedPublicKey,
-        );
-        const partialDecryptions = keyShares
-            .slice(0, threshold)
-            .map((keyShare) =>
-                partialDecrypt(
-                    encryptedMessage,
-                    keyShare.privateKeyShare,
-                    prime,
-                ),
-            );
-        const combinedPartialDecryptions = combinePartialDecryptions(
-            partialDecryptions,
-            prime,
-        );
-        const decryptedMessage = thresholdDecrypt(
-            encryptedMessage,
-            combinedPartialDecryptions,
-            prime,
-        );
-        expect(decryptedMessage).toBe(message);
+    describe('allows for secure encryption and decryption', () => {
+        it('with 2 participants and a threshold of 2', () => {
+            testSecureEncryptionAndDecryption(2, 2, 42);
+        });
+        it('with 3 participants and a threshold of 2', () => {
+            testSecureEncryptionAndDecryption(3, 2, 123);
+        });
+        it('with 5 participants and a threshold of 3', () => {
+            testSecureEncryptionAndDecryption(5, 3, 255);
+        });
+        it('with 7 participants and a threshold of 4', () => {
+            testSecureEncryptionAndDecryption(7, 4, 789);
+        });
     });
 
-    it('supports homomorphic multiplication of encrypted messages', () => {
-        homomorphicMultiplicationTest(2, 2, [3, 5]);
-        homomorphicMultiplicationTest(3, 2, [2, 3, 4]);
-        homomorphicMultiplicationTest(5, 3, [1, 2, 3, 4, 5]);
-        homomorphicMultiplicationTest(10, 5, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    describe('supports homomorphic multiplication of encrypted messages', () => {
+        it('with 2 participants and a threshold of 2', () => {
+            homomorphicMultiplicationTest(2, 2, [3, 5]);
+        });
+        it('with 3 participants and a threshold of 2', () => {
+            homomorphicMultiplicationTest(3, 2, [2, 3, 4]);
+        });
+        it('with 5 participants and a threshold of 3', () => {
+            homomorphicMultiplicationTest(5, 3, [1, 2, 3, 4, 5]);
+        });
+        it('with 10 participants and a threshold of 5', () => {
+            homomorphicMultiplicationTest(
+                10,
+                5,
+                [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            );
+        });
     });
 
     it('correctly calculates and verifies products from encrypted votes', () => {
