@@ -1,39 +1,20 @@
 import { expect, describe, it } from 'vitest';
 
-import { GROUPS } from './constants';
 import { encrypt } from './elgamal';
 import {
-    generateIndividualKeyPair,
-    combinePublicKeys,
+    thresholdSetup,
+    homomorphicMultiplicationTest,
+    getRandomScore,
+} from './testUtils';
+import {
     partialDecrypt,
     combinePartialDecryptions,
     thresholdDecrypt,
 } from './thresholdElgamal';
-import type { KeyPair } from './types';
 import { multiplyEncryptedValues } from './utils';
 
-const thresholdSetup = (
-    partiesCount: number,
-    primeBits: 2048 | 3072 | 4096 = 2048,
-): {
-    keyPairs: KeyPair[];
-    combinedPublicKey: bigint;
-    prime: bigint;
-    generator: bigint;
-} => {
-    const keyPairs = Array.from({ length: partiesCount }, () =>
-        generateIndividualKeyPair(primeBits),
-    );
-    const publicKeys = keyPairs.map((kp) => kp.publicKey);
-    const prime = GROUPS[`ffdhe${primeBits}`].prime;
-    const generator = GROUPS[`ffdhe${primeBits}`].generator;
-    const combinedPublicKey = combinePublicKeys(publicKeys, prime);
-
-    return { keyPairs, combinedPublicKey, prime, generator };
-};
-
-describe('Threshold ElGamal Encryption', () => {
-    it('allows for secure threshold encryption and decryption', () => {
+describe('Threshold ElGamal', () => {
+    it('allows for secure encryption and decryption', () => {
         const { keyPairs, combinedPublicKey, prime, generator } =
             thresholdSetup(3);
         const message = 42;
@@ -59,39 +40,68 @@ describe('Threshold ElGamal Encryption', () => {
     });
 
     it('supports homomorphic multiplication of encrypted messages', () => {
+        homomorphicMultiplicationTest(2, [3, 5]);
+        homomorphicMultiplicationTest(3, [2, 3, 4]);
+        homomorphicMultiplicationTest(5, [1, 2, 3, 4, 5]);
+        homomorphicMultiplicationTest(10, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    });
+
+    it('correctly calculates and verifies products from encrypted votes', () => {
+        const participants = 3;
+        const candidates = 3;
         const { keyPairs, combinedPublicKey, prime, generator } =
-            thresholdSetup(2);
-        const message1 = 3;
-        const encryptedMessage1 = encrypt(
-            message1,
-            prime,
-            generator,
-            combinedPublicKey,
+            thresholdSetup(participants);
+        const votesMatrix = Array.from({ length: participants }, () =>
+            Array.from({ length: candidates }, () => getRandomScore()),
         );
-        const message2 = 5;
-        const encryptedMessage2 = encrypt(
-            message2,
-            prime,
-            generator,
-            combinedPublicKey,
+        const expectedProducts = Array.from(
+            { length: candidates },
+            (_, candidateIndex) =>
+                votesMatrix.reduce(
+                    (product, votes) => product * votes[candidateIndex],
+                    1,
+                ),
         );
-        const encryptedProduct = multiplyEncryptedValues(
-            encryptedMessage1,
-            encryptedMessage2,
-            prime,
+        const encryptedVotesMatrix = votesMatrix.map((votes) =>
+            votes.map((vote) =>
+                encrypt(vote, prime, generator, combinedPublicKey),
+            ),
         );
-        const partialDecryptions = keyPairs.map((keyPair) =>
-            partialDecrypt(encryptedProduct.c1, keyPair.privateKey, prime),
+        const encryptedProducts = Array.from(
+            { length: candidates },
+            (_, candidateIndex) =>
+                encryptedVotesMatrix.reduce(
+                    (product, encryptedVotes) =>
+                        multiplyEncryptedValues(
+                            product,
+                            encryptedVotes[candidateIndex],
+                            prime,
+                        ),
+                    { c1: 1n, c2: 1n },
+                ),
         );
-        const combinedPartialDecryptions = combinePartialDecryptions(
-            partialDecryptions,
-            prime,
+        const partialDecryptionsMatrix = encryptedProducts.map((product) =>
+            keyPairs.map((keyPair) =>
+                partialDecrypt(product.c1, keyPair.privateKey, prime),
+            ),
         );
-        const decryptedProduct = thresholdDecrypt(
-            encryptedProduct,
-            combinedPartialDecryptions,
-            prime,
+        const decryptedProducts = partialDecryptionsMatrix.map(
+            (partialDecryptions) => {
+                const combinedPartialDecryptions = combinePartialDecryptions(
+                    partialDecryptions,
+                    prime,
+                );
+                const encryptedProduct =
+                    encryptedProducts[
+                        partialDecryptionsMatrix.indexOf(partialDecryptions)
+                    ];
+                return thresholdDecrypt(
+                    encryptedProduct,
+                    combinedPartialDecryptions,
+                    prime,
+                );
+            },
         );
-        expect(decryptedProduct).toBe(message1 * message2);
+        expect(decryptedProducts).toEqual(expectedProducts);
     });
 });
