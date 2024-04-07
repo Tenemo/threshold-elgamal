@@ -5,6 +5,7 @@
         "target": "esnext",
         "module": "ESNext",
         "moduleResolution": "Node",
+        "outDir": "./dist/",
         "removeComments": true,
         "declaration": false,
         "allowSyntheticDefaultImports": true,
@@ -24,5 +25,5 @@
         "esm": true,
         "experimentalSpecifierResolution": "node"
     },
-    "include": ["src/**/*", "eslint.config.js", "example"]
+    "include": ["src/**/*", "eslint.config.js"]
 }

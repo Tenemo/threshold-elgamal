@@ -4,6 +4,8 @@
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MIT",
     "description": "threshold-elgamal",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Tenemo/threshold-elgamal.git"
@@ -17,9 +19,12 @@
         "eslint": "eslint . -c eslint.config.js",
         "eslint:fix": "eslint . --fix -c eslint.config.js",
         "tsc": "tsc",
-        "build": "npm run tsc -- --noEmit false",
+        "prebuild": "npm run eslint && npm run tsc && npm run test && rimraf dist",
+        "build": "tsc --project tsconfig.build.json",
+        "build:skip": "tsc --project tsconfig.build.json",
         "test": "vitest --watch=false --reporter=verbose",
-        "test:watch": "vitest --watch=true --reporter=verbose"
+        "test:watch": "vitest --watch=true --reporter=verbose",
+        "jsdoc": "jsdoc -a all -c jsdoc.json -r -R README.md ./src -d docs/jsdoc && jsdoc2md --files ./src > docs/API.md"
     },
     "engines": {
         "node": ">=20.11.0"
@@ -35,6 +40,7 @@
         "@types/prettier": "^2.7.3",
         "@typescript-eslint/eslint-plugin": "^7.5.0",
         "@typescript-eslint/parser": "^7.5.0",
+        "docdash": "^2.0.2",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-import-resolver-typescript": "^3.6.1",
@@ -42,8 +48,11 @@
         "eslint-plugin-only-error": "^1.0.2",
         "eslint-plugin-prettier": "^5.1.3",
         "globals": "^15.0.0",
+        "jsdoc": "^4.0.2",
+        "jsdoc-to-markdown": "^8.0.1",
         "prettier": "^3.2.5",
         "prettier-eslint": "^16.3.0",
+        "rimraf": "^5.0.5",
         "tsx": "^4.7.2",
         "typescript": "^5.4.4",
         "vitest": "^1.4.0"
@@ -52,5 +61,21 @@
         "bigint-isqrt": "^0.3.2",
         "bigint-mod-arith": "^3.3.1",
         "random-bigint": "^0.0.1"
-    }
+    },
+    "keywords": [
+        "cryptography",
+        "security",
+        "encryption",
+        "elgamal",
+        "threshold-encryption",
+        "public-key-encryption",
+        "cryptographic-algorithm",
+        "distributed-cryptography",
+        "secure-communication",
+        "typescript-cryptography",
+        "data-protection",
+        "privacy",
+        "key-management",
+        "secret-sharing"
+    ]
 }

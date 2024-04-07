@@ -33,12 +33,15 @@
     "cSpell.words": [
         "Bleichenbacher's",
         "ciphertext",
+        "docdash",
         "Homomorphically",
         "isqrt",
         "jsbn",
         "Khadir's",
+        "Longname",
         "PRIMALITY",
         "Shamir's",
-        "shamirs"
+        "shamirs",
+        "typedefs"
     ]
 }

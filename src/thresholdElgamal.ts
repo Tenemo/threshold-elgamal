@@ -46,6 +46,33 @@ export const evaluatePolynomial = (
 };
 
 /**
+ * Generates a single key share for a participant in a threshold ElGamal cryptosystem.
+ *
+ * @param {number} index - The unique index of the participant (starting from 1).
+ * @param {number} threshold - The minimum number of key shares required for decryption.
+ * @param {2048 | 3072 | 4096} primeBits - The bit length of the prime modulus (default: 2048).
+ * @returns {PartyKeyPair} The key share containing a private and public key share for the participant.
+ */
+export const generateSingleKeyShare = (
+    index: number,
+    threshold: number,
+    primeBits: 2048 | 3072 | 4096 = 2048,
+): PartyKeyPair => {
+    const group = getGroup(primeBits);
+    const prime = group.prime;
+    const generator = group.generator;
+    const polynomial = generatePolynomial(threshold, prime);
+    let partyPrivateKey = evaluatePolynomial(polynomial, index, prime);
+    // Ensure non-zero private key, adjusting index if necessary
+    while (partyPrivateKey === 0n) {
+        partyPrivateKey = evaluatePolynomial(polynomial, index + 1, prime);
+    }
+    const partyPublicKey = modPow(generator, partyPrivateKey, prime);
+
+    return { partyPrivateKey, partyPublicKey };
+};
+
+/**
  * Generates key shares for a threshold ElGamal cryptosystem.
  *
  * @param {number} n - The total number of key shares.
@@ -58,22 +85,11 @@ export const generateKeyShares = (
     threshold: number,
     primeBits: 2048 | 3072 | 4096 = 2048,
 ): PartyKeyPair[] => {
-    const group = getGroup(primeBits);
-    const prime = group.prime;
-    const generator = group.generator;
-
-    const polynomial = generatePolynomial(threshold, prime);
     const keyShares = [];
-
     for (let i = 1; i <= n; i++) {
-        let partyPrivateKey = evaluatePolynomial(polynomial, i, prime);
-        while (partyPrivateKey === 0n) {
-            partyPrivateKey = evaluatePolynomial(polynomial, i + n, prime);
-        }
-        const partyPublicKey = modPow(generator, partyPrivateKey, prime);
-        keyShares.push({ partyPrivateKey, partyPublicKey });
+        const keyShare = generateSingleKeyShare(i, threshold, primeBits);
+        keyShares.push(keyShare);
     }
-
     return keyShares;
 };
 
