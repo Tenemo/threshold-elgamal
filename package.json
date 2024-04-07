@@ -1,6 +1,6 @@
 {
     "name": "threshold-elgamal",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MIT",
     "description": "threshold-elgamal",
@@ -26,8 +26,8 @@
         "test:watch": "vitest --watch=true --reporter=verbose",
         "pretypedoc": "rimraf docs",
         "typedoc": "typedoc --plugin typedoc-plugin-markdown src --out docs",
-        "prepublish": "npm run prebuild",
-        "publish": "npm publish --access public"
+        "prepublish:public": "npm run prebuild",
+        "publish:public": "npm publish --access public"
     },
     "engines": {
         "node": ">=20.11.0"

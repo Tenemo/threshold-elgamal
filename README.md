@@ -17,12 +17,6 @@ The JavaScript/TypeScript ecosystem seems to be lacking in modern, functional El
 -   Support for additive property of exponents, not just native ElGamal multiplication
 -   consider using {} function params for better readability and consistency in param naming
 
-## Setup
-
-Ensure you have Node.js installed on your system and then install the required dependencies by running:
-
-`npm install`
-
 ## Installation
 
 To use it in your project, install it first:
