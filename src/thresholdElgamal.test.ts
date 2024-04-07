@@ -9,46 +9,89 @@ import {
     combinePartialDecryptions,
     thresholdDecrypt,
 } from './thresholdElgamal';
+import type { KeyPair } from './types';
+import { multiplyEncryptedValues } from './utils';
+
+const thresholdSetup = (
+    partiesCount: number,
+    primeBits: 2048 | 3072 | 4096 = 2048,
+): {
+    keyPairs: KeyPair[];
+    combinedPublicKey: bigint;
+    prime: bigint;
+    generator: bigint;
+} => {
+    const keyPairs = Array.from({ length: partiesCount }, () =>
+        generateIndividualKeyPair(primeBits),
+    );
+    const publicKeys = keyPairs.map((kp) => kp.publicKey);
+    const prime = GROUPS[`ffdhe${primeBits}`].prime;
+    const generator = GROUPS[`ffdhe${primeBits}`].generator;
+    const combinedPublicKey = combinePublicKeys(publicKeys, prime);
+
+    return { keyPairs, combinedPublicKey, prime, generator };
+};
 
 describe('Threshold ElGamal Encryption', () => {
     it('allows for secure threshold encryption and decryption', () => {
-        // Simulate key generation for 3 parties
-        const keyPairs = [1, 2, 3].map(() => generateIndividualKeyPair(2048));
-        const publicKeys = keyPairs.map((kp) => kp.publicKey);
-
-        // Combine public keys to create a single public key for encryption
-        const prime = GROUPS.ffdhe2048.prime;
-        const generator = GROUPS.ffdhe2048.generator;
-        const combinedPublicKey = combinePublicKeys(publicKeys, prime);
-
+        const { keyPairs, combinedPublicKey, prime, generator } =
+            thresholdSetup(3);
         const message = 42;
-        // Encrypt the message using the combined public key
         const encryptedMessage = encrypt(
             message,
             prime,
             generator,
             combinedPublicKey,
         );
-
-        // Each party partially decrypts the ciphertext
         const partialDecryptions = keyPairs.map((keyPair) =>
             partialDecrypt(encryptedMessage.c1, keyPair.privateKey, prime),
         );
-
-        // Combine partial decryptions to decrypt the message
         const combinedPartialDecryptions = combinePartialDecryptions(
             partialDecryptions,
             prime,
         );
-
-        // Use the combined partial decryptions to fully decrypt the message
         const decryptedMessage = thresholdDecrypt(
             encryptedMessage,
             combinedPartialDecryptions,
             prime,
         );
-
-        // Verify that the decrypted message matches the original
         expect(decryptedMessage).toBe(message);
+    });
+
+    it('supports homomorphic multiplication of encrypted messages', () => {
+        const { keyPairs, combinedPublicKey, prime, generator } =
+            thresholdSetup(2);
+        const message1 = 3;
+        const encryptedMessage1 = encrypt(
+            message1,
+            prime,
+            generator,
+            combinedPublicKey,
+        );
+        const message2 = 5;
+        const encryptedMessage2 = encrypt(
+            message2,
+            prime,
+            generator,
+            combinedPublicKey,
+        );
+        const encryptedProduct = multiplyEncryptedValues(
+            encryptedMessage1,
+            encryptedMessage2,
+            prime,
+        );
+        const partialDecryptions = keyPairs.map((keyPair) =>
+            partialDecrypt(encryptedProduct.c1, keyPair.privateKey, prime),
+        );
+        const combinedPartialDecryptions = combinePartialDecryptions(
+            partialDecryptions,
+            prime,
+        );
+        const decryptedProduct = thresholdDecrypt(
+            encryptedProduct,
+            combinedPartialDecryptions,
+            prime,
+        );
+        expect(decryptedProduct).toBe(message1 * message2);
     });
 });
