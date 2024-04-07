@@ -9,6 +9,8 @@ However, it works correctly with `threshold == participantsCount`, which is its 
 
 It was written as clearly as possible, modularized, and with long, explicit variable names. It includes out-of-the-box VS Code configuration, including recommended extensions for working with the library and/or contributing.
 
+**This is not a cryptographically audited library, make sure you know what you are doing before using it.**
+
 ## Contributing
 
 The JavaScript/TypeScript ecosystem seems to be lacking in modern, functional ElGamal libraries that work out of the box with reasonable default (this library isn't at that point yet). All PRs are welcome.
@@ -18,12 +20,6 @@ The JavaScript/TypeScript ecosystem seems to be lacking in modern, functional El
 -   Hashing messages
 -   Support for additive property of exponents, not just native ElGamal multiplication
 -   consider using {} function params for better readability and consistency in param naming
-
-## Setup
-
-Ensure you have Node.js installed on your system and then install the required dependencies by running:
-
-`npm install`
 
 ## Installation
 
