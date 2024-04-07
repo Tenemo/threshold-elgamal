@@ -57,13 +57,12 @@ export const generateKeyShares = (
     n: number,
     threshold: number,
     primeBits: 2048 | 3072 | 4096 = 2048,
-    secret: number,
 ): PartyKeyPair[] => {
     const group = getGroup(primeBits);
     const prime = group.prime;
     const generator = group.generator;
 
-    const polynomial = generatePolynomial(threshold, prime, secret);
+    const polynomial = generatePolynomial(threshold, prime);
     const keyShares = [];
 
     for (let i = 1; i <= n; i++) {

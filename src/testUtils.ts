@@ -43,14 +43,12 @@ export const testSecureEncryptionAndDecryption = (
         participantsCount,
         threshold,
     );
-
     const encryptedMessage = encrypt(
         secret,
         prime,
         generator,
         combinedPublicKey,
     );
-
     const selectedDecryptionShares = keyShares
         .sort(() => Math.random() - 0.5)
         .slice(0, threshold)
@@ -61,18 +59,15 @@ export const testSecureEncryptionAndDecryption = (
                 prime,
             ),
         );
-
     const combinedDecryptionShares = combineDecryptionShares(
         selectedDecryptionShares,
         prime,
     );
-
     const decryptedMessage = thresholdDecrypt(
         encryptedMessage,
         combinedDecryptionShares,
         prime,
     );
-
     expect(decryptedMessage).toBe(secret);
 };
 

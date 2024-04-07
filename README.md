@@ -1,8 +1,11 @@
 # Threshold ElGamal
 
 **WIP: Early version. Thresholds when set below the number of scheme participants don't behave as expected.**
+It, however, works correctly with `threshold == participantsCount`, which is its main use case for myself.
 
 This project implements the ElGamal encryption algorithm in TypeScript. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption.
+
+It was written as clearly as possible, modularized and with long, explicit variable names.
 
 ## TODO
 
