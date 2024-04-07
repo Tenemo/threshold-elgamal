@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "baseUrl": "./src/",
+        "lib": ["ES2022"],
+        "target": "esnext",
+        "module": "ESNext",
+        "moduleResolution": "Node",
+        "removeComments": true,
+        "declaration": false,
+        "allowSyntheticDefaultImports": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "strict": true,
+        "sourceMap": true,
+        "allowJs": true,
+        "noEmit": true,
+        "esModuleInterop": true,
+        "isolatedModules": true,
+        "skipLibCheck": true,
+        "noUnusedParameters": true,
+        "noUnusedLocals": true
+    },
+    "ts-node": {
+        "esm": true,
+        "experimentalSpecifierResolution": "node"
+    },
+    "include": ["src/**/*", "eslint.config.js", "example"]
+}

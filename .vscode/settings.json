@@ -1,0 +1,40 @@
+{
+    "editor.formatOnSave": true,
+    "editor.linkedEditing": true,
+    "files.autoSave": "off",
+    "javascript.updateImportsOnFileMove.enabled": "prompt",
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs": true,
+
+    "css.validate": false,
+    "scss.validate": false,
+    "javascript.validate.enable": false,
+
+    "eslint.format.enable": true,
+    "eslint.experimental.useFlatConfig": true,
+    "[javascript]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "prettier.htmlWhitespaceSensitivity": "ignore",
+    "eslint.validate": ["javascript", "typescript"],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "never"
+    },
+
+    "workbench.iconTheme": "vscode-icons",
+    "cSpell.ignorePaths": ["node_modules", ".git"],
+    "cSpell.words": [
+        "Bleichenbacher's",
+        "ciphertext",
+        "jsbn",
+        "Khadir's",
+        "PRIMALITY"
+    ]
+}

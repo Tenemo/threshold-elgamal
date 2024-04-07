@@ -1,0 +1,13 @@
+{
+    "recommendations": [
+        "aaron-bond.better-comments",
+        "christian-kohler.npm-intellisense",
+        "christian-kohler.path-intellisense",
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens",
+        "esbenp.prettier-vscode",
+        "vscode-icons-team.vscode-icons",
+        "stylelint.vscode-stylelint",
+        "streetsidesoftware.code-spell-checker"
+    ]
+}
