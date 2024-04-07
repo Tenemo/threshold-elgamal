@@ -17,6 +17,7 @@
         "eslint": "eslint . -c eslint.config.js",
         "eslint:fix": "eslint . --fix -c eslint.config.js",
         "tsc": "tsc",
+        "build": "npm run tsc -- --noEmit false",
         "test": "vitest --watch=false --reporter=verbose",
         "test:watch": "vitest --watch=true --reporter=verbose"
     },
