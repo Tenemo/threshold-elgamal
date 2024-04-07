@@ -1,6 +1,8 @@
+import { modPow, modInv } from 'bigint-mod-arith';
+
 import { GROUPS } from './constants';
 import type { EncryptedMessage, Parameters } from './types';
-import { getRandomBigInteger, modPow, modInverse } from './utils';
+import { getRandomBigIntegerInRange } from './utils';
 
 /**
  * Generates the parameters for the ElGamal encryption, including the prime, generator,
@@ -32,45 +34,45 @@ export const generateParameters = (
             throw new Error('Unsupported bit length');
     }
 
-    const privateKey = getRandomBigInteger(2n, prime - 1n);
+    const privateKey = getRandomBigIntegerInRange(2n, prime - 1n);
     const publicKey = modPow(generator, privateKey, prime);
 
     return { prime, generator, publicKey, privateKey };
 };
 /**
- * Encrypts a message using ElGamal encryption.
+ * Encrypts a secret using ElGamal encryption.
  *
- * @param {number} message - The message to be encrypted.
+ * @param {number} secret - The secret to be encrypted.
  * @param {bigint} prime - The prime number used in the encryption system.
  * @param {bigint} generator - The generator used in the encryption system.
  * @param {bigint} publicKey - The public key used for encryption.
- * @returns {EncryptedMessage} The encrypted message, consisting of two BigIntegers (c1 and c2).
+ * @returns {EncryptedMessage} The encrypted secret, consisting of two BigIntegers (c1 and c2).
  */
 export const encrypt = (
-    message: number,
+    secret: number,
     prime: bigint,
     generator: bigint,
     publicKey: bigint,
 ): EncryptedMessage => {
-    if (message >= Number(prime)) {
+    if (secret >= Number(prime)) {
         throw new Error('Message is too large for direct encryption');
     }
-    const randomNumber = getRandomBigInteger(1n, prime - 1n);
+    const randomNumber = getRandomBigIntegerInRange(1n, prime - 1n);
 
     const c1 = modPow(generator, randomNumber, prime);
-    const messageBigInt = BigInt(message);
+    const messageBigInt = BigInt(secret);
     const c2 = (modPow(publicKey, randomNumber, prime) * messageBigInt) % prime;
 
     return { c1, c2 };
 };
 
 /**
- * Decrypts an ElGamal encrypted message.
+ * Decrypts an ElGamal encrypted secret.
  *
- * @param {EncryptedMessage} message - The encrypted message to decrypt.
+ * @param {EncryptedMessage} secret - The encrypted secret to decrypt.
  * @param {bigint} prime - The prime number used in the encryption system.
  * @param {bigint} privateKey - The private key used for decryption.
- * @returns {number} The decrypted message as an integer.
+ * @returns {number} The decrypted secret as an integer.
  */
 export const decrypt = (
     encryptedMessage: EncryptedMessage,
@@ -78,7 +80,6 @@ export const decrypt = (
     privateKey: bigint,
 ): number => {
     const ax: bigint = modPow(encryptedMessage.c1, privateKey, prime);
-    const plaintext: bigint =
-        (modInverse(ax, prime) * encryptedMessage.c2) % prime;
+    const plaintext: bigint = (modInv(ax, prime) * encryptedMessage.c2) % prime;
     return Number(plaintext);
 };

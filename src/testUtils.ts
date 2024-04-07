@@ -37,7 +37,7 @@ export const thresholdSetup = (
 export const testSecureEncryptionAndDecryption = (
     participantsCount: number,
     threshold: number,
-    message: number,
+    secret: number,
 ): void => {
     const { keyShares, combinedPublicKey, prime, generator } = thresholdSetup(
         participantsCount,
@@ -45,13 +45,13 @@ export const testSecureEncryptionAndDecryption = (
     );
 
     const encryptedMessage = encrypt(
-        message,
+        secret,
         prime,
         generator,
         combinedPublicKey,
     );
 
-    const decryptionShares = keyShares
+    const selectedDecryptionShares = keyShares
         .sort(() => Math.random() - 0.5)
         .slice(0, threshold)
         .map((keyShare) =>
@@ -63,7 +63,7 @@ export const testSecureEncryptionAndDecryption = (
         );
 
     const combinedDecryptionShares = combineDecryptionShares(
-        decryptionShares,
+        selectedDecryptionShares,
         prime,
     );
 
@@ -73,7 +73,7 @@ export const testSecureEncryptionAndDecryption = (
         prime,
     );
 
-    expect(decryptedMessage).toBe(message);
+    expect(decryptedMessage).toBe(secret);
 };
 
 export const homomorphicMultiplicationTest = (
@@ -82,22 +82,22 @@ export const homomorphicMultiplicationTest = (
     messages: number[],
 ): void => {
     const expectedProduct = messages.reduce(
-        (product, message) => product * message,
+        (product, secret) => product * secret,
         1,
     );
     const { keyShares, combinedPublicKey, prime, generator } = thresholdSetup(
         participantsCount,
         threshold,
     );
-    const encryptedMessages = messages.map((message) =>
-        encrypt(message, prime, generator, combinedPublicKey),
+    const encryptedMessages = messages.map((secret) =>
+        encrypt(secret, prime, generator, combinedPublicKey),
     );
     const encryptedProduct = encryptedMessages.reduce(
         (product, encryptedMessage) =>
             multiplyEncryptedValues(product, encryptedMessage, prime),
         { c1: 1n, c2: 1n },
     );
-    const decryptionShares = keyShares
+    const selectedDecryptionShares = keyShares
         .sort(() => Math.random() - 0.5)
         .slice(0, threshold)
         .map((keyShare) =>
@@ -108,7 +108,7 @@ export const homomorphicMultiplicationTest = (
             ),
         );
     const combinedDecryptionShares = combineDecryptionShares(
-        decryptionShares,
+        selectedDecryptionShares,
         prime,
     );
     const decryptedProduct = thresholdDecrypt(

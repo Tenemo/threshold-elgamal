@@ -10,9 +10,9 @@ describe('ElGamal: ', () => {
         const { publicKey, privateKey } = generateParameters(primeBits);
 
         it(`${primeBits}-bit encryption and decryption using ${groupName}`, () => {
-            const message = 42;
+            const secret = 42;
             const encryptedMessage = encrypt(
-                message,
+                secret,
                 prime,
                 generator,
                 publicKey,
@@ -23,7 +23,7 @@ describe('ElGamal: ', () => {
                 privateKey,
             );
 
-            expect(decryptedMessage).toBe(message);
+            expect(decryptedMessage).toBe(secret);
         });
 
         it('homomorphic multiplication', () => {

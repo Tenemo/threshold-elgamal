@@ -1,6 +1,8 @@
+import { modPow, modInv } from 'bigint-mod-arith';
+
 import { GROUPS } from './constants';
 import type { EncryptedMessage, PartyKeyPair } from './types';
-import { modPow, modInverse, generatePolynomial } from './utils';
+import { generatePolynomial } from './utils';
 
 /**
  * Retrieves the group parameters for a given prime bit length.
@@ -55,12 +57,13 @@ export const generateKeyShares = (
     n: number,
     threshold: number,
     primeBits: 2048 | 3072 | 4096 = 2048,
+    secret: number,
 ): PartyKeyPair[] => {
     const group = getGroup(primeBits);
     const prime = group.prime;
     const generator = group.generator;
 
-    const polynomial = generatePolynomial(threshold, prime);
+    const polynomial = generatePolynomial(threshold, prime, secret);
     const keyShares = [];
 
     for (let i = 1; i <= n; i++) {
@@ -90,7 +93,7 @@ export const combinePublicKeys = (
 /**
  * Performs a partial decryption on a ciphertext using an individual's private key share.
  *
- * @param {EncryptedMessage} encryptedMessage - The encrypted message.
+ * @param {EncryptedMessage} encryptedMessage - The encrypted secret.
  * @param {bigint} partyPrivateKey - The private key share of the decrypting party.
  * @param {bigint} prime - The prime modulus used in the ElGamal system.
  * @returns {bigint} The result of the partial decryption.
@@ -122,22 +125,19 @@ export const combineDecryptionShares = (
 };
 
 /**
- * Decrypts an encrypted message using the combined partial decryptions in a threshold ElGamal scheme.
+ * Decrypts an encrypted secret using the combined partial decryptions in a threshold ElGamal scheme.
  *
- * @param {{ c1: bigint; c2: bigint }} encryptedMessage - The encrypted message components.
+ * @param {{ c1: bigint; c2: bigint }} encryptedMessage - The encrypted secret components.
  * @param {bigint} combinedDecryptionShares - The combined partial decryptions from all parties.
  * @param {bigint} prime - The prime modulus used in the ElGamal system.
- * @returns {number} The decrypted message, assuming it was small enough to be directly encrypted.
+ * @returns {number} The decrypted secret, assuming it was small enough to be directly encrypted.
  */
 export const thresholdDecrypt = (
     encryptedMessage: { c1: bigint; c2: bigint },
     combinedDecryptionShares: bigint,
     prime: bigint,
 ): number => {
-    const combinedDecryptionInverse = modInverse(
-        combinedDecryptionShares,
-        prime,
-    );
+    const combinedDecryptionInverse = modInv(combinedDecryptionShares, prime);
     const plaintext: bigint =
         (encryptedMessage.c2 * combinedDecryptionInverse) % prime;
     return Number(plaintext);
