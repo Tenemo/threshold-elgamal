@@ -66,30 +66,16 @@ export const encrypt = (
  *
  * @param {EncryptedMessage} message - The encrypted message to decrypt.
  * @param {bigint} prime - The prime number used in the encryption system.
- * @param {bigint} generator - The generator used in the encryption system.
  * @param {bigint} privateKey - The private key used for decryption.
- * @param {bigint} publicKey - The public key used for decryption.
  * @returns {number} The decrypted message as an integer.
  */
 export const decrypt = (
-    message: EncryptedMessage,
+    encryptedMessage: EncryptedMessage,
     prime: bigint,
-    generator: bigint,
     privateKey: bigint,
-    publicKey: bigint,
 ): number => {
-    // Generate a random bigint 'r', which typically wouldn't be part of a standard decryption process.
-    const r: bigint = getRandomBigInteger(2n, prime - 1n);
-
-    // The following operations misuse publicKey in a way that's not part of the standard ElGamal decryption.
-    // This is purely for demonstration as per the request to include publicKey in the decryption process.
-    const aBlind: bigint = (modPow(generator, r, prime) * message.c1) % prime;
-    const ax: bigint = modPow(aBlind, privateKey, prime);
-    const plaintextBlind: bigint = (modInverse(ax, prime) * message.c2) % prime;
+    const ax: bigint = modPow(encryptedMessage.c1, privateKey, prime);
     const plaintext: bigint =
-        (modPow(publicKey, r, prime) * plaintextBlind) % prime;
-
-    // Assuming the plaintext can be safely converted to a number.
-    // This may not be safe for large values and is generally not recommended.
+        (modInverse(ax, prime) * encryptedMessage.c2) % prime;
     return Number(plaintext);
 };
