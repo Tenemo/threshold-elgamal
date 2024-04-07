@@ -14,3 +14,8 @@ export type KeyPair = {
     privateKey: bigint;
     publicKey: bigint;
 };
+
+export type KeyShare = {
+    privateKeyShare: bigint;
+    publicKeyShare: bigint;
+};

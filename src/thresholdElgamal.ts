@@ -1,38 +1,77 @@
 import { GROUPS } from './constants';
-import type { KeyPair } from './types';
-import { getRandomBigInteger, modPow, modInverse } from './utils';
+import type { EncryptedMessage, KeyShare } from './types';
+import { modPow, modInverse, generatePolynomial } from './utils';
 
 /**
- * Generates an individual ElGamal key pair for a given prime bit length.
+ * Retrieves the group parameters for a given prime bit length.
  *
  * @param {2048 | 3072 | 4096} primeBits - The bit length of the prime modulus (2048, 3072, or 4096).
- * @returns {KeyPair} The generated key pair including both private and public keys.
+ * @returns {Object} The group parameters including prime and generator.
  */
-export const generateIndividualKeyPair = (
-    primeBits: 2048 | 3072 | 4096 = 2048,
-): KeyPair => {
-    let group;
+const getGroup = (
+    primeBits: 2048 | 3072 | 4096,
+): { prime: bigint; generator: bigint } => {
     switch (primeBits) {
         case 2048:
-            group = GROUPS.ffdhe2048;
-            break;
+            return GROUPS.ffdhe2048;
         case 3072:
-            group = GROUPS.ffdhe3072;
-            break;
+            return GROUPS.ffdhe3072;
         case 4096:
-            group = GROUPS.ffdhe4096;
-            break;
+            return GROUPS.ffdhe4096;
         default:
             throw new Error('Unsupported bit length');
     }
+};
 
+/**
+ * Evaluates a polynomial at a given point using modular arithmetic.
+ *
+ * @param {bigint[]} polynomial - The coefficients of the polynomial.
+ * @param {number} x - The point at which to evaluate the polynomial.
+ * @param {bigint} prime - The prime modulus.
+ * @returns {bigint} The result of the polynomial evaluation.
+ */
+const evaluatePolynomial = (
+    polynomial: bigint[],
+    x: number,
+    prime: bigint,
+): bigint => {
+    let result = 0n;
+    for (let i = 0; i < polynomial.length; i++) {
+        result =
+            (result + polynomial[i] * modPow(BigInt(x), BigInt(i), prime)) %
+            prime;
+    }
+    return result;
+};
+
+/**
+ * Generates key shares for a threshold ElGamal cryptosystem.
+ *
+ * @param {number} n - The total number of key shares.
+ * @param {number} threshold - The minimum number of key shares required for decryption.
+ * @param {2048 | 3072 | 4096} primeBits - The bit length of the prime modulus (default: 2048).
+ * @returns {KeyShare[]} An array of key shares, each containing a private and public key share.
+ */
+export const generateKeyShares = (
+    n: number,
+    threshold: number,
+    primeBits: 2048 | 3072 | 4096 = 2048,
+): KeyShare[] => {
+    const group = getGroup(primeBits);
     const prime = group.prime;
     const generator = group.generator;
 
-    const privateKey: bigint = getRandomBigInteger(2n, prime - 1n);
-    const publicKey: bigint = modPow(generator, privateKey, prime);
+    const polynomial = generatePolynomial(threshold, prime);
+    const keyShares = [];
 
-    return { privateKey, publicKey };
+    for (let i = 1; i <= n; i++) {
+        const privateKeyShare = evaluatePolynomial(polynomial, i, prime);
+        const publicKeyShare = modPow(generator, privateKeyShare, prime);
+        keyShares.push({ privateKeyShare, publicKeyShare });
+    }
+
+    return keyShares;
 };
 
 /**
@@ -48,18 +87,20 @@ export const combinePublicKeys = (
 ): bigint => publicKeys.reduce((acc, current) => (acc * current) % prime, 1n);
 
 /**
- * Performs a partial decryption on a ciphertext using an individual's private key.
+ * Performs a partial decryption on a ciphertext using an individual's private key share.
  *
- * @param {bigint} c1 - The first component of the ciphertext.
- * @param {bigint} privateKey - The private key of the decrypting party.
+ * @param {EncryptedMessage} encryptedMessage - The encrypted message.
+ * @param {bigint} privateKeyShare - The private key share of the decrypting party.
  * @param {bigint} prime - The prime modulus used in the ElGamal system.
  * @returns {bigint} The result of the partial decryption.
  */
 export const partialDecrypt = (
-    c1: bigint,
-    privateKey: bigint,
+    encryptedMessage: EncryptedMessage,
+    privateKeyShare: bigint,
     prime: bigint,
-): bigint => modPow(c1, privateKey, prime);
+): bigint => {
+    return modPow(encryptedMessage.c1, privateKeyShare, prime);
+};
 
 /**
  * Combines partial decryptions from multiple parties into a single decryption factor.
@@ -71,8 +112,13 @@ export const partialDecrypt = (
 export const combinePartialDecryptions = (
     partialDecryptions: bigint[],
     prime: bigint,
-): bigint =>
-    partialDecryptions.reduce((acc, current) => (acc * current) % prime, 1n);
+): bigint => {
+    let result = 1n;
+    for (const partialDecryption of partialDecryptions) {
+        result = (result * partialDecryption) % prime;
+    }
+    return result;
+};
 
 /**
  * Decrypts an encrypted message using the combined partial decryptions in a threshold ElGamal scheme.
@@ -93,5 +139,8 @@ export const thresholdDecrypt = (
     );
     const plaintext: bigint =
         (encryptedMessage.c2 * combinedDecryptionInverse) % prime;
+    if (plaintext > Number.MAX_SAFE_INTEGER) {
+        throw new Error('Decrypted message is too large');
+    }
     return Number(plaintext);
 };

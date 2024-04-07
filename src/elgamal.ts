@@ -52,6 +52,9 @@ export const encrypt = (
     generator: bigint,
     publicKey: bigint,
 ): EncryptedMessage => {
+    if (message >= Number(prime)) {
+        throw new Error('Message is too large for direct encryption');
+    }
     const randomNumber = getRandomBigInteger(1n, prime - 1n);
 
     const c1 = modPow(generator, randomNumber, prime);
