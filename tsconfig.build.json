@@ -4,13 +4,14 @@
         "noEmit": false,
         "declaration": true,
         "sourceMap": false,
-        "removeComments": true
+        "removeComments": false
     },
     "include": ["src/**/*"],
     "exclude": [
         "node_modules",
         "**/*.test.ts",
         "**/*.spec.ts",
-        "eslint.config.js"
+        "eslint.config.js",
+        "jsdoc.config.js"
     ]
 }

@@ -1,3 +1,5 @@
+threshold-elgamal / [Exports](modules.md)
+
 # Threshold ElGamal
 
 This project is a collection of functions implementing the ElGamal encryption algorithm in TypeScript. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption.
