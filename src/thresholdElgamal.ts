@@ -1,5 +1,5 @@
 import { GROUPS } from './constants';
-import type { EncryptedMessage, KeyShare } from './types';
+import type { EncryptedMessage, PartyKeyPair } from './types';
 import { modPow, modInverse, generatePolynomial } from './utils';
 
 /**
@@ -8,7 +8,7 @@ import { modPow, modInverse, generatePolynomial } from './utils';
  * @param {2048 | 3072 | 4096} primeBits - The bit length of the prime modulus (2048, 3072, or 4096).
  * @returns {Object} The group parameters including prime and generator.
  */
-const getGroup = (
+export const getGroup = (
     primeBits: 2048 | 3072 | 4096,
 ): { prime: bigint; generator: bigint } => {
     switch (primeBits) {
@@ -49,13 +49,13 @@ export const evaluatePolynomial = (
  * @param {number} n - The total number of key shares.
  * @param {number} threshold - The minimum number of key shares required for decryption.
  * @param {2048 | 3072 | 4096} primeBits - The bit length of the prime modulus (default: 2048).
- * @returns {KeyShare[]} An array of key shares, each containing a private and public key share.
+ * @returns {PartyKeyPair[]} An array of key shares, each containing a private and public key share.
  */
 export const generateKeyShares = (
     n: number,
     threshold: number,
     primeBits: 2048 | 3072 | 4096 = 2048,
-): KeyShare[] => {
+): PartyKeyPair[] => {
     const group = getGroup(primeBits);
     const prime = group.prime;
     const generator = group.generator;
@@ -64,12 +64,12 @@ export const generateKeyShares = (
     const keyShares = [];
 
     for (let i = 1; i <= n; i++) {
-        let privateKeyShare = evaluatePolynomial(polynomial, i, prime);
-        while (privateKeyShare === 0n) {
-            privateKeyShare = evaluatePolynomial(polynomial, i + n, prime);
+        let partyPrivateKey = evaluatePolynomial(polynomial, i, prime);
+        while (partyPrivateKey === 0n) {
+            partyPrivateKey = evaluatePolynomial(polynomial, i + n, prime);
         }
-        const publicKeyShare = modPow(generator, privateKeyShare, prime);
-        keyShares.push({ privateKeyShare, publicKeyShare });
+        const partyPublicKey = modPow(generator, partyPrivateKey, prime);
+        keyShares.push({ partyPrivateKey, partyPublicKey });
     }
 
     return keyShares;
@@ -91,31 +91,31 @@ export const combinePublicKeys = (
  * Performs a partial decryption on a ciphertext using an individual's private key share.
  *
  * @param {EncryptedMessage} encryptedMessage - The encrypted message.
- * @param {bigint} privateKeyShare - The private key share of the decrypting party.
+ * @param {bigint} partyPrivateKey - The private key share of the decrypting party.
  * @param {bigint} prime - The prime modulus used in the ElGamal system.
  * @returns {bigint} The result of the partial decryption.
  */
-export const partialDecrypt = (
+export const createDecryptionShare = (
     encryptedMessage: EncryptedMessage,
-    privateKeyShare: bigint,
+    partyPrivateKey: bigint,
     prime: bigint,
 ): bigint => {
-    return modPow(encryptedMessage.c1, privateKeyShare, prime);
+    return modPow(encryptedMessage.c1, partyPrivateKey, prime);
 };
 
 /**
  * Combines partial decryptions from multiple parties into a single decryption factor.
  *
- * @param {bigint[]} partialDecryptions - An array of partial decryption results.
+ * @param {bigint[]} decryptionShares - An array of partial decryption results.
  * @param {bigint} prime - The prime modulus used in the ElGamal system.
  * @returns {bigint} The combined decryption factor.
  */
-export const combinePartialDecryptions = (
-    partialDecryptions: bigint[],
+export const combineDecryptionShares = (
+    decryptionShares: bigint[],
     prime: bigint,
 ): bigint => {
     let result = 1n;
-    for (const partialDecryption of partialDecryptions) {
+    for (const partialDecryption of decryptionShares) {
         result = (result * partialDecryption) % prime;
     }
     return result;
@@ -125,17 +125,17 @@ export const combinePartialDecryptions = (
  * Decrypts an encrypted message using the combined partial decryptions in a threshold ElGamal scheme.
  *
  * @param {{ c1: bigint; c2: bigint }} encryptedMessage - The encrypted message components.
- * @param {bigint} combinedPartialDecryptions - The combined partial decryptions from all parties.
+ * @param {bigint} combinedDecryptionShares - The combined partial decryptions from all parties.
  * @param {bigint} prime - The prime modulus used in the ElGamal system.
  * @returns {number} The decrypted message, assuming it was small enough to be directly encrypted.
  */
 export const thresholdDecrypt = (
     encryptedMessage: { c1: bigint; c2: bigint },
-    combinedPartialDecryptions: bigint,
+    combinedDecryptionShares: bigint,
     prime: bigint,
 ): number => {
     const combinedDecryptionInverse = modInverse(
-        combinedPartialDecryptions,
+        combinedDecryptionShares,
         prime,
     );
     const plaintext: bigint =

@@ -8,13 +8,27 @@ import {
     testSecureEncryptionAndDecryption,
 } from './testUtils';
 import {
-    partialDecrypt,
-    combinePartialDecryptions,
+    createDecryptionShare,
+    combineDecryptionShares,
     thresholdDecrypt,
+    getGroup,
+    generateKeyShares,
 } from './thresholdElgamal';
 import { multiplyEncryptedValues } from './utils';
 
 describe('Threshold ElGamal', () => {
+    it('correct encryption and decryption with 3 participantsCount and a threshold of 2', () => {
+        const participantsCount = 3;
+        const threshold = 2;
+        const message = 42;
+
+        const group = getGroup(2048);
+        const prime = group.prime;
+        const generator = group.generator;
+        const keyShares = generateKeyShares(participantsCount, threshold, 2048);
+
+        expect(decryptedMessage).toBe(message);
+    });
     describe('allows for secure encryption and decryption', () => {
         it('with 2 participants and a threshold of 2', () => {
             testSecureEncryptionAndDecryption(2, 2, 42);
@@ -34,6 +48,13 @@ describe('Threshold ElGamal', () => {
         it('with 2 participants and a threshold of 2', () => {
             homomorphicMultiplicationTest(2, 2, [3, 5]);
         });
+        it('with 10 participants and a threshold of 10', () => {
+            homomorphicMultiplicationTest(
+                10,
+                10,
+                [13, 24, 35, 46, 5, 6, 7, 8, 9, 10],
+            );
+        });
         it('with 3 participants and a threshold of 2', () => {
             homomorphicMultiplicationTest(3, 2, [2, 3, 4]);
         });
@@ -50,12 +71,12 @@ describe('Threshold ElGamal', () => {
     });
 
     it('correctly calculates and verifies products from encrypted votes', () => {
-        const participants = 3;
+        const participantsCount = 3;
         const threshold = 2;
         const candidates = 3;
         const { keyShares, combinedPublicKey, prime, generator } =
-            thresholdSetup(participants, threshold);
-        const votesMatrix = Array.from({ length: participants }, () =>
+            thresholdSetup(participantsCount, threshold);
+        const votesMatrix = Array.from({ length: participantsCount }, () =>
             Array.from({ length: candidates }, () => getRandomScore(1, 10)),
         );
         const expectedProducts = Array.from(
@@ -88,22 +109,26 @@ describe('Threshold ElGamal', () => {
             keyShares
                 .slice(0, threshold)
                 .map((keyShare) =>
-                    partialDecrypt(product, keyShare.privateKeyShare, prime),
+                    createDecryptionShare(
+                        product,
+                        keyShare.partyPrivateKey,
+                        prime,
+                    ),
                 ),
         );
         const decryptedProducts = partialDecryptionsMatrix.map(
-            (partialDecryptions) => {
-                const combinedPartialDecryptions = combinePartialDecryptions(
-                    partialDecryptions,
+            (decryptionShares) => {
+                const combinedDecryptionShares = combineDecryptionShares(
+                    decryptionShares,
                     prime,
                 );
                 const encryptedProduct =
                     encryptedProducts[
-                        partialDecryptionsMatrix.indexOf(partialDecryptions)
+                        partialDecryptionsMatrix.indexOf(decryptionShares)
                     ];
                 return thresholdDecrypt(
                     encryptedProduct,
-                    combinedPartialDecryptions,
+                    combinedDecryptionShares,
                     prime,
                 );
             },

@@ -5,11 +5,11 @@ import { encrypt } from './elgamal';
 import {
     generateKeyShares,
     combinePublicKeys,
-    partialDecrypt,
-    combinePartialDecryptions,
+    createDecryptionShare,
+    combineDecryptionShares,
     thresholdDecrypt,
 } from './thresholdElgamal';
-import type { KeyShare } from './types';
+import type { PartyKeyPair } from './types';
 import { multiplyEncryptedValues } from './utils';
 
 export const getRandomScore = (min = 1, max = 10): number =>
@@ -20,13 +20,13 @@ export const thresholdSetup = (
     threshold: number,
     primeBits: 2048 | 3072 | 4096 = 2048,
 ): {
-    keyShares: KeyShare[];
+    keyShares: PartyKeyPair[];
     combinedPublicKey: bigint;
     prime: bigint;
     generator: bigint;
 } => {
     const keyShares = generateKeyShares(partiesCount, threshold, primeBits);
-    const publicKeys = keyShares.map((ks) => ks.publicKeyShare);
+    const publicKeys = keyShares.map((ks) => ks.partyPublicKey);
     const prime = GROUPS[`ffdhe${primeBits}`].prime;
     const generator = GROUPS[`ffdhe${primeBits}`].generator;
     const combinedPublicKey = combinePublicKeys(publicKeys, prime);
@@ -51,20 +51,25 @@ export const testSecureEncryptionAndDecryption = (
         combinedPublicKey,
     );
 
-    const partialDecryptions = keyShares
+    const decryptionShares = keyShares
+        .sort(() => Math.random() - 0.5)
         .slice(0, threshold)
         .map((keyShare) =>
-            partialDecrypt(encryptedMessage, keyShare.privateKeyShare, prime),
+            createDecryptionShare(
+                encryptedMessage,
+                keyShare.partyPrivateKey,
+                prime,
+            ),
         );
 
-    const combinedPartialDecryptions = combinePartialDecryptions(
-        partialDecryptions,
+    const combinedDecryptionShares = combineDecryptionShares(
+        decryptionShares,
         prime,
     );
 
     const decryptedMessage = thresholdDecrypt(
         encryptedMessage,
-        combinedPartialDecryptions,
+        combinedDecryptionShares,
         prime,
     );
 
@@ -92,16 +97,23 @@ export const homomorphicMultiplicationTest = (
             multiplyEncryptedValues(product, encryptedMessage, prime),
         { c1: 1n, c2: 1n },
     );
-    const partialDecryptions = keyShares.map((keyShare) =>
-        partialDecrypt(encryptedProduct, keyShare.privateKeyShare, prime),
-    );
-    const combinedPartialDecryptions = combinePartialDecryptions(
-        partialDecryptions,
+    const decryptionShares = keyShares
+        .sort(() => Math.random() - 0.5)
+        .slice(0, threshold)
+        .map((keyShare) =>
+            createDecryptionShare(
+                encryptedProduct,
+                keyShare.partyPrivateKey,
+                prime,
+            ),
+        );
+    const combinedDecryptionShares = combineDecryptionShares(
+        decryptionShares,
         prime,
     );
     const decryptedProduct = thresholdDecrypt(
         encryptedProduct,
-        combinedPartialDecryptions,
+        combinedDecryptionShares,
         prime,
     );
     expect(decryptedProduct).toBe(expectedProduct);
