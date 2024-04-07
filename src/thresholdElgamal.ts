@@ -101,9 +101,7 @@ export const createDecryptionShare = (
     encryptedMessage: EncryptedMessage,
     partyPrivateKey: bigint,
     prime: bigint,
-): bigint => {
-    return modPow(encryptedMessage.c1, partyPrivateKey, prime);
-};
+): bigint => modPow(encryptedMessage.c1, partyPrivateKey, prime);
 
 /**
  * Combines partial decryptions from multiple parties into a single decryption factor.

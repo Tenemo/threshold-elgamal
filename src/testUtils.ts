@@ -1,6 +1,5 @@
 import { expect } from 'vitest';
 
-import { GROUPS } from './constants';
 import { encrypt } from './elgamal';
 import {
     generateKeyShares,
@@ -8,6 +7,7 @@ import {
     createDecryptionShare,
     combineDecryptionShares,
     thresholdDecrypt,
+    getGroup,
 } from './thresholdElgamal';
 import type { PartyKeyPair } from './types';
 import { multiplyEncryptedValues } from './utils';
@@ -25,10 +25,9 @@ export const thresholdSetup = (
     prime: bigint;
     generator: bigint;
 } => {
+    const { prime, generator } = getGroup(primeBits);
     const keyShares = generateKeyShares(partiesCount, threshold, primeBits);
     const publicKeys = keyShares.map((ks) => ks.partyPublicKey);
-    const prime = GROUPS[`ffdhe${primeBits}`].prime;
-    const generator = GROUPS[`ffdhe${primeBits}`].generator;
     const combinedPublicKey = combinePublicKeys(publicKeys, prime);
 
     return { keyShares, combinedPublicKey, prime, generator };
@@ -112,4 +111,67 @@ export const homomorphicMultiplicationTest = (
         prime,
     );
     expect(decryptedProduct).toBe(expectedProduct);
+};
+
+export const votingTest = (
+    participantsCount: number,
+    threshold: number,
+    candidatesCount: number,
+): void => {
+    const { keyShares, combinedPublicKey, prime, generator } = thresholdSetup(
+        participantsCount,
+        threshold,
+    );
+    const votesMatrix = Array.from({ length: participantsCount }, () =>
+        Array.from({ length: candidatesCount }, () => getRandomScore(1, 10)),
+    );
+    const expectedProducts = Array.from(
+        { length: candidatesCount },
+        (_, candidateIndex) =>
+            votesMatrix.reduce(
+                (product, votes) => product * votes[candidateIndex],
+                1,
+            ),
+    );
+    const encryptedVotesMatrix = votesMatrix.map((votes) =>
+        votes.map((vote) => encrypt(vote, prime, generator, combinedPublicKey)),
+    );
+    const encryptedProducts = Array.from(
+        { length: candidatesCount },
+        (_, candidateIndex) =>
+            encryptedVotesMatrix.reduce(
+                (product, encryptedVotes) =>
+                    multiplyEncryptedValues(
+                        product,
+                        encryptedVotes[candidateIndex],
+                        prime,
+                    ),
+                { c1: 1n, c2: 1n },
+            ),
+    );
+    const partialDecryptionsMatrix = encryptedProducts.map((product) =>
+        keyShares
+            .slice(0, threshold)
+            .map((keyShare) =>
+                createDecryptionShare(product, keyShare.partyPrivateKey, prime),
+            ),
+    );
+    const decryptedProducts = partialDecryptionsMatrix.map(
+        (decryptionShares) => {
+            const combinedDecryptionShares = combineDecryptionShares(
+                decryptionShares,
+                prime,
+            );
+            const encryptedProduct =
+                encryptedProducts[
+                    partialDecryptionsMatrix.indexOf(decryptionShares)
+                ];
+            return thresholdDecrypt(
+                encryptedProduct,
+                combinedDecryptionShares,
+                prime,
+            );
+        },
+    );
+    expect(decryptedProducts).toEqual(expectedProducts);
 };

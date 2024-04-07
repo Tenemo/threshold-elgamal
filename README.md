@@ -10,6 +10,7 @@ It was written as clearly as possible, modularized and with long, explicit varia
 ## TODO
 
 -   Hashing messages
+-   Support for additive property of exponents, not just native ElGamal multiplication
 
 ## Contributing
 

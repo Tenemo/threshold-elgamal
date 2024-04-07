@@ -1,35 +1,14 @@
-import crypto from 'crypto';
+import { describe, it } from 'vitest';
 
-import sqrt from 'bigint-isqrt';
-import { modPow, modInv } from 'bigint-mod-arith';
-import { expect, describe, it } from 'vitest';
-
-import { encrypt } from './elgamal';
 import {
-    thresholdSetup,
     homomorphicMultiplicationTest,
-    getRandomScore,
     testSecureEncryptionAndDecryption,
+    votingTest,
 } from './testUtils';
-import {
-    createDecryptionShare,
-    combineDecryptionShares,
-    thresholdDecrypt,
-    getGroup,
-    generateKeyShares,
-} from './thresholdElgamal';
-import { multiplyEncryptedValues, getRandomBigIntegerInRange } from './utils';
 
 // I already have modPow, modInv and getRandomBigIntegerInRange
 describe('Threshold ElGamal', () => {
     describe('in a single secret scheme', () => {
-        it('correctly encrypts and decrypts the single secret with 3 participantsCount and a threshold of 2', () => {
-            const participantsCount = 3;
-            const threshold = 2;
-            const { keyShares, combinedPublicKey, prime, generator } =
-                thresholdSetup(participantsCount, threshold, 2048);
-        });
-
         describe('allows for secure encryption and decryption', () => {
             it('with 2 participants and a threshold of 2', () => {
                 testSecureEncryptionAndDecryption(2, 2, 42);
@@ -37,15 +16,17 @@ describe('Threshold ElGamal', () => {
             it('with 20 participants and a threshold of 20', () => {
                 testSecureEncryptionAndDecryption(20, 20, 4243);
             });
-            // it('with 3 participants and a threshold of 2', () => {
-            //     testSecureEncryptionAndDecryption(3, 2, 123);
-            // });
-            // it('with 5 participants and a threshold of 3', () => {
-            //     testSecureEncryptionAndDecryption(5, 3, 255);
-            // });
-            // it('with 7 participants and a threshold of 4', () => {
-            //     testSecureEncryptionAndDecryption(7, 4, 789);
-            // });
+
+            // Failing tests
+            it('(t < n) with 3 participants and a threshold of 2', () => {
+                testSecureEncryptionAndDecryption(3, 2, 123);
+            });
+            it('(t < n) with 5 participants and a threshold of 3', () => {
+                testSecureEncryptionAndDecryption(5, 3, 255);
+            });
+            it('(t < n) with 7 participants and a threshold of 4', () => {
+                testSecureEncryptionAndDecryption(7, 4, 789);
+            });
         });
     });
     describe('in a multiple secrets scheme', () => {
@@ -60,85 +41,43 @@ describe('Threshold ElGamal', () => {
                     [13, 24, 35, 46, 5, 6, 7, 8, 9, 10],
                 );
             });
-            // it('with 3 participants and a threshold of 2', () => {
-            //     homomorphicMultiplicationTest(3, 2, [2, 3, 4]);
-            // });
-            // it('with 5 participants and a threshold of 3', () => {
-            //     homomorphicMultiplicationTest(5, 3, [1, 2, 3, 4, 5]);
-            // });
-            // it('with 10 participants and a threshold of 5', () => {
-            //     homomorphicMultiplicationTest(
-            //         10,
-            //         5,
-            //         [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            //     );
-            // });
-        });
 
-        // it('correctly calculates and verifies products from encrypted votes', () => {
-        //     const participantsCount = 3;
-        //     const threshold = 2;
-        //     const candidates = 3;
-        //     const { keyShares, combinedPublicKey, prime, generator } =
-        //         thresholdSetup(participantsCount, threshold);
-        //     const votesMatrix = Array.from({ length: participantsCount }, () =>
-        //         Array.from({ length: candidates }, () => getRandomScore(1, 10)),
-        //     );
-        //     const expectedProducts = Array.from(
-        //         { length: candidates },
-        //         (_, candidateIndex) =>
-        //             votesMatrix.reduce(
-        //                 (product, votes) => product * votes[candidateIndex],
-        //                 1,
-        //             ),
-        //     );
-        //     const encryptedVotesMatrix = votesMatrix.map((votes) =>
-        //         votes.map((vote) =>
-        //             encrypt(vote, prime, generator, combinedPublicKey),
-        //         ),
-        //     );
-        //     const encryptedProducts = Array.from(
-        //         { length: candidates },
-        //         (_, candidateIndex) =>
-        //             encryptedVotesMatrix.reduce(
-        //                 (product, encryptedVotes) =>
-        //                     multiplyEncryptedValues(
-        //                         product,
-        //                         encryptedVotes[candidateIndex],
-        //                         prime,
-        //                     ),
-        //                 { c1: 1n, c2: 1n },
-        //             ),
-        //     );
-        //     const partialDecryptionsMatrix = encryptedProducts.map((product) =>
-        //         keyShares
-        //             .slice(0, threshold)
-        //             .map((keyShare) =>
-        //                 createDecryptionShare(
-        //                     product,
-        //                     keyShare.partyPrivateKey,
-        //                     prime,
-        //                 ),
-        //             ),
-        //     );
-        //     const decryptedProducts = partialDecryptionsMatrix.map(
-        //         (decryptionShares) => {
-        //             const combinedDecryptionShares = combineDecryptionShares(
-        //                 decryptionShares,
-        //                 prime,
-        //             );
-        //             const encryptedProduct =
-        //                 encryptedProducts[
-        //                     partialDecryptionsMatrix.indexOf(decryptionShares)
-        //                 ];
-        //             return thresholdDecrypt(
-        //                 encryptedProduct,
-        //                 combinedDecryptionShares,
-        //                 prime,
-        //             );
-        //         },
-        //     );
-        //     expect(decryptedProducts).toEqual(expectedProducts);
-        // });
+            // Failing tests
+            it('(t < n) with 3 participants and a threshold of 2', () => {
+                homomorphicMultiplicationTest(3, 2, [2, 3, 4]);
+            });
+            it('(t < n) with 5 participants and a threshold of 3', () => {
+                homomorphicMultiplicationTest(5, 3, [1, 2, 3, 4, 5]);
+            });
+            it('(t < n) with 10 participants and a threshold of 5', () => {
+                homomorphicMultiplicationTest(
+                    10,
+                    5,
+                    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                );
+            });
+        });
+        describe('supports voting', () => {
+            it('with 2 participants, threshold of 2 and 2 candidates', () => {
+                votingTest(2, 2, 2);
+            });
+            it('with 5 participants, threshold of 5 and 3 candidates', () => {
+                votingTest(5, 5, 3);
+            });
+            it('with 7 participants, threshold of 7 and 7 candidates', () => {
+                votingTest(7, 7, 7);
+            });
+            it('with 6 participants, threshold of 6 and 8 candidates', () => {
+                votingTest(6, 6, 8);
+            });
+
+            // Failing tests
+            it('(t < n) with 3 participants, threshold of 2 and 2 candidates', () => {
+                votingTest(3, 2, 2);
+            });
+            it('(t < n) with 7 participants, threshold of 5 and 3 candidates', () => {
+                votingTest(7, 5, 3);
+            });
+        });
     });
 });
