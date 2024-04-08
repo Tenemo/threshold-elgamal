@@ -3,7 +3,7 @@
     "version": "0.1.9",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MIT",
-    "description": "threshold-elgamal",
+    "description": "Threshold ElGamal encryption implementation in TypeScript",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "repository": {
