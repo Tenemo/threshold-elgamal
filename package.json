@@ -26,7 +26,7 @@
         "test:watch": "vitest --watch=true --reporter=verbose",
         "pretypedoc": "del-cli 'docs/*' '!docs/_config.yml'",
         "typedoc": "typedoc --plugin typedoc-plugin-markdown src --out docs  --darkHighlightTheme dark-plus --githubPages false --entryDocument index.md --cleanOutputDir false",
-        "prepublish:public": "npm run prebuild",
+        "prepublish:public": "npm run build",
         "publish:public": "npm publish --access public"
     },
     "engines": {
