@@ -1,6 +1,6 @@
 {
     "name": "threshold-elgamal",
-    "version": "0.1.11",
+    "version": "0.1.12",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MIT",
     "description": "Threshold ElGamal encryption implementation in TypeScript",
