@@ -25,7 +25,7 @@
         "test": "vitest --watch=false --reporter=verbose",
         "test:watch": "vitest --watch=true --reporter=verbose",
         "pretypedoc": "rimraf docs",
-        "typedoc": "typedoc --plugin typedoc-plugin-markdown src --out docs",
+        "typedoc": "typedoc --plugin typedoc-plugin-markdown src --out docs  --darkHighlightTheme dark-plus --githubPages false --entryDocument index.md",
         "prepublish:public": "npm run prebuild",
         "publish:public": "npm publish --access public"
     },

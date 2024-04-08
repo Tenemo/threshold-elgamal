@@ -2,7 +2,7 @@ threshold-elgamal / [Exports](modules.md)
 
 # Threshold ElGamal
 
-This project is a collection of functions implementing the ElGamal encryption algorithm in TypeScript. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption.
+This project is a collection of functions implementing the ElGamal encryption algorithm in TypeScript on top of native JavaScript BigInteger. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption.
 
 **WIP: Early version. Thresholds when set below the number of scheme participants don't behave as expected.**
 However, it works correctly with `threshold == participantsCount`, which is its main use case for myself for now.
@@ -14,6 +14,20 @@ It was written as clearly as possible, modularized, and with long, explicit vari
 ## Contributing
 
 The JavaScript/TypeScript ecosystem seems to be lacking in modern, functional ElGamal libraries that work out of the box with reasonable default (this library isn't at that point yet). All PRs are welcome.
+
+## Libraries/tools used
+
+-   TypeScript
+-   Vitest
+-   ESLint + Prettier
+-   Typedoc
+
+## Production dependencies
+
+-   [bigint-mod-arith](https://www.npmjs.com/package/bigint-mod-arith)
+-   [random-bigint](https://www.npmjs.com/package/random-bigint)
+
+It has no other production dependencies apart from these two. They could be inlined easily, if needed.
 
 ## TODO
 
