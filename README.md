@@ -43,7 +43,7 @@ It has no other production dependencies apart from these two. They could be inli
 
 To use it in your project, install it first:
 
-`npm install threshold-elgamal`
+`npm install --save threshold-elgamal`
 
 ## Examples
 
