@@ -38,6 +38,8 @@ It has no other production dependencies apart from these two. They could be inli
 -   Hashing messages
 -   Support for additive property of exponents, not just native ElGamal multiplication
 -   consider using {} function params for better readability and consistency in param naming
+-   ZK proofs
+-   Validation
 
 ## Installation
 
@@ -173,7 +175,7 @@ const thresholdDecryptedMessage = thresholdDecrypt(
 console.log(thresholdDecryptedMessage); // 42
 ```
 
-### Voting and Multiplication with Threshold Scheme for 3 Participants
+### Voting and multiplication with threshold scheme for 3 participants
 
 This example demonstrates a 1 to 10 voting scenario where 3 participants cast encrypted votes on two options. The encrypted votes are aggregated, multiplied with each other and then require all three participants to decrypt the final tally. The decryption does not work on individual votes, meaning that it is impossible to decrypt their votes even after decrypting the result.
 
