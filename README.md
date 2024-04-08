@@ -9,6 +9,10 @@ It was written as clearly as possible, modularized, and with long, explicit vari
 
 **This is not a cryptographically audited library, make sure you know what you are doing before using it.**
 
+## Documentation
+
+For a detailed list of exported types and functions, [click here](https://tenemo.github.io/threshold-elgamal/modules.html).
+
 ## Contributing
 
 The JavaScript/TypeScript ecosystem seems to be lacking in modern, functional ElGamal libraries that work out of the box with reasonable default (this library isn't at that point yet). All PRs are welcome.
