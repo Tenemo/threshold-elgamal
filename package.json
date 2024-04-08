@@ -1,6 +1,6 @@
 {
     "name": "threshold-elgamal",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MIT",
     "description": "threshold-elgamal",
