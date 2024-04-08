@@ -126,7 +126,7 @@ export default [
         ],
         overrides: [
             {
-                files: ['**/*.mjs', '**/*.js', '**/*.jsx', 'eslint.config.mjs'],
+                files: ['**/*.mjs', '**/*.js'],
                 rules: {
                     '@typescript-eslint/no-unsafe-assignment': OFF,
                     '@typescript-eslint/no-unsafe-member-access': OFF,
@@ -136,26 +136,6 @@ export default [
         ],
     }),
     {
-        files: ['**/*.scss.d.ts'],
-        rules: {
-            'prettier/prettier': OFF,
-            '@typescript-eslint/consistent-type-definitions': OFF,
-        },
-    },
-    {
-        files: ['**/*.spec.tsx'],
-        rules: {
-            '@typescript-eslint/ban-ts-comment': OFF,
-            '@typescript-eslint/no-unsafe-return': OFF,
-        },
-    },
-    {
-        ignores: [
-            'node_modules/*',
-            '.tmp/*',
-            'coverage/*',
-            'dist/*',
-            '**/*.html',
-        ],
+        ignores: ['node_modules/*', 'docs/*', 'dist/*'],
     },
 ];
