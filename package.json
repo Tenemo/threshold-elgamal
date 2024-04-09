@@ -15,6 +15,7 @@
     },
     "homepage": "https://tenemo.github.io/threshold-elgamal/",
     "scripts": {
+        "prepare": "ts-patch install -s",
         "eslint": "eslint . -c eslint.config.js",
         "eslint:fix": "eslint . --fix -c eslint.config.js",
         "tsc": "tsc",
@@ -52,15 +53,16 @@
         "globals": "^15.0.0",
         "prettier": "^3.2.5",
         "prettier-eslint": "^16.3.0",
+        "ts-patch": "^3.1.2",
         "tsx": "^4.7.2",
         "typedoc": "^0.25.13",
         "typedoc-plugin-markdown": "^3.17.1",
         "typescript": "^5.4.4",
+        "typescript-transformer-esm": "^1.1.0",
         "vitest": "^1.4.0"
     },
     "dependencies": {
-        "bigint-mod-arith": "^3.3.1",
-        "random-bigint": "^0.0.1"
+        "bigint-mod-arith": "^3.3.1"
     },
     "keywords": [
         "cryptography",

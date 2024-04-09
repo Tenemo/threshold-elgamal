@@ -8,7 +8,13 @@
         "declaration": true,
         "sourceMap": false,
         "removeComments": false,
-        "esModuleInterop": false
+        "esModuleInterop": false,
+        "plugins": [
+            {
+                "transform": "typescript-transformer-esm",
+                "after": true
+            }
+        ]
     },
     "include": ["src/**/*"],
     "exclude": [

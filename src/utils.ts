@@ -1,6 +1,5 @@
-import randomBigint from 'random-bigint';
-
 import { GROUPS } from './constants';
+import { randomBigint } from './randomBigInt';
 import type { EncryptedMessage } from './types';
 
 /**
