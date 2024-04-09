@@ -34,18 +34,3 @@ export {
     getGroup,
 };
 export type { EncryptedMessage, Parameters, KeyPair, PartyKeyPair };
-
-export default {
-    generateParameters,
-    encrypt,
-    decrypt,
-    generateSingleKeyShare,
-    generateKeyShares,
-    combinePublicKeys,
-    createDecryptionShare,
-    combineDecryptionShares,
-    thresholdDecrypt,
-    getRandomBigIntegerInRange,
-    multiplyEncryptedValues,
-    getGroup,
-};
