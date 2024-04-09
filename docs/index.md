@@ -105,8 +105,6 @@ import {
     createDecryptionShare,
     combineDecryptionShares,
     thresholdDecrypt,
-    multiplyEncryptedValues,
-    generateParameters,
 } from "threshold-elgamal";
 
 const primeBits = 2048; // Bit length of the prime modulus

@@ -9,7 +9,11 @@ export {
     thresholdDecrypt,
 } from './thresholdElgamal';
 
-export { getRandomBigIntegerInRange, multiplyEncryptedValues } from './utils';
+export {
+    getRandomBigIntegerInRange,
+    multiplyEncryptedValues,
+    getGroup,
+} from './utils';
 
 export type {
     EncryptedMessage,
