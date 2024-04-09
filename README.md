@@ -2,7 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://badge.fury.io/js/threshold-elgamal)
 
-This project is a collection of functions implementing selected ElGamal cryptographic algorithms in TypeScript on top of native JavaScript BigInteger. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption.
+This project is a collection of functions implementing selected ElGamal cryptographic algorithms in TypeScript on top of native JavaScript BigInteger. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption. Runs both in Node and in browsers.
 
 **WIP: Early version. Thresholds when set below the number of scheme participants don't behave as expected.**
 However, it works correctly with `threshold == participantsCount`, which is its main use case for myself for now.
@@ -96,8 +96,8 @@ import {
     createDecryptionShare,
     combineDecryptionShares,
     thresholdDecrypt,
-    PartyKeyPair,
 } from "threshold-elgamal";
+import type { PartyKeyPair } from "threshold-elgamal";
 
 const primeBits = 2048; // Bit length of the prime modulus
 const threshold = 3; // A scenario for 3 participants with a threshold of 3
@@ -180,17 +180,30 @@ import {
     combineDecryptionShares,
     thresholdDecrypt,
     multiplyEncryptedValues,
-    generateParameters,
+    getGroup,
 } from "threshold-elgamal";
+import type { PartyKeyPair } from "threshold-elgamal";
 
 const primeBits = 2048; // Bit length of the prime modulus
 const threshold = 3; // A scenario for 3 participants with a threshold of 3
 const { prime, generator } = getGroup(2048);
 
 // Each participant generates their public key share and private key individually
-const participant1KeyShare = generateSingleKeyShare(1, threshold, primeBits);
-const participant2KeyShare = generateSingleKeyShare(2, threshold, primeBits);
-const participant3KeyShare = generateSingleKeyShare(3, threshold, primeBits);
+const participant1KeyShare: PartyKeyPair = generateSingleKeyShare(
+    1,
+    threshold,
+    primeBits,
+);
+const participant2KeyShare: PartyKeyPair = generateSingleKeyShare(
+    2,
+    threshold,
+    primeBits,
+);
+const participant3KeyShare: PartyKeyPair = generateSingleKeyShare(
+    3,
+    threshold,
+    primeBits,
+);
 
 // Combine the public keys to form a single public key
 const combinedPublicKey = combinePublicKeys(
