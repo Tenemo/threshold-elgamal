@@ -1,14 +1,15 @@
 import { expect } from 'vitest';
 
-import { encrypt } from './elgamal';
+import { encrypt } from '../elgamal';
 import {
     generateKeyShares,
     combinePublicKeys,
     createDecryptionShare,
     combineDecryptionShares,
     thresholdDecrypt,
-} from './thresholdElgamal';
-import type { PartyKeyPair } from './types';
+} from '../thresholdElgamal';
+import type { PartyKeyPair } from '../types';
+
 import { multiplyEncryptedValues, getGroup } from './utils';
 
 export const getRandomScore = (min = 1, max = 10): number =>

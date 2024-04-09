@@ -2,11 +2,6 @@ import { describe, it, expect } from 'vitest';
 
 import { encrypt } from './elgamal';
 import {
-    homomorphicMultiplicationTest,
-    testSecureEncryptionAndDecryption,
-    votingTest,
-} from './testUtils';
-import {
     combinePublicKeys,
     createDecryptionShare,
     generateSingleKeyShare,
@@ -14,7 +9,12 @@ import {
     combineDecryptionShares,
 } from './thresholdElgamal';
 import { PartyKeyPair } from './types';
-import { multiplyEncryptedValues, getGroup } from './utils';
+import {
+    homomorphicMultiplicationTest,
+    testSecureEncryptionAndDecryption,
+    votingTest,
+} from './utils/testUtils';
+import { multiplyEncryptedValues, getGroup } from './utils/utils';
 
 // I already have modPow, modInv and getRandomBigIntegerInRange
 describe('Threshold ElGamal', () => {

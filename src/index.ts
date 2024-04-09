@@ -17,7 +17,7 @@ import {
     getRandomBigIntegerInRange,
     multiplyEncryptedValues,
     getGroup,
-} from './utils';
+} from './utils/utils';
 
 export {
     generateParameters,

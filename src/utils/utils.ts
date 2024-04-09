@@ -1,6 +1,42 @@
-import { GROUPS } from './constants';
-import { randomBigint } from './randomBigInt';
-import type { EncryptedMessage } from './types';
+import { GROUPS } from '../constants';
+import type { EncryptedMessage } from '../types';
+
+/**
+ * Generates a random BigInt of exactly the specified number of bits.
+ * The function calculates the required number of hexadecimal digits to represent
+ * the given number of bits. It ensures the most significant bit is always set,
+ * guaranteeing the BigInt has the exact bit length specified. The remaining
+ * bits are filled with random values to complete the desired bit length.
+ *
+ * @param {number} bits The exact bit length for the generated BigInt.
+ * @returns {bigint} A random BigInt of exactly the specified bit length.
+ *
+ * @example
+ * // Generates a random BigInt of exactly 128 bits
+ * const randomBigInt = generateRandomBigIntFromBits(128);
+ * console.log(randomBigInt);
+ */
+export const randomBigint = (bits: number): bigint => {
+    // Ensure bits is positive and greater than zero to avoid infinite loop
+    if (bits <= 0) {
+        throw new RangeError('Bit length must be greater than 0');
+    }
+
+    // Calculate the number of hexadecimal digits needed
+    const hexDigits = Math.ceil(bits / 4);
+
+    // The first hex digit must be between 8 and F (inclusive) to ensure the MSB is set
+    const firstDigit = (8 + Math.floor(Math.random() * 8)).toString(16);
+
+    // Generate the remaining hex digits randomly
+    const remainingDigits = Array(hexDigits - 1)
+        .fill(0)
+        .map(() => Math.floor(Math.random() * 16).toString(16))
+        .join('');
+
+    // Combine, convert to BigInt, and return
+    return BigInt(`0x${firstDigit}${remainingDigits}`);
+};
 
 /**
  * Retrieves the group parameters for a given prime bit length.

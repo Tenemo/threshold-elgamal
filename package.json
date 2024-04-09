@@ -1,9 +1,9 @@
 {
     "name": "threshold-elgamal",
     "version": "0.1.22",
+    "description": "Threshold ElGamal in TypeScript",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MIT",
-    "description": "Threshold ElGamal in TypeScript",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "repository": {
@@ -29,10 +29,9 @@
         "prepublish:public": "npm run build && npm run typedoc && git add . && git commit && git push origin && npm version patch",
         "publish:public": "npm publish --access public"
     },
-    "engines": {
-        "node": ">=20.11.0"
+    "dependencies": {
+        "bigint-mod-arith": "^3.3.1"
     },
-    "type": "module",
     "devDependencies": {
         "@eslint/eslintrc": "^3.0.2",
         "@eslint/js": "^8.57.0",
@@ -61,9 +60,10 @@
         "typescript-transformer-esm": "^1.1.0",
         "vitest": "^1.4.0"
     },
-    "dependencies": {
-        "bigint-mod-arith": "^3.3.1"
+    "engines": {
+        "node": ">=20.11.0"
     },
+    "type": "module",
     "keywords": [
         "cryptography",
         "security",

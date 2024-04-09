@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import { GROUPS } from './constants';
 import { generateParameters, encrypt, decrypt } from './elgamal';
-import { multiplyEncryptedValues } from './utils';
+import { multiplyEncryptedValues } from './utils/utils';
 
 describe('ElGamal: ', () => {
     Object.entries(GROUPS).forEach(([groupName, groupInfo]) => {
