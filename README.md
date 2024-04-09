@@ -29,9 +29,8 @@ The JavaScript/TypeScript ecosystem seems to be lacking in modern, functional El
 ## Production dependencies
 
 -   [bigint-mod-arith](https://www.npmjs.com/package/bigint-mod-arith)
--   [random-bigint](https://www.npmjs.com/package/random-bigint)
 
-It has no other production dependencies apart from these two. They could be inlined easily, if needed.
+It has no other production dependencies apart from this one. It could be inlined easily, if needed.
 
 ## TODO
 
