@@ -24,16 +24,16 @@ export const generateParameters = (
  * Encrypts a secret using ElGamal encryption.
  *
  * @param {number} secret - The secret to be encrypted.
- * @param {bigint} prime - The prime number used in the encryption system.
- * @param {bigint} generator - The generator used in the encryption system.
  * @param {bigint} publicKey - The public key used for encryption.
+ * @param {bigint} prime - The prime number used in the encryption system. Defaults to the 2048-bit group's prime.
+ * @param {bigint} generator - The generator used in the encryption system. Defaults to the 2048-bit group's generator.
  * @returns {EncryptedMessage} The encrypted secret, consisting of two BigIntegers (c1 and c2).
  */
 export const encrypt = (
     secret: number,
-    prime: bigint,
-    generator: bigint,
     publicKey: bigint,
+    prime: bigint = getGroup().prime,
+    generator: bigint = getGroup().generator,
 ): EncryptedMessage => {
     if (secret >= Number(prime)) {
         throw new Error('Message is too large for direct encryption');

@@ -80,33 +80,37 @@ export const generateKeyShares = (
  */
 export const combinePublicKeys = (
     publicKeys: bigint[],
-    prime: bigint = getGroup(2048).prime,
-): bigint => publicKeys.reduce((acc, current) => (acc * current) % prime, 1n);
+    prime: bigint = getGroup().prime,
+): bigint =>
+    publicKeys.reduce(
+        (combinedPublicKey, current) => (combinedPublicKey * current) % prime,
+        1n,
+    );
 
 /**
  * Performs a partial decryption on a ciphertext using an individual's private key share.
  *
  * @param {EncryptedMessage} encryptedMessage - The encrypted secret.
  * @param {bigint} privateKey - The private key share of the decrypting party.
- * @param {bigint} prime - The prime modulus used in the ElGamal system.
+ * @param {bigint} prime - The prime modulus used in the ElGamal system. Defaults to the 2048-bit group prime.
  * @returns {bigint} The result of the partial decryption.
  */
 export const createDecryptionShare = (
     encryptedMessage: EncryptedMessage,
     privateKey: bigint,
-    prime: bigint,
+    prime: bigint = getGroup().prime,
 ): bigint => modPow(encryptedMessage.c1, privateKey, prime);
 
 /**
  * Combines partial decryptions from multiple parties into a single decryption factor.
  *
  * @param {bigint[]} decryptionShares - An array of partial decryption results.
- * @param {bigint} prime - The prime modulus used in the ElGamal system.
+ * @param {bigint} prime - The prime modulus used in the ElGamal system. Defaults to the 2048-bit group prime.
  * @returns {bigint} The combined decryption factor.
  */
 export const combineDecryptionShares = (
     decryptionShares: bigint[],
-    prime: bigint,
+    prime: bigint = getGroup().prime,
 ): bigint => {
     let result = 1n;
     for (const partialDecryption of decryptionShares) {
@@ -120,13 +124,13 @@ export const combineDecryptionShares = (
  *
  * @param {{ c1: bigint; c2: bigint }} encryptedMessage - The encrypted secret components.
  * @param {bigint} combinedDecryptionShares - The combined partial decryptions from all parties.
- * @param {bigint} prime - The prime modulus used in the ElGamal system.
+ * @param {bigint} prime - The prime modulus used in the ElGamal system. Defaults to the 2048-bit group prime.
  * @returns {number} The decrypted secret, assuming it was small enough to be directly encrypted.
  */
 export const thresholdDecrypt = (
     encryptedMessage: { c1: bigint; c2: bigint },
     combinedDecryptionShares: bigint,
-    prime: bigint,
+    prime: bigint = getGroup().prime,
 ): number => {
     const combinedDecryptionInverse = modInv(combinedDecryptionShares, prime);
     const plaintext: bigint =

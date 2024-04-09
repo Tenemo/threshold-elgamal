@@ -84,13 +84,13 @@ export const getRandomBigIntegerInRange = (
  * Performs homomorphic multiplication on two encrypted values, allowing for encrypted arithmetic operations.
  * @param {EncryptedMessage} value1 - The first encrypted value.
  * @param {EncryptedMessage} value2 - The second encrypted value.
- * @param {bigint} prime - The prime modulus used in the encryption system.
+ * @param {bigint} prime - The prime modulus used in the encryption system. Defaults to the 2048-bit group prime.
  * @returns {EncryptedMessage} The result of the multiplication, as a new encrypted message.
  */
 export const multiplyEncryptedValues = (
     value1: EncryptedMessage,
     value2: EncryptedMessage,
-    prime: bigint,
+    prime: bigint = getGroup().prime,
 ): EncryptedMessage => {
     const c1Multiplied = (value1.c1 * value2.c1) % prime;
     const c2Multiplied = (value1.c2 * value2.c2) % prime;

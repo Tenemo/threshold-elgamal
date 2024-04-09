@@ -13,9 +13,9 @@ describe('ElGamal: ', () => {
             const secret = 42;
             const encryptedMessage = encrypt(
                 secret,
+                publicKey,
                 prime,
                 generator,
-                publicKey,
             );
             const decryptedMessage = decrypt(
                 encryptedMessage,
@@ -31,8 +31,8 @@ describe('ElGamal: ', () => {
             const m2 = 13;
             const m1m2 = m1 * m2;
 
-            const e1 = encrypt(m1, prime, generator, publicKey);
-            const e2 = encrypt(m2, prime, generator, publicKey);
+            const e1 = encrypt(m1, publicKey, prime, generator);
+            const e2 = encrypt(m2, publicKey, prime, generator);
             const e1e2 = multiplyEncryptedValues(e1, e2, prime);
             const decryptedMessage = decrypt(e1e2, prime, privateKey);
 

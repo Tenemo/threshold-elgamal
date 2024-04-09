@@ -41,7 +41,7 @@ export const testSecureEncryptionAndDecryption = (
         participantsCount,
         threshold,
     );
-    const encryptedMessage = encrypt(secret, prime, generator, commonPublicKey);
+    const encryptedMessage = encrypt(secret, commonPublicKey, prime, generator);
     const selectedDecryptionShares = keyShares
         .sort(() => Math.random() - 0.5)
         .slice(0, threshold)
@@ -74,7 +74,7 @@ export const homomorphicMultiplicationTest = (
         threshold,
     );
     const encryptedMessages = messages.map((secret) =>
-        encrypt(secret, prime, generator, commonPublicKey),
+        encrypt(secret, commonPublicKey, prime, generator),
     );
     const encryptedProduct = encryptedMessages.reduce(
         (product, encryptedMessage) =>
@@ -120,7 +120,7 @@ export const votingTest = (
             ),
     );
     const encryptedVotesMatrix = votesMatrix.map((votes) =>
-        votes.map((vote) => encrypt(vote, prime, generator, commonPublicKey)),
+        votes.map((vote) => encrypt(vote, commonPublicKey, prime, generator)),
     );
     const encryptedProducts = Array.from(
         { length: candidatesCount },

@@ -13,7 +13,7 @@ import {
     testSecureEncryptionAndDecryption,
     votingTest,
 } from './utils/testUtils';
-import { multiplyEncryptedValues, getGroup } from './utils/utils';
+import { multiplyEncryptedValues } from './utils/utils';
 
 // I already have modPow, modInv and getRandomBigIntegerInRange
 describe('Threshold ElGamal', () => {
@@ -39,7 +39,6 @@ describe('Threshold ElGamal', () => {
         });
         it('works for the 3,3 step-by-step README example', () => {
             const threshold = 3; // A scenario for 3 participants with a threshold of 3
-            const { prime, generator } = getGroup(); // 2048-bit by default
 
             // Each participant generates their public key share and private key individually
             const participant1Keys = generateKeys(1, threshold);
@@ -55,42 +54,31 @@ describe('Threshold ElGamal', () => {
 
             // Encrypt a message using the combined public key
             const secret = 42;
-            const encryptedMessage = encrypt(
-                secret,
-                prime,
-                generator,
-                commonPublicKey,
-            );
+            const encryptedMessage = encrypt(secret, commonPublicKey);
 
             // Decryption shares
             const decryptionShares = [
                 createDecryptionShare(
                     encryptedMessage,
                     participant1Keys.privateKey,
-                    prime,
                 ),
                 createDecryptionShare(
                     encryptedMessage,
                     participant2Keys.privateKey,
-                    prime,
                 ),
                 createDecryptionShare(
                     encryptedMessage,
                     participant3Keys.privateKey,
-                    prime,
                 ),
             ];
             // Combining the decryption shares into one, used to decrypt the message
-            const combinedDecryptionShares = combineDecryptionShares(
-                decryptionShares,
-                prime,
-            );
+            const combinedDecryptionShares =
+                combineDecryptionShares(decryptionShares);
 
             // Decrypting the message using the combined decryption shares
             const thresholdDecryptedMessage = thresholdDecrypt(
                 encryptedMessage,
                 combinedDecryptionShares,
-                prime,
             );
             console.log(thresholdDecryptedMessage); // 42
             expect(thresholdDecryptedMessage).toBe(secret);
@@ -148,7 +136,6 @@ describe('Threshold ElGamal', () => {
         });
         it('works for the 3, 3, 2 step-by-step README example', () => {
             const threshold = 3; // A scenario for 3 participants with a threshold of 3
-            const { prime, generator } = getGroup(); // 2048-bit by default
 
             // Each participant generates their public key share and private key individually
             const participant1Keys = generateKeys(1, threshold);
@@ -168,21 +155,21 @@ describe('Threshold ElGamal', () => {
 
             // Encrypt votes for both options
             const encryptedVotesOption1 = voteOption1.map((vote) =>
-                encrypt(vote, prime, generator, commonPublicKey),
+                encrypt(vote, commonPublicKey),
             );
             const encryptedVotesOption2 = voteOption2.map((vote) =>
-                encrypt(vote, prime, generator, commonPublicKey),
+                encrypt(vote, commonPublicKey),
             );
 
             // Multiply encrypted votes together to aggregate
             const aggregatedEncryptedVoteOption1 = encryptedVotesOption1.reduce(
-                (acc, encryptedVote) =>
-                    multiplyEncryptedValues(acc, encryptedVote, prime),
+                (talliedVotes, encryptedVote) =>
+                    multiplyEncryptedValues(talliedVotes, encryptedVote),
                 { c1: 1n, c2: 1n },
             );
             const aggregatedEncryptedVoteOption2 = encryptedVotesOption2.reduce(
-                (acc, encryptedVote) =>
-                    multiplyEncryptedValues(acc, encryptedVote, prime),
+                (talliedVotes, encryptedVote) =>
+                    multiplyEncryptedValues(talliedVotes, encryptedVote),
                 { c1: 1n, c2: 1n },
             );
 
@@ -193,34 +180,28 @@ describe('Threshold ElGamal', () => {
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption1,
                     participant1Keys.privateKey,
-                    prime,
                 ),
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption1,
                     participant2Keys.privateKey,
-                    prime,
                 ),
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption1,
                     participant3Keys.privateKey,
-                    prime,
                 ),
             ];
             const decryptionSharesOption2 = [
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption2,
                     participant1Keys.privateKey,
-                    prime,
                 ),
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption2,
                     participant2Keys.privateKey,
-                    prime,
                 ),
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption2,
                     participant3Keys.privateKey,
-                    prime,
                 ),
             ];
 
@@ -229,22 +210,18 @@ describe('Threshold ElGamal', () => {
             // Only the decryption shares are shared with other participants.
             const combinedDecryptionSharesOption1 = combineDecryptionShares(
                 decryptionSharesOption1,
-                prime,
             );
             const combinedDecryptionSharesOption2 = combineDecryptionShares(
                 decryptionSharesOption2,
-                prime,
             );
 
             const finalTallyOption1 = thresholdDecrypt(
                 aggregatedEncryptedVoteOption1,
                 combinedDecryptionSharesOption1,
-                prime,
             );
             const finalTallyOption2 = thresholdDecrypt(
                 aggregatedEncryptedVoteOption2,
                 combinedDecryptionSharesOption2,
-                prime,
             );
 
             console.log(
