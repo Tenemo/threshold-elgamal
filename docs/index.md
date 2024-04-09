@@ -92,7 +92,7 @@ const decryptedMessage = decrypt(encryptedMessage, prime, privateKey);
 console.log(decryptedMessage); // 42
 ```
 
-### Single secret for shared with 3 participants
+### Single secret shared with 3 participants
 
 Threshold scheme for generating a common public key, sharing a secret to 3 participants using that key and requiring all three participants to decrypt it.
 
