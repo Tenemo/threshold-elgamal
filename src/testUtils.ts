@@ -7,10 +7,9 @@ import {
     createDecryptionShare,
     combineDecryptionShares,
     thresholdDecrypt,
-    getGroup,
 } from './thresholdElgamal';
 import type { PartyKeyPair } from './types';
-import { multiplyEncryptedValues } from './utils';
+import { multiplyEncryptedValues, getGroup } from './utils';
 
 export const getRandomScore = (min = 1, max = 10): number =>
     Math.floor(Math.random() * (max - min + 1)) + min;

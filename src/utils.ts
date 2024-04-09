@@ -1,6 +1,28 @@
 import randomBigint from 'random-bigint';
 
+import { GROUPS } from './constants';
 import type { EncryptedMessage } from './types';
+
+/**
+ * Retrieves the group parameters for a given prime bit length.
+ *
+ * @param {2048 | 3072 | 4096} primeBits - The bit length of the prime modulus (2048, 3072, or 4096).
+ * @returns {Object} The group parameters including prime and generator.
+ */
+export const getGroup = (
+    primeBits: 2048 | 3072 | 4096,
+): { prime: bigint; generator: bigint } => {
+    switch (primeBits) {
+        case 2048:
+            return GROUPS.ffdhe2048;
+        case 3072:
+            return GROUPS.ffdhe3072;
+        case 4096:
+            return GROUPS.ffdhe4096;
+        default:
+            throw new Error('Unsupported bit length');
+    }
+};
 
 /**
  * Generates a random bigint within a specified range.

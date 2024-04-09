@@ -13,7 +13,7 @@
     "bugs": {
         "url": "https://github.com/Tenemo/threshold-elgamal/issues"
     },
-    "homepage": "https://github.com/Tenemo/threshold-elgamal#readme",
+    "homepage": "https://tenemo.github.io/threshold-elgamal/",
     "scripts": {
         "example": "tsx ./example/example",
         "eslint": "eslint . -c eslint.config.js",
@@ -26,7 +26,7 @@
         "test:watch": "vitest --watch=true --reporter=verbose",
         "pretypedoc": "del-cli 'docs/*' '!docs/_config.yml'",
         "typedoc": "typedoc --plugin typedoc-plugin-markdown src --out docs  --darkHighlightTheme dark-plus --githubPages false --entryDocument index.md --cleanOutputDir false",
-        "prepublish:public": "npm run build",
+        "prepublish:public": "npm run build && npm run typedoc && git add . && git commit && git push origin && npm version patch",
         "publish:public": "npm publish --access public"
     },
     "engines": {

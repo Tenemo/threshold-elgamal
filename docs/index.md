@@ -2,7 +2,9 @@ threshold-elgamal / [Exports](modules.md)
 
 # Threshold ElGamal
 
-This project is a collection of functions implementing the ElGamal encryption algorithm in TypeScript on top of native JavaScript BigInteger. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption.
+[![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://badge.fury.io/js/threshold-elgamal)
+
+This project is a collection of functions implementing selected ElGamal cryptographic algorithms in TypeScript on top of native JavaScript BigInteger. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption.
 
 **WIP: Early version. Thresholds when set below the number of scheme participants don't behave as expected.**
 However, it works correctly with `threshold == participantsCount`, which is its main use case for myself for now.
@@ -38,12 +40,14 @@ It has no other production dependencies apart from these two. They could be inli
 -   Hashing messages
 -   Support for additive property of exponents, not just native ElGamal multiplication
 -   consider using {} function params for better readability and consistency in param naming
+-   ZK proofs
+-   Validation
 
 ## Installation
 
 To use it in your project, install it first:
 
-`npm install threshold-elgamal`
+`npm install --save threshold-elgamal`
 
 ## Examples
 
@@ -173,7 +177,7 @@ const thresholdDecryptedMessage = thresholdDecrypt(
 console.log(thresholdDecryptedMessage); // 42
 ```
 
-### Voting and Multiplication with Threshold Scheme for 3 Participants
+### Voting and multiplication with threshold scheme for 3 participants
 
 This example demonstrates a 1 to 10 voting scenario where 3 participants cast encrypted votes on two options. The encrypted votes are aggregated, multiplied with each other and then require all three participants to decrypt the final tally. The decryption does not work on individual votes, meaning that it is impossible to decrypt their votes even after decrypting the result.
 

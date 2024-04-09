@@ -1,8 +1,7 @@
 import { modPow, modInv } from 'bigint-mod-arith';
 
-import { GROUPS } from './constants';
 import type { EncryptedMessage, Parameters } from './types';
-import { getRandomBigIntegerInRange } from './utils';
+import { getRandomBigIntegerInRange, getGroup } from './utils';
 
 /**
  * Generates the parameters for the ElGamal encryption, including the prime, generator,
@@ -14,25 +13,7 @@ import { getRandomBigIntegerInRange } from './utils';
 export const generateParameters = (
     primeBits: 2048 | 3072 | 4096 = 2048,
 ): Parameters => {
-    let prime: bigint;
-    let generator: bigint;
-
-    switch (primeBits) {
-        case 2048:
-            prime = BigInt(GROUPS.ffdhe2048.prime);
-            generator = BigInt(GROUPS.ffdhe2048.generator);
-            break;
-        case 3072:
-            prime = BigInt(GROUPS.ffdhe3072.prime);
-            generator = BigInt(GROUPS.ffdhe3072.generator);
-            break;
-        case 4096:
-            prime = BigInt(GROUPS.ffdhe4096.prime);
-            generator = BigInt(GROUPS.ffdhe4096.generator);
-            break;
-        default:
-            throw new Error('Unsupported bit length');
-    }
+    const { prime, generator } = getGroup(primeBits); // Use getGroup to fetch the prime and generator
 
     const privateKey = getRandomBigIntegerInRange(2n, prime - 1n);
     const publicKey = modPow(generator, privateKey, prime);

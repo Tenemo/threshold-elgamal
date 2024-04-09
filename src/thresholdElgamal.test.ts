@@ -10,12 +10,11 @@ import {
     combinePublicKeys,
     createDecryptionShare,
     generateSingleKeyShare,
-    getGroup,
     thresholdDecrypt,
     combineDecryptionShares,
 } from './thresholdElgamal';
 import { PartyKeyPair } from './types';
-import { multiplyEncryptedValues } from './utils';
+import { multiplyEncryptedValues, getGroup } from './utils';
 
 // I already have modPow, modInv and getRandomBigIntegerInRange
 describe('Threshold ElGamal', () => {
