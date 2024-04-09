@@ -99,14 +99,13 @@ import {
     thresholdDecrypt,
 } from "threshold-elgamal";
 
-const primeBits = 2048; // Bit length of the prime modulus
 const threshold = 3; // A scenario for 3 participants with a threshold of 3
-const { prime, generator } = getGroup(2048);
+const { prime, generator } = getGroup(); // 2048-bit by default
 
 // Each participant generates their public key share and private key individually
-const participant1Keys = generateKeys(1, threshold, primeBits);
-const participant2Keys = generateKeys(2, threshold, primeBits);
-const participant3Keys = generateKeys(3, threshold, primeBits);
+const participant1Keys = generateKeys(1, threshold);
+const participant2Keys = generateKeys(2, threshold);
+const participant3Keys = generateKeys(3, threshold);
 
 // Combine the public keys to form a single public key
 const combinedPublicKey = combinePublicKeys(
@@ -141,6 +140,7 @@ const thresholdDecryptedMessage = thresholdDecrypt(
     prime,
 );
 console.log(thresholdDecryptedMessage); // 42
+expect(thresholdDecryptedMessage).toBe(secret);
 ```
 
 ### Voting and multiplication with threshold scheme for 3 participants
@@ -159,14 +159,13 @@ import {
     getGroup,
 } from "threshold-elgamal";
 
-const primeBits = 2048; // Bit length of the prime modulus
 const threshold = 3; // A scenario for 3 participants with a threshold of 3
-const { prime, generator } = getGroup(2048);
+const { prime, generator } = getGroup(); // 2048-bit by default
 
 // Each participant generates their public key share and private key individually
-const participant1Keys = generateKeys(1, threshold, primeBits);
-const participant2Keys = generateKeys(2, threshold, primeBits);
-const participant3Keys = generateKeys(3, threshold, primeBits);
+const participant1Keys = generateKeys(1, threshold);
+const participant2Keys = generateKeys(2, threshold);
+const participant3Keys = generateKeys(3, threshold);
 
 // Combine the public keys to form a single public key
 const combinedPublicKey = combinePublicKeys(

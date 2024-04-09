@@ -45,7 +45,7 @@ export const randomBigint = (bits: number): bigint => {
  * @returns {Object} The group parameters including prime and generator.
  */
 export const getGroup = (
-    primeBits: 2048 | 3072 | 4096,
+    primeBits: 2048 | 3072 | 4096 = 2048,
 ): { prime: bigint; generator: bigint } => {
     switch (primeBits) {
         case 2048:

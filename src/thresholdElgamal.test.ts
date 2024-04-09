@@ -38,14 +38,13 @@ describe('Threshold ElGamal', () => {
             // });
         });
         it('works for the 3,3 step-by-step README example', () => {
-            const primeBits = 2048; // Bit length of the prime modulus
             const threshold = 3; // A scenario for 3 participants with a threshold of 3
-            const { prime, generator } = getGroup(2048);
+            const { prime, generator } = getGroup(); // 2048-bit by default
 
             // Each participant generates their public key share and private key individually
-            const participant1Keys = generateKeys(1, threshold, primeBits);
-            const participant2Keys = generateKeys(2, threshold, primeBits);
-            const participant3Keys = generateKeys(3, threshold, primeBits);
+            const participant1Keys = generateKeys(1, threshold);
+            const participant2Keys = generateKeys(2, threshold);
+            const participant3Keys = generateKeys(3, threshold);
 
             // Combine the public keys to form a single public key
             const combinedPublicKey = combinePublicKeys(
@@ -151,14 +150,13 @@ describe('Threshold ElGamal', () => {
             // });
         });
         it('works for the 3, 3, 2 step-by-step README example', () => {
-            const primeBits = 2048; // Bit length of the prime modulus
             const threshold = 3; // A scenario for 3 participants with a threshold of 3
-            const { prime, generator } = getGroup(2048);
+            const { prime, generator } = getGroup(); // 2048-bit by default
 
             // Each participant generates their public key share and private key individually
-            const participant1Keys = generateKeys(1, threshold, primeBits);
-            const participant2Keys = generateKeys(2, threshold, primeBits);
-            const participant3Keys = generateKeys(3, threshold, primeBits);
+            const participant1Keys = generateKeys(1, threshold);
+            const participant2Keys = generateKeys(2, threshold);
+            const participant3Keys = generateKeys(3, threshold);
 
             // Combine the public keys to form a single public key
             const combinedPublicKey = combinePublicKeys(
