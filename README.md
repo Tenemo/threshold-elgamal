@@ -54,32 +54,20 @@ First, import the whatever functions you need from the library:
 import { generateParameters, encrypt, decrypt } from "threshold-elgamal";
 ```
 
-### Generating Keys
-
-Generate a public/private key pair:
+### Generating keys, encrypting and decrypting a secret
 
 ```typescript
+// Generate a public/private key pair
+// If prime and generator aren't specified, they default to the 2048-bit group.
 const { publicKey, privateKey, prime, generator } = generateParameters();
-console.log(publicKey, privateKey, prime, generator); // ffdhe2048 group by default
-```
 
-### Encrypting a Message
-
-Encrypt a message using the public key:
-
-```typescript
-const secret = 42;
+// Encrypt a message using the public key:
+const secret = 859;
 const encryptedMessage = encrypt(secret, publicKey, prime, generator);
-console.log(encryptedMessage);
-```
 
-### Decrypting a Message
-
-Decrypt a message using the private key:
-
-```typescript
+// Decrypt the message using the private key:
 const decryptedMessage = decrypt(encryptedMessage, prime, privateKey);
-console.log(decryptedMessage); // 42
+// console.log(decryptedMessage); // 859
 ```
 
 ### Single secret shared with 3 participants
