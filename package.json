@@ -15,7 +15,6 @@
     },
     "homepage": "https://tenemo.github.io/threshold-elgamal/",
     "scripts": {
-        "example": "tsx ./example/example",
         "eslint": "eslint . -c eslint.config.js",
         "eslint:fix": "eslint . --fix -c eslint.config.js",
         "tsc": "tsc",

@@ -54,14 +54,7 @@ To use it in your project, install it first:
 First, import the whatever functions you need from the library:
 
 ```typescript
-import {
-    generateParameters,
-    encrypt,
-    decrypt,
-    generateKeyShares,
-    combinePublicKeys,
-    thresholdDecrypt,
-} from "threshold-elgamal";
+import { generateParameters, encrypt, decrypt } from "threshold-elgamal";
 ```
 
 ### Generating Keys
@@ -105,6 +98,7 @@ import {
     createDecryptionShare,
     combineDecryptionShares,
     thresholdDecrypt,
+    PartyKeyPair,
 } from "threshold-elgamal";
 
 const primeBits = 2048; // Bit length of the prime modulus
