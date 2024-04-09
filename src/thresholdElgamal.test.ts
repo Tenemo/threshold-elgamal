@@ -179,25 +179,26 @@ describe('Threshold ElGamal', () => {
             const decryptionSharesOption1 = [
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption1,
+                    // The order of the shares does not matter during decryption.
+                    participant3Keys.privateKey,
+                ),
+                createDecryptionShare(
+                    aggregatedEncryptedVoteOption1,
                     participant1Keys.privateKey,
                 ),
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption1,
                     participant2Keys.privateKey,
-                ),
-                createDecryptionShare(
-                    aggregatedEncryptedVoteOption1,
-                    participant3Keys.privateKey,
                 ),
             ];
             const decryptionSharesOption2 = [
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption2,
-                    participant1Keys.privateKey,
+                    participant2Keys.privateKey,
                 ),
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption2,
-                    participant2Keys.privateKey,
+                    participant1Keys.privateKey,
                 ),
                 createDecryptionShare(
                     aggregatedEncryptedVoteOption2,

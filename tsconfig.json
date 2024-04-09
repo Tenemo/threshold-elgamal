@@ -3,7 +3,7 @@
         "baseUrl": "./src/",
         "target": "ES2020",
         "module": "ESNext",
-        "moduleResolution": "Bundler",
+        "moduleResolution": "node",
         "removeComments": true,
         "declaration": false,
         "allowSyntheticDefaultImports": true,
