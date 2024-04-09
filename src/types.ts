@@ -9,13 +9,3 @@ export type Parameters = {
     publicKey: bigint;
     privateKey: bigint;
 };
-
-export type KeyPair = {
-    privateKey: bigint;
-    publicKey: bigint;
-};
-
-export type PartyKeyPair = {
-    partyPrivateKey: bigint;
-    partyPublicKey: bigint;
-};

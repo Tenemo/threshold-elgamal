@@ -1,18 +1,13 @@
 import { generateParameters, encrypt, decrypt } from './elgamal';
 import {
-    generateSingleKeyShare,
+    generateKeys,
     generateKeyShares,
     combinePublicKeys,
     createDecryptionShare,
     combineDecryptionShares,
     thresholdDecrypt,
 } from './thresholdElgamal';
-import type {
-    EncryptedMessage,
-    Parameters,
-    KeyPair,
-    PartyKeyPair,
-} from './types';
+import type { EncryptedMessage, Parameters } from './types';
 import {
     getRandomBigIntegerInRange,
     multiplyEncryptedValues,
@@ -23,7 +18,7 @@ export {
     generateParameters,
     encrypt,
     decrypt,
-    generateSingleKeyShare,
+    generateKeys,
     generateKeyShares,
     combinePublicKeys,
     createDecryptionShare,
@@ -33,4 +28,4 @@ export {
     multiplyEncryptedValues,
     getGroup,
 };
-export type { EncryptedMessage, Parameters, KeyPair, PartyKeyPair };
+export type { EncryptedMessage, Parameters };

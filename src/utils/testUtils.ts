@@ -8,7 +8,6 @@ import {
     combineDecryptionShares,
     thresholdDecrypt,
 } from '../thresholdElgamal';
-import type { PartyKeyPair } from '../types';
 
 import { multiplyEncryptedValues, getGroup } from './utils';
 
@@ -20,14 +19,14 @@ export const thresholdSetup = (
     threshold: number,
     primeBits: 2048 | 3072 | 4096 = 2048,
 ): {
-    keyShares: PartyKeyPair[];
+    keyShares: { privateKey: bigint; publicKey: bigint }[];
     combinedPublicKey: bigint;
     prime: bigint;
     generator: bigint;
 } => {
     const { prime, generator } = getGroup(primeBits);
     const keyShares = generateKeyShares(partiesCount, threshold, primeBits);
-    const publicKeys = keyShares.map((ks) => ks.partyPublicKey);
+    const publicKeys = keyShares.map((ks) => ks.publicKey);
     const combinedPublicKey = combinePublicKeys(publicKeys, prime);
 
     return { keyShares, combinedPublicKey, prime, generator };
@@ -51,12 +50,8 @@ export const testSecureEncryptionAndDecryption = (
     const selectedDecryptionShares = keyShares
         .sort(() => Math.random() - 0.5)
         .slice(0, threshold)
-        .map((keyShare) =>
-            createDecryptionShare(
-                encryptedMessage,
-                keyShare.partyPrivateKey,
-                prime,
-            ),
+        .map(({ privateKey }) =>
+            createDecryptionShare(encryptedMessage, privateKey, prime),
         );
     const combinedDecryptionShares = combineDecryptionShares(
         selectedDecryptionShares,
@@ -94,12 +89,8 @@ export const homomorphicMultiplicationTest = (
     const selectedDecryptionShares = keyShares
         .sort(() => Math.random() - 0.5)
         .slice(0, threshold)
-        .map((keyShare) =>
-            createDecryptionShare(
-                encryptedProduct,
-                keyShare.partyPrivateKey,
-                prime,
-            ),
+        .map(({ privateKey }) =>
+            createDecryptionShare(encryptedProduct, privateKey, prime),
         );
     const combinedDecryptionShares = combineDecryptionShares(
         selectedDecryptionShares,
@@ -153,7 +144,7 @@ export const votingTest = (
         keyShares
             .slice(0, threshold)
             .map((keyShare) =>
-                createDecryptionShare(product, keyShare.partyPrivateKey, prime),
+                createDecryptionShare(product, keyShare.privateKey, prime),
             ),
     );
     const decryptedProducts = partialDecryptionsMatrix.map(

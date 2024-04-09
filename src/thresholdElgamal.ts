@@ -1,6 +1,6 @@
 import { modPow, modInv } from 'bigint-mod-arith';
 
-import type { EncryptedMessage, PartyKeyPair } from './types';
+import type { EncryptedMessage } from './types';
 import { generatePolynomial, getGroup } from './utils/utils';
 
 /**
@@ -29,25 +29,25 @@ export const evaluatePolynomial = (
  * @param {number} index - The unique index of the participant (starting from 1).
  * @param {number} threshold - The minimum number of key shares required for decryption.
  * @param {2048 | 3072 | 4096} primeBits - The bit length of the prime modulus (default: 2048).
- * @returns {PartyKeyPair} The key share containing a private and public key share for the participant.
+ * @returns { privateKey: bigint; publicKey: bigint} The key share containing a private and public key share for the participant.
  */
-export const generateSingleKeyShare = (
+export const generateKeys = (
     index: number,
     threshold: number,
     primeBits: 2048 | 3072 | 4096 = 2048,
-): PartyKeyPair => {
+): { privateKey: bigint; publicKey: bigint } => {
     const group = getGroup(primeBits);
     const prime = group.prime;
     const generator = group.generator;
     const polynomial = generatePolynomial(threshold, prime);
-    let partyPrivateKey = evaluatePolynomial(polynomial, index, prime);
+    let privateKey = evaluatePolynomial(polynomial, index, prime);
     // Ensure non-zero private key, adjusting index if necessary
-    while (partyPrivateKey === 0n) {
-        partyPrivateKey = evaluatePolynomial(polynomial, index + 1, prime);
+    while (privateKey === 0n) {
+        privateKey = evaluatePolynomial(polynomial, index + 1, prime);
     }
-    const partyPublicKey = modPow(generator, partyPrivateKey, prime);
+    const publicKey = modPow(generator, privateKey, prime);
 
-    return { partyPrivateKey, partyPublicKey };
+    return { privateKey, publicKey };
 };
 
 /**
@@ -56,16 +56,16 @@ export const generateSingleKeyShare = (
  * @param {number} n - The total number of key shares.
  * @param {number} threshold - The minimum number of key shares required for decryption.
  * @param {2048 | 3072 | 4096} primeBits - The bit length of the prime modulus (default: 2048).
- * @returns {PartyKeyPair[]} An array of key shares, each containing a private and public key share.
+ * @returns {{ privateKey: bigint; publicKey: bigint }[]} An array of key shares, each containing a private and public key share.
  */
 export const generateKeyShares = (
     n: number,
     threshold: number,
     primeBits: 2048 | 3072 | 4096 = 2048,
-): PartyKeyPair[] => {
+): { privateKey: bigint; publicKey: bigint }[] => {
     const keyShares = [];
     for (let i = 1; i <= n; i++) {
-        const keyShare = generateSingleKeyShare(i, threshold, primeBits);
+        const keyShare = generateKeys(i, threshold, primeBits);
         keyShares.push(keyShare);
     }
     return keyShares;
@@ -87,15 +87,15 @@ export const combinePublicKeys = (
  * Performs a partial decryption on a ciphertext using an individual's private key share.
  *
  * @param {EncryptedMessage} encryptedMessage - The encrypted secret.
- * @param {bigint} partyPrivateKey - The private key share of the decrypting party.
+ * @param {bigint} privateKey - The private key share of the decrypting party.
  * @param {bigint} prime - The prime modulus used in the ElGamal system.
  * @returns {bigint} The result of the partial decryption.
  */
 export const createDecryptionShare = (
     encryptedMessage: EncryptedMessage,
-    partyPrivateKey: bigint,
+    privateKey: bigint,
     prime: bigint,
-): bigint => modPow(encryptedMessage.c1, partyPrivateKey, prime);
+): bigint => modPow(encryptedMessage.c1, privateKey, prime);
 
 /**
  * Combines partial decryptions from multiple parties into a single decryption factor.

@@ -7,9 +7,7 @@
 ### Type Aliases
 
 - [EncryptedMessage](modules.md#encryptedmessage)
-- [KeyPair](modules.md#keypair)
 - [Parameters](modules.md#parameters)
-- [PartyKeyPair](modules.md#partykeypair)
 
 ### Functions
 
@@ -19,8 +17,8 @@
 - [decrypt](modules.md#decrypt)
 - [encrypt](modules.md#encrypt)
 - [generateKeyShares](modules.md#generatekeyshares)
+- [generateKeys](modules.md#generatekeys)
 - [generateParameters](modules.md#generateparameters)
-- [generateSingleKeyShare](modules.md#generatesinglekeyshare)
 - [getGroup](modules.md#getgroup)
 - [getRandomBigIntegerInRange](modules.md#getrandombigintegerinrange)
 - [multiplyEncryptedValues](modules.md#multiplyencryptedvalues)
@@ -41,24 +39,7 @@
 
 #### Defined in
 
-[types.ts:1](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/types.ts#L1)
-
-___
-
-### KeyPair
-
-Ƭ **KeyPair**: `Object`
-
-#### Type declaration
-
-| Name | Type |
-| :------ | :------ |
-| `privateKey` | `bigint` |
-| `publicKey` | `bigint` |
-
-#### Defined in
-
-[types.ts:13](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/types.ts#L13)
+[types.ts:1](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/types.ts#L1)
 
 ___
 
@@ -77,24 +58,7 @@ ___
 
 #### Defined in
 
-[types.ts:6](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/types.ts#L6)
-
-___
-
-### PartyKeyPair
-
-Ƭ **PartyKeyPair**: `Object`
-
-#### Type declaration
-
-| Name | Type |
-| :------ | :------ |
-| `partyPrivateKey` | `bigint` |
-| `partyPublicKey` | `bigint` |
-
-#### Defined in
-
-[types.ts:18](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/types.ts#L18)
+[types.ts:6](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/types.ts#L6)
 
 ## Functions
 
@@ -119,7 +83,7 @@ The combined decryption factor.
 
 #### Defined in
 
-[thresholdElgamal.ts:107](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/thresholdElgamal.ts#L107)
+[thresholdElgamal.ts:107](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/thresholdElgamal.ts#L107)
 
 ___
 
@@ -144,13 +108,13 @@ The combined public key.
 
 #### Defined in
 
-[thresholdElgamal.ts:81](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/thresholdElgamal.ts#L81)
+[thresholdElgamal.ts:81](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/thresholdElgamal.ts#L81)
 
 ___
 
 ### createDecryptionShare
 
-▸ **createDecryptionShare**(`encryptedMessage`, `partyPrivateKey`, `prime`): `bigint`
+▸ **createDecryptionShare**(`encryptedMessage`, `privateKey`, `prime`): `bigint`
 
 Performs a partial decryption on a ciphertext using an individual's private key share.
 
@@ -159,7 +123,7 @@ Performs a partial decryption on a ciphertext using an individual's private key 
 | Name | Type | Description |
 | :------ | :------ | :------ |
 | `encryptedMessage` | [`EncryptedMessage`](modules.md#encryptedmessage) | The encrypted secret. |
-| `partyPrivateKey` | `bigint` | The private key share of the decrypting party. |
+| `privateKey` | `bigint` | The private key share of the decrypting party. |
 | `prime` | `bigint` | The prime modulus used in the ElGamal system. |
 
 #### Returns
@@ -170,7 +134,7 @@ The result of the partial decryption.
 
 #### Defined in
 
-[thresholdElgamal.ts:94](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/thresholdElgamal.ts#L94)
+[thresholdElgamal.ts:94](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/thresholdElgamal.ts#L94)
 
 ___
 
@@ -196,7 +160,7 @@ The decrypted secret as an integer.
 
 #### Defined in
 
-[elgamal.ts:58](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/elgamal.ts#L58)
+[elgamal.ts:58](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/elgamal.ts#L58)
 
 ___
 
@@ -223,13 +187,13 @@ The encrypted secret, consisting of two BigIntegers (c1 and c2).
 
 #### Defined in
 
-[elgamal.ts:32](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/elgamal.ts#L32)
+[elgamal.ts:32](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/elgamal.ts#L32)
 
 ___
 
 ### generateKeyShares
 
-▸ **generateKeyShares**(`n`, `threshold`, `primeBits?`): [`PartyKeyPair`](modules.md#partykeypair)[]
+▸ **generateKeyShares**(`n`, `threshold`, `primeBits?`): \{ `privateKey`: `bigint` ; `publicKey`: `bigint`  }[]
 
 Generates key shares for a threshold ElGamal cryptosystem.
 
@@ -243,13 +207,44 @@ Generates key shares for a threshold ElGamal cryptosystem.
 
 #### Returns
 
-[`PartyKeyPair`](modules.md#partykeypair)[]
+\{ `privateKey`: `bigint` ; `publicKey`: `bigint`  }[]
 
 An array of key shares, each containing a private and public key share.
 
 #### Defined in
 
-[thresholdElgamal.ts:61](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/thresholdElgamal.ts#L61)
+[thresholdElgamal.ts:61](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/thresholdElgamal.ts#L61)
+
+___
+
+### generateKeys
+
+▸ **generateKeys**(`index`, `threshold`, `primeBits?`): `Object`
+
+Generates a single key share for a participant in a threshold ElGamal cryptosystem.
+
+#### Parameters
+
+| Name | Type | Default value | Description |
+| :------ | :------ | :------ | :------ |
+| `index` | `number` | `undefined` | The unique index of the participant (starting from 1). |
+| `threshold` | `number` | `undefined` | The minimum number of key shares required for decryption. |
+| `primeBits` | ``2048`` \| ``3072`` \| ``4096`` | `2048` | The bit length of the prime modulus (default: 2048). |
+
+#### Returns
+
+`Object`
+
+The key share containing a private and public key share for the participant.
+
+| Name | Type |
+| :------ | :------ |
+| `privateKey` | `bigint` |
+| `publicKey` | `bigint` |
+
+#### Defined in
+
+[thresholdElgamal.ts:34](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/thresholdElgamal.ts#L34)
 
 ___
 
@@ -274,33 +269,7 @@ The generated parameters including the prime, generator, publicKey, and privateK
 
 #### Defined in
 
-[elgamal.ts:13](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/elgamal.ts#L13)
-
-___
-
-### generateSingleKeyShare
-
-▸ **generateSingleKeyShare**(`index`, `threshold`, `primeBits?`): [`PartyKeyPair`](modules.md#partykeypair)
-
-Generates a single key share for a participant in a threshold ElGamal cryptosystem.
-
-#### Parameters
-
-| Name | Type | Default value | Description |
-| :------ | :------ | :------ | :------ |
-| `index` | `number` | `undefined` | The unique index of the participant (starting from 1). |
-| `threshold` | `number` | `undefined` | The minimum number of key shares required for decryption. |
-| `primeBits` | ``2048`` \| ``3072`` \| ``4096`` | `2048` | The bit length of the prime modulus (default: 2048). |
-
-#### Returns
-
-[`PartyKeyPair`](modules.md#partykeypair)
-
-The key share containing a private and public key share for the participant.
-
-#### Defined in
-
-[thresholdElgamal.ts:34](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/thresholdElgamal.ts#L34)
+[elgamal.ts:13](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/elgamal.ts#L13)
 
 ___
 
@@ -329,7 +298,7 @@ The group parameters including prime and generator.
 
 #### Defined in
 
-[utils/utils.ts:47](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/utils/utils.ts#L47)
+[utils/utils.ts:47](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/utils/utils.ts#L47)
 
 ___
 
@@ -354,7 +323,7 @@ A random bigint within the specified range.
 
 #### Defined in
 
-[utils/utils.ts:68](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/utils/utils.ts#L68)
+[utils/utils.ts:68](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/utils/utils.ts#L68)
 
 ___
 
@@ -380,7 +349,7 @@ The result of the multiplication, as a new encrypted message.
 
 #### Defined in
 
-[utils/utils.ts:90](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/utils/utils.ts#L90)
+[utils/utils.ts:90](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/utils/utils.ts#L90)
 
 ___
 
@@ -408,4 +377,4 @@ The decrypted secret, assuming it was small enough to be directly encrypted.
 
 #### Defined in
 
-[thresholdElgamal.ts:126](https://github.com/Tenemo/threshold-elgamal/blob/52ff4d46431c2c93c814d34980adbbbf9b9ab33b/src/thresholdElgamal.ts#L126)
+[thresholdElgamal.ts:126](https://github.com/Tenemo/threshold-elgamal/blob/39e93546bc0cf58214b73e6c85d91a38749a2467/src/thresholdElgamal.ts#L126)

@@ -90,41 +90,28 @@ Threshold scheme for generating a common public key, sharing a secret to 3 parti
 import {
     getGroup,
     encrypt,
-    generateSingleKeyShare,
+    generateKeys,
     combinePublicKeys,
     createDecryptionShare,
     combineDecryptionShares,
     thresholdDecrypt,
 } from "threshold-elgamal";
-import type { PartyKeyPair } from "threshold-elgamal";
 
 const primeBits = 2048; // Bit length of the prime modulus
 const threshold = 3; // A scenario for 3 participants with a threshold of 3
 const { prime, generator } = getGroup(2048);
 
 // Each participant generates their public key share and private key individually
-const participant1KeyShare: PartyKeyPair = generateSingleKeyShare(
-    1,
-    threshold,
-    primeBits,
-);
-const participant2KeyShare: PartyKeyPair = generateSingleKeyShare(
-    2,
-    threshold,
-    primeBits,
-);
-const participant3KeyShare: PartyKeyPair = generateSingleKeyShare(
-    3,
-    threshold,
-    primeBits,
-);
+const participant1Keys = generateKeys(1, threshold, primeBits);
+const participant2Keys = generateKeys(2, threshold, primeBits);
+const participant3Keys = generateKeys(3, threshold, primeBits);
 
 // Combine the public keys to form a single public key
 const combinedPublicKey = combinePublicKeys(
     [
-        participant1KeyShare.partyPublicKey,
-        participant2KeyShare.partyPublicKey,
-        participant3KeyShare.partyPublicKey,
+        participant1Keys.publicKey,
+        participant2Keys.publicKey,
+        participant3Keys.publicKey,
     ],
     prime,
 );
@@ -135,21 +122,9 @@ const encryptedMessage = encrypt(secret, prime, generator, combinedPublicKey);
 
 // Decryption shares
 const decryptionShares = [
-    createDecryptionShare(
-        encryptedMessage,
-        participant1KeyShare.partyPrivateKey,
-        prime,
-    ),
-    createDecryptionShare(
-        encryptedMessage,
-        participant2KeyShare.partyPrivateKey,
-        prime,
-    ),
-    createDecryptionShare(
-        encryptedMessage,
-        participant3KeyShare.partyPrivateKey,
-        prime,
-    ),
+    createDecryptionShare(encryptedMessage, participant1Keys.privateKey, prime),
+    createDecryptionShare(encryptedMessage, participant2Keys.privateKey, prime),
+    createDecryptionShare(encryptedMessage, participant3Keys.privateKey, prime),
 ];
 // Combining the decryption shares into one, used to decrypt the message
 const combinedDecryptionShares = combineDecryptionShares(
@@ -173,7 +148,7 @@ This example demonstrates a 1 to 10 voting scenario where 3 participants cast en
 ```typescript
 import {
     encrypt,
-    generateSingleKeyShare,
+    generateKeys,
     combinePublicKeys,
     createDecryptionShare,
     combineDecryptionShares,
@@ -181,35 +156,22 @@ import {
     multiplyEncryptedValues,
     getGroup,
 } from "threshold-elgamal";
-import type { PartyKeyPair } from "threshold-elgamal";
 
 const primeBits = 2048; // Bit length of the prime modulus
 const threshold = 3; // A scenario for 3 participants with a threshold of 3
 const { prime, generator } = getGroup(2048);
 
 // Each participant generates their public key share and private key individually
-const participant1KeyShare: PartyKeyPair = generateSingleKeyShare(
-    1,
-    threshold,
-    primeBits,
-);
-const participant2KeyShare: PartyKeyPair = generateSingleKeyShare(
-    2,
-    threshold,
-    primeBits,
-);
-const participant3KeyShare: PartyKeyPair = generateSingleKeyShare(
-    3,
-    threshold,
-    primeBits,
-);
+const participant1Keys = generateKeys(1, threshold, primeBits);
+const participant2Keys = generateKeys(2, threshold, primeBits);
+const participant3Keys = generateKeys(3, threshold, primeBits);
 
 // Combine the public keys to form a single public key
 const combinedPublicKey = combinePublicKeys(
     [
-        participant1KeyShare.partyPublicKey,
-        participant2KeyShare.partyPublicKey,
-        participant3KeyShare.partyPublicKey,
+        participant1Keys.publicKey,
+        participant2Keys.publicKey,
+        participant3Keys.publicKey,
     ],
     prime,
 );
@@ -228,11 +190,11 @@ const encryptedVotesOption2 = voteOption2.map((vote) =>
 
 // Multiply encrypted votes together to aggregate
 const aggregatedEncryptedVoteOption1 = encryptedVotesOption1.reduce(
-    (acc, current) => multiplyEncryptedValues(acc, current, prime),
+    (acc, encryptedVote) => multiplyEncryptedValues(acc, encryptedVote, prime),
     { c1: 1n, c2: 1n },
 );
 const aggregatedEncryptedVoteOption2 = encryptedVotesOption2.reduce(
-    (acc, current) => multiplyEncryptedValues(acc, current, prime),
+    (acc, encryptedVote) => multiplyEncryptedValues(acc, encryptedVote, prime),
     { c1: 1n, c2: 1n },
 );
 
@@ -242,34 +204,34 @@ const aggregatedEncryptedVoteOption2 = encryptedVotesOption2.reduce(
 const decryptionSharesOption1 = [
     createDecryptionShare(
         aggregatedEncryptedVoteOption1,
-        participant1KeyShare.partyPrivateKey,
+        participant1Keys.privateKey,
         prime,
     ),
     createDecryptionShare(
         aggregatedEncryptedVoteOption1,
-        participant2KeyShare.partyPrivateKey,
+        participant2Keys.privateKey,
         prime,
     ),
     createDecryptionShare(
         aggregatedEncryptedVoteOption1,
-        participant3KeyShare.partyPrivateKey,
+        participant3Keys.privateKey,
         prime,
     ),
 ];
 const decryptionSharesOption2 = [
     createDecryptionShare(
         aggregatedEncryptedVoteOption2,
-        participant1KeyShare.partyPrivateKey,
+        participant1Keys.privateKey,
         prime,
     ),
     createDecryptionShare(
         aggregatedEncryptedVoteOption2,
-        participant2KeyShare.partyPrivateKey,
+        participant2Keys.privateKey,
         prime,
     ),
     createDecryptionShare(
         aggregatedEncryptedVoteOption2,
-        participant3KeyShare.partyPrivateKey,
+        participant3Keys.privateKey,
         prime,
     ),
 ];
