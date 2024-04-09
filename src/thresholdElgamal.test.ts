@@ -47,14 +47,11 @@ describe('Threshold ElGamal', () => {
             const participant3Keys = generateKeys(3, threshold);
 
             // Combine the public keys to form a single public key
-            const combinedPublicKey = combinePublicKeys(
-                [
-                    participant1Keys.publicKey,
-                    participant2Keys.publicKey,
-                    participant3Keys.publicKey,
-                ],
-                prime,
-            );
+            const commonPublicKey = combinePublicKeys([
+                participant1Keys.publicKey,
+                participant2Keys.publicKey,
+                participant3Keys.publicKey,
+            ]);
 
             // Encrypt a message using the combined public key
             const secret = 42;
@@ -62,7 +59,7 @@ describe('Threshold ElGamal', () => {
                 secret,
                 prime,
                 generator,
-                combinedPublicKey,
+                commonPublicKey,
             );
 
             // Decryption shares
@@ -159,14 +156,11 @@ describe('Threshold ElGamal', () => {
             const participant3Keys = generateKeys(3, threshold);
 
             // Combine the public keys to form a single public key
-            const combinedPublicKey = combinePublicKeys(
-                [
-                    participant1Keys.publicKey,
-                    participant2Keys.publicKey,
-                    participant3Keys.publicKey,
-                ],
-                prime,
-            );
+            const commonPublicKey = combinePublicKeys([
+                participant1Keys.publicKey,
+                participant2Keys.publicKey,
+                participant3Keys.publicKey,
+            ]);
 
             // Participants cast their encrypted votes for two options
             const voteOption1 = [6, 7, 1]; // Votes for option 1 by participants 1, 2, and 3
@@ -174,10 +168,10 @@ describe('Threshold ElGamal', () => {
 
             // Encrypt votes for both options
             const encryptedVotesOption1 = voteOption1.map((vote) =>
-                encrypt(vote, prime, generator, combinedPublicKey),
+                encrypt(vote, prime, generator, commonPublicKey),
             );
             const encryptedVotesOption2 = voteOption2.map((vote) =>
-                encrypt(vote, prime, generator, combinedPublicKey),
+                encrypt(vote, prime, generator, commonPublicKey),
             );
 
             // Multiply encrypted votes together to aggregate

@@ -80,7 +80,7 @@ export const generateKeyShares = (
  */
 export const combinePublicKeys = (
     publicKeys: bigint[],
-    prime: bigint,
+    prime: bigint = getGroup(2048).prime,
 ): bigint => publicKeys.reduce((acc, current) => (acc * current) % prime, 1n);
 
 /**

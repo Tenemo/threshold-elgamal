@@ -20,16 +20,16 @@ export const thresholdSetup = (
     primeBits: 2048 | 3072 | 4096 = 2048,
 ): {
     keyShares: { privateKey: bigint; publicKey: bigint }[];
-    combinedPublicKey: bigint;
+    commonPublicKey: bigint;
     prime: bigint;
     generator: bigint;
 } => {
     const { prime, generator } = getGroup(primeBits);
     const keyShares = generateKeyShares(partiesCount, threshold, primeBits);
     const publicKeys = keyShares.map((ks) => ks.publicKey);
-    const combinedPublicKey = combinePublicKeys(publicKeys, prime);
+    const commonPublicKey = combinePublicKeys(publicKeys, prime);
 
-    return { keyShares, combinedPublicKey, prime, generator };
+    return { keyShares, commonPublicKey, prime, generator };
 };
 
 export const testSecureEncryptionAndDecryption = (
@@ -37,16 +37,11 @@ export const testSecureEncryptionAndDecryption = (
     threshold: number,
     secret: number,
 ): void => {
-    const { keyShares, combinedPublicKey, prime, generator } = thresholdSetup(
+    const { keyShares, commonPublicKey, prime, generator } = thresholdSetup(
         participantsCount,
         threshold,
     );
-    const encryptedMessage = encrypt(
-        secret,
-        prime,
-        generator,
-        combinedPublicKey,
-    );
+    const encryptedMessage = encrypt(secret, prime, generator, commonPublicKey);
     const selectedDecryptionShares = keyShares
         .sort(() => Math.random() - 0.5)
         .slice(0, threshold)
@@ -74,12 +69,12 @@ export const homomorphicMultiplicationTest = (
         (product, secret) => product * secret,
         1,
     );
-    const { keyShares, combinedPublicKey, prime, generator } = thresholdSetup(
+    const { keyShares, commonPublicKey, prime, generator } = thresholdSetup(
         participantsCount,
         threshold,
     );
     const encryptedMessages = messages.map((secret) =>
-        encrypt(secret, prime, generator, combinedPublicKey),
+        encrypt(secret, prime, generator, commonPublicKey),
     );
     const encryptedProduct = encryptedMessages.reduce(
         (product, encryptedMessage) =>
@@ -109,7 +104,7 @@ export const votingTest = (
     threshold: number,
     candidatesCount: number,
 ): void => {
-    const { keyShares, combinedPublicKey, prime, generator } = thresholdSetup(
+    const { keyShares, commonPublicKey, prime, generator } = thresholdSetup(
         participantsCount,
         threshold,
     );
@@ -125,7 +120,7 @@ export const votingTest = (
             ),
     );
     const encryptedVotesMatrix = votesMatrix.map((votes) =>
-        votes.map((vote) => encrypt(vote, prime, generator, combinedPublicKey)),
+        votes.map((vote) => encrypt(vote, prime, generator, commonPublicKey)),
     );
     const encryptedProducts = Array.from(
         { length: candidatesCount },
