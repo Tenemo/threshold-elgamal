@@ -116,3 +116,43 @@ export const generatePolynomial = (
     }
     return polynomial;
 };
+
+/**
+ * Serializes an encrypted message into an object with string representations of its components.
+ * This function is useful for converting the bigint components of an encrypted message into
+ * strings, making them easier to store or transmit as JSON, for instance.
+ *
+ * @param {EncryptedMessage} message - The encrypted message to be serialized. It should have two bigint properties: `c1` and `c2`.
+ * @returns {{ c1: string; c2: string }} An object containing the `c1` and `c2` components of the message as strings.
+ *
+ * @example
+ * // An example encrypted message
+ * const encryptedMessage = { c1: BigInt('1234567890123456789012345678901234567890'), c2: BigInt('0987654321098765432109876543210987654321') };
+ * const serializedMessage = serializeEncryptedMessage(encryptedMessage);
+ * console.log(serializedMessage); // Output: { c1: "1234567890123456789012345678901234567890", c2: "0987654321098765432109876543210987654321" }
+ */
+export const serializeEncryptedMessage = (
+    message: EncryptedMessage,
+): {
+    c1: string;
+    c2: string;
+} => ({ c1: message.c1.toString(), c2: message.c2.toString() });
+
+/**
+ * Deserializes an object containing string representations of an encrypted message's components
+ * back into an `EncryptedMessage` with bigint components. This is useful for reconstructing
+ * encrypted messages from their stringified forms, such as when retrieving them from JSON data.
+ *
+ * @param {{ c1: string; c2: string }} message - An object containing the `c1` and `c2` components of the message as strings.
+ * @returns {EncryptedMessage} The deserialized encrypted message with `c1` and `c2` as bigints.
+ *
+ * @example
+ * // An example serialized message
+ * const serializedMessage = { c1: "1234567890123456789012345678901234567890", c2: "0987654321098765432109876543210987654321" };
+ * const encryptedMessage = deserializeEncryptedMessage(serializedMessage);
+ * console.log(encryptedMessage); // Output: { c1: 1234567890123456789012345678901234567890n, c2: 0987654321098765432109876543210987654321n }
+ */
+export const deserializeEncryptedMessage = (message: {
+    c1: string;
+    c2: string;
+}): EncryptedMessage => ({ c1: BigInt(message.c1), c2: BigInt(message.c2) });

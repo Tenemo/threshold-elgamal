@@ -12,6 +12,8 @@ import {
     getRandomBigIntegerInRange,
     multiplyEncryptedValues,
     getGroup,
+    serializeEncryptedMessage,
+    deserializeEncryptedMessage,
 } from './utils/utils';
 
 export {
@@ -27,5 +29,7 @@ export {
     getRandomBigIntegerInRange,
     multiplyEncryptedValues,
     getGroup,
+    serializeEncryptedMessage,
+    deserializeEncryptedMessage,
 };
 export type { EncryptedMessage, Parameters };

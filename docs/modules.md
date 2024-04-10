@@ -15,6 +15,7 @@
 - [combinePublicKeys](modules.md#combinepublickeys)
 - [createDecryptionShare](modules.md#createdecryptionshare)
 - [decrypt](modules.md#decrypt)
+- [deserializeEncryptedMessage](modules.md#deserializeencryptedmessage)
 - [encrypt](modules.md#encrypt)
 - [generateKeyShares](modules.md#generatekeyshares)
 - [generateKeys](modules.md#generatekeys)
@@ -22,6 +23,7 @@
 - [getGroup](modules.md#getgroup)
 - [getRandomBigIntegerInRange](modules.md#getrandombigintegerinrange)
 - [multiplyEncryptedValues](modules.md#multiplyencryptedvalues)
+- [serializeEncryptedMessage](modules.md#serializeencryptedmessage)
 - [thresholdDecrypt](modules.md#thresholddecrypt)
 
 ## Type Aliases
@@ -39,7 +41,7 @@
 
 #### Defined in
 
-[types.ts:1](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/types.ts#L1)
+[types.ts:1](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/types.ts#L1)
 
 ___
 
@@ -58,7 +60,7 @@ ___
 
 #### Defined in
 
-[types.ts:6](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/types.ts#L6)
+[types.ts:6](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/types.ts#L6)
 
 ## Functions
 
@@ -83,7 +85,7 @@ The combined decryption factor.
 
 #### Defined in
 
-[thresholdElgamal.ts:111](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/thresholdElgamal.ts#L111)
+[thresholdElgamal.ts:111](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/thresholdElgamal.ts#L111)
 
 ___
 
@@ -108,7 +110,7 @@ The combined public key.
 
 #### Defined in
 
-[thresholdElgamal.ts:81](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/thresholdElgamal.ts#L81)
+[thresholdElgamal.ts:81](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/thresholdElgamal.ts#L81)
 
 ___
 
@@ -134,7 +136,7 @@ The result of the partial decryption.
 
 #### Defined in
 
-[thresholdElgamal.ts:98](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/thresholdElgamal.ts#L98)
+[thresholdElgamal.ts:98](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/thresholdElgamal.ts#L98)
 
 ___
 
@@ -160,7 +162,44 @@ The decrypted secret as an integer.
 
 #### Defined in
 
-[elgamal.ts:58](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/elgamal.ts#L58)
+[elgamal.ts:58](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/elgamal.ts#L58)
+
+___
+
+### deserializeEncryptedMessage
+
+▸ **deserializeEncryptedMessage**(`message`): [`EncryptedMessage`](modules.md#encryptedmessage)
+
+Deserializes an object containing string representations of an encrypted message's components
+back into an `EncryptedMessage` with bigint components. This is useful for reconstructing
+encrypted messages from their stringified forms, such as when retrieving them from JSON data.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `message` | `Object` | An object containing the `c1` and `c2` components of the message as strings. |
+| `message.c1` | `string` | - |
+| `message.c2` | `string` | - |
+
+#### Returns
+
+[`EncryptedMessage`](modules.md#encryptedmessage)
+
+The deserialized encrypted message with `c1` and `c2` as bigints.
+
+**`Example`**
+
+```ts
+// An example serialized message
+const serializedMessage = { c1: "1234567890123456789012345678901234567890", c2: "0987654321098765432109876543210987654321" };
+const encryptedMessage = deserializeEncryptedMessage(serializedMessage);
+console.log(encryptedMessage); // Output: { c1: 1234567890123456789012345678901234567890n, c2: 0987654321098765432109876543210987654321n }
+```
+
+#### Defined in
+
+[utils/utils.ts:155](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/utils/utils.ts#L155)
 
 ___
 
@@ -187,7 +226,7 @@ The encrypted secret, consisting of two BigIntegers (c1 and c2).
 
 #### Defined in
 
-[elgamal.ts:32](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/elgamal.ts#L32)
+[elgamal.ts:32](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/elgamal.ts#L32)
 
 ___
 
@@ -213,7 +252,7 @@ An array of key shares, each containing a private and public key share.
 
 #### Defined in
 
-[thresholdElgamal.ts:61](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/thresholdElgamal.ts#L61)
+[thresholdElgamal.ts:61](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/thresholdElgamal.ts#L61)
 
 ___
 
@@ -244,7 +283,7 @@ The key share containing a private and public key share for the participant.
 
 #### Defined in
 
-[thresholdElgamal.ts:34](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/thresholdElgamal.ts#L34)
+[thresholdElgamal.ts:34](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/thresholdElgamal.ts#L34)
 
 ___
 
@@ -269,7 +308,7 @@ The generated parameters including the prime, generator, publicKey, and privateK
 
 #### Defined in
 
-[elgamal.ts:13](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/elgamal.ts#L13)
+[elgamal.ts:13](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/elgamal.ts#L13)
 
 ___
 
@@ -298,7 +337,7 @@ The group parameters including prime and generator.
 
 #### Defined in
 
-[utils/utils.ts:47](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/utils/utils.ts#L47)
+[utils/utils.ts:47](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/utils/utils.ts#L47)
 
 ___
 
@@ -323,7 +362,7 @@ A random bigint within the specified range.
 
 #### Defined in
 
-[utils/utils.ts:68](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/utils/utils.ts#L68)
+[utils/utils.ts:68](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/utils/utils.ts#L68)
 
 ___
 
@@ -349,7 +388,47 @@ The result of the multiplication, as a new encrypted message.
 
 #### Defined in
 
-[utils/utils.ts:90](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/utils/utils.ts#L90)
+[utils/utils.ts:90](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/utils/utils.ts#L90)
+
+___
+
+### serializeEncryptedMessage
+
+▸ **serializeEncryptedMessage**(`message`): `Object`
+
+Serializes an encrypted message into an object with string representations of its components.
+This function is useful for converting the bigint components of an encrypted message into
+strings, making them easier to store or transmit as JSON, for instance.
+
+#### Parameters
+
+| Name | Type | Description |
+| :------ | :------ | :------ |
+| `message` | [`EncryptedMessage`](modules.md#encryptedmessage) | The encrypted message to be serialized. It should have two bigint properties: `c1` and `c2`. |
+
+#### Returns
+
+`Object`
+
+An object containing the `c1` and `c2` components of the message as strings.
+
+| Name | Type |
+| :------ | :------ |
+| `c1` | `string` |
+| `c2` | `string` |
+
+**`Example`**
+
+```ts
+// An example encrypted message
+const encryptedMessage = { c1: BigInt('1234567890123456789012345678901234567890'), c2: BigInt('0987654321098765432109876543210987654321') };
+const serializedMessage = serializeEncryptedMessage(encryptedMessage);
+console.log(serializedMessage); // Output: { c1: "1234567890123456789012345678901234567890", c2: "0987654321098765432109876543210987654321" }
+```
+
+#### Defined in
+
+[utils/utils.ts:134](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/utils/utils.ts#L134)
 
 ___
 
@@ -377,4 +456,4 @@ The decrypted secret, assuming it was small enough to be directly encrypted.
 
 #### Defined in
 
-[thresholdElgamal.ts:130](https://github.com/Tenemo/threshold-elgamal/blob/e57efd1a2c1e21390aa1fc66e65a001f3d325fd5/src/thresholdElgamal.ts#L130)
+[thresholdElgamal.ts:130](https://github.com/Tenemo/threshold-elgamal/blob/48382fcd0efef2ed7870bca11815f4031a4ff7f6/src/thresholdElgamal.ts#L130)
