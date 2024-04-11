@@ -74,9 +74,9 @@ export const getRandomBigIntegerInRange = (
     const bitsNeeded = range.toString(2).length;
     // Generate a random bigint within the calculated bits
     let num = randomBigint(bitsNeeded);
-    // Adjust the number to our range
+    // Adjust the number to the range
     num = num % range;
-    // Add the minimum to align with our desired range
+    // Add the minimum to align with the desired range
     return min + num;
 };
 

@@ -21,7 +21,7 @@
         "tsc": "tsc",
         "prebuild": "npm run eslint && npm run tsc && npm run test && del-cli dist",
         "build": "tsc --project tsconfig.build.json",
-        "build:skip": "tsc --project tsconfig.build.json",
+        "build:skip": "del-cli dist && tsc --project tsconfig.build.json",
         "test": "vitest --watch=false --reporter=verbose",
         "test:watch": "vitest --watch=true --reporter=verbose",
         "pretypedoc": "del-cli 'docs/*' '!docs/_config.yml'",
