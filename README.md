@@ -2,12 +2,12 @@
 
 [![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://badge.fury.io/js/threshold-elgamal)
 
-This project is a collection of functions implementing selected ElGamal cryptographic algorithms in TypeScript on top of native JavaScript BigInteger. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption. Runs both in Node and in browsers.
+A TypeScript library with a collection of functions implementing selected ElGamal cryptographic algorithms in TypeScript on top of native JavaScript BigInteger. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption. **Runs both in Node and in browsers.**
 
 **WIP: Early version. Thresholds when set below the number of scheme participants don't behave as expected.**
 However, it works correctly with `threshold == participantsCount`, which is its main use case for myself for now.
 
-It was written as clearly as possible, modularized, and with long, explicit variable names. It includes out-of-the-box VS Code configuration, including recommended extensions for working with the library and/or contributing.
+It was written as cleanly as possible, modularized, and with long, explicit variable names. It includes out-of-the-box VS Code configuration, including recommended extensions for working with the library and/or contributing.
 
 **This is not a cryptographically audited library, make sure you know what you are doing before using it.**
 

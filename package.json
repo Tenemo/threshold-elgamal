@@ -1,7 +1,7 @@
 {
     "name": "threshold-elgamal",
     "version": "0.1.34",
-    "description": "Threshold ElGamal in TypeScript",
+    "description": "A TypeScript library with a collection of functions implementing selected ElGamal cryptographic algorithms in TypeScript on top of native JavaScript BigInteger. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption. Runs both in Node and in browsers.",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MIT",
     "main": "dist/index.js",
