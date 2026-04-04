@@ -1,6 +1,6 @@
 import { modInv, modPow } from 'bigint-mod-arith';
 
-import { InvalidScalarError } from './errors';
+import { InvalidScalarError } from './errors.js';
 
 const assertPositiveModulus = (modulus: bigint): void => {
     if (modulus <= 0n) {

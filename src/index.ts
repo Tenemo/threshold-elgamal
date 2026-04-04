@@ -1,4 +1,4 @@
-import { generateParameters, encrypt, decrypt } from './elgamal';
+import { generateParameters, encrypt, decrypt } from './elgamal.js';
 import {
     generateKeys,
     generateKeyShares,
@@ -6,15 +6,15 @@ import {
     createDecryptionShare,
     combineDecryptionShares,
     thresholdDecrypt,
-} from './thresholdElgamal';
-import type { EncryptedMessage, Parameters } from './types';
+} from './thresholdElgamal.js';
+import type { EncryptedMessage, Parameters } from './types.js';
 import {
     getRandomBigIntegerInRange,
     multiplyEncryptedValues,
     getGroup,
     serializeEncryptedMessage,
     deserializeEncryptedMessage,
-} from './utils/utils';
+} from './utils/utils.js';
 
 export {
     generateParameters,

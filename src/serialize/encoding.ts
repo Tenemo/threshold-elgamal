@@ -1,4 +1,4 @@
-import { InvalidPayloadError, InvalidScalarError } from '../core/errors';
+import { InvalidPayloadError, InvalidScalarError } from '../core/errors.js';
 
 const textEncoder = new TextEncoder();
 const hexPattern = /^[0-9a-f]+$/i;

@@ -1,7 +1,7 @@
 import { modPow, modInv } from 'bigint-mod-arith';
 
-import type { EncryptedMessage } from './types';
-import { generatePolynomial, getGroup } from './utils/utils';
+import type { EncryptedMessage } from './types.js';
+import { generatePolynomial, getGroup } from './utils/utils.js';
 
 /**
  * Evaluates a polynomial at a given point using modular arithmetic.

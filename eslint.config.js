@@ -1,7 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// eslint-disable-next-line import/namespace
 import { FlatCompat } from '@eslint/eslintrc';
 import eslintJs from '@eslint/js';
 import errorOnlyPlugin from 'eslint-plugin-only-error';

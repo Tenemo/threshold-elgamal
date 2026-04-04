@@ -1,1 +1,1 @@
-export { mod, modInvP, modInvQ, modP, modPowP, modQ } from './bigint';
+export { mod, modInvP, modInvQ, modP, modPowP, modQ } from './bigint.js';

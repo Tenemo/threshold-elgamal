@@ -1,7 +1,7 @@
 import { modPow, modInv } from 'bigint-mod-arith';
 
-import type { EncryptedMessage, Parameters } from './types';
-import { getRandomBigIntegerInRange, getGroup } from './utils/utils';
+import type { EncryptedMessage, Parameters } from './types.js';
+import { getRandomBigIntegerInRange, getGroup } from './utils/utils.js';
 
 /**
  * Generates the parameters for the ElGamal encryption, including the prime, generator,

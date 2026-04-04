@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
-import path from 'node:path';
-import process from 'node:process';
+import * as path from 'node:path';
+import { exit } from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 const rootDir = path.resolve(
@@ -56,7 +56,7 @@ if (offenders.length > 0) {
     for (const offender of offenders) {
         console.error(`- ${offender}`);
     }
-    process.exit(1);
+    exit(1);
 }
 
 console.log('No Math.random() usage found in v2 source directories.');

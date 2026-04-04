@@ -1,5 +1,5 @@
-import { GROUPS } from '../constants';
-import type { EncryptedMessage } from '../types';
+import { GROUPS } from '../constants.js';
+import type { EncryptedMessage } from '../types.js';
 
 /**
  * Generates a random BigInt of exactly the specified number of bits.

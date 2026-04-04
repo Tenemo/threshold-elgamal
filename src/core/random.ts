@@ -1,5 +1,5 @@
-import { InvalidScalarError } from './errors';
-import type { RandomBytesSource } from './types';
+import { InvalidScalarError } from './errors.js';
+import type { RandomBytesSource } from './types.js';
 
 const getCrypto = (): Crypto => {
     if (

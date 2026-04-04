@@ -1,5 +1,5 @@
-import { UnsupportedSuiteError } from './errors';
-import type { CryptoGroup, GroupName, PrimeBits } from './types';
+import { UnsupportedSuiteError } from './errors.js';
+import type { CryptoGroup, GroupName, PrimeBits } from './types.js';
 
 const GROUPS: Record<GroupName, CryptoGroup> = {
     ffdhe2048: {

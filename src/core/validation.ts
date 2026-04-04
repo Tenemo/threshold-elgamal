@@ -1,11 +1,11 @@
-import { modPowP } from './bigint';
+import { modPowP } from './bigint.js';
 import {
     IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidScalarError,
     PlaintextDomainError,
     ThresholdViolationError,
-} from './errors';
+} from './errors.js';
 
 export const isInSubgroup = (value: bigint, p: bigint, q: bigint): boolean =>
     value > 1n && value < p - 1n && modPowP(value, q, p) === 1n;
