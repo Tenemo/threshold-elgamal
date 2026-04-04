@@ -1,15 +1,14 @@
 import { expect } from 'vitest';
 
-import { encrypt } from '../elgamal';
+import { encrypt } from '../../src/elgamal';
 import {
-    generateKeyShares,
+    combineDecryptionShares,
     combinePublicKeys,
     createDecryptionShare,
-    combineDecryptionShares,
+    generateKeyShares,
     thresholdDecrypt,
-} from '../thresholdElgamal';
-
-import { multiplyEncryptedValues, getGroup } from './utils';
+} from '../../src/thresholdElgamal';
+import { getGroup, multiplyEncryptedValues } from '../../src/utils/utils';
 
 export const getRandomScore = (min = 1, max = 10): number =>
     Math.floor(Math.random() * (max - min + 1)) + min;
@@ -26,7 +25,7 @@ export const thresholdSetup = (
 } => {
     const { prime, generator } = getGroup(primeBits);
     const keyShares = generateKeyShares(partiesCount, threshold, primeBits);
-    const publicKeys = keyShares.map((ks) => ks.publicKey);
+    const publicKeys = keyShares.map((keyShare) => keyShare.publicKey);
     const commonPublicKey = combinePublicKeys(publicKeys, prime);
 
     return { keyShares, commonPublicKey, prime, generator };

@@ -4,6 +4,10 @@
 
 A TypeScript library with a collection of functions implementing selected ElGamal cryptographic algorithms in TypeScript on top of native JavaScript BigInteger. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption. **Runs both in Node and in browsers.** Used by [sealed.vote](https://sealed.vote).
 
+## v2 rewrite status
+
+Milestone 0 for the v2 rewrite is tracked in [docs/spec/index.md](docs/spec/index.md). These spec documents freeze the invariants, mandatory suite, and library/application boundary before the implementation rewrite starts.
+
 **WIP: Early version. Thresholds when set below the number of scheme participants don't behave as expected.**
 However, it works correctly with `threshold == participantsCount`, which is its main use case for myself for now.
 
