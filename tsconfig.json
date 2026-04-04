@@ -22,7 +22,6 @@
     "include": [
         "src/**/*",
         "tests/**/*",
-        "scripts/**/*",
         "vitest.config.ts",
         "eslint.config.js"
     ]

@@ -15,7 +15,7 @@ import {
     votingTest,
 } from '../helpers/testUtils';
 
-describe('Threshold ElGamal', () => {
+describe('threshold elgamal', () => {
     describe('in a single secret scheme', () => {
         describe('allows for secure encryption and decryption', () => {
             it('with 2 participants and a threshold of 2', () => {

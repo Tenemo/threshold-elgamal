@@ -239,4 +239,4 @@ This example can be extended with calculating a geometric mean for the candidate
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under MPL-2.0. See the LICENSE file for the full text.

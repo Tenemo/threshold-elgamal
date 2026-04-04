@@ -4,8 +4,8 @@ import { GROUPS } from '../../src/constants';
 import { decrypt, encrypt, generateParameters } from '../../src/elgamal';
 import { multiplyEncryptedValues } from '../../src/utils/utils';
 
-describe('ElGamal', () => {
-    it('works for the README example', () => {
+describe('elgamal', () => {
+    it('works for the readme example', () => {
         const { publicKey, privateKey, prime, generator } =
             generateParameters();
         const secret = 859;

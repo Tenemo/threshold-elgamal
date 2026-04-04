@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const rootDir = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
     '..',
+    '..',
 );
 const v2Directories = [
     'src/core',

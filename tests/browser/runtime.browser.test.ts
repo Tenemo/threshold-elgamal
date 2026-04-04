@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getGroup } from '../../src/index';
+import { getGroup } from '../../src/core';
 
 describe('browser runtime smoke test', () => {
     it('provides browser globals and loads a harmless public import', () => {
@@ -10,7 +10,9 @@ describe('browser runtime smoke test', () => {
 
         const group = getGroup();
 
-        expect(group.generator).toBe(2n);
-        expect(group.prime > 0n).toBe(true);
+        expect(group.g).toBe(2n);
+        expect(group.h > 1n).toBe(true);
+        expect(group.p > 0n).toBe(true);
+        expect(group.q > 0n).toBe(true);
     });
 });
