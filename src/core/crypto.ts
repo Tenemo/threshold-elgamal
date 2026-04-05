@@ -1,4 +1,4 @@
-import { UnsupportedSuiteError } from './errors.js';
+import { InvalidScalarError, UnsupportedSuiteError } from './errors.js';
 
 const textEncoder = new TextEncoder();
 
@@ -7,7 +7,7 @@ const toBufferSource = (bytes: Uint8Array): ArrayBuffer =>
 
 const assertByteLength = (length: number, label: string): void => {
     if (!Number.isInteger(length) || length < 0) {
-        throw new UnsupportedSuiteError(
+        throw new InvalidScalarError(
             `${label} length must be a non-negative integer`,
         );
     }

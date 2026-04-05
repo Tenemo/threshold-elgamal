@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { hkdfSha256, sha256, utf8ToBytes } from '#core';
+import { hkdfSha256, InvalidScalarError, sha256, utf8ToBytes } from '#core';
 
 describe('core crypto helpers', () => {
     it('hashes bytes with sha-256', async () => {
@@ -22,5 +22,24 @@ describe('core crypto helpers', () => {
         expect(Buffer.from(okm).toString('hex')).toBe(
             'fe8f9615d2374c0d17f77d1aeaf408c2e75fe0466073d0def23c733e2f862dfd',
         );
+    });
+
+    it('rejects invalid HKDF output lengths', async () => {
+        await expect(
+            hkdfSha256(
+                utf8ToBytes('ikm'),
+                utf8ToBytes('salt'),
+                utf8ToBytes('info'),
+                -1,
+            ),
+        ).rejects.toThrow(InvalidScalarError);
+        await expect(
+            hkdfSha256(
+                utf8ToBytes('ikm'),
+                utf8ToBytes('salt'),
+                utf8ToBytes('info'),
+                1.5,
+            ),
+        ).rejects.toThrow(InvalidScalarError);
     });
 });
