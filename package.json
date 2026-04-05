@@ -33,10 +33,8 @@
         "pretypedoc": "del-cli 'docs/*' '!docs/_config.yml' '!docs/spec' '!docs/spec/**'",
         "typedoc": "typedoc --plugin typedoc-plugin-markdown src/index.ts --out docs --darkHighlightTheme dark-plus --githubPages false --cleanOutputDir false",
         "prepublish:public": "pnpm run build && pnpm run typedoc && git add . && git commit && git push origin && pnpm version patch",
-        "publish:public": "pnpm publish --access public"
-    },
-    "dependencies": {
-        "bigint-mod-arith": "^3.3.1"
+        "publish:public": "pnpm publish --access public",
+        "prepare": "husky"
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3.3.5",
@@ -53,6 +51,7 @@
         "eslint-plugin-only-error": "^1.0.2",
         "eslint-plugin-prettier": "^5.5.5",
         "globals": "^17.4.0",
+        "husky": "^9.1.7",
         "playwright": "^1.59.1",
         "prettier": "^3.8.1",
         "tsx": "^4.21.0",
@@ -66,10 +65,7 @@
         "node": ">=24.14.1"
     },
     "pnpm": {
-        "onlyBuiltDependencies": [
-            "esbuild",
-            "unrs-resolver"
-        ]
+        "onlyBuiltDependencies": ["esbuild", "unrs-resolver"]
     },
     "type": "module",
     "keywords": [

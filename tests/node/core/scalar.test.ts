@@ -19,11 +19,14 @@ describe('core scalar helpers', () => {
     it('computes inverses and powers', () => {
         expect(modInvQ(3n, 11n)).toBe(4n);
         expect(modPowP(2n, 10n, 17n)).toBe(4n);
+        expect(modInvQ(-3n, 11n)).toBe(7n);
+        expect(modPowP(-15n, 7n, 97n)).toBe(14n);
     });
 
     it('rejects invalid moduli and exponents', () => {
         expect(() => mod(1n, 0n)).toThrow(InvalidScalarError);
         expect(() => modInvQ(1n, 0n)).toThrow(InvalidScalarError);
+        expect(() => modInvQ(6n, 21n)).toThrow(InvalidScalarError);
         expect(() => modPowP(2n, -1n, 17n)).toThrow(InvalidScalarError);
     });
 });

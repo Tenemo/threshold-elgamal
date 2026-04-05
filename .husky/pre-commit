@@ -1,0 +1,1 @@
+pnpm run lint && pnpm run typecheck && pnpm run guard:no-math-random:v2 && pnpm run test && pnpm run build:skip
