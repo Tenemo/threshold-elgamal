@@ -6,6 +6,24 @@
     "license": "MPL-2.0",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        },
+        "./core": {
+            "types": "./dist/core/index.d.ts",
+            "import": "./dist/core/index.js"
+        },
+        "./elgamal": {
+            "types": "./dist/elgamal/index.d.ts",
+            "import": "./dist/elgamal/index.js"
+        },
+        "./serialize": {
+            "types": "./dist/serialize/index.d.ts",
+            "import": "./dist/serialize/index.js"
+        }
+    },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Tenemo/threshold-elgamal.git"

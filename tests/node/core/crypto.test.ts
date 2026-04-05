@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { hkdfSha256, sha256, utf8ToBytes } from '../../../src/core';
+import { hkdfSha256, sha256, utf8ToBytes } from 'threshold-elgamal/core';
 
 describe('core crypto helpers', () => {
     it('hashes bytes with sha-256', async () => {

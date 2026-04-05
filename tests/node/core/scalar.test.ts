@@ -6,7 +6,7 @@ import {
     modInvQ,
     modPowP,
     modQ,
-} from '../../../src/core';
+} from 'threshold-elgamal/core';
 
 describe('core scalar helpers', () => {
     it('normalizes values into the field', () => {

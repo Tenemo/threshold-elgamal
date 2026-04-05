@@ -9,7 +9,7 @@ import {
     maxVotersForExactProduct,
     multiplyEncryptedValues,
     PlaintextDomainError,
-} from '../../../src/index.js';
+} from 'threshold-elgamal';
 
 describe('multiplicative ElGamal', () => {
     it('round-trips across every supported group', () => {

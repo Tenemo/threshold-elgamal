@@ -5,7 +5,7 @@ import {
     encrypt,
     generateParameters,
     getGroup,
-} from '../../src/index';
+} from 'threshold-elgamal';
 
 describe('browser runtime smoke test', () => {
     it('provides browser globals and performs a v2 round-trip', () => {

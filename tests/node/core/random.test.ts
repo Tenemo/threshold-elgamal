@@ -6,7 +6,7 @@ import {
     randomScalarBelow,
     randomScalarInRange,
     type RandomBytesSource,
-} from '../../../src/core';
+} from 'threshold-elgamal/core';
 
 const createSequenceSource = (...chunks: number[][]): RandomBytesSource => {
     let index = 0;

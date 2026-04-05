@@ -15,7 +15,7 @@ import {
     isInSubgroup,
     PlaintextDomainError,
     ThresholdViolationError,
-} from '../../../src/core';
+} from 'threshold-elgamal/core';
 
 describe('core validation', () => {
     const group = getGroup(2048);

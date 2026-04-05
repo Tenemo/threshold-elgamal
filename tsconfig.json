@@ -1,5 +1,13 @@
 {
     "compilerOptions": {
+        "baseUrl": ".",
+        "ignoreDeprecations": "6.0",
+        "paths": {
+            "threshold-elgamal": ["./src/index.ts"],
+            "threshold-elgamal/core": ["./src/core/index.ts"],
+            "threshold-elgamal/elgamal": ["./src/elgamal/index.ts"],
+            "threshold-elgamal/serialize": ["./src/serialize/index.ts"]
+        },
         "target": "ES2020",
         "module": "ESNext",
         "moduleResolution": "bundler",
