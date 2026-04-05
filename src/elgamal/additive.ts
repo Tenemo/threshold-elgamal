@@ -5,10 +5,10 @@ import {
     modP,
     modPowP,
     randomScalarInRange,
-    type CryptoGroup,
 } from '../core/index.js';
 
 import { babyStepGiantStep } from './bsgs.js';
+import { resolveElgamalGroup } from './group.js';
 import type { ElgamalCiphertext, ElgamalGroupInput } from './types.js';
 import {
     assertValidAdditiveCiphertext,
@@ -17,25 +17,13 @@ import {
     assertValidPrivateKey,
 } from './validation.js';
 
-const resolveGroup = (group: ElgamalGroupInput | undefined): CryptoGroup => {
-    if (group === undefined) {
-        return getGroup();
-    }
-
-    if (typeof group === 'object') {
-        return group;
-    }
-
-    return getGroup(group);
-};
-
 export const encryptAdditive = (
     message: bigint,
     publicKey: bigint,
     group: ElgamalGroupInput = getGroup(),
     bound?: bigint,
 ): ElgamalCiphertext => {
-    const resolvedGroup = resolveGroup(group);
+    const resolvedGroup = resolveElgamalGroup(group);
     const resolvedBound = bound ?? resolvedGroup.q - 1n;
     assertValidAdditivePlaintext(message, resolvedBound, resolvedGroup);
     assertValidAdditivePublicKey(publicKey, resolvedGroup);
@@ -55,7 +43,7 @@ export const decryptAdditive = (
     group: ElgamalGroupInput = getGroup(),
     bound: bigint,
 ): bigint => {
-    const resolvedGroup = resolveGroup(group);
+    const resolvedGroup = resolveElgamalGroup(group);
     assertValidPrivateKey(privateKey, resolvedGroup);
     assertValidAdditiveCiphertext(ciphertext, resolvedGroup);
     assertValidAdditivePlaintext(0n, bound, resolvedGroup);

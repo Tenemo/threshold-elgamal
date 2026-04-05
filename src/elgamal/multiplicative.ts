@@ -5,9 +5,9 @@ import {
     modP,
     modPowP,
     randomScalarInRange,
-    type CryptoGroup,
 } from '../core/index.js';
 
+import { resolveElgamalGroup } from './group.js';
 import type {
     ElgamalCiphertext,
     ElgamalGroupInput,
@@ -20,22 +20,10 @@ import {
     assertValidPrivateKey,
 } from './validation.js';
 
-const resolveGroup = (group: ElgamalGroupInput | undefined): CryptoGroup => {
-    if (group === undefined) {
-        return getGroup();
-    }
-
-    if (typeof group === 'object') {
-        return group;
-    }
-
-    return getGroup(group);
-};
-
 export const generateParameters = (
     group: ElgamalGroupInput = getGroup(),
 ): ElgamalParameters => {
-    const resolvedGroup = resolveGroup(group);
+    const resolvedGroup = resolveElgamalGroup(group);
     const privateKey = randomScalarInRange(1n, resolvedGroup.q);
     const publicKey = modPowP(resolvedGroup.g, privateKey, resolvedGroup.p);
 
@@ -51,7 +39,7 @@ export const encrypt = (
     publicKey: bigint,
     group: ElgamalGroupInput = getGroup(),
 ): ElgamalCiphertext => {
-    const resolvedGroup = resolveGroup(group);
+    const resolvedGroup = resolveElgamalGroup(group);
     assertValidMultiplicativePlaintext(message, resolvedGroup);
     assertValidMultiplicativePublicKey(publicKey, resolvedGroup);
 
@@ -68,7 +56,7 @@ export const decrypt = (
     privateKey: bigint,
     group: ElgamalGroupInput = getGroup(),
 ): bigint => {
-    const resolvedGroup = resolveGroup(group);
+    const resolvedGroup = resolveElgamalGroup(group);
     assertValidPrivateKey(privateKey, resolvedGroup);
     assertValidMultiplicativeCiphertext(ciphertext, resolvedGroup);
 
@@ -90,7 +78,7 @@ export const maxVotersForExactProduct = (
         );
     }
 
-    const resolvedGroup = resolveGroup(group);
+    const resolvedGroup = resolveElgamalGroup(group);
     let voterCount = 0n;
     let product = 1n;
 
