@@ -28,8 +28,10 @@
     },
     "include": [
         "src/**/*",
+        "scripts/**/*",
         "tests/**/*",
         "vitest.config.ts",
-        "eslint.config.js"
+        "eslint.config.js",
+        "typedoc.config.mjs"
     ]
 }

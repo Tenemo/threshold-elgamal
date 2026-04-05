@@ -4,7 +4,8 @@ This site contains the manual documentation for the current public package surfa
 
 ## What is here
 
-- [Spec pages](spec/index.md)
+- [API reference](api/)
+- [Spec pages](spec/)
 - The repository README covers installation and examples
 
 ## Current public modules
@@ -15,5 +16,5 @@ This site contains the manual documentation for the current public package surfa
 
 ## Notes
 
-- Generated TypeDoc output is no longer committed to `docs/`.
-- The manual spec pages describe only what is currently shipped.
+- The API reference in `docs/api` is generated from the public package entry point.
+- The spec pages in `docs/spec` are manual and describe only what is currently shipped.

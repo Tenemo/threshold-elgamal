@@ -22,6 +22,7 @@ This library is a hardened research prototype. It is not audited production voti
 
 The old legacy threshold API has been removed from the main package surface.
 The public package currently exposes only the v2 core, serialization, and plain ElGamal modules.
+The generated API reference lives in [docs/api/index.md](docs/api/index.md).
 
 ## Installation
 
@@ -87,6 +88,7 @@ console.log(suite.q > 0n); // true
 - Raw multiplicative ElGamal with direct plaintext embedding leaks the plaintext's quadratic residuosity unless the plaintext is subgroup-encoded.
 - Browser JavaScript `bigint` arithmetic is not constant-time. Do not overstate side-channel resistance on end-user devices.
 
+For the generated API reference, see [docs/api/index.md](docs/api/index.md).
 For the manual v2 invariants and suite notes, see [docs/spec/index.md](docs/spec/index.md).
 
 ## Development
