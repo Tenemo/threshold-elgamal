@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-    decrypt,
-    encrypt,
-    generateParameters,
-    getGroup,
-} from 'threshold-elgamal';
+import { decrypt, encrypt, generateParameters, getGroup } from '#root';
 
 describe('browser runtime smoke test', () => {
     it('provides browser globals and performs a v2 round-trip', () => {

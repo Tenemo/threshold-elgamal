@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-    InvalidPayloadError,
-    InvalidScalarError,
-} from 'threshold-elgamal/core';
+import { InvalidPayloadError, InvalidScalarError } from '#core';
 import {
     bigintToFixedHex,
     bytesToHex,
@@ -12,7 +9,7 @@ import {
     encodeForChallenge,
     fixedHexToBigint,
     hexToBytes,
-} from 'threshold-elgamal/serialize';
+} from '#serialize';
 
 describe('foundational encoding', () => {
     it('round-trips fixed-width hex', () => {

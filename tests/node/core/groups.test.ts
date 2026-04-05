@@ -6,7 +6,7 @@ import {
     listGroups,
     modPowP,
     UnsupportedSuiteError,
-} from 'threshold-elgamal/core';
+} from '#core';
 
 describe('core groups', () => {
     it('returns q as (p - 1) / 2 for every supported group', () => {

@@ -9,7 +9,7 @@ import {
     getGroup,
     InvalidGroupElementError,
     PlaintextDomainError,
-} from 'threshold-elgamal';
+} from '#root';
 
 describe('additive ElGamal', () => {
     it('round-trips bounded additive messages', () => {

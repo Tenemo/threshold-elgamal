@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-    InvalidScalarError,
-    mod,
-    modInvQ,
-    modPowP,
-    modQ,
-} from 'threshold-elgamal/core';
+import { InvalidScalarError, mod, modInvQ, modPowP, modQ } from '#core';
 
 describe('core scalar helpers', () => {
     it('normalizes values into the field', () => {
