@@ -1,5 +1,5 @@
 import {
-    getGroup,
+    InvalidScalarError,
     PlaintextDomainError,
     modInvP,
     modP,
@@ -17,18 +17,43 @@ import {
     assertValidPrivateKey,
 } from './validation.js';
 
-export const encryptAdditive = (
+const assertEncryptionRandomness = (randomness: bigint, q: bigint): void => {
+    if (randomness <= 0n || randomness >= q) {
+        throw new InvalidScalarError(
+            'Encryption randomness must be in the range 1..q-1',
+        );
+    }
+};
+
+const resolveAdditiveBound = (
+    groupOrBound: ElgamalGroupInput | bigint,
+    bound: bigint | undefined,
+    operation: 'encryption' | 'decryption',
+): { bound: bigint; group: ElgamalGroupInput } => {
+    if (typeof groupOrBound === 'bigint') {
+        return { bound: groupOrBound, group: 2048 };
+    }
+
+    if (bound === undefined) {
+        throw new InvalidScalarError(
+            `Additive ${operation} requires an explicit plaintext bound`,
+        );
+    }
+
+    return { bound, group: groupOrBound };
+};
+
+export const encryptAdditiveWithRandomness = (
     message: bigint,
     publicKey: bigint,
-    group: ElgamalGroupInput = getGroup(),
-    bound?: bigint,
+    randomness: bigint,
+    bound: bigint,
+    group: ElgamalGroupInput = 2048,
 ): ElgamalCiphertext => {
     const resolvedGroup = resolveElgamalGroup(group);
-    const resolvedBound = bound ?? resolvedGroup.q - 1n;
-    assertValidAdditivePlaintext(message, resolvedBound, resolvedGroup);
+    assertValidAdditivePlaintext(message, bound, resolvedGroup);
     assertValidAdditivePublicKey(publicKey, resolvedGroup);
-
-    const randomness = randomScalarInRange(1n, resolvedGroup.q);
+    assertEncryptionRandomness(randomness, resolvedGroup.q);
     const c1 = modPowP(resolvedGroup.g, randomness, resolvedGroup.p);
     const messageEncoding = modPowP(resolvedGroup.g, message, resolvedGroup.p);
     const sharedSecret = modPowP(publicKey, randomness, resolvedGroup.p);
@@ -37,16 +62,66 @@ export const encryptAdditive = (
     return { c1, c2 };
 };
 
-export const decryptAdditive = (
+export function encryptAdditive(
+    message: bigint,
+    publicKey: bigint,
+    bound: bigint,
+): ElgamalCiphertext;
+export function encryptAdditive(
+    message: bigint,
+    publicKey: bigint,
+    group: ElgamalGroupInput,
+    bound: bigint,
+): ElgamalCiphertext;
+export function encryptAdditive(
+    message: bigint,
+    publicKey: bigint,
+    groupOrBound: ElgamalGroupInput | bigint,
+    bound?: bigint,
+): ElgamalCiphertext {
+    const resolvedInput = resolveAdditiveBound(
+        groupOrBound,
+        bound,
+        'encryption',
+    );
+    const resolvedGroup = resolveElgamalGroup(resolvedInput.group);
+    const randomness = randomScalarInRange(1n, resolvedGroup.q);
+
+    return encryptAdditiveWithRandomness(
+        message,
+        publicKey,
+        randomness,
+        resolvedInput.bound,
+        resolvedGroup.name,
+    );
+}
+
+export function decryptAdditive(
     ciphertext: ElgamalCiphertext,
     privateKey: bigint,
-    group: ElgamalGroupInput = getGroup(),
     bound: bigint,
-): bigint => {
-    const resolvedGroup = resolveElgamalGroup(group);
+): bigint;
+export function decryptAdditive(
+    ciphertext: ElgamalCiphertext,
+    privateKey: bigint,
+    group: ElgamalGroupInput,
+    bound: bigint,
+): bigint;
+export function decryptAdditive(
+    ciphertext: ElgamalCiphertext,
+    privateKey: bigint,
+    groupOrBound: ElgamalGroupInput | bigint,
+    bound?: bigint,
+): bigint {
+    const resolvedInput = resolveAdditiveBound(
+        groupOrBound,
+        bound,
+        'decryption',
+    );
+    const resolvedGroup = resolveElgamalGroup(resolvedInput.group);
     assertValidPrivateKey(privateKey, resolvedGroup);
     assertValidAdditiveCiphertext(ciphertext, resolvedGroup);
-    assertValidAdditivePlaintext(0n, bound, resolvedGroup);
+    assertValidAdditivePlaintext(0n, resolvedInput.bound, resolvedGroup);
 
     const sharedSecret = modPowP(ciphertext.c1, privateKey, resolvedGroup.p);
     const encodedMessage = modP(
@@ -57,7 +132,7 @@ export const decryptAdditive = (
         encodedMessage,
         resolvedGroup.g,
         resolvedGroup.p,
-        bound,
+        resolvedInput.bound,
     );
 
     if (message === null) {
@@ -67,4 +142,4 @@ export const decryptAdditive = (
     }
 
     return message;
-};
+}

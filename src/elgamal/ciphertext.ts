@@ -1,4 +1,4 @@
-import { getGroup, modP } from '../core/index.js';
+import { modP } from '../core/index.js';
 
 import { resolveElgamalGroup } from './group.js';
 import type { ElgamalCiphertext, ElgamalGroupInput } from './types.js';
@@ -10,7 +10,7 @@ import {
 export const multiplyEncryptedValues = (
     left: ElgamalCiphertext,
     right: ElgamalCiphertext,
-    group: ElgamalGroupInput = getGroup(),
+    group: ElgamalGroupInput = 2048,
 ): ElgamalCiphertext => {
     const resolvedGroup = resolveElgamalGroup(group);
     assertValidMultiplicativeCiphertext(left, resolvedGroup);
@@ -25,7 +25,7 @@ export const multiplyEncryptedValues = (
 export const addEncryptedValues = (
     left: ElgamalCiphertext,
     right: ElgamalCiphertext,
-    group: ElgamalGroupInput = getGroup(),
+    group: ElgamalGroupInput = 2048,
 ): ElgamalCiphertext => {
     const resolvedGroup = resolveElgamalGroup(group);
     assertValidAdditiveCiphertext(left, resolvedGroup);

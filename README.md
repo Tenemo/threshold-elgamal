@@ -43,7 +43,8 @@ import {
     multiplyEncryptedValues,
 } from 'threshold-elgamal';
 
-const group = getGroup('ffdhe3072');
+const group = 'ffdhe3072' as const;
+const suite = getGroup(group);
 const { publicKey, privateKey } = generateParameters(group);
 
 const left = encrypt(6n, publicKey, group);
@@ -51,6 +52,7 @@ const right = encrypt(7n, publicKey, group);
 const product = multiplyEncryptedValues(left, right, group);
 
 console.log(decrypt(product, privateKey, group)); // 42n
+console.log(suite.securityEstimate); // 125
 ```
 
 ### Additive ElGamal
@@ -64,7 +66,8 @@ import {
     getGroup,
 } from 'threshold-elgamal';
 
-const group = getGroup('ffdhe3072');
+const group = 'ffdhe3072' as const;
+const suite = getGroup(group);
 const { publicKey, privateKey } = generateParameters(group);
 
 const left = encryptAdditive(6n, publicKey, group, 20n);
@@ -72,6 +75,7 @@ const right = encryptAdditive(7n, publicKey, group, 20n);
 const sum = addEncryptedValues(left, right, group);
 
 console.log(decryptAdditive(sum, privateKey, group, 20n)); // 13n
+console.log(suite.q > 0n); // true
 ```
 
 ## Security notes
@@ -79,7 +83,9 @@ console.log(decryptAdditive(sum, privateKey, group, 20n)); // 13n
 - All public APIs use `bigint`, never JavaScript `number`.
 - Multiplicative mode accepts plaintexts in the range `1..p-1`.
 - Additive mode accepts plaintexts in the range `0..bound`, where `bound < q`.
+- Additive encryption requires an explicit caller-supplied bound so bounded discrete-log recovery stays operationally predictable.
 - For score voting, use additive mode for confidential tallies. Raw multiplicative mode remains a lower-level primitive and exact products wrap once they exceed `p`.
+- Raw multiplicative ElGamal with direct plaintext embedding leaks the plaintext's quadratic residuosity unless the plaintext is subgroup-encoded.
 - Browser JavaScript `bigint` arithmetic is not constant-time. Do not overstate side-channel resistance on end-user devices.
 
 For the frozen v2 invariants and suite notes, see [docs/spec/index.md](docs/spec/index.md).

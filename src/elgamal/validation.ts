@@ -1,5 +1,6 @@
 import {
     assertInSubgroup,
+    assertInSubgroupOrIdentity,
     assertPlaintextAdditive,
     assertPlaintextMultiplicative,
     assertValidPublicKey,
@@ -64,6 +65,18 @@ export const assertValidMultiplicativeCiphertext = (
     ciphertext: ElgamalCiphertext,
     group: CryptoGroup,
 ): void => {
+    assertInSubgroupOrIdentity(ciphertext.c1, group.p, group.q);
+    assertNonZeroFieldElement(
+        ciphertext.c2,
+        group,
+        'Multiplicative ciphertext c2',
+    );
+};
+
+export const assertValidFreshMultiplicativeCiphertext = (
+    ciphertext: ElgamalCiphertext,
+    group: CryptoGroup,
+): void => {
     assertInSubgroup(ciphertext.c1, group.p, group.q);
     assertNonZeroFieldElement(
         ciphertext.c2,
@@ -76,6 +89,14 @@ export const assertValidAdditiveCiphertext = (
     ciphertext: ElgamalCiphertext,
     group: CryptoGroup,
 ): void => {
+    assertInSubgroupOrIdentity(ciphertext.c1, group.p, group.q);
+    assertInSubgroupOrIdentity(ciphertext.c2, group.p, group.q);
+};
+
+export const assertValidFreshAdditiveCiphertext = (
+    ciphertext: ElgamalCiphertext,
+    group: CryptoGroup,
+): void => {
     assertInSubgroup(ciphertext.c1, group.p, group.q);
-    assertInSubgroup(ciphertext.c2, group.p, group.q);
+    assertInSubgroupOrIdentity(ciphertext.c2, group.p, group.q);
 };

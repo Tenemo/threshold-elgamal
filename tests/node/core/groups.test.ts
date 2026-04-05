@@ -25,7 +25,7 @@ describe('core groups', () => {
 
     it('derives h deterministically from the frozen suite inputs', async () => {
         for (const group of listGroups()) {
-            await expect(deriveH(group)).resolves.toBe(group.h);
+            await expect(deriveH(group.name)).resolves.toBe(group.h);
         }
     });
 
@@ -37,5 +37,15 @@ describe('core groups', () => {
 
     it('rejects unsupported groups', () => {
         expect(() => getGroup(1024 as never)).toThrow(UnsupportedSuiteError);
+    });
+
+    it('returns frozen built-in group objects', () => {
+        const group = getGroup(2048);
+
+        expect(Object.isFrozen(group)).toBe(true);
+        expect(() => {
+            (group as { p: bigint }).p = 17n;
+        }).toThrow(TypeError);
+        expect(getGroup(2048).p).not.toBe(17n);
     });
 });

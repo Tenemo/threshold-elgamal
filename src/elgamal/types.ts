@@ -1,6 +1,6 @@
 import type { CryptoGroup, GroupName, PrimeBits } from '../core/types.js';
 
-export type ElgamalGroupInput = CryptoGroup | GroupName | PrimeBits;
+export type ElgamalGroupInput = GroupName | PrimeBits;
 
 export type ElgamalKeyPair = {
     readonly publicKey: bigint;

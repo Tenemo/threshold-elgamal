@@ -1,5 +1,4 @@
 import {
-    getGroup,
     InvalidScalarError,
     modInvP,
     modP,
@@ -20,11 +19,20 @@ import {
     assertValidPrivateKey,
 } from './validation.js';
 
-export const generateParameters = (
-    group: ElgamalGroupInput = getGroup(),
+const assertEncryptionRandomness = (randomness: bigint, q: bigint): void => {
+    if (randomness <= 0n || randomness >= q) {
+        throw new InvalidScalarError(
+            'Encryption randomness must be in the range 1..q-1',
+        );
+    }
+};
+
+export const generateParametersWithPrivateKey = (
+    privateKey: bigint,
+    group: ElgamalGroupInput = 2048,
 ): ElgamalParameters => {
     const resolvedGroup = resolveElgamalGroup(group);
-    const privateKey = randomScalarInRange(1n, resolvedGroup.q);
+    assertValidPrivateKey(privateKey, resolvedGroup);
     const publicKey = modPowP(resolvedGroup.g, privateKey, resolvedGroup.p);
 
     return {
@@ -34,16 +42,24 @@ export const generateParameters = (
     };
 };
 
-export const encrypt = (
+export const generateParameters = (
+    group: ElgamalGroupInput = 2048,
+): ElgamalParameters => {
+    const resolvedGroup = resolveElgamalGroup(group);
+    const privateKey = randomScalarInRange(1n, resolvedGroup.q);
+    return generateParametersWithPrivateKey(privateKey, resolvedGroup.name);
+};
+
+export const encryptWithRandomness = (
     message: bigint,
     publicKey: bigint,
-    group: ElgamalGroupInput = getGroup(),
+    randomness: bigint,
+    group: ElgamalGroupInput = 2048,
 ): ElgamalCiphertext => {
     const resolvedGroup = resolveElgamalGroup(group);
     assertValidMultiplicativePlaintext(message, resolvedGroup);
     assertValidMultiplicativePublicKey(publicKey, resolvedGroup);
-
-    const randomness = randomScalarInRange(1n, resolvedGroup.q);
+    assertEncryptionRandomness(randomness, resolvedGroup.q);
     const c1 = modPowP(resolvedGroup.g, randomness, resolvedGroup.p);
     const sharedSecret = modPowP(publicKey, randomness, resolvedGroup.p);
     const c2 = modP(sharedSecret * message, resolvedGroup.p);
@@ -51,10 +67,26 @@ export const encrypt = (
     return { c1, c2 };
 };
 
+export const encrypt = (
+    message: bigint,
+    publicKey: bigint,
+    group: ElgamalGroupInput = 2048,
+): ElgamalCiphertext => {
+    const resolvedGroup = resolveElgamalGroup(group);
+    const randomness = randomScalarInRange(1n, resolvedGroup.q);
+
+    return encryptWithRandomness(
+        message,
+        publicKey,
+        randomness,
+        resolvedGroup.name,
+    );
+};
+
 export const decrypt = (
     ciphertext: ElgamalCiphertext,
     privateKey: bigint,
-    group: ElgamalGroupInput = getGroup(),
+    group: ElgamalGroupInput = 2048,
 ): bigint => {
     const resolvedGroup = resolveElgamalGroup(group);
     assertValidPrivateKey(privateKey, resolvedGroup);
@@ -70,7 +102,7 @@ export const decrypt = (
 
 export const maxVotersForExactProduct = (
     maxScore: bigint,
-    group: ElgamalGroupInput = getGroup(),
+    group: ElgamalGroupInput = 2048,
 ): bigint => {
     if (maxScore <= 1n) {
         throw new InvalidScalarError(

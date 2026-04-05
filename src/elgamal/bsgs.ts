@@ -45,12 +45,12 @@ export const babyStepGiantStep = (
     }
 
     const stepSize = integerSquareRootCeil(bound + 1n);
-    const babySteps = new Map<string, bigint>();
+    const babySteps = new Map<bigint, bigint>();
     let babyStep = 1n;
     let exponent = 0n;
 
     while (exponent < stepSize) {
-        babySteps.set(babyStep.toString(), exponent);
+        babySteps.set(babyStep, exponent);
         babyStep = modP(babyStep * base, p);
         exponent += 1n;
     }
@@ -60,7 +60,7 @@ export const babyStepGiantStep = (
     let giantIndex = 0n;
 
     while (giantIndex <= stepSize) {
-        const babyIndex = babySteps.get(giantStep.toString());
+        const babyIndex = babySteps.get(giantStep);
         if (babyIndex !== undefined) {
             const discreteLog = giantIndex * stepSize + babyIndex;
             if (discreteLog <= bound) {

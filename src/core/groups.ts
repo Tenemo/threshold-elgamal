@@ -55,11 +55,23 @@ const FROZEN_H_VALUES: Record<GroupName, bigint> = {
         983066145307897040884741051762498409254415289996751664523175065783459495405522766384223938680787705817269163309470970263228780777192726557735534398592765101996342408421190053316710792066040994039419408864763266883411720598307904694623460008276369139713127705323912268588191928898455116354628094480177917023101215777790036669040131821951240431623141764018522265117700403995126593209373516775742720533070709022534685320920235975367462274965265914013112616839295196930563610265137194110486490468221247536153570836613006359926752496240611282835310084569865530453009028967362095005644203023702913046393330844409161242292756925081408504612679396522959967078957664606145751034639790967424475813068497746665767230505250446647729392756038557416453402972661990070298293722746236297066250355918495226246146358747600965466389789259418652806853014914246948401983166837988377077886334473871163154783783563547517530198591851073202921264614514762055095911936156378770600278644518089967358096394980689110973542151768847463380724485129032037084318064011622926337590871332245005430283741210604030291807782281546922322899828083455401376020437720766750386324680953700544681100280636448880215238518944003899154275133578259851529950423934290049519638722246n,
 };
 
+const freezeGroup = (group: CryptoGroup): CryptoGroup => Object.freeze(group);
+
 const GROUPS: Record<GroupName, CryptoGroup> = {
-    ffdhe2048: { ...BASE_GROUPS.ffdhe2048, h: FROZEN_H_VALUES.ffdhe2048 },
-    ffdhe3072: { ...BASE_GROUPS.ffdhe3072, h: FROZEN_H_VALUES.ffdhe3072 },
-    ffdhe4096: { ...BASE_GROUPS.ffdhe4096, h: FROZEN_H_VALUES.ffdhe4096 },
+    ffdhe2048: freezeGroup({
+        ...BASE_GROUPS.ffdhe2048,
+        h: FROZEN_H_VALUES.ffdhe2048,
+    }),
+    ffdhe3072: freezeGroup({
+        ...BASE_GROUPS.ffdhe3072,
+        h: FROZEN_H_VALUES.ffdhe3072,
+    }),
+    ffdhe4096: freezeGroup({
+        ...BASE_GROUPS.ffdhe4096,
+        h: FROZEN_H_VALUES.ffdhe4096,
+    }),
 };
+const GROUP_LIST = Object.freeze(Object.values(GROUPS));
 
 const getDerivationSeed = (group: GroupDefinition): Uint8Array =>
     utf8ToBytes(`threshold-elgamal-v1-${group.name}-generator-h`);
@@ -72,13 +84,8 @@ const getDerivationInfo = (counter: number): Uint8Array =>
     );
 
 const resolveGroupDefinition = (
-    input: PrimeBits | GroupName | CryptoGroup,
+    input: PrimeBits | GroupName,
 ): GroupDefinition => {
-    if (typeof input === 'object') {
-        const { name, bits, byteLength, p, q, g, securityEstimate } = input;
-        return { name, bits, byteLength, p, q, g, securityEstimate };
-    }
-
     switch (input) {
         case 2048:
         case 'ffdhe2048':
@@ -97,7 +104,7 @@ const resolveGroupDefinition = (
 };
 
 export const deriveH = async (
-    input: PrimeBits | GroupName | CryptoGroup,
+    input: PrimeBits | GroupName,
 ): Promise<bigint> => {
     const group = resolveGroupDefinition(input);
     const outputLength = Math.ceil((group.bits + 128) / 8);
@@ -142,4 +149,4 @@ export const getGroup = (
     }
 };
 
-export const listGroups = (): readonly CryptoGroup[] => Object.values(GROUPS);
+export const listGroups = (): readonly CryptoGroup[] => GROUP_LIST;

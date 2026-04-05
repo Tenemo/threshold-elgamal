@@ -10,6 +10,12 @@ import {
 export const isInSubgroup = (value: bigint, p: bigint, q: bigint): boolean =>
     value > 1n && value < p - 1n && modPowP(value, q, p) === 1n;
 
+export const isInSubgroupOrIdentity = (
+    value: bigint,
+    p: bigint,
+    q: bigint,
+): boolean => value === 1n || isInSubgroup(value, p, q);
+
 export const assertValidParticipantIndex = (
     index: number,
     participantCount: number,
@@ -83,6 +89,18 @@ export const assertInSubgroup = (value: bigint, p: bigint, q: bigint): void => {
     if (!isInSubgroup(value, p, q)) {
         throw new InvalidGroupElementError(
             'Element is not in the prime-order subgroup',
+        );
+    }
+};
+
+export const assertInSubgroupOrIdentity = (
+    value: bigint,
+    p: bigint,
+    q: bigint,
+): void => {
+    if (!isInSubgroupOrIdentity(value, p, q)) {
+        throw new InvalidGroupElementError(
+            'Element is not in the prime-order subgroup or its identity',
         );
     }
 };

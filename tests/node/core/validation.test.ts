@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
     assertInSubgroup,
+    assertInSubgroupOrIdentity,
     assertPlaintextAdditive,
     assertPlaintextMultiplicative,
     assertScalarInZq,
@@ -13,6 +14,7 @@ import {
     InvalidGroupElementError,
     InvalidScalarError,
     isInSubgroup,
+    isInSubgroupOrIdentity,
     PlaintextDomainError,
     ThresholdViolationError,
 } from '#core';
@@ -24,8 +26,12 @@ describe('core validation', () => {
         const validElement = 4n;
 
         expect(isInSubgroup(validElement, group.p, group.q)).toBe(true);
+        expect(isInSubgroupOrIdentity(validElement, group.p, group.q)).toBe(
+            true,
+        );
         expect(isInSubgroup(0n, group.p, group.q)).toBe(false);
         expect(isInSubgroup(1n, group.p, group.q)).toBe(false);
+        expect(isInSubgroupOrIdentity(1n, group.p, group.q)).toBe(true);
         expect(isInSubgroup(group.p - 1n, group.p, group.q)).toBe(false);
     });
 
@@ -74,6 +80,9 @@ describe('core validation', () => {
         expect(() => assertInSubgroup(1n, group.p, group.q)).toThrow(
             InvalidGroupElementError,
         );
+        expect(() =>
+            assertInSubgroupOrIdentity(1n, group.p, group.q),
+        ).not.toThrow();
         expect(() =>
             assertValidPublicKey(group.p - 1n, group.p, group.q),
         ).toThrow(InvalidGroupElementError);
