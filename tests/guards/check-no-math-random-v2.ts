@@ -8,15 +8,7 @@ const rootDir = path.resolve(
     '..',
     '..',
 );
-const v2Directories = [
-    'src/core',
-    'src/elgamal',
-    'src/threshold',
-    'src/proofs',
-    'src/serialize',
-    'src/transport',
-    'src/dkg',
-];
+const v2Directories = ['src/core', 'src/elgamal', 'src/serialize'];
 const offenders: string[] = [];
 
 const walk = async (directory: string): Promise<void> => {

@@ -54,9 +54,7 @@
         "test": "pnpm run test:node && pnpm run test:browser",
         "test:watch": "vitest --project node --watch --reporter=verbose",
         "ci": "pnpm run lint && pnpm run typecheck && pnpm run guard:no-math-random:v2 && pnpm run test && pnpm run build:skip",
-        "pretypedoc": "del-cli 'docs/*' '!docs/_config.yml' '!docs/spec' '!docs/spec/**'",
-        "typedoc": "typedoc --plugin typedoc-plugin-markdown src/index.ts --out docs --darkHighlightTheme dark-plus --githubPages false --cleanOutputDir false",
-        "prepublish:public": "pnpm run build && pnpm run typedoc && git add . && git commit && git push origin && pnpm version patch",
+        "prepublish:public": "pnpm run build && git add . && git commit && git push origin && pnpm version patch",
         "publish:public": "pnpm publish --access public",
         "prepare": "husky"
     },
@@ -79,8 +77,6 @@
         "playwright": "^1.59.1",
         "prettier": "^3.8.1",
         "tsx": "^4.21.0",
-        "typedoc": "^0.28.18",
-        "typedoc-plugin-markdown": "^4.11.0",
         "typescript": "^6.0.2",
         "vite": "^8.0.3",
         "vitest": "^4.1.2"

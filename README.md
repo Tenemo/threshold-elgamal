@@ -14,15 +14,14 @@ The v2 rewrite currently ships:
 - homomorphic ciphertext helpers
 - foundational encoding helpers for later proof and protocol work
 
-Threshold decryption, proofs, transport, and DKG are still under active rewrite and are not part of the current public API.
+Threshold decryption, proofs, transport, and DKG are not part of the current public API.
 
 This library is a hardened research prototype. It is not audited production voting software.
 
 ## Current status
 
 The old legacy threshold API has been removed from the main package surface.
-
-The next rewrite batch is the dealer-based `k`-of-`n` threshold core. Until that lands, the public package exposes only the v2 core, serialization, and plain ElGamal modules.
+The public package currently exposes only the v2 core, serialization, and plain ElGamal modules.
 
 ## Installation
 
@@ -32,7 +31,7 @@ pnpm add threshold-elgamal
 
 ## Example
 
-### Multiplicative ElGamal
+### Multiplicative mode
 
 ```typescript
 import {
@@ -55,7 +54,7 @@ console.log(decrypt(product, privateKey, group)); // 42n
 console.log(suite.securityEstimate); // 125
 ```
 
-### Additive ElGamal
+### Additive mode
 
 ```typescript
 import {
@@ -88,7 +87,7 @@ console.log(suite.q > 0n); // true
 - Raw multiplicative ElGamal with direct plaintext embedding leaks the plaintext's quadratic residuosity unless the plaintext is subgroup-encoded.
 - Browser JavaScript `bigint` arithmetic is not constant-time. Do not overstate side-channel resistance on end-user devices.
 
-For the frozen v2 invariants and suite notes, see [docs/spec/index.md](docs/spec/index.md).
+For the manual v2 invariants and suite notes, see [docs/spec/index.md](docs/spec/index.md).
 
 ## Development
 

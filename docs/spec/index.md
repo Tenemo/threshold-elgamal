@@ -1,7 +1,7 @@
-# v2 spec freeze
+# v2 spec
 
-Milestone 0 freezes the non-negotiable rules for the v2 rewrite before any cryptographic replacement work begins.
+This section records the fixed rules for the current public v2 surface.
 
 - [Library invariants](library-invariants.md)
-- [Mandatory suite](library-suite.md)
+- [Current suite](library-suite.md)
 - [API contract](api-contract.md)

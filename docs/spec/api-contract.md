@@ -1,21 +1,19 @@
 # API contract
 
-The v2 rewrite draws a hard boundary between the cryptographic library and the surrounding application.
+The current package draws a hard boundary between the cryptographic library and the surrounding application.
 
 ## Library responsibilities
 
 - Group definitions and scalar arithmetic
-- Plain ElGamal and threshold ElGamal primitives
-- Proof systems and proof verification
-- Typed protocol payloads and validation
-- Canonical serialization and transcript hashing
-- Envelope cryptography for encrypted share transport
-- DKG state-machine transitions and phase-admissibility checks
+- Plain multiplicative ElGamal
+- Additive ElGamal with bounded discrete-log recovery
+- Ciphertext combination helpers
+- Foundational serialization and encoding helpers
+- Runtime validation for public inputs, plaintext domains, and subgroup membership
 
 ## Application responsibilities
 
-- Message transport and bulletin-board persistence
-- Network retries and delivery coordination
-- Epoch timing, wall-clock deadlines, and scheduling
-- Out-of-band digest comparison and split-view detection plumbing
-- UI, storage, and deployment-specific operational policy
+- Message transport, storage, and deployment-specific operational policy
+- Tally policy, additive bound selection, and result interpretation
+- UI, orchestration, retries, and deadline handling
+- Threshold protocols, DKG, and proof systems until they are implemented and exported
