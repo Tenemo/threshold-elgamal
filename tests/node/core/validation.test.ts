@@ -50,17 +50,23 @@ describe('core validation', () => {
             InvalidScalarError,
         );
 
-        expect(() => assertPlaintextMultiplicative(1n)).not.toThrow();
-        expect(() => assertPlaintextMultiplicative(0n)).toThrow(
+        expect(() => assertPlaintextMultiplicative(1n, group.p)).not.toThrow();
+        expect(() => assertPlaintextMultiplicative(0n, group.p)).toThrow(
             PlaintextDomainError,
         );
-        expect(() => assertPlaintextAdditive(0n, 10n)).not.toThrow();
-        expect(() => assertPlaintextAdditive(10n, 10n)).not.toThrow();
-        expect(() => assertPlaintextAdditive(-1n, 10n)).toThrow(
+        expect(() => assertPlaintextMultiplicative(group.p, group.p)).toThrow(
             PlaintextDomainError,
         );
-        expect(() => assertPlaintextAdditive(11n, 10n)).toThrow(
+        expect(() => assertPlaintextAdditive(0n, 10n, group.q)).not.toThrow();
+        expect(() => assertPlaintextAdditive(10n, 10n, group.q)).not.toThrow();
+        expect(() => assertPlaintextAdditive(-1n, 10n, group.q)).toThrow(
             PlaintextDomainError,
+        );
+        expect(() => assertPlaintextAdditive(11n, 10n, group.q)).toThrow(
+            PlaintextDomainError,
+        );
+        expect(() => assertPlaintextAdditive(0n, group.q, group.q)).toThrow(
+            InvalidScalarError,
         );
     });
 

@@ -50,17 +50,26 @@ export const assertScalarInZq = (value: bigint, q: bigint): void => {
     }
 };
 
-export const assertPlaintextMultiplicative = (value: bigint): void => {
-    if (value <= 0n) {
+export const assertPlaintextMultiplicative = (
+    value: bigint,
+    p: bigint,
+): void => {
+    if (value <= 0n || value >= p) {
         throw new PlaintextDomainError(
-            'Multiplicative mode requires plaintext values greater than 0',
+            'Multiplicative mode requires plaintext values in the range 1..p-1',
         );
     }
 };
 
-export const assertPlaintextAdditive = (value: bigint, bound: bigint): void => {
-    if (bound < 0n) {
-        throw new InvalidScalarError('Additive plaintext bound must be >= 0');
+export const assertPlaintextAdditive = (
+    value: bigint,
+    bound: bigint,
+    q: bigint,
+): void => {
+    if (bound < 0n || bound >= q) {
+        throw new InvalidScalarError(
+            'Additive plaintext bound must be in the range 0..q-1',
+        );
     }
 
     if (value < 0n || value > bound) {

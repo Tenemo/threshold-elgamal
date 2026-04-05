@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    deriveH,
     getGroup,
     listGroups,
     modPowP,
@@ -19,6 +20,12 @@ describe('core groups', () => {
             expect(group.h).not.toBe(group.g);
             expect(group.h > 1n).toBe(true);
             expect(modPowP(group.h, group.q, group.p)).toBe(1n);
+        }
+    });
+
+    it('derives h deterministically from the frozen suite inputs', async () => {
+        for (const group of listGroups()) {
+            await expect(deriveH(group)).resolves.toBe(group.h);
         }
     });
 

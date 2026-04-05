@@ -1,18 +1,6 @@
+import { getWebCrypto } from './crypto.js';
 import { InvalidScalarError } from './errors.js';
 import type { RandomBytesSource } from './types.js';
-
-const getCrypto = (): Crypto => {
-    if (
-        typeof globalThis.crypto === 'undefined' ||
-        typeof globalThis.crypto.getRandomValues !== 'function'
-    ) {
-        throw new InvalidScalarError(
-            'Web Crypto API is required for secure randomness',
-        );
-    }
-
-    return globalThis.crypto;
-};
 
 const bitLength = (value: bigint): number =>
     value === 0n ? 0 : value.toString(2).length;
@@ -32,7 +20,7 @@ const bytesToBigInt = (bytes: Uint8Array): bigint => {
 
 const secureRandomBytesSource: RandomBytesSource = (length) => {
     const bytes = new Uint8Array(length);
-    getCrypto().getRandomValues(bytes);
+    getWebCrypto().getRandomValues(bytes);
     return bytes;
 };
 

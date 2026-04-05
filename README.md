@@ -2,241 +2,95 @@
 
 [![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://badge.fury.io/js/threshold-elgamal)
 
-A TypeScript library with a collection of functions implementing selected ElGamal cryptographic algorithms in TypeScript on top of native JavaScript BigInteger. Its core includes ElGamal functions for key generation, encryption, and decryption. It is extended with support for threshold encryption. **Runs both in Node and in browsers.** Used by [sealed.vote](https://sealed.vote).
+`threshold-elgamal` is a browser-native TypeScript library for finite-field ElGamal research prototypes built on native `bigint`.
 
-## v2 rewrite status
+The v2 rewrite currently ships:
 
-Milestone 0 for the v2 rewrite is tracked in [docs/spec/index.md](docs/spec/index.md). These spec documents freeze the invariants, mandatory suite, and library/application boundary before the implementation rewrite starts.
+- validated RFC 7919 FFDHE groups with first-class `q`
+- deterministic suite-derived `h`
+- CSPRNG-based key generation with rejection sampling
+- multiplicative ElGamal
+- additive ElGamal with bounded discrete-log recovery
+- homomorphic ciphertext helpers
+- foundational encoding helpers for later proof and protocol work
 
-**WIP: Early version. Thresholds when set below the number of scheme participants don't behave as expected.**
-However, it works correctly with `threshold == participantsCount`, which is its main use case for myself for now.
+Threshold decryption, proofs, transport, and DKG are still under active rewrite and are not part of the current public API.
 
-It was written as cleanly as possible, modularized, and with long, explicit variable names. It includes out-of-the-box VS Code configuration, including recommended extensions for working with the library and/or contributing.
+This library is a hardened research prototype. It is not audited production voting software.
 
-**This is not a cryptographically audited library, make sure you know what you are doing before using it.**
+## Current status
 
-## Documentation
+The old legacy threshold API has been removed from the main package surface.
 
-For a detailed list of exported types and functions, [click here](https://tenemo.github.io/threshold-elgamal/modules.html).
-
-## Contributing
-
-The JavaScript/TypeScript ecosystem seems to be lacking in modern, functional ElGamal libraries that work out of the box with reasonable default (this library isn't at that point yet). All PRs are welcome.
-
-## Libraries/tools used
-
--   TypeScript
--   Vitest
--   ESLint + Prettier
--   Typedoc
-
-## Production dependencies
-
--   [bigint-mod-arith](https://www.npmjs.com/package/bigint-mod-arith)
-
-It has no other production dependencies apart from this one. It could be inlined easily, if needed.
-
-## TODO
-
--   Hashing messages
--   Support for additive property of exponents, not just native ElGamal multiplication
--   consider using {} function params for better readability and consistency in param naming
--   ZK proofs
--   Validation
+The next rewrite batch is the dealer-based `k`-of-`n` threshold core. Until that lands, the public package exposes only the v2 core, serialization, and plain ElGamal modules.
 
 ## Installation
-
-To use it in your project, install it first:
 
 ```bash
 pnpm add threshold-elgamal
 ```
 
-## Examples
+## Example
 
-First, import the whatever functions you need from the library:
-
-```typescript
-import { generateParameters, encrypt, decrypt } from "threshold-elgamal";
-```
-
-### Generating keys, encrypting and decrypting a secret
-
-```typescript
-// Generate a public/private key pair
-// If prime and generator aren't specified, they default to the 2048-bit group.
-const { publicKey, privateKey, prime, generator } = generateParameters();
-
-// Encrypt a message using the public key:
-const secret = 859;
-const encryptedMessage = encrypt(secret, publicKey, prime, generator);
-
-// Decrypt the message using the private key:
-const decryptedMessage = decrypt(encryptedMessage, prime, privateKey);
-// console.log(decryptedMessage); // 859
-```
-
-### Single secret shared with 3 participants
-
-Threshold scheme for generating a common public key, sharing a secret to 3 participants using that key and requiring all three participants to decrypt it.
+### Multiplicative ElGamal
 
 ```typescript
 import {
+    decrypt,
     encrypt,
-    generateKeys,
-    combinePublicKeys,
-    createDecryptionShare,
-    combineDecryptionShares,
-    thresholdDecrypt,
-} from "threshold-elgamal";
-
-const threshold = 3; // A scenario for 3 participants with a threshold of 3
-
-// Each participant generates their public key share and private key individually
-const participant1Keys = generateKeys(1, threshold);
-const participant2Keys = generateKeys(2, threshold);
-const participant3Keys = generateKeys(3, threshold);
-
-// Combine the public keys to form a single public key
-const commonPublicKey = combinePublicKeys([
-    participant1Keys.publicKey,
-    participant2Keys.publicKey,
-    participant3Keys.publicKey,
-]);
-
-// Encrypt a message using the combined public key
-const secret = 42;
-const encryptedMessage = encrypt(secret, commonPublicKey);
-
-// Decryption shares
-const decryptionShares = [
-    createDecryptionShare(encryptedMessage, participant1Keys.privateKey),
-    createDecryptionShare(encryptedMessage, participant2Keys.privateKey),
-    createDecryptionShare(encryptedMessage, participant3Keys.privateKey),
-];
-// Combining the decryption shares into one, used to decrypt the message
-const combinedDecryptionShares = combineDecryptionShares(decryptionShares);
-
-// Decrypting the message using the combined decryption shares
-const thresholdDecryptedMessage = thresholdDecrypt(
-    encryptedMessage,
-    combinedDecryptionShares,
-);
-console.log(thresholdDecryptedMessage); // 42
-```
-
-### Voting and multiplication with threshold scheme for 3 participants
-
-This example demonstrates a 1 to 10 voting scenario where 3 participants cast encrypted votes on two options. The encrypted votes are aggregated, multiplied with each other and then require all three participants to decrypt the final tally. The decryption does not work on individual votes, meaning that it is impossible to decrypt their votes even after decrypting the result.
-
-```typescript
-import {
-    encrypt,
-    generateKeys,
-    combinePublicKeys,
-    createDecryptionShare,
-    combineDecryptionShares,
-    thresholdDecrypt,
+    generateParameters,
+    getGroup,
     multiplyEncryptedValues,
-} from "threshold-elgamal";
+} from 'threshold-elgamal';
 
-const threshold = 3; // A scenario for 3 participants with a threshold of 3
+const group = getGroup('ffdhe3072');
+const { publicKey, privateKey } = generateParameters(group);
 
-// Each participant generates their public key share and private key individually
-const participant1Keys = generateKeys(1, threshold);
-const participant2Keys = generateKeys(2, threshold);
-const participant3Keys = generateKeys(3, threshold);
+const left = encrypt(6n, publicKey, group);
+const right = encrypt(7n, publicKey, group);
+const product = multiplyEncryptedValues(left, right, group);
 
-// Combine the public keys to form a single public key
-const commonPublicKey = combinePublicKeys([
-    participant1Keys.publicKey,
-    participant2Keys.publicKey,
-    participant3Keys.publicKey,
-]);
-
-// Participants cast their encrypted votes for two options
-const voteOption1 = [6, 7, 1]; // Votes for option 1 by participants 1, 2, and 3
-const voteOption2 = [10, 7, 4]; // Votes for option 2 by participants 1, 2, and 3
-
-// Encrypt votes for both options
-const encryptedVotesOption1 = voteOption1.map((vote) =>
-    encrypt(vote, commonPublicKey),
-);
-const encryptedVotesOption2 = voteOption2.map((vote) =>
-    encrypt(vote, commonPublicKey),
-);
-
-// Multiply encrypted votes together to aggregate
-const aggregatedEncryptedVoteOption1 = encryptedVotesOption1.reduce(
-    (talliedVotes, encryptedVote) =>
-        multiplyEncryptedValues(talliedVotes, encryptedVote),
-    { c1: 1n, c2: 1n },
-);
-const aggregatedEncryptedVoteOption2 = encryptedVotesOption2.reduce(
-    (talliedVotes, encryptedVote) =>
-        multiplyEncryptedValues(talliedVotes, encryptedVote),
-    { c1: 1n, c2: 1n },
-);
-
-// Each participant creates a decryption share for both options.
-// Notice that the shares are created for the aggregated, multiplied tally specifically,
-// not the individual votes. This means that they can be used ONLY for decrypting the aggregated votes.
-const decryptionSharesOption1 = [
-    createDecryptionShare(
-        aggregatedEncryptedVoteOption1,
-        // The order of the shares does not matter during decryption.
-        participant3Keys.privateKey,
-    ),
-    createDecryptionShare(
-        aggregatedEncryptedVoteOption1,
-        participant1Keys.privateKey,
-    ),
-    createDecryptionShare(
-        aggregatedEncryptedVoteOption1,
-        participant2Keys.privateKey,
-    ),
-];
-const decryptionSharesOption2 = [
-    createDecryptionShare(
-        aggregatedEncryptedVoteOption2,
-        participant2Keys.privateKey,
-    ),
-    createDecryptionShare(
-        aggregatedEncryptedVoteOption2,
-        participant1Keys.privateKey,
-    ),
-    createDecryptionShare(
-        aggregatedEncryptedVoteOption2,
-        participant3Keys.privateKey,
-    ),
-];
-
-// Combine decryption shares and decrypt the aggregated votes for both options.
-// Notice that the private keys of the participants never leave their possession.
-// Only the decryption shares are shared with other participants.
-const combinedDecryptionSharesOption1 = combineDecryptionShares(
-    decryptionSharesOption1,
-);
-const combinedDecryptionSharesOption2 = combineDecryptionShares(
-    decryptionSharesOption2,
-);
-
-const finalTallyOption1 = thresholdDecrypt(
-    aggregatedEncryptedVoteOption1,
-    combinedDecryptionSharesOption1,
-);
-const finalTallyOption2 = thresholdDecrypt(
-    aggregatedEncryptedVoteOption2,
-    combinedDecryptionSharesOption2,
-);
-
-console.log(
-    `Final tally for Option 1: ${finalTallyOption1}, Option 2: ${finalTallyOption2}`,
-); // 42, 280
+console.log(decrypt(product, privateKey, group)); // 42n
 ```
 
-This example can be extended with calculating a geometric mean for the candidate options to better present the results.
+### Additive ElGamal
+
+```typescript
+import {
+    addEncryptedValues,
+    decryptAdditive,
+    encryptAdditive,
+    generateParameters,
+    getGroup,
+} from 'threshold-elgamal';
+
+const group = getGroup('ffdhe3072');
+const { publicKey, privateKey } = generateParameters(group);
+
+const left = encryptAdditive(6n, publicKey, group, 20n);
+const right = encryptAdditive(7n, publicKey, group, 20n);
+const sum = addEncryptedValues(left, right, group);
+
+console.log(decryptAdditive(sum, privateKey, group, 20n)); // 13n
+```
+
+## Security notes
+
+- All public APIs use `bigint`, never JavaScript `number`.
+- Multiplicative mode accepts plaintexts in the range `1..p-1`.
+- Additive mode accepts plaintexts in the range `0..bound`, where `bound < q`.
+- For score voting, use additive mode for confidential tallies. Raw multiplicative mode remains a lower-level primitive and exact products wrap once they exceed `p`.
+- Browser JavaScript `bigint` arithmetic is not constant-time. Do not overstate side-channel resistance on end-user devices.
+
+For the frozen v2 invariants and suite notes, see [docs/spec/index.md](docs/spec/index.md).
+
+## Development
+
+```bash
+pnpm install
+pnpm run ci
+```
 
 ## License
 
-This project is licensed under MPL-2.0. See the LICENSE file for the full text.
+This project is licensed under MPL-2.0. See [LICENSE](LICENSE).

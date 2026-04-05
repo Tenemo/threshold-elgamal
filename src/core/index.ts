@@ -1,4 +1,5 @@
 export * from './bigint.js';
+export * from './crypto.js';
 export * from './errors.js';
 export * from './groups.js';
 export * from './random.js';
