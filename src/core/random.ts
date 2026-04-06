@@ -20,6 +20,21 @@ const secureRandomBytesSource: RandomBytesSource = (length) => {
     return bytes;
 };
 
+/**
+ * Returns cryptographically secure random bytes.
+ *
+ * The default Web Crypto source is chunked into fills of at most 65,536 bytes
+ * to avoid browser quota errors. Injected custom sources are called once with
+ * the requested length.
+ *
+ * @example
+ * ```ts
+ * const nonce = randomBytes(32);
+ * ```
+ *
+ * @throws {@link InvalidScalarError} When `length` is negative, not an integer,
+ * or the injected source returns the wrong number of bytes.
+ */
 export const randomBytes = (
     length: number,
     randomSource: RandomBytesSource = secureRandomBytesSource,
@@ -40,6 +55,12 @@ export const randomBytes = (
     return bytes;
 };
 
+/**
+ * Samples a uniform scalar from the range `0..maxExclusive-1` with rejection
+ * sampling.
+ *
+ * @throws {@link InvalidScalarError} When `maxExclusive` is not positive.
+ */
 export const randomScalarBelow = (
     maxExclusive: bigint,
     randomSource: RandomBytesSource = secureRandomBytesSource,
@@ -58,6 +79,11 @@ export const randomScalarBelow = (
     }
 };
 
+/**
+ * Samples a uniform scalar from the range `minInclusive..maxExclusive-1`.
+ *
+ * @throws {@link InvalidScalarError} When the range is empty or inverted.
+ */
 export const randomScalarInRange = (
     minInclusive: bigint,
     maxExclusive: bigint,

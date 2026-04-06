@@ -1,12 +1,11 @@
 # Roadmap
 
-## Shipped in v2
+## Shipped now
 
 - Core finite-field helpers and RFC 7919 group definitions
 - Deterministic `h` derivation and subgroup validation
 - Web Crypto randomness with rejection sampling
 - Additive ElGamal on the safe surface
-- Unsafe multiplicative ElGamal under `threshold-elgamal/unsafe`
 - Foundational serialization helpers for later proof and protocol work
 
 ## Not shipped yet

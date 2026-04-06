@@ -1,0 +1,34 @@
+[**threshold-elgamal**](../../index.md)
+
+***
+
+[threshold-elgamal](../../modules.md) / [threshold-elgamal](../index.md) / bigintToFixedHex
+
+# Function: bigintToFixedHex()
+
+> **bigintToFixedHex**(`value`, `byteLength`): `string`
+
+Encodes a non-negative bigint as fixed-width lowercase hexadecimal.
+
+## Parameters
+
+### value
+
+`bigint`
+
+### byteLength
+
+`number`
+
+## Returns
+
+`string`
+
+## Throws
+
+[InvalidPayloadError](../classes/InvalidPayloadError.md) When `byteLength` is not positive.
+
+## Throws
+
+[InvalidScalarError](../classes/InvalidScalarError.md) When the value is negative or does not fit
+in the requested width.

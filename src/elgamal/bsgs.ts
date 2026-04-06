@@ -32,6 +32,14 @@ const integerSquareRootCeil = (value: bigint): bigint => {
     return low;
 };
 
+/**
+ * Solves a bounded discrete logarithm with the baby-step giant-step method.
+ *
+ * It returns `null` instead of throwing when the target does not decode to a
+ * discrete log within the supplied bound.
+ *
+ * @throws {@link InvalidScalarError} When `bound` is negative.
+ */
 export const babyStepGiantStep = (
     target: bigint,
     base: bigint,

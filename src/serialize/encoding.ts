@@ -15,6 +15,7 @@ const encodeLength = (length: number): Uint8Array => {
     return bytes;
 };
 
+/** Encodes raw bytes as lowercase hexadecimal. */
 export const bytesToHex = (bytes: Uint8Array): string => {
     let hex = '';
     for (const byte of bytes) {
@@ -23,6 +24,11 @@ export const bytesToHex = (bytes: Uint8Array): string => {
     return hex;
 };
 
+/**
+ * Decodes a non-empty even-length hexadecimal string into bytes.
+ *
+ * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
+ */
 export const hexToBytes = (hex: string): Uint8Array => {
     if (hex.length === 0 || hex.length % 2 !== 0 || !hexPattern.test(hex)) {
         throw new InvalidPayloadError(
@@ -37,6 +43,13 @@ export const hexToBytes = (hex: string): Uint8Array => {
     return bytes;
 };
 
+/**
+ * Encodes a non-negative bigint as fixed-width lowercase hexadecimal.
+ *
+ * @throws {@link InvalidPayloadError} When `byteLength` is not positive.
+ * @throws {@link InvalidScalarError} When the value is negative or does not fit
+ * in the requested width.
+ */
 export const bigintToFixedHex = (value: bigint, byteLength: number): string => {
     if (!Number.isInteger(byteLength) || byteLength < 1) {
         throw new InvalidPayloadError(
@@ -62,6 +75,11 @@ export const bigintToFixedHex = (value: bigint, byteLength: number): string => {
     return hex.padStart(targetLength, '0');
 };
 
+/**
+ * Decodes a fixed-width hexadecimal string back into a bigint.
+ *
+ * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
+ */
 export const fixedHexToBigint = (hex: string): bigint => {
     if (hex.length === 0 || hex.length % 2 !== 0 || !hexPattern.test(hex)) {
         throw new InvalidPayloadError(
@@ -72,6 +90,7 @@ export const fixedHexToBigint = (hex: string): bigint => {
     return BigInt(`0x${hex}`);
 };
 
+/** Concatenates multiple byte arrays into a single contiguous buffer. */
 export const concatBytes = (...arrays: Uint8Array[]): Uint8Array => {
     const totalLength = arrays.reduce((sum, array) => sum + array.length, 0);
     const result = new Uint8Array(totalLength);
@@ -85,6 +104,7 @@ export const concatBytes = (...arrays: Uint8Array[]): Uint8Array => {
     return result;
 };
 
+/** Encodes a domain-separation tag as UTF-8 bytes. */
 export const domainSeparator = (tag: string): Uint8Array => utf8ToBytes(tag);
 
 const encodeBigIntForChallenge = (value: bigint): Uint8Array => {
@@ -113,6 +133,21 @@ const encodeChallengeElement = (
     return new Uint8Array(element);
 };
 
+/**
+ * Injectively encodes challenge transcript elements with 4-byte big-endian
+ * length prefixes.
+ *
+ * This helper is intended for Fiat-Shamir style transcripts where different
+ * element sequences must never collide after encoding.
+ *
+ * @example
+ * ```ts
+ * const payload = encodeForChallenge('dleq', 7n, new Uint8Array([1, 2, 3]));
+ * ```
+ *
+ * @throws {@link InvalidScalarError} When a bigint element is negative.
+ * @throws {@link InvalidPayloadError} When an encoded element length is invalid.
+ */
 export const encodeForChallenge = (
     ...elements: (bigint | Uint8Array | string)[]
 ): Uint8Array =>

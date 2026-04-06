@@ -7,15 +7,23 @@ import {
     ThresholdViolationError,
 } from './errors.js';
 
+/** Returns `true` when the value is a non-identity element of the order-`q` subgroup. */
 export const isInSubgroup = (value: bigint, p: bigint, q: bigint): boolean =>
     value > 1n && value < p - 1n && modPowP(value, q, p) === 1n;
 
+/** Returns `true` when the value is the subgroup identity or a valid subgroup element. */
 export const isInSubgroupOrIdentity = (
     value: bigint,
     p: bigint,
     q: bigint,
 ): boolean => value === 1n || isInSubgroup(value, p, q);
 
+/**
+ * Validates a one-based participant index against a fixed roster size.
+ *
+ * @throws {@link IndexOutOfRangeError} When the index or participant count is
+ * not an integer, or when the index falls outside `1..participantCount`.
+ */
 export const assertValidParticipantIndex = (
     index: number,
     participantCount: number,
@@ -33,6 +41,12 @@ export const assertValidParticipantIndex = (
     }
 };
 
+/**
+ * Validates a threshold `k` against a participant count `n`.
+ *
+ * @throws {@link ThresholdViolationError} When either input is not an integer
+ * or when `k` falls outside `1..n`.
+ */
 export const assertThreshold = (
     threshold: number,
     participantCount: number,
@@ -50,6 +64,11 @@ export const assertThreshold = (
     }
 };
 
+/**
+ * Validates that a scalar belongs to `Z_q`.
+ *
+ * @throws {@link InvalidScalarError} When the value is outside `0..q-1`.
+ */
 export const assertScalarInZq = (value: bigint, q: bigint): void => {
     if (value < 0n || value >= q) {
         throw new InvalidScalarError(
@@ -58,17 +77,13 @@ export const assertScalarInZq = (value: bigint, q: bigint): void => {
     }
 };
 
-export const assertPlaintextMultiplicative = (
-    value: bigint,
-    p: bigint,
-): void => {
-    if (value <= 0n || value >= p) {
-        throw new PlaintextDomainError(
-            'Multiplicative mode requires plaintext values in the range 1..p-1',
-        );
-    }
-};
-
+/**
+ * Validates the plaintext domain and caller-supplied bound for additive
+ * ElGamal.
+ *
+ * @throws {@link InvalidScalarError} When `bound` is outside `0..q-1`.
+ * @throws {@link PlaintextDomainError} When `value` is outside `0..bound`.
+ */
 export const assertPlaintextAdditive = (
     value: bigint,
     bound: bigint,
@@ -87,6 +102,12 @@ export const assertPlaintextAdditive = (
     }
 };
 
+/**
+ * Validates that a value is a non-identity element of the prime-order subgroup.
+ *
+ * @throws {@link InvalidGroupElementError} When the value is outside the
+ * subgroup.
+ */
 export const assertInSubgroup = (value: bigint, p: bigint, q: bigint): void => {
     if (!isInSubgroup(value, p, q)) {
         throw new InvalidGroupElementError(
@@ -95,6 +116,13 @@ export const assertInSubgroup = (value: bigint, p: bigint, q: bigint): void => {
     }
 };
 
+/**
+ * Validates that a value is either the subgroup identity or a non-identity
+ * subgroup element.
+ *
+ * @throws {@link InvalidGroupElementError} When the value is outside the
+ * subgroup-or-identity domain.
+ */
 export const assertInSubgroupOrIdentity = (
     value: bigint,
     p: bigint,
@@ -107,6 +135,12 @@ export const assertInSubgroupOrIdentity = (
     }
 };
 
+/**
+ * Validates a public key as a non-identity prime-order subgroup element.
+ *
+ * @throws {@link InvalidGroupElementError} When the value is not a valid
+ * subgroup public key.
+ */
 export const assertValidPublicKey = (
     value: bigint,
     p: bigint,

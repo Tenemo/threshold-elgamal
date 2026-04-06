@@ -1,6 +1,6 @@
-# v2 spec
+# Spec
 
-This section records the fixed rules for the current public v2 surface.
+These pages record the fixed rules for the current shipped surface. They are normative and intentionally narrower than the guides.
 
 - [Library invariants](library-invariants.html)
 - [Current suite](library-suite.html)

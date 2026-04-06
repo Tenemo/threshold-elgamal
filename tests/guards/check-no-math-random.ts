@@ -8,7 +8,7 @@ const rootDir = path.resolve(
     '..',
     '..',
 );
-const v2Directories = ['src/core', 'src/elgamal', 'src/serialize'];
+const sourceDirectories = ['src/core', 'src/elgamal', 'src/serialize'];
 const offenders: string[] = [];
 
 const walk = async (directory: string): Promise<void> => {
@@ -39,16 +39,16 @@ const walk = async (directory: string): Promise<void> => {
     }
 };
 
-for (const relativeDirectory of v2Directories) {
+for (const relativeDirectory of sourceDirectories) {
     await walk(path.join(rootDir, relativeDirectory));
 }
 
 if (offenders.length > 0) {
-    console.error('Math.random() is forbidden in v2 source directories:');
+    console.error('Math.random() is forbidden in source directories:');
     for (const offender of offenders) {
         console.error(`- ${offender}`);
     }
     exit(1);
 }
 
-console.log('No Math.random() usage found in v2 source directories.');
+console.log('No Math.random() usage found in source directories.');

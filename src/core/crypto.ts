@@ -13,28 +13,47 @@ const assertByteLength = (length: number, label: string): void => {
     }
 };
 
+/** Encodes a JavaScript string as UTF-8 bytes. */
 export const utf8ToBytes = (value: string): Uint8Array =>
     textEncoder.encode(value);
 
+/**
+ * Returns the runtime Web Crypto implementation used by the library.
+ *
+ * @throws {@link UnsupportedSuiteError} When the current runtime does not
+ * expose `crypto.subtle` and `crypto.getRandomValues`.
+ */
 export const getWebCrypto = (): Crypto => {
     if (
         typeof globalThis.crypto?.subtle === 'undefined' ||
         typeof globalThis.crypto.getRandomValues !== 'function'
     ) {
         throw new UnsupportedSuiteError(
-            'Web Crypto API is required for v2 cryptographic operations',
+            'Web Crypto API is required for cryptographic operations',
         );
     }
 
     return globalThis.crypto;
 };
 
+/**
+ * Hashes bytes with SHA-256.
+ *
+ * @throws {@link UnsupportedSuiteError} When Web Crypto is unavailable.
+ */
 export const sha256 = async (data: Uint8Array): Promise<Uint8Array> => {
     const crypto = getWebCrypto();
     const digest = await crypto.subtle.digest('SHA-256', toBufferSource(data));
     return new Uint8Array(digest);
 };
 
+/**
+ * Derives deterministic key material with HKDF-SHA-256.
+ *
+ * @throws {@link InvalidScalarError} When `length` is negative or not an
+ * integer.
+ * @throws {@link UnsupportedSuiteError} When Web Crypto is unavailable.
+ */
 export const hkdfSha256 = async (
     ikm: Uint8Array,
     salt: Uint8Array,

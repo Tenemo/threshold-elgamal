@@ -4,7 +4,6 @@ import {
     assertInSubgroup,
     assertInSubgroupOrIdentity,
     assertPlaintextAdditive,
-    assertPlaintextMultiplicative,
     assertScalarInZq,
     assertThreshold,
     assertValidParticipantIndex,
@@ -56,13 +55,6 @@ describe('core validation', () => {
             InvalidScalarError,
         );
 
-        expect(() => assertPlaintextMultiplicative(1n, group.p)).not.toThrow();
-        expect(() => assertPlaintextMultiplicative(0n, group.p)).toThrow(
-            PlaintextDomainError,
-        );
-        expect(() => assertPlaintextMultiplicative(group.p, group.p)).toThrow(
-            PlaintextDomainError,
-        );
         expect(() => assertPlaintextAdditive(0n, 10n, group.q)).not.toThrow();
         expect(() => assertPlaintextAdditive(10n, 10n, group.q)).not.toThrow();
         expect(() => assertPlaintextAdditive(-1n, 10n, group.q)).toThrow(

@@ -1,6 +1,6 @@
 # Current suite
 
-v2 fixes the current browser-native cryptographic suite for the shipped public API.
+This page fixes the current browser-native cryptographic suite for the shipped public API.
 
 ## Group parameters
 

@@ -1,6 +1,6 @@
 # Library invariants
 
-These invariants apply to the current v2 modules and public API.
+These invariants apply to the current shipped modules and public API.
 
 - All scalar arithmetic is performed in `Z_q`, never `Z_p`.
 - All secret-dependent exponentiations use validated prime-order subgroup elements before secret-dependent use.
@@ -13,6 +13,4 @@ These invariants apply to the current v2 modules and public API.
 - Additive mode accepts plaintext `0` but still rejects negative values.
 - Additive encryption requires an explicit plaintext bound below `q`.
 - Additive ciphertext components are constrained to the subgroup or its identity.
-- Unsafe multiplicative ciphertext validation keeps `c1` in the subgroup or its identity and validates `c2` under mode-specific `Z_p*` rules.
-- Unsafe multiplicative mode rejects plaintext `0` and all negative values.
 - Aggregate ciphertext validation allows subgroup identity only where ciphertext algebra permits it.

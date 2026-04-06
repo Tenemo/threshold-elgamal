@@ -1,14 +1,13 @@
 # API contract
 
-The current package draws a hard boundary between the cryptographic library and the surrounding application.
+The current package draws a hard boundary between the shipped cryptographic library and the surrounding application.
 
 ## Library responsibilities
 
 - Group definitions and scalar arithmetic
-- Plain multiplicative ElGamal
-- Additive ElGamal with bounded discrete-log recovery
-- Ciphertext combination helpers
-- Foundational serialization and encoding helpers
+- Safe additive ElGamal on the root package
+- Ciphertext combination helpers for the shipped additive workflow
+- Serialization and deterministic encoding helpers
 - Runtime validation for public inputs, plaintext domains, and subgroup membership
 
 ## Application responsibilities

@@ -141,6 +141,7 @@ describe('additive ElGamal', () => {
                 group.name,
             );
 
+            expect(keyPair.publicKey).toBe(BigInt(vector.publicKey));
             expect(ciphertext).toEqual({
                 c1: BigInt(additiveVector.c1),
                 c2: BigInt(additiveVector.c2),

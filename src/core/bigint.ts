@@ -64,24 +64,57 @@ const modPow = (base: bigint, exponent: bigint, modulus: bigint): bigint => {
     return result;
 };
 
+/**
+ * Reduces a value into the canonical range `0..modulus-1`.
+ *
+ * @throws {@link InvalidScalarError} When `modulus` is not positive.
+ */
 export const mod = (value: bigint, modulus: bigint): bigint => {
     assertPositiveModulus(modulus);
     return normalize(value, modulus);
 };
 
+/**
+ * Reduces a value into the range `0..p-1`.
+ *
+ * @throws {@link InvalidScalarError} When `p` is not positive.
+ */
 export const modP = (value: bigint, p: bigint): bigint => mod(value, p);
+/**
+ * Reduces a value into the range `0..q-1`.
+ *
+ * @throws {@link InvalidScalarError} When `q` is not positive.
+ */
 export const modQ = (value: bigint, q: bigint): bigint => mod(value, q);
 
+/**
+ * Computes the multiplicative inverse of a value modulo `p`.
+ *
+ * @throws {@link InvalidScalarError} When `p` is not positive or the inverse
+ * does not exist.
+ */
 export const modInvP = (value: bigint, p: bigint): bigint => {
     assertPositiveModulus(p);
     return modInv(modP(value, p), p);
 };
 
+/**
+ * Computes the multiplicative inverse of a value modulo `q`.
+ *
+ * @throws {@link InvalidScalarError} When `q` is not positive or the inverse
+ * does not exist.
+ */
 export const modInvQ = (value: bigint, q: bigint): bigint => {
     assertPositiveModulus(q);
     return modInv(modQ(value, q), q);
 };
 
+/**
+ * Computes `base^exponent mod p` for non-negative exponents.
+ *
+ * @throws {@link InvalidScalarError} When `p` is not positive or `exponent` is
+ * negative.
+ */
 export const modPowP = (base: bigint, exponent: bigint, p: bigint): bigint => {
     assertPositiveModulus(p);
     if (exponent < 0n) {

@@ -1,7 +1,7 @@
 {
     "name": "threshold-elgamal",
     "version": "2.0.0",
-    "description": "A browser-native TypeScript ElGamal library for bigint-based research prototypes, currently shipping core primitives, additive ElGamal, and an unsafe multiplicative namespace.",
+    "description": "A browser-native TypeScript ElGamal library for bigint-based research prototypes, currently shipping core primitives, additive ElGamal, key generation, and serialization helpers.",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MPL-2.0",
     "main": "dist/index.js",
@@ -10,7 +10,6 @@
         "#root": "./src/index.ts",
         "#core": "./src/core/index.ts",
         "#elgamal": "./src/elgamal/index.ts",
-        "#unsafe": "./src/unsafe/index.ts",
         "#serialize": "./src/serialize/index.ts"
     },
     "exports": {
@@ -29,10 +28,6 @@
         "./serialize": {
             "types": "./dist/serialize/index.d.ts",
             "import": "./dist/serialize/index.js"
-        },
-        "./unsafe": {
-            "types": "./dist/unsafe/index.d.ts",
-            "import": "./dist/unsafe/index.js"
         }
     },
     "repository": {
@@ -50,7 +45,7 @@
         "eslint:fix": "eslint . --fix -c eslint.config.js",
         "typecheck": "tsc",
         "tsc": "pnpm run typecheck",
-        "guard:no-math-random:v2": "tsx ./tests/guards/check-no-math-random-v2.ts",
+        "guard:no-math-random": "tsx ./tests/guards/check-no-math-random.ts",
         "prebuild": "pnpm run lint && pnpm run typecheck && pnpm run test && del-cli dist",
         "build": "tsc --project tsconfig.build.json",
         "build:skip": "del-cli dist && tsc --project tsconfig.build.json",
@@ -58,8 +53,9 @@
         "test:browser": "vitest --project browser --run",
         "test": "pnpm run test:node && pnpm run test:browser",
         "test:watch": "vitest --project node --watch",
-        "ci": "pnpm run lint && pnpm run typecheck && pnpm run guard:no-math-random:v2 && pnpm run test && pnpm run build:skip",
+        "ci": "pnpm run lint && pnpm run typecheck && pnpm run guard:no-math-random && pnpm run test && pnpm run build:skip && pnpm run docs:api && pnpm run verify:docs",
         "docs:api": "tsx ./node_modules/typedoc/bin/typedoc --options typedoc.config.mjs",
+        "verify:docs": "tsx ./scripts/verify-docs.ts",
         "prepublish:public": "pnpm run build && pnpm run docs:api && git add . && git commit && git push origin && pnpm version patch",
         "publish:public": "pnpm publish --access public",
         "prepare": "husky"

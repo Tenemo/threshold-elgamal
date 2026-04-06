@@ -4,27 +4,19 @@
 
 `threshold-elgamal` is a browser-native TypeScript library for finite-field ElGamal research prototypes built on native `bigint`.
 
-The v2 rewrite currently ships:
+This library ships:
 
 - validated RFC 7919 FFDHE groups with first-class `q`
 - deterministic suite-derived `h`
-- CSPRNG-based key generation with rejection sampling and Web Crypto quota-safe chunking
-- additive ElGamal with bounded discrete-log recovery
-- homomorphic ciphertext helpers
-- key generation helpers shared by additive and multiplicative modes
-- unsafe multiplicative ElGamal under `threshold-elgamal/unsafe`
-- foundational encoding helpers for later proof and protocol work
+- cryptographically secure randomness with rejection sampling
+- additive ElGamal on the safe root package
+- bounded discrete-log recovery and additive ciphertext combination helpers
+- key generation helpers for the shipped additive workflow
+- deterministic encoding helpers for serialization and challenge inputs
 
-Threshold decryption, proofs, transport, and DKG are not part of the current public API.
+Threshold decryption, proofs, DKG, and transport are not shipped yet.
 
 This library is a hardened research prototype. It is not audited production voting software.
-
-## Current status
-
-The old legacy threshold API has been removed from the main package surface.
-The safe public package currently exposes only the v2 core, serialization, additive ElGamal, and key generation helpers.
-Raw multiplicative ElGamal now lives under `threshold-elgamal/unsafe`.
-The generated API reference lives in [docs/api/index.md](docs/api/index.md).
 
 ## Installation
 
@@ -32,34 +24,7 @@ The generated API reference lives in [docs/api/index.md](docs/api/index.md).
 pnpm add threshold-elgamal
 ```
 
-## Example
-
-### Unsafe multiplicative mode
-
-```typescript
-import {
-    decrypt,
-    encrypt,
-    generateParameters,
-    multiplyEncryptedValues,
-} from 'threshold-elgamal/unsafe';
-import { getGroup } from 'threshold-elgamal';
-
-const group = 'ffdhe3072' as const;
-const suite = getGroup(group);
-const { publicKey, privateKey } = generateParameters(group);
-
-const left = encrypt(6n, publicKey, group);
-const right = encrypt(7n, publicKey, group);
-const product = multiplyEncryptedValues(left, right, group);
-
-console.log(decrypt(product, privateKey, group)); // 42n
-console.log(suite.securityEstimate); // 125
-```
-
-Raw multiplicative ElGamal is intentionally outside the safe surface because direct plaintext embedding leaks quadratic residuosity unless callers apply a safer encoding discipline.
-
-### Additive mode
+## Safe quickstart
 
 ```typescript
 import {
@@ -71,8 +36,8 @@ import {
 } from 'threshold-elgamal';
 
 const group = 'ffdhe3072' as const;
-const suite = getGroup(group);
 const { publicKey, privateKey } = generateParameters(group);
+const suite = getGroup(group);
 
 const left = encryptAdditive(6n, publicKey, group, 20n);
 const right = encryptAdditive(7n, publicKey, group, 20n);
@@ -82,19 +47,32 @@ console.log(decryptAdditive(sum, privateKey, group, 20n)); // 13n
 console.log(suite.q > 0n); // true
 ```
 
-## Security notes
+All public APIs require explicit group selection. There is no implicit default suite.
 
-- All public APIs use `bigint`, never JavaScript `number`.
-- All public APIs require explicit group selection. There is no implicit default suite.
-- Multiplicative mode accepts plaintexts in the range `1..p-1`.
-- Additive mode accepts plaintexts in the range `0..bound`, where `bound < q`.
-- Additive encryption requires an explicit caller-supplied bound so bounded discrete-log recovery stays operationally predictable.
-- For score voting, use additive mode for confidential tallies. Unsafe multiplicative mode remains a lower-level primitive and exact products wrap once they exceed `p`.
-- Unsafe multiplicative ElGamal with direct plaintext embedding leaks the plaintext's quadratic residuosity unless the plaintext is subgroup-encoded.
-- Browser JavaScript `bigint` arithmetic is not constant-time. Do not overstate side-channel resistance on end-user devices.
+## Documentation
 
-For the generated API reference, see [docs/api/index.md](docs/api/index.md).
-For the manual v2 invariants and suite notes, see [docs/spec/index.md](docs/spec/index.md).
+- Start at the docs portal: [docs/index.md](docs/index.md)
+- Safe onboarding: [docs/guides/getting-started.md](docs/guides/getting-started.md)
+- Additive mode guide: [docs/guides/additive-elgamal.md](docs/guides/additive-elgamal.md)
+- API reference: [docs/api/index.md](docs/api/index.md)
+- Spec pages: [docs/spec/index.md](docs/spec/index.md)
+
+## Changes since v1
+
+This library has been substantially rewritten around a smaller and stricter public surface. The current release keeps the validated group definitions, deterministic suite-derived `h`, secure randomness, additive ElGamal, key generation, and serialization helpers. Raw multiplicative mode has been removed.
+
+The reason is privacy leakage at the individual ciphertext level, not any problem with the geometric mean itself. In multiplicative ElGamal, `c2 = m * y^r mod p`. The masking term `y^r` is always a quadratic residue because it stays inside the prime-order subgroup, so `c2` inherits the Legendre symbol of `m`. Anyone observing the public ciphertext can compute that symbol and learn whether the plaintext score is in the quadratic-residue half of the score domain or the non-residue half. For a small domain such as `{1, ..., 10}`, that leaks about one bit per ballot and narrows each encrypted score from ten possibilities to roughly five before any decryption happens.
+
+In additive ElGamal, `c2 = g^m * y^r mod p`. Both factors lie in the same prime-order subgroup, so `c2` is always a quadratic residue. The Legendre symbol therefore leaks nothing about the individual plaintext. That makes additive mode strictly better on per-ballot privacy.
+
+The remaining inference problem comes from publishing exact aggregates over small groups, and that problem exists in both designs. If a small board publishes an exact sum, participants can reason backward from the total and their own vote. If it publishes an exact product, they can do the same thing from the product. No homomorphic encryption scheme fixes that by itself. The only real mitigations are changing what gets published, suppressing small results, or adding noise, all of which change the voting system semantics.
+
+| Concern | Multiplicative mode | Additive mode |
+| --- | --- | --- |
+| Per-ballot leakage before decryption | Roughly one bit from the Legendre symbol | Zero bits from the Legendre symbol |
+| Inference after publishing exact aggregates in small groups | Still present | Still present |
+
+This does create a real tradeoff: additive homomorphism gives sums and arithmetic means, while multiplicative homomorphism gives products and geometric means. If a scoring system truly requires geometric-mean behavior, additive mode does not reproduce that semantics directly. The library now chooses the mode that does not leak information from each posted ciphertext.
 
 ## Development
 
