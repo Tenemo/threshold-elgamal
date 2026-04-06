@@ -47,10 +47,10 @@ const sum = addEncryptedValues(left, right, 'ffdhe3072');
 
 ## Throws
 
-[InvalidGroupElementError](../classes/InvalidGroupElementError.md) When either ciphertext component is
+[InvalidGroupElementError](../../core/classes/InvalidGroupElementError.md) When either ciphertext component is
 outside the additive subgroup-or-identity domain.
 
 ## Throws
 
-[UnsupportedSuiteError](../classes/UnsupportedSuiteError.md) When `group` does not resolve to a
+[UnsupportedSuiteError](../../core/classes/UnsupportedSuiteError.md) When `group` does not resolve to a
 built-in suite.

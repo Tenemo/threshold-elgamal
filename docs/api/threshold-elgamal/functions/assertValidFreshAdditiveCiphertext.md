@@ -18,7 +18,7 @@ Validates a freshly produced additive ciphertext with subgroup `c1`.
 
 ### group
 
-[`CryptoGroup`](../type-aliases/CryptoGroup.md)
+[`CryptoGroup`](../../core/type-aliases/CryptoGroup.md)
 
 ## Returns
 

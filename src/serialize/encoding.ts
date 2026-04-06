@@ -1,5 +1,7 @@
+import { bytesToHex as encodeBytesToHex } from '../core/bytes.js';
 import { utf8ToBytes } from '../core/crypto.js';
 import { InvalidPayloadError, InvalidScalarError } from '../core/errors.js';
+
 const hexPattern = /^[0-9a-f]+$/i;
 
 const encodeLength = (length: number): Uint8Array => {
@@ -15,19 +17,20 @@ const encodeLength = (length: number): Uint8Array => {
     return bytes;
 };
 
+const assertHexInput = (hex: string, errorMessage: string): void => {
+    if (hex.length === 0 || hex.length % 2 !== 0 || !hexPattern.test(hex)) {
+        throw new InvalidPayloadError(errorMessage);
+    }
+};
+
 /**
  * Encodes raw bytes as lowercase hexadecimal.
  *
  * @param bytes Raw bytes to encode.
  * @returns A lowercase hexadecimal string.
  */
-export const bytesToHex = (bytes: Uint8Array): string => {
-    let hex = '';
-    for (const byte of bytes) {
-        hex += byte.toString(16).padStart(2, '0');
-    }
-    return hex;
-};
+export const bytesToHex = (bytes: Uint8Array): string =>
+    encodeBytesToHex(bytes);
 
 /**
  * Decodes a non-empty even-length hexadecimal string into bytes.
@@ -38,11 +41,10 @@ export const bytesToHex = (bytes: Uint8Array): string => {
  * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
  */
 export const hexToBytes = (hex: string): Uint8Array => {
-    if (hex.length === 0 || hex.length % 2 !== 0 || !hexPattern.test(hex)) {
-        throw new InvalidPayloadError(
-            'Hex input must be a non-empty even-length hexadecimal string',
-        );
-    }
+    assertHexInput(
+        hex,
+        'Hex input must be a non-empty even-length hexadecimal string',
+    );
 
     const bytes = new Uint8Array(hex.length / 2);
     for (let index = 0; index < hex.length; index += 2) {
@@ -96,11 +98,10 @@ export const bigintToFixedHex = (value: bigint, byteLength: number): string => {
  * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
  */
 export const fixedHexToBigint = (hex: string): bigint => {
-    if (hex.length === 0 || hex.length % 2 !== 0 || !hexPattern.test(hex)) {
-        throw new InvalidPayloadError(
-            'Fixed-width hex input must be a non-empty even-length hexadecimal string',
-        );
-    }
+    assertHexInput(
+        hex,
+        'Fixed-width hex input must be a non-empty even-length hexadecimal string',
+    );
 
     return BigInt(`0x${hex}`);
 };

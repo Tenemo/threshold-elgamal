@@ -5,17 +5,13 @@ import {
     assertInSubgroupOrIdentity,
     assertPlaintextAdditive,
     assertScalarInZq,
-    assertThreshold,
-    assertValidParticipantIndex,
     assertValidPublicKey,
     getGroup,
-    IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidScalarError,
     isInSubgroup,
     isInSubgroupOrIdentity,
     PlaintextDomainError,
-    ThresholdViolationError,
 } from '#core';
 
 describe('core validation', () => {
@@ -32,20 +28,6 @@ describe('core validation', () => {
         expect(isInSubgroup(1n, group.p, group.q)).toBe(false);
         expect(isInSubgroupOrIdentity(1n, group.p, group.q)).toBe(true);
         expect(isInSubgroup(group.p - 1n, group.p, group.q)).toBe(false);
-    });
-
-    it('validates thresholds and indices', () => {
-        expect(() => assertThreshold(2, 3)).not.toThrow();
-        expect(() => assertValidParticipantIndex(1, 3)).not.toThrow();
-
-        expect(() => assertThreshold(0, 3)).toThrow(ThresholdViolationError);
-        expect(() => assertThreshold(4, 3)).toThrow(ThresholdViolationError);
-        expect(() => assertValidParticipantIndex(0, 3)).toThrow(
-            IndexOutOfRangeError,
-        );
-        expect(() => assertValidParticipantIndex(4, 3)).toThrow(
-            IndexOutOfRangeError,
-        );
     });
 
     it('validates scalar ranges and plaintext domains', () => {

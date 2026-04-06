@@ -17,13 +17,6 @@ export type ScalarQ = Brand<bigint, 'ScalarQ'>;
 export type GroupElement = Brand<bigint, 'GroupElement'>;
 /** Element known to lie in the selected suite's prime-order subgroup. */
 export type SubgroupElement = Brand<bigint, 'SubgroupElement'>;
-/**
- * One-based roster index used by higher-level committee logic.
- *
- * Roster indices stay as small integers until threshold arithmetic converts
- * them to bigint values at the `Z_q` boundary.
- */
-export type ParticipantIndex = Brand<number, 'ParticipantIndex'>;
 /** Public key element that has already passed subgroup validation. */
 export type ValidatedPublicKey = Brand<SubgroupElement, 'ValidatedPublicKey'>;
 

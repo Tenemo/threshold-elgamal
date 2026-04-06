@@ -18,7 +18,7 @@ Validates that a private key lies in the range `1..q-1`.
 
 ### group
 
-[`CryptoGroup`](../type-aliases/CryptoGroup.md)
+[`CryptoGroup`](../../core/type-aliases/CryptoGroup.md)
 
 ## Returns
 
@@ -26,5 +26,5 @@ Validates that a private key lies in the range `1..q-1`.
 
 ## Throws
 
-[InvalidScalarError](../classes/InvalidScalarError.md) When the private key is zero, negative, or
+[InvalidScalarError](../../core/classes/InvalidScalarError.md) When the private key is zero, negative, or
 not strictly less than `q`.

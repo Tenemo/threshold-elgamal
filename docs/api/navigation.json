@@ -3,7 +3,240 @@
     "title": "core",
     "kind": 2,
     "path": "core/index.md",
-    "isDeprecated": false
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Classes",
+        "children": [
+          {
+            "title": "InvalidGroupElementError",
+            "kind": 128,
+            "path": "core/classes/InvalidGroupElementError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "InvalidPayloadError",
+            "kind": 128,
+            "path": "core/classes/InvalidPayloadError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "InvalidScalarError",
+            "kind": 128,
+            "path": "core/classes/InvalidScalarError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "PlaintextDomainError",
+            "kind": 128,
+            "path": "core/classes/PlaintextDomainError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "UnsupportedSuiteError",
+            "kind": 128,
+            "path": "core/classes/UnsupportedSuiteError.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "Brand",
+            "kind": 2097152,
+            "path": "core/type-aliases/Brand.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "CryptoGroup",
+            "kind": 2097152,
+            "path": "core/type-aliases/CryptoGroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "GroupElement",
+            "kind": 2097152,
+            "path": "core/type-aliases/GroupElement.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "GroupName",
+            "kind": 2097152,
+            "path": "core/type-aliases/GroupName.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "PrimeBits",
+            "kind": 2097152,
+            "path": "core/type-aliases/PrimeBits.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "RandomBytesSource",
+            "kind": 2097152,
+            "path": "core/type-aliases/RandomBytesSource.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ScalarQ",
+            "kind": 2097152,
+            "path": "core/type-aliases/ScalarQ.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "SubgroupElement",
+            "kind": 2097152,
+            "path": "core/type-aliases/SubgroupElement.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ValidatedPublicKey",
+            "kind": 2097152,
+            "path": "core/type-aliases/ValidatedPublicKey.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "assertInSubgroup",
+            "kind": 64,
+            "path": "core/functions/assertInSubgroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertInSubgroupOrIdentity",
+            "kind": 64,
+            "path": "core/functions/assertInSubgroupOrIdentity.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertPlaintextAdditive",
+            "kind": 64,
+            "path": "core/functions/assertPlaintextAdditive.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertScalarInZq",
+            "kind": 64,
+            "path": "core/functions/assertScalarInZq.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidPublicKey",
+            "kind": 64,
+            "path": "core/functions/assertValidPublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "getGroup",
+            "kind": 64,
+            "path": "core/functions/getGroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "getWebCrypto",
+            "kind": 64,
+            "path": "core/functions/getWebCrypto.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "hkdfSha256",
+            "kind": 64,
+            "path": "core/functions/hkdfSha256.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "isInSubgroup",
+            "kind": 64,
+            "path": "core/functions/isInSubgroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "isInSubgroupOrIdentity",
+            "kind": 64,
+            "path": "core/functions/isInSubgroupOrIdentity.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "listGroups",
+            "kind": 64,
+            "path": "core/functions/listGroups.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "mod",
+            "kind": 64,
+            "path": "core/functions/mod.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modInvP",
+            "kind": 64,
+            "path": "core/functions/modInvP.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modInvQ",
+            "kind": 64,
+            "path": "core/functions/modInvQ.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modP",
+            "kind": 64,
+            "path": "core/functions/modP.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modPowP",
+            "kind": 64,
+            "path": "core/functions/modPowP.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modQ",
+            "kind": 64,
+            "path": "core/functions/modQ.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "randomBytes",
+            "kind": 64,
+            "path": "core/functions/randomBytes.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "randomScalarBelow",
+            "kind": 64,
+            "path": "core/functions/randomScalarBelow.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "randomScalarInRange",
+            "kind": 64,
+            "path": "core/functions/randomScalarInRange.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "sha256",
+            "kind": 64,
+            "path": "core/functions/sha256.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "utf8ToBytes",
+            "kind": 64,
+            "path": "core/functions/utf8ToBytes.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
   },
   {
     "title": "elgamal",
@@ -24,97 +257,8 @@
     "isDeprecated": false,
     "children": [
       {
-        "title": "Classes",
-        "children": [
-          {
-            "title": "IndexOutOfRangeError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/IndexOutOfRangeError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "InvalidCiphertextError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/InvalidCiphertextError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "InvalidGroupElementError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/InvalidGroupElementError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "InvalidPayloadError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/InvalidPayloadError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "InvalidProofError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/InvalidProofError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "InvalidScalarError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/InvalidScalarError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "InvalidShareError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/InvalidShareError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "PhaseViolationError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/PhaseViolationError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "PlaintextDomainError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/PlaintextDomainError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "ThresholdViolationError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/ThresholdViolationError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "TranscriptMismatchError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/TranscriptMismatchError.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "UnsupportedSuiteError",
-            "kind": 128,
-            "path": "threshold-elgamal/classes/UnsupportedSuiteError.md",
-            "isDeprecated": false
-          }
-        ]
-      },
-      {
         "title": "Type Aliases",
         "children": [
-          {
-            "title": "Brand",
-            "kind": 2097152,
-            "path": "threshold-elgamal/type-aliases/Brand.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "CryptoGroup",
-            "kind": 2097152,
-            "path": "threshold-elgamal/type-aliases/CryptoGroup.md",
-            "isDeprecated": false
-          },
           {
             "title": "ElgamalCiphertext",
             "kind": 2097152,
@@ -138,54 +282,6 @@
             "kind": 2097152,
             "path": "threshold-elgamal/type-aliases/ElgamalParameters.md",
             "isDeprecated": false
-          },
-          {
-            "title": "GroupElement",
-            "kind": 2097152,
-            "path": "threshold-elgamal/type-aliases/GroupElement.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "GroupName",
-            "kind": 2097152,
-            "path": "threshold-elgamal/type-aliases/GroupName.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "ParticipantIndex",
-            "kind": 2097152,
-            "path": "threshold-elgamal/type-aliases/ParticipantIndex.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "PrimeBits",
-            "kind": 2097152,
-            "path": "threshold-elgamal/type-aliases/PrimeBits.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "RandomBytesSource",
-            "kind": 2097152,
-            "path": "threshold-elgamal/type-aliases/RandomBytesSource.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "ScalarQ",
-            "kind": 2097152,
-            "path": "threshold-elgamal/type-aliases/ScalarQ.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "SubgroupElement",
-            "kind": 2097152,
-            "path": "threshold-elgamal/type-aliases/SubgroupElement.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "ValidatedPublicKey",
-            "kind": 2097152,
-            "path": "threshold-elgamal/type-aliases/ValidatedPublicKey.md",
-            "isDeprecated": false
           }
         ]
       },
@@ -196,36 +292,6 @@
             "title": "addEncryptedValues",
             "kind": 64,
             "path": "threshold-elgamal/functions/addEncryptedValues.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "assertInSubgroup",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/assertInSubgroup.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "assertInSubgroupOrIdentity",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/assertInSubgroupOrIdentity.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "assertPlaintextAdditive",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/assertPlaintextAdditive.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "assertScalarInZq",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/assertScalarInZq.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "assertThreshold",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/assertThreshold.md",
             "isDeprecated": false
           },
           {
@@ -253,21 +319,9 @@
             "isDeprecated": false
           },
           {
-            "title": "assertValidParticipantIndex",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/assertValidParticipantIndex.md",
-            "isDeprecated": false
-          },
-          {
             "title": "assertValidPrivateKey",
             "kind": 64,
             "path": "threshold-elgamal/functions/assertValidPrivateKey.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "assertValidPublicKey",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/assertValidPublicKey.md",
             "isDeprecated": false
           },
           {
@@ -298,12 +352,6 @@
             "title": "decryptAdditive",
             "kind": 64,
             "path": "threshold-elgamal/functions/decryptAdditive.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "deriveH",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/deriveH.md",
             "isDeprecated": false
           },
           {
@@ -349,111 +397,9 @@
             "isDeprecated": false
           },
           {
-            "title": "getGroup",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/getGroup.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "getWebCrypto",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/getWebCrypto.md",
-            "isDeprecated": false
-          },
-          {
             "title": "hexToBytes",
             "kind": 64,
             "path": "threshold-elgamal/functions/hexToBytes.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "hkdfSha256",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/hkdfSha256.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "isInSubgroup",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/isInSubgroup.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "isInSubgroupOrIdentity",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/isInSubgroupOrIdentity.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "listGroups",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/listGroups.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "mod",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/mod.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "modInvP",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/modInvP.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "modInvQ",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/modInvQ.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "modP",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/modP.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "modPowP",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/modPowP.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "modQ",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/modQ.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "randomBytes",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/randomBytes.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "randomScalarBelow",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/randomScalarBelow.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "randomScalarInRange",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/randomScalarInRange.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "sha256",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/sha256.md",
-            "isDeprecated": false
-          },
-          {
-            "title": "utf8ToBytes",
-            "kind": 64,
-            "path": "threshold-elgamal/functions/utf8ToBytes.md",
             "isDeprecated": false
           }
         ]

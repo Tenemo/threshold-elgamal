@@ -1,10 +1,8 @@
 import { modPowP } from './bigint.js';
 import {
-    IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidScalarError,
     PlaintextDomainError,
-    ThresholdViolationError,
 } from './errors.js';
 
 /** Returns `true` when the value is a non-identity element of the order-`q` subgroup. */
@@ -17,52 +15,6 @@ export const isInSubgroupOrIdentity = (
     p: bigint,
     q: bigint,
 ): boolean => value === 1n || isInSubgroup(value, p, q);
-
-/**
- * Validates a one-based participant index against a fixed roster size.
- *
- * @throws {@link IndexOutOfRangeError} When the index or participant count is
- * not an integer, or when the index falls outside `1..participantCount`.
- */
-export const assertValidParticipantIndex = (
-    index: number,
-    participantCount: number,
-): void => {
-    // Ceremony roster positions are tracked as 1-based integers. Threshold
-    // arithmetic converts them to bigint only at the Lagrange boundary.
-    if (!Number.isInteger(index) || !Number.isInteger(participantCount)) {
-        throw new IndexOutOfRangeError('Participant indices must be integers');
-    }
-
-    if (participantCount < 1 || index < 1 || index > participantCount) {
-        throw new IndexOutOfRangeError(
-            `Participant index ${index} must be in the range 1..${participantCount}`,
-        );
-    }
-};
-
-/**
- * Validates a threshold `k` against a participant count `n`.
- *
- * @throws {@link ThresholdViolationError} When either input is not an integer
- * or when `k` falls outside `1..n`.
- */
-export const assertThreshold = (
-    threshold: number,
-    participantCount: number,
-): void => {
-    if (!Number.isInteger(threshold) || !Number.isInteger(participantCount)) {
-        throw new ThresholdViolationError(
-            'Threshold and participant count must be integers',
-        );
-    }
-
-    if (participantCount < 1 || threshold < 1 || threshold > participantCount) {
-        throw new ThresholdViolationError(
-            `Threshold ${threshold} must satisfy 1 <= threshold <= participantCount (${participantCount})`,
-        );
-    }
-};
 
 /**
  * Validates that a scalar belongs to `Z_q`.

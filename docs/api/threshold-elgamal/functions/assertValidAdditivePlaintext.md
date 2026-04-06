@@ -22,7 +22,7 @@ Validates the plaintext domain and caller-supplied bound for additive mode.
 
 ### group
 
-[`CryptoGroup`](../type-aliases/CryptoGroup.md)
+[`CryptoGroup`](../../core/type-aliases/CryptoGroup.md)
 
 ## Returns
 

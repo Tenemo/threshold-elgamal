@@ -24,6 +24,8 @@ jobs:
       - run: pnpm run guard:no-math-random
       - run: pnpm run test:node
       - run: pnpm run build:skip
+      - run: pnpm run docs:api
+      - run: pnpm run verify:docs
 
   browser:
     runs-on: ubuntu-latest

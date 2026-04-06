@@ -1,12 +1,7 @@
-import { modPowP } from './bigint.js';
-import { bytesToBigInt } from './bytes.js';
-import { hkdfSha256, utf8ToBytes } from './crypto.js';
 import { UnsupportedSuiteError } from './errors.js';
 import type { CryptoGroup, GroupName, PrimeBits } from './types.js';
 
 type GroupDefinition = Omit<CryptoGroup, 'h'>;
-
-const H_DERIVATION_SALT = utf8ToBytes('threshold-elgamal-v1-salt');
 
 const BASE_GROUPS: Record<GroupName, GroupDefinition> = {
     ffdhe2048: {
@@ -73,16 +68,6 @@ const GROUP_NAMES = new Map<GroupName | PrimeBits, GroupName>([
     ['ffdhe4096', 'ffdhe4096'],
 ]);
 
-const getDerivationSeed = (group: GroupDefinition): Uint8Array =>
-    utf8ToBytes(`threshold-elgamal-v1-${group.name}-generator-h`);
-
-const getDerivationInfo = (counter: number): Uint8Array =>
-    utf8ToBytes(
-        counter === 0
-            ? 'generator-h-expansion'
-            : `generator-h-expansion:${counter}`,
-    );
-
 const resolveGroupName = (input: PrimeBits | GroupName): GroupName => {
     const groupName = GROUP_NAMES.get(input);
     if (groupName === undefined) {
@@ -90,45 +75,6 @@ const resolveGroupName = (input: PrimeBits | GroupName): GroupName => {
     }
 
     return groupName;
-};
-
-/**
- * Derives the deterministic secondary subgroup generator `h` for a built-in
- * suite.
- *
- * The derivation uses HKDF expand-and-square until it finds a subgroup element
- * distinct from both the identity and `g`.
- *
- * @param input Built-in suite identifier by bit size or canonical group name.
- * @returns The derived subgroup generator `h` for the selected suite.
- *
- * @throws {@link UnsupportedSuiteError} When the identifier does not match one
- * of the built-in suites.
- */
-export const deriveH = async (
-    input: PrimeBits | GroupName,
-): Promise<bigint> => {
-    const group = BASE_GROUPS[resolveGroupName(input)];
-    const outputLength = Math.ceil((group.bits + 128) / 8);
-    let counter = 0;
-
-    for (;;) {
-        const okm = await hkdfSha256(
-            getDerivationSeed(group),
-            H_DERIVATION_SALT,
-            getDerivationInfo(counter),
-            outputLength,
-        );
-        const z = bytesToBigInt(okm);
-        const reduced = 2n + (z % (group.p - 3n));
-        const h = modPowP(reduced, 2n, group.p);
-
-        if (h !== 1n && h !== group.g && modPowP(h, group.q, group.p) === 1n) {
-            return h;
-        }
-
-        counter += 1;
-    }
 };
 
 /**

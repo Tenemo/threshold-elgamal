@@ -1,6 +1,7 @@
 import {
     InvalidScalarError,
     PlaintextDomainError,
+    type CryptoGroup,
     modInvP,
     modP,
     modPowP,
@@ -11,11 +12,17 @@ import { babyStepGiantStep } from './bsgs.js';
 import { assertEncryptionRandomness, resolveElgamalGroup } from './helpers.js';
 import type { ElgamalCiphertext, ElgamalGroupInput } from './types.js';
 import {
+    assertValidAdditiveBound,
     assertValidAdditiveCiphertext,
     assertValidAdditivePlaintext,
     assertValidAdditivePublicKey,
     assertValidPrivateKey,
 } from './validation.js';
+
+type ResolvedAdditiveContext = {
+    readonly bound: bigint;
+    readonly group: CryptoGroup;
+};
 
 const resolveAdditiveBound = (
     bound: bigint | undefined,
@@ -28,6 +35,36 @@ const resolveAdditiveBound = (
     }
 
     return bound;
+};
+
+const resolveAdditiveContext = (
+    group: ElgamalGroupInput,
+    bound: bigint | undefined,
+    operation: 'encryption' | 'decryption',
+): ResolvedAdditiveContext => {
+    const resolvedGroup = resolveElgamalGroup(group);
+    const resolvedBound = resolveAdditiveBound(bound, operation);
+
+    assertValidAdditiveBound(resolvedBound, resolvedGroup);
+
+    return {
+        bound: resolvedBound,
+        group: resolvedGroup,
+    };
+};
+
+const encryptAdditiveWithValidatedInputs = (
+    message: bigint,
+    publicKey: bigint,
+    randomness: bigint,
+    group: CryptoGroup,
+): ElgamalCiphertext => {
+    const c1 = modPowP(group.g, randomness, group.p);
+    const messageEncoding = modPowP(group.g, message, group.p);
+    const sharedSecret = modPowP(publicKey, randomness, group.p);
+    const c2 = modP(messageEncoding * sharedSecret, group.p);
+
+    return { c1, c2 };
 };
 
 /**
@@ -60,25 +97,19 @@ export const encryptAdditiveWithRandomness = (
     bound: bigint,
     group: ElgamalGroupInput,
 ): ElgamalCiphertext => {
-    const resolvedGroup = resolveElgamalGroup(group);
-    const resolvedBound = resolveAdditiveBound(bound, 'encryption');
-    assertValidAdditivePlaintext(message, resolvedBound, resolvedGroup);
-    assertValidAdditivePublicKey(publicKey, resolvedGroup);
-    assertEncryptionRandomness(randomness, resolvedGroup.q);
-    const c1 = modPowP(resolvedGroup.g, randomness, resolvedGroup.p);
-    const messageEncoding = modPowP(resolvedGroup.g, message, resolvedGroup.p);
-    const sharedSecret = modPowP(publicKey, randomness, resolvedGroup.p);
-    const c2 = modP(messageEncoding * sharedSecret, resolvedGroup.p);
+    const context = resolveAdditiveContext(group, bound, 'encryption');
 
-    return { c1, c2 };
+    assertValidAdditivePlaintext(message, context.bound, context.group);
+    assertValidAdditivePublicKey(publicKey, context.group);
+    assertEncryptionRandomness(randomness, context.group.q);
+
+    return encryptAdditiveWithValidatedInputs(
+        message,
+        publicKey,
+        randomness,
+        context.group,
+    );
 };
-
-export function encryptAdditive(
-    message: bigint,
-    publicKey: bigint,
-    group: ElgamalGroupInput,
-    bound: bigint,
-): ElgamalCiphertext;
 /**
  * Encrypts an additive plaintext with fresh random `r in 1..q-1`.
  *
@@ -101,31 +132,23 @@ export function encryptAdditive(
  * const ciphertext = encryptAdditive(6n, publicKey, 'ffdhe3072', 20n);
  * ```
  */
-export function encryptAdditive(
+export const encryptAdditive = (
     message: bigint,
     publicKey: bigint,
     group: ElgamalGroupInput,
     bound: bigint,
-): ElgamalCiphertext {
-    const resolvedGroup = resolveElgamalGroup(group);
-    const resolvedBound = resolveAdditiveBound(bound, 'encryption');
-    const randomness = randomScalarInRange(1n, resolvedGroup.q);
+): ElgamalCiphertext => {
+    const context = resolveAdditiveContext(group, bound, 'encryption');
+    const randomness = randomScalarInRange(1n, context.group.q);
 
     return encryptAdditiveWithRandomness(
         message,
         publicKey,
         randomness,
-        resolvedBound,
+        context.bound,
         group,
     );
-}
-
-export function decryptAdditive(
-    ciphertext: ElgamalCiphertext,
-    privateKey: bigint,
-    group: ElgamalGroupInput,
-    bound: bigint,
-): bigint;
+};
 /**
  * Decrypts an additive ciphertext and recovers the bounded plaintext with
  * baby-step giant-step.
@@ -152,28 +175,27 @@ export function decryptAdditive(
  * const message = decryptAdditive(ciphertext, privateKey, 'ffdhe3072', 20n);
  * ```
  */
-export function decryptAdditive(
+export const decryptAdditive = (
     ciphertext: ElgamalCiphertext,
     privateKey: bigint,
     group: ElgamalGroupInput,
     bound: bigint,
-): bigint {
-    const resolvedGroup = resolveElgamalGroup(group);
-    const resolvedBound = resolveAdditiveBound(bound, 'decryption');
-    assertValidPrivateKey(privateKey, resolvedGroup);
-    assertValidAdditiveCiphertext(ciphertext, resolvedGroup);
-    assertValidAdditivePlaintext(0n, resolvedBound, resolvedGroup);
+): bigint => {
+    const context = resolveAdditiveContext(group, bound, 'decryption');
 
-    const sharedSecret = modPowP(ciphertext.c1, privateKey, resolvedGroup.p);
+    assertValidPrivateKey(privateKey, context.group);
+    assertValidAdditiveCiphertext(ciphertext, context.group);
+
+    const sharedSecret = modPowP(ciphertext.c1, privateKey, context.group.p);
     const encodedMessage = modP(
-        ciphertext.c2 * modInvP(sharedSecret, resolvedGroup.p),
-        resolvedGroup.p,
+        ciphertext.c2 * modInvP(sharedSecret, context.group.p),
+        context.group.p,
     );
     const message = babyStepGiantStep(
         encodedMessage,
-        resolvedGroup.g,
-        resolvedGroup.p,
-        resolvedBound,
+        context.group.g,
+        context.group.p,
+        context.bound,
     );
 
     if (message === null) {
@@ -183,4 +205,4 @@ export function decryptAdditive(
     }
 
     return message;
-}
+};

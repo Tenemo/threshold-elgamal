@@ -18,7 +18,7 @@ Validates an additive ciphertext that may already be an aggregate.
 
 ### group
 
-[`CryptoGroup`](../type-aliases/CryptoGroup.md)
+[`CryptoGroup`](../../core/type-aliases/CryptoGroup.md)
 
 ## Returns
 

@@ -2,13 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import plainElgamalVectors from '../../../test-vectors/plain-elgamal.json';
 
-import {
-    deriveH,
-    getGroup,
-    listGroups,
-    modPowP,
-    UnsupportedSuiteError,
-} from '#core';
+import { getGroup, listGroups, modPowP, UnsupportedSuiteError } from '#core';
 
 describe('core groups', () => {
     it('returns q as (p - 1) / 2 for every supported group', () => {
@@ -22,12 +16,6 @@ describe('core groups', () => {
             expect(group.h).not.toBe(group.g);
             expect(group.h > 1n).toBe(true);
             expect(modPowP(group.h, group.q, group.p)).toBe(1n);
-        }
-    });
-
-    it('derives h deterministically from the frozen suite inputs', async () => {
-        for (const group of listGroups()) {
-            await expect(deriveH(group.name)).resolves.toBe(group.h);
         }
     });
 

@@ -6,6 +6,6 @@
 
 # Type alias: ElgamalGroupInput
 
-> **ElgamalGroupInput** = [`GroupName`](GroupName.md) \| [`PrimeBits`](PrimeBits.md)
+> **ElgamalGroupInput** = [`GroupName`](../../core/type-aliases/GroupName.md) \| [`PrimeBits`](../../core/type-aliases/PrimeBits.md)
 
 Accepted group identifier input for public ElGamal APIs.

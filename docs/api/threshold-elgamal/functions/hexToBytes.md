@@ -26,4 +26,4 @@ Decoded bytes.
 
 ## Throws
 
-[InvalidPayloadError](../classes/InvalidPayloadError.md) When the input is not valid hexadecimal.
+[InvalidPayloadError](../../core/classes/InvalidPayloadError.md) When the input is not valid hexadecimal.

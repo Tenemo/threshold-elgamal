@@ -18,7 +18,7 @@ Validates an additive-mode public key against the selected group.
 
 ### group
 
-[`CryptoGroup`](../type-aliases/CryptoGroup.md)
+[`CryptoGroup`](../../core/type-aliases/CryptoGroup.md)
 
 ## Returns
 

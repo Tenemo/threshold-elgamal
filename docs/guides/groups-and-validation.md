@@ -27,8 +27,6 @@ Useful exported helpers include:
 - `assertValidPublicKey` for subgroup public keys
 - `assertValidAdditiveCiphertext` and `assertValidFreshAdditiveCiphertext`
 - `assertScalarInZq`
-- `assertThreshold`
-- `assertValidParticipantIndex`
 
 ## Common failures
 

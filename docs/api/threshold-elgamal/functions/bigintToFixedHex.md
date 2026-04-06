@@ -32,9 +32,9 @@ A lowercase hexadecimal string padded to exactly `byteLength * 2` characters.
 
 ## Throws
 
-[InvalidPayloadError](../classes/InvalidPayloadError.md) When `byteLength` is not positive.
+[InvalidPayloadError](../../core/classes/InvalidPayloadError.md) When `byteLength` is not positive.
 
 ## Throws
 
-[InvalidScalarError](../classes/InvalidScalarError.md) When the value is negative or does not fit
+[InvalidScalarError](../../core/classes/InvalidScalarError.md) When the value is negative or does not fit
 in the requested width.

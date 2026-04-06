@@ -50,4 +50,4 @@ The recovered discrete log, or `null` when no solution exists within `bound`.
 
 ## Throws
 
-[InvalidScalarError](../classes/InvalidScalarError.md) When `bound` is negative.
+[InvalidScalarError](../../core/classes/InvalidScalarError.md) When `bound` is negative.

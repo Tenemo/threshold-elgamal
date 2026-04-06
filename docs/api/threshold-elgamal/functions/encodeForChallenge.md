@@ -36,8 +36,8 @@ const payload = encodeForChallenge('dleq', 7n, new Uint8Array([1, 2, 3]));
 
 ## Throws
 
-[InvalidScalarError](../classes/InvalidScalarError.md) When a bigint element is negative.
+[InvalidScalarError](../../core/classes/InvalidScalarError.md) When a bigint element is negative.
 
 ## Throws
 
-[InvalidPayloadError](../classes/InvalidPayloadError.md) When an encoded element length is invalid.
+[InvalidPayloadError](../../core/classes/InvalidPayloadError.md) When an encoded element length is invalid.

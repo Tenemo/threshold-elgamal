@@ -1,9 +1,9 @@
 import {
     assertInSubgroup,
     assertInSubgroupOrIdentity,
-    assertPlaintextAdditive,
     assertValidPublicKey,
     InvalidScalarError,
+    PlaintextDomainError,
     type CryptoGroup,
 } from '../core/index.js';
 
@@ -32,13 +32,31 @@ export const assertValidAdditivePublicKey = (
     assertValidPublicKey(publicKey, group.p, group.q);
 };
 
+/** Validates the caller-supplied additive plaintext bound. */
+export const assertValidAdditiveBound = (
+    bound: bigint,
+    group: CryptoGroup,
+): void => {
+    if (bound < 0n || bound >= group.q) {
+        throw new InvalidScalarError(
+            'Additive plaintext bound must be in the range 0..q-1',
+        );
+    }
+};
+
 /** Validates the plaintext domain and caller-supplied bound for additive mode. */
 export const assertValidAdditivePlaintext = (
     value: bigint,
     bound: bigint,
     group: CryptoGroup,
 ): void => {
-    assertPlaintextAdditive(value, bound, group.q);
+    assertValidAdditiveBound(bound, group);
+
+    if (value < 0n || value > bound) {
+        throw new PlaintextDomainError(
+            `Additive mode requires plaintext values in the range 0..${bound}`,
+        );
+    }
 };
 
 /** Validates an additive ciphertext that may already be an aggregate. */

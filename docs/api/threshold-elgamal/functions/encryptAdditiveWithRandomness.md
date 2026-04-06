@@ -53,16 +53,16 @@ A fresh additive ciphertext `(c1, c2)`.
 
 ## Throws
 
-[InvalidScalarError](../classes/InvalidScalarError.md) When `randomness` or `bound` is invalid.
+[InvalidScalarError](../../core/classes/InvalidScalarError.md) When `randomness` or `bound` is invalid.
 
 ## Throws
 
-[InvalidGroupElementError](../classes/InvalidGroupElementError.md) When `publicKey` is not a valid
+[InvalidGroupElementError](../../core/classes/InvalidGroupElementError.md) When `publicKey` is not a valid
 subgroup public key for `group`.
 
 ## Throws
 
-[PlaintextDomainError](../classes/PlaintextDomainError.md) When `message` falls outside `0..bound`.
+[PlaintextDomainError](../../core/classes/PlaintextDomainError.md) When `message` falls outside `0..bound`.
 
 ## Example
 

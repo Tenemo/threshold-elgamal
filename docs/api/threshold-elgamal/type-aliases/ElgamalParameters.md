@@ -14,6 +14,6 @@ Key material plus the resolved immutable group definition.
 
 ### group
 
-> `readonly` **group**: [`CryptoGroup`](CryptoGroup.md)
+> `readonly` **group**: [`CryptoGroup`](../../core/type-aliases/CryptoGroup.md)
 
 Resolved built-in group parameters used to create the key pair.

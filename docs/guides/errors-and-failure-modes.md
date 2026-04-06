@@ -6,13 +6,8 @@ The library exposes dedicated error classes so callers can distinguish input mis
 
 - `InvalidScalarError`: invalid randomness, bounds, or modular arithmetic inputs
 - `InvalidGroupElementError`: value is not a valid subgroup element or public key
-- `InvalidCiphertextError`: reserved exported error class for future
-  ciphertext-shape APIs; the shipped additive validation path currently raises
-  `InvalidGroupElementError` for invalid ciphertext components
 - `PlaintextDomainError`: plaintext is outside the accepted range for the selected mode
 - `UnsupportedSuiteError`: unknown group identifier or missing Web Crypto support
-- `ThresholdViolationError`: invalid threshold or participant-count relationship
-- `IndexOutOfRangeError`: invalid one-based participant index
 - `InvalidPayloadError`: malformed hex or challenge-encoding input
 
 ## How to handle them
