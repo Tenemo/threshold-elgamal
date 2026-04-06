@@ -13,3 +13,5 @@ Lists all immutable built-in RFC 7919 group definitions.
 ## Returns
 
 readonly [`CryptoGroup`](../type-aliases/CryptoGroup.md)[]
+
+The frozen list of every built-in group definition.

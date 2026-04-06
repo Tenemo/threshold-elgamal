@@ -33,10 +33,19 @@ const resolveAdditiveBound = (
 /**
  * Encrypts an additive plaintext with caller-supplied randomness.
  *
- * The plaintext is encoded as `g^m`, so decryption succeeds only when the same
- * bound is later supplied to the bounded discrete-log solver.
+ * The plaintext is encoded as `g^m`. The `bound` passed here validates the
+ * single plaintext being encrypted and is not stored in the ciphertext.
+ *
+ * @param message Plaintext in the range `0..bound`.
+ * @param publicKey Additive-mode public key for the selected group.
+ * @param randomness Encryption randomness in the range `1..q-1`.
+ * @param bound Maximum plaintext accepted for this encryption call.
+ * @param group Built-in group identifier shared by the key and ciphertext.
+ * @returns A fresh additive ciphertext `(c1, c2)`.
  *
  * @throws {@link InvalidScalarError} When `randomness` or `bound` is invalid.
+ * @throws {@link InvalidGroupElementError} When `publicKey` is not a valid
+ * subgroup public key for `group`.
  * @throws {@link PlaintextDomainError} When `message` falls outside `0..bound`.
  *
  * @example
@@ -76,7 +85,15 @@ export function encryptAdditive(
  * Use this mode for confidential sums where plaintexts stay within a known
  * bounded range.
  *
+ * @param message Plaintext in the range `0..bound`.
+ * @param publicKey Additive-mode public key for the selected group.
+ * @param group Built-in group identifier shared by the key and ciphertext.
+ * @param bound Maximum plaintext accepted for this encryption call.
+ * @returns A fresh additive ciphertext `(c1, c2)`.
+ *
  * @throws {@link InvalidScalarError} When `bound` is missing or invalid.
+ * @throws {@link InvalidGroupElementError} When `publicKey` is not a valid
+ * subgroup public key for `group`.
  * @throws {@link PlaintextDomainError} When `message` falls outside `0..bound`.
  *
  * @example
@@ -113,10 +130,20 @@ export function decryptAdditive(
  * Decrypts an additive ciphertext and recovers the bounded plaintext with
  * baby-step giant-step.
  *
- * The supplied `bound` must match the operational range used for the ciphertext
- * or decryption may fail even when the key is correct.
+ * The supplied `bound` must cover the plaintext you expect to recover. For
+ * aggregate decryption this is usually the maximum tally, which can be larger
+ * than the bounds used to validate individual plaintexts during encryption. The
+ * library does not store or authenticate this bound inside the ciphertext.
+ *
+ * @param ciphertext Additive ciphertext to decrypt.
+ * @param privateKey Private key in the range `1..q-1`.
+ * @param group Built-in group identifier shared by the key and ciphertext.
+ * @param bound Maximum plaintext to search for during bounded recovery.
+ * @returns The recovered plaintext as a bigint.
  *
  * @throws {@link InvalidScalarError} When `bound` is missing or invalid.
+ * @throws {@link InvalidGroupElementError} When `ciphertext` is not valid for
+ * the selected group.
  * @throws {@link PlaintextDomainError} When the decrypted plaintext lies
  * outside the supplied bound.
  *

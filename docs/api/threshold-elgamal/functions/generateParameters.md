@@ -16,9 +16,17 @@ Generates a fresh ElGamal key pair for a built-in group.
 
 [`ElgamalGroupInput`](../type-aliases/ElgamalGroupInput.md)
 
+Built-in group identifier that fixes `(p, q, g, h)`.
+
 ## Returns
 
 [`ElgamalParameters`](../type-aliases/ElgamalParameters.md)
+
+Key material containing the resolved group, public and private keys.
+
+## Throws
+
+`UnsupportedSuiteError` When `group` does not resolve to a built-in suite.
 
 ## Example
 

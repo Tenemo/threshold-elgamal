@@ -24,6 +24,12 @@ This library is a hardened research prototype. It is not audited production voti
 pnpm add threshold-elgamal
 ```
 
+## Runtime requirements
+
+- Use ESM imports such as `import { encryptAdditive } from 'threshold-elgamal'`. The published package does not expose CommonJS `require()` entry points.
+- Browsers need native `bigint` together with Web Crypto (`crypto.subtle` and `crypto.getRandomValues`).
+- Node requires version `24.14.1` or newer with `globalThis.crypto`.
+
 ## Safe quickstart
 
 ```typescript
@@ -33,21 +39,32 @@ import {
     encryptAdditive,
     generateParameters,
     getGroup,
-} from 'threshold-elgamal';
+} from "threshold-elgamal";
 
-const group = 'ffdhe3072' as const;
+const group = "ffdhe3072" as const;
 const { publicKey, privateKey } = generateParameters(group);
 const suite = getGroup(group);
+const messageBound = 10n;
+const tallyBound = 20n;
 
-const left = encryptAdditive(6n, publicKey, group, 20n);
-const right = encryptAdditive(7n, publicKey, group, 20n);
+const left = encryptAdditive(6n, publicKey, group, messageBound);
+const right = encryptAdditive(7n, publicKey, group, messageBound);
 const sum = addEncryptedValues(left, right, group);
 
-console.log(decryptAdditive(sum, privateKey, group, 20n)); // 13n
+console.log(decryptAdditive(sum, privateKey, group, tallyBound)); // 13n
 console.log(suite.q > 0n); // true
 ```
 
 All public APIs require explicit group selection. There is no implicit default suite.
+
+## Choosing an additive bound
+
+- The encryption-time `bound` validates the plaintext for that one ciphertext. Use the maximum single message you allow.
+- The decryption-time `bound` must cover the plaintext you expect to recover. For aggregates, that usually means the maximum tally, which is often larger than the per-message bound.
+- Ciphertexts do not store or authenticate the bound for you. You must carry that policy in your application logic.
+- Larger bounds make decryption slower and more memory-hungry because baby-step giant-step work grows roughly with `sqrt(bound)`.
+
+For example, if each ballot is in `0..10` and you tally `50` ballots, encrypt each ballot with `10n` and decrypt the final sum with `500n`.
 
 ## Documentation
 
@@ -67,10 +84,10 @@ In additive ElGamal, `c2 = g^m * y^r mod p`. Both factors lie in the same prime-
 
 The remaining inference problem comes from publishing exact aggregates over small groups, and that problem exists in both designs. If a small board publishes an exact sum, participants can reason backward from the total and their own vote. If it publishes an exact product, they can do the same thing from the product. No homomorphic encryption scheme fixes that by itself. The only real mitigations are changing what gets published, suppressing small results, or adding noise, all of which change the voting system semantics.
 
-| Concern | Multiplicative mode | Additive mode |
-| --- | --- | --- |
-| Per-ballot leakage before decryption | Roughly one bit from the Legendre symbol | Zero bits from the Legendre symbol |
-| Inference after publishing exact aggregates in small groups | Still present | Still present |
+| Concern                                                     | Multiplicative mode                      | Additive mode                      |
+| ----------------------------------------------------------- | ---------------------------------------- | ---------------------------------- |
+| Per-ballot leakage before decryption                        | Roughly one bit from the Legendre symbol | Zero bits from the Legendre symbol |
+| Inference after publishing exact aggregates in small groups | Still present                            | Still present                      |
 
 This does create a real tradeoff: additive homomorphism gives sums and arithmetic means, while multiplicative homomorphism gives products and geometric means. If a scoring system truly requires geometric-mean behavior, additive mode does not reproduce that semantics directly. The library now chooses the mode that does not leak information from each posted ciphertext.
 

@@ -20,9 +20,13 @@ distinct from both the identity and `g`.
 
 [`PrimeBits`](../type-aliases/PrimeBits.md) \| [`GroupName`](../type-aliases/GroupName.md)
 
+Built-in suite identifier by bit size or canonical group name.
+
 ## Returns
 
 `Promise`\<`bigint`\>
+
+The derived subgroup generator `h` for the selected suite.
 
 ## Throws
 

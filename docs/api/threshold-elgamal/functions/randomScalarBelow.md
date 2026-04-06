@@ -17,13 +17,19 @@ sampling.
 
 `bigint`
 
+Exclusive upper bound for the sampled scalar.
+
 ### randomSource?
 
 [`RandomBytesSource`](../type-aliases/RandomBytesSource.md) = `secureRandomBytesSource`
 
+Optional injected random source used for deterministic tests or custom runtimes.
+
 ## Returns
 
 `bigint`
+
+A uniformly sampled bigint below `maxExclusive`.
 
 ## Throws
 

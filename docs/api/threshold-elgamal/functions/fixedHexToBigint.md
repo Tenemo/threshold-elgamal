@@ -16,9 +16,13 @@ Decodes a fixed-width hexadecimal string back into a bigint.
 
 `string`
 
+Lowercase or uppercase hexadecimal input.
+
 ## Returns
 
 `bigint`
+
+The decoded bigint value.
 
 ## Throws
 

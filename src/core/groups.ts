@@ -99,6 +99,9 @@ const resolveGroupName = (input: PrimeBits | GroupName): GroupName => {
  * The derivation uses HKDF expand-and-square until it finds a subgroup element
  * distinct from both the identity and `g`.
  *
+ * @param input Built-in suite identifier by bit size or canonical group name.
+ * @returns The derived subgroup generator `h` for the selected suite.
+ *
  * @throws {@link UnsupportedSuiteError} When the identifier does not match one
  * of the built-in suites.
  */
@@ -134,6 +137,9 @@ export const deriveH = async (
  * The returned object is frozen and includes the prime-order subgroup order
  * `q` together with the deterministic secondary generator `h`.
  *
+ * @param identifier Built-in suite identifier by bit size or canonical group name.
+ * @returns The immutable built-in group definition for `identifier`.
+ *
  * @example
  * ```ts
  * const group = getGroup('ffdhe3072');
@@ -146,5 +152,9 @@ export const deriveH = async (
 export const getGroup = (identifier: PrimeBits | GroupName): CryptoGroup =>
     GROUPS[resolveGroupName(identifier)];
 
-/** Lists all immutable built-in RFC 7919 group definitions. */
+/**
+ * Lists all immutable built-in RFC 7919 group definitions.
+ *
+ * @returns The frozen list of every built-in group definition.
+ */
 export const listGroups = (): readonly CryptoGroup[] => GROUP_LIST;

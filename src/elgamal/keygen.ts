@@ -7,7 +7,12 @@ import { assertValidPrivateKey } from './validation.js';
 /**
  * Derives the public key for a caller-supplied private scalar.
  *
+ * @param privateKey Private scalar in the range `1..q-1`.
+ * @param group Built-in group identifier that fixes `(p, q, g, h)`.
+ * @returns Key material containing the resolved group, public key, and private key.
+ *
  * @throws `InvalidScalarError` When `privateKey` is outside `1..q-1`.
+ * @throws `UnsupportedSuiteError` When `group` does not resolve to a built-in suite.
  *
  * @example
  * ```ts
@@ -31,6 +36,11 @@ export const generateParametersWithPrivateKey = (
 
 /**
  * Generates a fresh ElGamal key pair for a built-in group.
+ *
+ * @param group Built-in group identifier that fixes `(p, q, g, h)`.
+ * @returns Key material containing the resolved group, public and private keys.
+ *
+ * @throws `UnsupportedSuiteError` When `group` does not resolve to a built-in suite.
  *
  * @example
  * ```ts

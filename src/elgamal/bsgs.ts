@@ -38,6 +38,15 @@ const integerSquareRootCeil = (value: bigint): bigint => {
  * It returns `null` instead of throwing when the target does not decode to a
  * discrete log within the supplied bound.
  *
+ * Runtime and memory both grow roughly with `sqrt(bound)` because the solver
+ * materializes a baby-step table for the searched range.
+ *
+ * @param target Group element whose discrete log should be recovered.
+ * @param base Generator used to encode plaintexts.
+ * @param p Prime modulus for the multiplicative group.
+ * @param bound Maximum discrete log to search for.
+ * @returns The recovered discrete log, or `null` when no solution exists within `bound`.
+ *
  * @throws {@link InvalidScalarError} When `bound` is negative.
  */
 export const babyStepGiantStep = (

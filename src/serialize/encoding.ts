@@ -15,7 +15,12 @@ const encodeLength = (length: number): Uint8Array => {
     return bytes;
 };
 
-/** Encodes raw bytes as lowercase hexadecimal. */
+/**
+ * Encodes raw bytes as lowercase hexadecimal.
+ *
+ * @param bytes Raw bytes to encode.
+ * @returns A lowercase hexadecimal string.
+ */
 export const bytesToHex = (bytes: Uint8Array): string => {
     let hex = '';
     for (const byte of bytes) {
@@ -26,6 +31,9 @@ export const bytesToHex = (bytes: Uint8Array): string => {
 
 /**
  * Decodes a non-empty even-length hexadecimal string into bytes.
+ *
+ * @param hex Lowercase or uppercase hexadecimal input.
+ * @returns Decoded bytes.
  *
  * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
  */
@@ -45,6 +53,10 @@ export const hexToBytes = (hex: string): Uint8Array => {
 
 /**
  * Encodes a non-negative bigint as fixed-width lowercase hexadecimal.
+ *
+ * @param value Non-negative bigint to encode.
+ * @param byteLength Required output width in bytes.
+ * @returns A lowercase hexadecimal string padded to exactly `byteLength * 2` characters.
  *
  * @throws {@link InvalidPayloadError} When `byteLength` is not positive.
  * @throws {@link InvalidScalarError} When the value is negative or does not fit
@@ -78,6 +90,9 @@ export const bigintToFixedHex = (value: bigint, byteLength: number): string => {
 /**
  * Decodes a fixed-width hexadecimal string back into a bigint.
  *
+ * @param hex Lowercase or uppercase hexadecimal input.
+ * @returns The decoded bigint value.
+ *
  * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
  */
 export const fixedHexToBigint = (hex: string): bigint => {
@@ -90,7 +105,12 @@ export const fixedHexToBigint = (hex: string): bigint => {
     return BigInt(`0x${hex}`);
 };
 
-/** Concatenates multiple byte arrays into a single contiguous buffer. */
+/**
+ * Concatenates multiple byte arrays into a single contiguous buffer.
+ *
+ * @param arrays Byte arrays to concatenate in order.
+ * @returns A single `Uint8Array` containing every input array.
+ */
 export const concatBytes = (...arrays: Uint8Array[]): Uint8Array => {
     const totalLength = arrays.reduce((sum, array) => sum + array.length, 0);
     const result = new Uint8Array(totalLength);
@@ -104,7 +124,12 @@ export const concatBytes = (...arrays: Uint8Array[]): Uint8Array => {
     return result;
 };
 
-/** Encodes a domain-separation tag as UTF-8 bytes. */
+/**
+ * Encodes a domain-separation tag as UTF-8 bytes.
+ *
+ * @param tag Domain-separation string.
+ * @returns UTF-8 bytes for `tag`.
+ */
 export const domainSeparator = (tag: string): Uint8Array => utf8ToBytes(tag);
 
 const encodeBigIntForChallenge = (value: bigint): Uint8Array => {
@@ -139,6 +164,9 @@ const encodeChallengeElement = (
  *
  * This helper is intended for Fiat-Shamir style transcripts where different
  * element sequences must never collide after encoding.
+ *
+ * @param elements Transcript elements to encode in order.
+ * @returns A deterministic length-prefixed byte encoding of `elements`.
  *
  * @example
  * ```ts

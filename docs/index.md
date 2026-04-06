@@ -31,4 +31,5 @@ This site is split into guides, spec pages, and generated API reference. Start w
 ## Current surface
 
 - `threshold-elgamal` is the safe root package
+- `core`, `elgamal`, and `serialize` are available as narrower subpath imports
 - Threshold, proof, DKG, and transport APIs are not shipped yet

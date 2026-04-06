@@ -20,13 +20,19 @@ the requested length.
 
 `number`
 
+Number of random bytes to return.
+
 ### randomSource?
 
 [`RandomBytesSource`](../type-aliases/RandomBytesSource.md) = `secureRandomBytesSource`
 
+Optional injected random source used for deterministic tests or custom runtimes.
+
 ## Returns
 
 `Uint8Array`
+
+A `Uint8Array` with exactly `length` random bytes.
 
 ## Example
 
@@ -38,3 +44,8 @@ const nonce = randomBytes(32);
 
 [InvalidScalarError](../classes/InvalidScalarError.md) When `length` is negative, not an integer,
 or the injected source returns the wrong number of bytes.
+
+## Throws
+
+[UnsupportedSuiteError](../classes/UnsupportedSuiteError.md) When the default Web Crypto source is
+unavailable in the current runtime.

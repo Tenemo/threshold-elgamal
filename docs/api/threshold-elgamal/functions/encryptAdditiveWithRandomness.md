@@ -10,8 +10,8 @@
 
 Encrypts an additive plaintext with caller-supplied randomness.
 
-The plaintext is encoded as `g^m`, so decryption succeeds only when the same
-bound is later supplied to the bounded discrete-log solver.
+The plaintext is encoded as `g^m`. The `bound` passed here validates the
+single plaintext being encrypted and is not stored in the ciphertext.
 
 ## Parameters
 
@@ -19,29 +19,46 @@ bound is later supplied to the bounded discrete-log solver.
 
 `bigint`
 
+Plaintext in the range `0..bound`.
+
 ### publicKey
 
 `bigint`
+
+Additive-mode public key for the selected group.
 
 ### randomness
 
 `bigint`
 
+Encryption randomness in the range `1..q-1`.
+
 ### bound
 
 `bigint`
+
+Maximum plaintext accepted for this encryption call.
 
 ### group
 
 [`ElgamalGroupInput`](../type-aliases/ElgamalGroupInput.md)
 
+Built-in group identifier shared by the key and ciphertext.
+
 ## Returns
 
 [`ElgamalCiphertext`](../type-aliases/ElgamalCiphertext.md)
 
+A fresh additive ciphertext `(c1, c2)`.
+
 ## Throws
 
 [InvalidScalarError](../classes/InvalidScalarError.md) When `randomness` or `bound` is invalid.
+
+## Throws
+
+[InvalidGroupElementError](../classes/InvalidGroupElementError.md) When `publicKey` is not a valid
+subgroup public key for `group`.
 
 ## Throws
 

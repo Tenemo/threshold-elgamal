@@ -16,17 +16,25 @@ Samples a uniform scalar from the range `minInclusive..maxExclusive-1`.
 
 `bigint`
 
+Inclusive lower bound for the sampled scalar.
+
 ### maxExclusive
 
 `bigint`
+
+Exclusive upper bound for the sampled scalar.
 
 ### randomSource?
 
 [`RandomBytesSource`](../type-aliases/RandomBytesSource.md) = `secureRandomBytesSource`
 
+Optional injected random source used for deterministic tests or custom runtimes.
+
 ## Returns
 
 `bigint`
+
+A uniformly sampled bigint in the requested half-open range.
 
 ## Throws
 

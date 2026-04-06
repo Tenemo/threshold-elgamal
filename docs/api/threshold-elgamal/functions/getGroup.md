@@ -19,9 +19,13 @@ The returned object is frozen and includes the prime-order subgroup order
 
 [`PrimeBits`](../type-aliases/PrimeBits.md) \| [`GroupName`](../type-aliases/GroupName.md)
 
+Built-in suite identifier by bit size or canonical group name.
+
 ## Returns
 
 [`CryptoGroup`](../type-aliases/CryptoGroup.md)
+
+The immutable built-in group definition for `identifier`.
 
 ## Example
 

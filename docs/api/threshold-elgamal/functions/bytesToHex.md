@@ -16,6 +16,10 @@ Encodes raw bytes as lowercase hexadecimal.
 
 `Uint8Array`
 
+Raw bytes to encode.
+
 ## Returns
 
 `string`
+
+A lowercase hexadecimal string.

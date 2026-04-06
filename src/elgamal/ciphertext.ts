@@ -8,6 +8,11 @@ import { assertValidAdditiveCiphertext } from './validation.js';
  * Use the same group and operational plaintext bound across all ciphertexts in
  * a tally.
  *
+ * @param left Left additive ciphertext.
+ * @param right Right additive ciphertext.
+ * @param group Built-in group identifier shared by both ciphertexts.
+ * @returns The additive combination of `left` and `right`.
+ *
  * @example
  * ```ts
  * const sum = addEncryptedValues(left, right, 'ffdhe3072');

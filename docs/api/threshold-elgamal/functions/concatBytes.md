@@ -16,6 +16,10 @@ Concatenates multiple byte arrays into a single contiguous buffer.
 
 ...`Uint8Array`\<`ArrayBufferLike`\>[]
 
+Byte arrays to concatenate in order.
+
 ## Returns
 
 `Uint8Array`
+
+A single `Uint8Array` containing every input array.

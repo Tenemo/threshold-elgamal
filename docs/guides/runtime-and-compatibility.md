@@ -8,7 +8,8 @@ The current surface is browser-native and depends on two JavaScript runtime feat
 ## Browser and Node expectations
 
 - Modern browsers must expose Web Crypto and `bigint`
-- Node must expose `globalThis.crypto`
+- Node must be version `24.14.1` or newer and expose `globalThis.crypto`
+- The published package is ESM-only, so consumers must use `import` rather than CommonJS `require()`
 - If Web Crypto is missing, the library raises `UnsupportedSuiteError`
 
 ## Randomness behavior

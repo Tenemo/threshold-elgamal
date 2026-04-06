@@ -20,9 +20,13 @@ element sequences must never collide after encoding.
 
 ...(`string` \| `bigint` \| `Uint8Array`\<`ArrayBufferLike`\>)[]
 
+Transcript elements to encode in order.
+
 ## Returns
 
 `Uint8Array`
+
+A deterministic length-prefixed byte encoding of `elements`.
 
 ## Example
 

@@ -16,6 +16,10 @@ Encodes a domain-separation tag as UTF-8 bytes.
 
 `string`
 
+Domain-separation string.
+
 ## Returns
 
 `Uint8Array`
+
+UTF-8 bytes for `tag`.

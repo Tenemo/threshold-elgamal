@@ -16,13 +16,19 @@ Encodes a non-negative bigint as fixed-width lowercase hexadecimal.
 
 `bigint`
 
+Non-negative bigint to encode.
+
 ### byteLength
 
 `number`
 
+Required output width in bytes.
+
 ## Returns
 
 `string`
+
+A lowercase hexadecimal string padded to exactly `byteLength * 2` characters.
 
 ## Throws
 

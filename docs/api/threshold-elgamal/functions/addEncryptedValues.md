@@ -19,17 +19,25 @@ a tally.
 
 [`ElgamalCiphertext`](../type-aliases/ElgamalCiphertext.md)
 
+Left additive ciphertext.
+
 ### right
 
 [`ElgamalCiphertext`](../type-aliases/ElgamalCiphertext.md)
+
+Right additive ciphertext.
 
 ### group
 
 [`ElgamalGroupInput`](../type-aliases/ElgamalGroupInput.md)
 
+Built-in group identifier shared by both ciphertexts.
+
 ## Returns
 
 [`ElgamalCiphertext`](../type-aliases/ElgamalCiphertext.md)
+
+The additive combination of `left` and `right`.
 
 ## Example
 

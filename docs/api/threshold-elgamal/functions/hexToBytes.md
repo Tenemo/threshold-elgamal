@@ -16,9 +16,13 @@ Decodes a non-empty even-length hexadecimal string into bytes.
 
 `string`
 
+Lowercase or uppercase hexadecimal input.
+
 ## Returns
 
 `Uint8Array`
+
+Decoded bytes.
 
 ## Throws
 
