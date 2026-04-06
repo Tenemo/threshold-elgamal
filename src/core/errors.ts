@@ -10,7 +10,7 @@ class ThresholdElgamalError extends Error {
 export class InvalidScalarError extends ThresholdElgamalError {}
 /** Raised when a group element is not valid for the selected finite-field suite. */
 export class InvalidGroupElementError extends ThresholdElgamalError {}
-/** Raised when a ciphertext shape or component value is invalid. */
+/** Reserved exported error class for future ciphertext-shape APIs. */
 export class InvalidCiphertextError extends ThresholdElgamalError {}
 /** Reserved exported error class for future share-oriented APIs. */
 export class InvalidShareError extends ThresholdElgamalError {}

@@ -10,22 +10,22 @@ import {
 
 import typedocConfig from '../typedoc.config.mjs';
 
+import { publicApiDocs } from './public-api-docs';
+
 const repoRoot = process.cwd();
 const markdownRoots = ['README.md', 'docs'];
+const documentedPublicApi = publicApiDocs as readonly {
+    apiIndexPage: string;
+    moduleName: string;
+}[];
 const requiredApiEntryPages = [
     'docs/api/index.md',
-    'docs/api/threshold-elgamal/index.md',
-    'docs/api/core/index.md',
-    'docs/api/elgamal/index.md',
-    'docs/api/serialize/index.md',
+    ...documentedPublicApi.map((entry) => entry.apiIndexPage),
     'docs/api/navigation.json',
 ] as const;
-const requiredApiModules = new Set([
-    'threshold-elgamal',
-    'core',
-    'elgamal',
-    'serialize',
-]);
+const requiredApiModules = new Set(
+    documentedPublicApi.map((entry) => entry.moduleName),
+);
 
 const markdownLinkPattern = /!?\[[^\]]*]\(([^)]+)\)/g;
 const linkTargetPattern = /^([^\s]+)(?:\s+["'][^"']*["'])?$/;
@@ -179,6 +179,14 @@ const verifyApiEntryPages = async (): Promise<string[]> => {
     for (const moduleName of requiredApiModules) {
         if (!seenModules.has(moduleName)) {
             failures.push(`navigation.json missing module "${moduleName}"`);
+        }
+    }
+
+    for (const moduleName of seenModules) {
+        if (moduleName !== undefined && !requiredApiModules.has(moduleName)) {
+            failures.push(
+                `navigation.json contains non-exported module "${moduleName}"`,
+            );
         }
     }
 

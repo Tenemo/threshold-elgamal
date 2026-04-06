@@ -21,7 +21,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
       - run: pnpm run typecheck
-      - run: pnpm run guard:no-math-random:v2
+      - run: pnpm run guard:no-math-random
       - run: pnpm run test:node
       - run: pnpm run build:skip
 

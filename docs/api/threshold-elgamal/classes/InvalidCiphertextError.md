@@ -6,7 +6,7 @@
 
 # Class: InvalidCiphertextError
 
-Raised when a ciphertext shape or component value is invalid.
+Reserved exported error class for future ciphertext-shape APIs.
 
 ## Extends
 

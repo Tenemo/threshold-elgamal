@@ -13,8 +13,10 @@ import { assertValidAdditiveCiphertext } from './validation.js';
  * const sum = addEncryptedValues(left, right, 'ffdhe3072');
  * ```
  *
- * @throws `InvalidCiphertextError` When either ciphertext is not valid for
- * additive mode.
+ * @throws {@link InvalidGroupElementError} When either ciphertext component is
+ * outside the additive subgroup-or-identity domain.
+ * @throws {@link UnsupportedSuiteError} When `group` does not resolve to a
+ * built-in suite.
  */
 export const addEncryptedValues = (
     left: ElgamalCiphertext,

@@ -16,7 +16,7 @@ helpers, and serialization helpers that are safe for the shipped package.
 | Class | Description |
 | ------ | ------ |
 | [IndexOutOfRangeError](classes/IndexOutOfRangeError.md) | Raised when a participant index falls outside the allowed roster range. |
-| [InvalidCiphertextError](classes/InvalidCiphertextError.md) | Raised when a ciphertext shape or component value is invalid. |
+| [InvalidCiphertextError](classes/InvalidCiphertextError.md) | Reserved exported error class for future ciphertext-shape APIs. |
 | [InvalidGroupElementError](classes/InvalidGroupElementError.md) | Raised when a group element is not valid for the selected finite-field suite. |
 | [InvalidPayloadError](classes/InvalidPayloadError.md) | Raised when serialized payload bytes do not satisfy the required encoding. |
 | [InvalidProofError](classes/InvalidProofError.md) | Reserved exported error class for future proof-oriented APIs. |

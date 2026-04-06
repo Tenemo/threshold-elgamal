@@ -1,11 +1,8 @@
+import { typedocEntryPoints } from './scripts/public-api-docs';
+
 /** @type {import('typedoc').TypeDocOptions} */
 const config = {
-    entryPoints: [
-        'scripts/typedoc/entrypoints/threshold-elgamal.ts',
-        'scripts/typedoc/entrypoints/core.ts',
-        'scripts/typedoc/entrypoints/elgamal.ts',
-        'scripts/typedoc/entrypoints/serialize.ts',
-    ],
+    entryPoints: typedocEntryPoints,
     entryPointStrategy: 'resolve',
     alwaysCreateEntryPointModule: true,
     plugin: [

@@ -33,7 +33,8 @@ Useful exported helpers include:
 ## Common failures
 
 - `InvalidGroupElementError` for invalid subgroup elements or public keys
-- `InvalidCiphertextError` for malformed ciphertext components
+- `InvalidGroupElementError` also covers shipped additive ciphertexts with
+  invalid subgroup-or-identity components
 - `InvalidScalarError` for invalid bounds, randomness, or out-of-range scalars
 - `PlaintextDomainError` for plaintexts outside the accepted mode-specific domain
 
