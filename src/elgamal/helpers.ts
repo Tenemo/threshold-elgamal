@@ -7,9 +7,8 @@ import {
 
 import type { ElgamalCiphertext, ElgamalGroupInput } from './types.js';
 
-export const resolveElgamalGroup = (
-    group: ElgamalGroupInput | undefined,
-): CryptoGroup => getGroup(group ?? 2048);
+export const resolveElgamalGroup = (group: ElgamalGroupInput): CryptoGroup =>
+    getGroup(group);
 
 export const assertEncryptionRandomness = (
     randomness: bigint,

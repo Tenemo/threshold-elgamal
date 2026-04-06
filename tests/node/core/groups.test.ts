@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import plainElgamalVectors from '../../../test-vectors/plain-elgamal.json';
+
 import {
     deriveH,
     getGroup,
@@ -26,6 +28,14 @@ describe('core groups', () => {
     it('derives h deterministically from the frozen suite inputs', async () => {
         for (const group of listGroups()) {
             await expect(deriveH(group.name)).resolves.toBe(group.h);
+        }
+    });
+
+    it('matches the frozen h vectors for every shipped group', () => {
+        for (const [groupName, vector] of Object.entries(
+            plainElgamalVectors.groups,
+        )) {
+            expect(getGroup(groupName as never).h).toBe(BigInt(vector.h));
         }
     });
 

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import plainElgamalVectors from '../../../test-vectors/plain-elgamal.json';
+
 import {
     addEncryptedValues,
     assertValidAdditiveCiphertext,
@@ -27,13 +29,6 @@ describe('additive ElGamal', () => {
                 message,
             );
         }
-    });
-
-    it('supports additive overloads that default to group 2048', () => {
-        const { publicKey, privateKey } = generateParameters(2048);
-        const ciphertext = encryptAdditive(9n, publicKey, 20n);
-
-        expect(decryptAdditive(ciphertext, privateKey, 20n)).toBe(9n);
     });
 
     it('rejects invalid additive plaintexts and public keys', () => {
@@ -113,13 +108,92 @@ describe('additive ElGamal', () => {
     it('requires an explicit additive bound', () => {
         const { publicKey, privateKey } = generateParameters(2048);
         const ciphertext = encryptAdditive(1n, publicKey, 2048, 10n);
+        const encryptAdditiveUnchecked = encryptAdditive as (
+            ...args: unknown[]
+        ) => unknown;
+        const decryptAdditiveUnchecked = decryptAdditive as (
+            ...args: unknown[]
+        ) => unknown;
 
-        expect(() => encryptAdditive(1n, publicKey, 2048 as never)).toThrow(
+        expect(() => encryptAdditiveUnchecked(1n, publicKey, 2048)).toThrow(
             InvalidScalarError,
         );
         expect(() =>
-            decryptAdditive(ciphertext, privateKey, 2048 as never),
+            decryptAdditiveUnchecked(ciphertext, privateKey, 2048),
         ).toThrow(InvalidScalarError);
+    });
+
+    it('matches the frozen additive vectors for every shipped group', () => {
+        for (const [groupName, vector] of Object.entries(
+            plainElgamalVectors.groups,
+        )) {
+            const group = getGroup(groupName as never);
+            const additiveVector = vector.additive;
+            const keyPair = generateParametersWithPrivateKey(
+                BigInt(vector.privateKey),
+                group.name,
+            );
+            const ciphertext = encryptAdditiveWithRandomness(
+                BigInt(additiveVector.message),
+                keyPair.publicKey,
+                BigInt(additiveVector.randomness),
+                BigInt(additiveVector.bound),
+                group.name,
+            );
+
+            expect(ciphertext).toEqual({
+                c1: BigInt(additiveVector.c1),
+                c2: BigInt(additiveVector.c2),
+            });
+            expect(
+                decryptAdditive(
+                    ciphertext,
+                    keyPair.privateKey,
+                    group.name,
+                    BigInt(additiveVector.bound),
+                ),
+            ).toBe(BigInt(additiveVector.message));
+        }
+    });
+
+    it('matches the frozen additive homomorphic vectors', () => {
+        for (const [groupName, vector] of Object.entries(
+            plainElgamalVectors.groups,
+        )) {
+            const group = getGroup(groupName as never);
+            const keyPair = generateParametersWithPrivateKey(
+                BigInt(vector.privateKey),
+                group.name,
+            );
+            const left = encryptAdditiveWithRandomness(
+                BigInt(vector.additive.left.message),
+                keyPair.publicKey,
+                BigInt(vector.additive.left.randomness),
+                BigInt(vector.additive.left.bound),
+                group.name,
+            );
+            const right = encryptAdditiveWithRandomness(
+                BigInt(vector.additive.right.message),
+                keyPair.publicKey,
+                BigInt(vector.additive.right.randomness),
+                BigInt(vector.additive.right.bound),
+                group.name,
+            );
+            const sum = addEncryptedValues(left, right, group.name);
+
+            expect(sum).toEqual({
+                c1: BigInt(vector.additive.sum.c1),
+                c2: BigInt(vector.additive.sum.c2),
+            });
+            expect(
+                decryptAdditive(
+                    sum,
+                    keyPair.privateKey,
+                    group.name,
+                    BigInt(vector.additive.sum.bound),
+                ),
+            ).toBe(BigInt(vector.additive.sum.message));
+        }
     });
 
     it('rejects arbitrary group objects at runtime', () => {

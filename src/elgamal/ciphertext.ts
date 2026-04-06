@@ -8,7 +8,7 @@ import {
 export const multiplyEncryptedValues = (
     left: ElgamalCiphertext,
     right: ElgamalCiphertext,
-    group: ElgamalGroupInput = 2048,
+    group: ElgamalGroupInput,
 ): ElgamalCiphertext => {
     const resolvedGroup = resolveElgamalGroup(group);
     assertValidMultiplicativeCiphertext(left, resolvedGroup);
@@ -20,7 +20,7 @@ export const multiplyEncryptedValues = (
 export const addEncryptedValues = (
     left: ElgamalCiphertext,
     right: ElgamalCiphertext,
-    group: ElgamalGroupInput = 2048,
+    group: ElgamalGroupInput,
 ): ElgamalCiphertext => {
     const resolvedGroup = resolveElgamalGroup(group);
     assertValidAdditiveCiphertext(left, resolvedGroup);

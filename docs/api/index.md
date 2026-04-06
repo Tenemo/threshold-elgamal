@@ -514,7 +514,7 @@
 
 ### addEncryptedValues()
 
-> **addEncryptedValues**(`left`, `right`, `group?`): [`ElgamalCiphertext`](#elgamalciphertext)
+> **addEncryptedValues**(`left`, `right`, `group`): [`ElgamalCiphertext`](#elgamalciphertext)
 
 #### Parameters
 
@@ -526,9 +526,9 @@
 
 [`ElgamalCiphertext`](#elgamalciphertext)
 
-##### group?
+##### group
 
-[`ElgamalGroupInput`](#elgamalgroupinput) = `2048`
+[`ElgamalGroupInput`](#elgamalgroupinput)
 
 #### Returns
 
@@ -752,86 +752,6 @@
 
 ***
 
-### assertValidFreshMultiplicativeCiphertext()
-
-> **assertValidFreshMultiplicativeCiphertext**(`ciphertext`, `group`): `void`
-
-#### Parameters
-
-##### ciphertext
-
-[`ElgamalCiphertext`](#elgamalciphertext)
-
-##### group
-
-[`CryptoGroup`](#cryptogroup)
-
-#### Returns
-
-`void`
-
-***
-
-### assertValidMultiplicativeCiphertext()
-
-> **assertValidMultiplicativeCiphertext**(`ciphertext`, `group`): `void`
-
-#### Parameters
-
-##### ciphertext
-
-[`ElgamalCiphertext`](#elgamalciphertext)
-
-##### group
-
-[`CryptoGroup`](#cryptogroup)
-
-#### Returns
-
-`void`
-
-***
-
-### assertValidMultiplicativePlaintext()
-
-> **assertValidMultiplicativePlaintext**(`value`, `group`): `void`
-
-#### Parameters
-
-##### value
-
-`bigint`
-
-##### group
-
-[`CryptoGroup`](#cryptogroup)
-
-#### Returns
-
-`void`
-
-***
-
-### assertValidMultiplicativePublicKey()
-
-> **assertValidMultiplicativePublicKey**(`publicKey`, `group`): `void`
-
-#### Parameters
-
-##### publicKey
-
-`bigint`
-
-##### group
-
-[`CryptoGroup`](#cryptogroup)
-
-#### Returns
-
-`void`
-
-***
-
 ### assertValidParticipantIndex()
 
 > **assertValidParticipantIndex**(`index`, `participantCount`): `void`
@@ -976,9 +896,9 @@
 
 ***
 
-### decrypt()
+### decryptAdditive()
 
-> **decrypt**(`ciphertext`, `privateKey`, `group?`): `bigint`
+> **decryptAdditive**(`ciphertext`, `privateKey`, `group`, `bound`): `bigint`
 
 #### Parameters
 
@@ -990,63 +910,15 @@
 
 `bigint`
 
-##### group?
-
-[`ElgamalGroupInput`](#elgamalgroupinput) = `2048`
-
-#### Returns
-
-`bigint`
-
-***
-
-### decryptAdditive()
-
-#### Call signature
-
-> **decryptAdditive**(`ciphertext`, `privateKey`, `bound`): `bigint`
-
-##### Parameters
-
-###### ciphertext
-
-[`ElgamalCiphertext`](#elgamalciphertext)
-
-###### privateKey
-
-`bigint`
-
-###### bound
-
-`bigint`
-
-##### Returns
-
-`bigint`
-
-#### Call signature
-
-> **decryptAdditive**(`ciphertext`, `privateKey`, `group`, `bound`): `bigint`
-
-##### Parameters
-
-###### ciphertext
-
-[`ElgamalCiphertext`](#elgamalciphertext)
-
-###### privateKey
-
-`bigint`
-
-###### group
+##### group
 
 [`ElgamalGroupInput`](#elgamalgroupinput)
 
-###### bound
+##### bound
 
 `bigint`
 
-##### Returns
+#### Returns
 
 `bigint`
 
@@ -1100,9 +972,9 @@
 
 ***
 
-### encrypt()
+### encryptAdditive()
 
-> **encrypt**(`message`, `publicKey`, `group?`): [`ElgamalCiphertext`](#elgamalciphertext)
+> **encryptAdditive**(`message`, `publicKey`, `group`, `bound`): [`ElgamalCiphertext`](#elgamalciphertext)
 
 #### Parameters
 
@@ -1114,9 +986,13 @@
 
 `bigint`
 
-##### group?
+##### group
 
-[`ElgamalGroupInput`](#elgamalgroupinput) = `2048`
+[`ElgamalGroupInput`](#elgamalgroupinput)
+
+##### bound
+
+`bigint`
 
 #### Returns
 
@@ -1124,61 +1000,9 @@
 
 ***
 
-### encryptAdditive()
-
-#### Call signature
-
-> **encryptAdditive**(`message`, `publicKey`, `bound`): [`ElgamalCiphertext`](#elgamalciphertext)
-
-##### Parameters
-
-###### message
-
-`bigint`
-
-###### publicKey
-
-`bigint`
-
-###### bound
-
-`bigint`
-
-##### Returns
-
-[`ElgamalCiphertext`](#elgamalciphertext)
-
-#### Call signature
-
-> **encryptAdditive**(`message`, `publicKey`, `group`, `bound`): [`ElgamalCiphertext`](#elgamalciphertext)
-
-##### Parameters
-
-###### message
-
-`bigint`
-
-###### publicKey
-
-`bigint`
-
-###### group
-
-[`ElgamalGroupInput`](#elgamalgroupinput)
-
-###### bound
-
-`bigint`
-
-##### Returns
-
-[`ElgamalCiphertext`](#elgamalciphertext)
-
-***
-
 ### encryptAdditiveWithRandomness()
 
-> **encryptAdditiveWithRandomness**(`message`, `publicKey`, `randomness`, `bound`, `group?`): [`ElgamalCiphertext`](#elgamalciphertext)
+> **encryptAdditiveWithRandomness**(`message`, `publicKey`, `randomness`, `bound`, `group`): [`ElgamalCiphertext`](#elgamalciphertext)
 
 #### Parameters
 
@@ -1198,37 +1022,9 @@
 
 `bigint`
 
-##### group?
+##### group
 
-[`ElgamalGroupInput`](#elgamalgroupinput) = `2048`
-
-#### Returns
-
-[`ElgamalCiphertext`](#elgamalciphertext)
-
-***
-
-### encryptWithRandomness()
-
-> **encryptWithRandomness**(`message`, `publicKey`, `randomness`, `group?`): [`ElgamalCiphertext`](#elgamalciphertext)
-
-#### Parameters
-
-##### message
-
-`bigint`
-
-##### publicKey
-
-`bigint`
-
-##### randomness
-
-`bigint`
-
-##### group?
-
-[`ElgamalGroupInput`](#elgamalgroupinput) = `2048`
+[`ElgamalGroupInput`](#elgamalgroupinput)
 
 #### Returns
 
@@ -1254,13 +1050,13 @@
 
 ### generateParameters()
 
-> **generateParameters**(`group?`): [`ElgamalParameters`](#elgamalparameters)
+> **generateParameters**(`group`): [`ElgamalParameters`](#elgamalparameters)
 
 #### Parameters
 
-##### group?
+##### group
 
-[`ElgamalGroupInput`](#elgamalgroupinput) = `2048`
+[`ElgamalGroupInput`](#elgamalgroupinput)
 
 #### Returns
 
@@ -1270,7 +1066,7 @@
 
 ### generateParametersWithPrivateKey()
 
-> **generateParametersWithPrivateKey**(`privateKey`, `group?`): [`ElgamalParameters`](#elgamalparameters)
+> **generateParametersWithPrivateKey**(`privateKey`, `group`): [`ElgamalParameters`](#elgamalparameters)
 
 #### Parameters
 
@@ -1278,9 +1074,9 @@
 
 `bigint`
 
-##### group?
+##### group
 
-[`ElgamalGroupInput`](#elgamalgroupinput) = `2048`
+[`ElgamalGroupInput`](#elgamalgroupinput)
 
 #### Returns
 
@@ -1290,11 +1086,11 @@
 
 ### getGroup()
 
-> **getGroup**(`identifier?`): [`CryptoGroup`](#cryptogroup)
+> **getGroup**(`identifier`): [`CryptoGroup`](#cryptogroup)
 
 #### Parameters
 
-##### identifier?
+##### identifier
 
 [`PrimeBits`](#primebits) \| [`GroupName`](#groupname)
 
@@ -1413,26 +1209,6 @@
 #### Returns
 
 readonly [`CryptoGroup`](#cryptogroup)[]
-
-***
-
-### maxVotersForExactProduct()
-
-> **maxVotersForExactProduct**(`maxScore`, `group?`): `bigint`
-
-#### Parameters
-
-##### maxScore
-
-`bigint`
-
-##### group?
-
-[`ElgamalGroupInput`](#elgamalgroupinput) = `2048`
-
-#### Returns
-
-`bigint`
 
 ***
 
@@ -1557,30 +1333,6 @@ readonly [`CryptoGroup`](#cryptogroup)[]
 #### Returns
 
 `bigint`
-
-***
-
-### multiplyEncryptedValues()
-
-> **multiplyEncryptedValues**(`left`, `right`, `group?`): [`ElgamalCiphertext`](#elgamalciphertext)
-
-#### Parameters
-
-##### left
-
-[`ElgamalCiphertext`](#elgamalciphertext)
-
-##### right
-
-[`ElgamalCiphertext`](#elgamalciphertext)
-
-##### group?
-
-[`ElgamalGroupInput`](#elgamalgroupinput) = `2048`
-
-#### Returns
-
-[`ElgamalCiphertext`](#elgamalciphertext)
 
 ***
 

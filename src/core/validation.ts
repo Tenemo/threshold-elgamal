@@ -20,6 +20,8 @@ export const assertValidParticipantIndex = (
     index: number,
     participantCount: number,
 ): void => {
+    // Ceremony roster positions are tracked as 1-based integers. Threshold
+    // arithmetic converts them to bigint only at the Lagrange boundary.
     if (!Number.isInteger(index) || !Number.isInteger(participantCount)) {
         throw new IndexOutOfRangeError('Participant indices must be integers');
     }

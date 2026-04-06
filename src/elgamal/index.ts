@@ -1,6 +1,15 @@
 export * from './additive.js';
 export * from './bsgs.js';
-export * from './ciphertext.js';
-export * from './multiplicative.js';
+export { addEncryptedValues } from './ciphertext.js';
+export {
+    generateParameters,
+    generateParametersWithPrivateKey,
+} from './keygen.js';
 export * from './types.js';
-export * from './validation.js';
+export {
+    assertValidAdditiveCiphertext,
+    assertValidAdditivePlaintext,
+    assertValidAdditivePublicKey,
+    assertValidFreshAdditiveCiphertext,
+    assertValidPrivateKey,
+} from './validation.js';

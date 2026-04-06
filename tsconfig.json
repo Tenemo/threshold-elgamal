@@ -6,6 +6,7 @@
             "#root": ["./src/index.ts"],
             "#core": ["./src/core/index.ts"],
             "#elgamal": ["./src/elgamal/index.ts"],
+            "#unsafe": ["./src/unsafe/index.ts"],
             "#serialize": ["./src/serialize/index.ts"]
         },
         "target": "ES2020",
@@ -29,6 +30,7 @@
     "include": [
         "src/**/*",
         "scripts/**/*",
+        "test-vectors/**/*",
         "tests/**/*",
         "vitest.config.ts",
         "eslint.config.js",

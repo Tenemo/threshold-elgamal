@@ -1,7 +1,7 @@
 {
     "name": "threshold-elgamal",
     "version": "2.0.0",
-    "description": "A browser-native TypeScript ElGamal library for bigint-based research prototypes, with threshold support under active v2 rewrite.",
+    "description": "A browser-native TypeScript ElGamal library for bigint-based research prototypes, currently shipping core primitives, additive ElGamal, and an unsafe multiplicative namespace.",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MPL-2.0",
     "main": "dist/index.js",
@@ -10,6 +10,7 @@
         "#root": "./src/index.ts",
         "#core": "./src/core/index.ts",
         "#elgamal": "./src/elgamal/index.ts",
+        "#unsafe": "./src/unsafe/index.ts",
         "#serialize": "./src/serialize/index.ts"
     },
     "exports": {
@@ -28,6 +29,10 @@
         "./serialize": {
             "types": "./dist/serialize/index.d.ts",
             "import": "./dist/serialize/index.js"
+        },
+        "./unsafe": {
+            "types": "./dist/unsafe/index.d.ts",
+            "import": "./dist/unsafe/index.js"
         }
     },
     "repository": {

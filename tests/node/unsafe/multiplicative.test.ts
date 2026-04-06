@@ -1,23 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
+import plainElgamalVectors from '../../../test-vectors/plain-elgamal.json';
+
+import {
+    generateParameters,
+    getGroup,
+    InvalidGroupElementError,
+    InvalidScalarError,
+    PlaintextDomainError,
+    UnsupportedSuiteError,
+} from '#root';
 import {
     assertValidFreshMultiplicativeCiphertext,
     assertValidMultiplicativeCiphertext,
     decrypt,
     encrypt,
     encryptWithRandomness,
-    generateParameters,
     generateParametersWithPrivateKey,
-    getGroup,
-    InvalidGroupElementError,
-    InvalidScalarError,
     maxVotersForExactProduct,
     multiplyEncryptedValues,
-    PlaintextDomainError,
-    UnsupportedSuiteError,
-} from '#root';
+} from '#unsafe';
 
-describe('multiplicative ElGamal', () => {
+describe('unsafe multiplicative ElGamal', () => {
     it('round-trips across every supported group', () => {
         for (const identifier of [2048, 3072, 4096] as const) {
             const { publicKey, privateKey } = generateParameters(identifier);
@@ -118,5 +122,66 @@ describe('multiplicative ElGamal', () => {
         expect(maxVotersForExactProduct(10n, 2048)).toBe(616n);
         expect(maxVotersForExactProduct(10n, 3072)).toBe(924n);
         expect(maxVotersForExactProduct(10n, 4096)).toBe(1233n);
+    });
+
+    it('matches the frozen multiplicative vectors for every shipped group', () => {
+        for (const [groupName, vector] of Object.entries(
+            plainElgamalVectors.groups,
+        )) {
+            const group = getGroup(groupName as never);
+            const multiplicativeVector = vector.multiplicative;
+            const keyPair = generateParametersWithPrivateKey(
+                BigInt(vector.privateKey),
+                group.name,
+            );
+            const ciphertext = encryptWithRandomness(
+                BigInt(multiplicativeVector.message),
+                keyPair.publicKey,
+                BigInt(multiplicativeVector.randomness),
+                group.name,
+            );
+
+            expect(keyPair.publicKey).toBe(BigInt(vector.publicKey));
+            expect(ciphertext).toEqual({
+                c1: BigInt(multiplicativeVector.c1),
+                c2: BigInt(multiplicativeVector.c2),
+            });
+            expect(decrypt(ciphertext, keyPair.privateKey, group.name)).toBe(
+                BigInt(multiplicativeVector.message),
+            );
+        }
+    });
+
+    it('matches the frozen multiplicative homomorphic vectors', () => {
+        for (const [groupName, vector] of Object.entries(
+            plainElgamalVectors.groups,
+        )) {
+            const group = getGroup(groupName as never);
+            const keyPair = generateParametersWithPrivateKey(
+                BigInt(vector.privateKey),
+                group.name,
+            );
+            const left = encryptWithRandomness(
+                BigInt(vector.multiplicative.left.message),
+                keyPair.publicKey,
+                BigInt(vector.multiplicative.left.randomness),
+                group.name,
+            );
+            const right = encryptWithRandomness(
+                BigInt(vector.multiplicative.right.message),
+                keyPair.publicKey,
+                BigInt(vector.multiplicative.right.randomness),
+                group.name,
+            );
+            const product = multiplyEncryptedValues(left, right, group.name);
+
+            expect(product).toEqual({
+                c1: BigInt(vector.multiplicative.product.c1),
+                c2: BigInt(vector.multiplicative.product.c2),
+            });
+            expect(decrypt(product, keyPair.privateKey, group.name)).toBe(
+                BigInt(vector.multiplicative.product.message),
+            );
+        }
     });
 });

@@ -118,8 +118,7 @@ export const deriveH = async (
     }
 };
 
-export const getGroup = (
-    identifier: PrimeBits | GroupName = 2048,
-): CryptoGroup => GROUPS[resolveGroupName(identifier)];
+export const getGroup = (identifier: PrimeBits | GroupName): CryptoGroup =>
+    GROUPS[resolveGroupName(identifier)];
 
 export const listGroups = (): readonly CryptoGroup[] => GROUP_LIST;

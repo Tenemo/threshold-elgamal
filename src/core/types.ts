@@ -8,6 +8,8 @@ export type GroupName = 'ffdhe2048' | 'ffdhe3072' | 'ffdhe4096';
 export type ScalarQ = Brand<bigint, 'ScalarQ'>;
 export type GroupElement = Brand<bigint, 'GroupElement'>;
 export type SubgroupElement = Brand<bigint, 'SubgroupElement'>;
+// Roster indices stay as small 1-based numbers until threshold math converts
+// them to bigint values for Z_q arithmetic.
 export type ParticipantIndex = Brand<number, 'ParticipantIndex'>;
 export type ValidatedPublicKey = Brand<SubgroupElement, 'ValidatedPublicKey'>;
 

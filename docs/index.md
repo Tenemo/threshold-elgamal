@@ -13,8 +13,10 @@ This site contains the manual documentation for the current public package surfa
 - `core`
 - `elgamal`
 - `serialize`
+- `unsafe`
 
 ## Notes
 
 - The API reference in `docs/api` is generated from the public package entry point.
 - The spec pages in `docs/spec` are manual and describe only what is currently shipped.
+- The `unsafe` package subpath documents lower-level primitives that stay outside the safe top-level API.

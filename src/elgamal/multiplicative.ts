@@ -21,7 +21,7 @@ import {
 
 export const generateParametersWithPrivateKey = (
     privateKey: bigint,
-    group: ElgamalGroupInput = 2048,
+    group: ElgamalGroupInput,
 ): ElgamalParameters => {
     const resolvedGroup = resolveElgamalGroup(group);
     assertValidPrivateKey(privateKey, resolvedGroup);
@@ -35,7 +35,7 @@ export const generateParametersWithPrivateKey = (
 };
 
 export const generateParameters = (
-    group: ElgamalGroupInput = 2048,
+    group: ElgamalGroupInput,
 ): ElgamalParameters => {
     const resolvedGroup = resolveElgamalGroup(group);
     const privateKey = randomScalarInRange(1n, resolvedGroup.q);
@@ -46,7 +46,7 @@ export const encryptWithRandomness = (
     message: bigint,
     publicKey: bigint,
     randomness: bigint,
-    group: ElgamalGroupInput = 2048,
+    group: ElgamalGroupInput,
 ): ElgamalCiphertext => {
     const resolvedGroup = resolveElgamalGroup(group);
     assertValidMultiplicativePlaintext(message, resolvedGroup);
@@ -62,7 +62,7 @@ export const encryptWithRandomness = (
 export const encrypt = (
     message: bigint,
     publicKey: bigint,
-    group: ElgamalGroupInput = 2048,
+    group: ElgamalGroupInput,
 ): ElgamalCiphertext => {
     const resolvedGroup = resolveElgamalGroup(group);
     const randomness = randomScalarInRange(1n, resolvedGroup.q);
@@ -78,7 +78,7 @@ export const encrypt = (
 export const decrypt = (
     ciphertext: ElgamalCiphertext,
     privateKey: bigint,
-    group: ElgamalGroupInput = 2048,
+    group: ElgamalGroupInput,
 ): bigint => {
     const resolvedGroup = resolveElgamalGroup(group);
     assertValidPrivateKey(privateKey, resolvedGroup);
@@ -94,7 +94,7 @@ export const decrypt = (
 
 export const maxVotersForExactProduct = (
     maxScore: bigint,
-    group: ElgamalGroupInput = 2048,
+    group: ElgamalGroupInput,
 ): bigint => {
     if (maxScore <= 1n) {
         throw new InvalidScalarError(
