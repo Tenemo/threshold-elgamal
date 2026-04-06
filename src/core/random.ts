@@ -1,22 +1,10 @@
+import { bytesToBigInt } from './bytes.js';
 import { getWebCrypto } from './crypto.js';
 import { InvalidScalarError } from './errors.js';
 import type { RandomBytesSource } from './types.js';
 
 const bitLength = (value: bigint): number =>
     value === 0n ? 0 : value.toString(2).length;
-
-const bytesToBigInt = (bytes: Uint8Array): bigint => {
-    if (bytes.length === 0) {
-        return 0n;
-    }
-
-    let hex = '';
-    for (const byte of bytes) {
-        hex += byte.toString(16).padStart(2, '0');
-    }
-
-    return BigInt(`0x${hex}`);
-};
 
 const secureRandomBytesSource: RandomBytesSource = (length) => {
     const bytes = new Uint8Array(length);

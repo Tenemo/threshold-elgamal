@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { encryptAdditiveWithRandomness } from '../../../src/elgamal/additive.js';
-import { generateParametersWithPrivateKey } from '../../../src/elgamal/multiplicative.js';
-
 import {
     addEncryptedValues,
     assertValidAdditiveCiphertext,
@@ -10,7 +7,9 @@ import {
     babyStepGiantStep,
     decryptAdditive,
     encryptAdditive,
+    encryptAdditiveWithRandomness,
     generateParameters,
+    generateParametersWithPrivateKey,
     getGroup,
     InvalidGroupElementError,
     InvalidScalarError,
@@ -28,6 +27,13 @@ describe('additive ElGamal', () => {
                 message,
             );
         }
+    });
+
+    it('supports additive overloads that default to group 2048', () => {
+        const { publicKey, privateKey } = generateParameters(2048);
+        const ciphertext = encryptAdditive(9n, publicKey, 20n);
+
+        expect(decryptAdditive(ciphertext, privateKey, 20n)).toBe(9n);
     });
 
     it('rejects invalid additive plaintexts and public keys', () => {

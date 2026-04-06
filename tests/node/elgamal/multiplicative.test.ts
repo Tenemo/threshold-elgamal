@@ -1,16 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-    encryptWithRandomness,
-    generateParametersWithPrivateKey,
-} from '../../../src/elgamal/multiplicative.js';
-
-import {
     assertValidFreshMultiplicativeCiphertext,
     assertValidMultiplicativeCiphertext,
     decrypt,
     encrypt,
+    encryptWithRandomness,
     generateParameters,
+    generateParametersWithPrivateKey,
     getGroup,
     InvalidGroupElementError,
     InvalidScalarError,

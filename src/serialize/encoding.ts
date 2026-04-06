@@ -1,6 +1,5 @@
+import { utf8ToBytes } from '../core/crypto.js';
 import { InvalidPayloadError, InvalidScalarError } from '../core/errors.js';
-
-const textEncoder = new TextEncoder();
 const hexPattern = /^[0-9a-f]+$/i;
 
 const encodeLength = (length: number): Uint8Array => {
@@ -86,8 +85,7 @@ export const concatBytes = (...arrays: Uint8Array[]): Uint8Array => {
     return result;
 };
 
-export const domainSeparator = (tag: string): Uint8Array =>
-    textEncoder.encode(tag);
+export const domainSeparator = (tag: string): Uint8Array => utf8ToBytes(tag);
 
 const encodeBigIntForChallenge = (value: bigint): Uint8Array => {
     if (value < 0n) {
@@ -109,7 +107,7 @@ const encodeChallengeElement = (
     }
 
     if (typeof element === 'string') {
-        return textEncoder.encode(element);
+        return utf8ToBytes(element);
     }
 
     return new Uint8Array(element);

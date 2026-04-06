@@ -8,7 +8,7 @@ import {
 } from '../core/index.js';
 
 import { babyStepGiantStep } from './bsgs.js';
-import { resolveElgamalGroup } from './group.js';
+import { assertEncryptionRandomness, resolveElgamalGroup } from './helpers.js';
 import type { ElgamalCiphertext, ElgamalGroupInput } from './types.js';
 import {
     assertValidAdditiveCiphertext,
@@ -16,14 +16,6 @@ import {
     assertValidAdditivePublicKey,
     assertValidPrivateKey,
 } from './validation.js';
-
-const assertEncryptionRandomness = (randomness: bigint, q: bigint): void => {
-    if (randomness <= 0n || randomness >= q) {
-        throw new InvalidScalarError(
-            'Encryption randomness must be in the range 1..q-1',
-        );
-    }
-};
 
 const resolveAdditiveBound = (
     groupOrBound: ElgamalGroupInput | bigint,

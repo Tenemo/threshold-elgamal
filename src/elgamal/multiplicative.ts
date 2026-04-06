@@ -6,7 +6,7 @@ import {
     randomScalarInRange,
 } from '../core/index.js';
 
-import { resolveElgamalGroup } from './group.js';
+import { assertEncryptionRandomness, resolveElgamalGroup } from './helpers.js';
 import type {
     ElgamalCiphertext,
     ElgamalGroupInput,
@@ -18,14 +18,6 @@ import {
     assertValidMultiplicativePublicKey,
     assertValidPrivateKey,
 } from './validation.js';
-
-const assertEncryptionRandomness = (randomness: bigint, q: bigint): void => {
-    if (randomness <= 0n || randomness >= q) {
-        throw new InvalidScalarError(
-            'Encryption randomness must be in the range 1..q-1',
-        );
-    }
-};
 
 export const generateParametersWithPrivateKey = (
     privateKey: bigint,

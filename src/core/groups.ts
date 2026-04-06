@@ -1,4 +1,5 @@
 import { modPowP } from './bigint.js';
+import { bytesToBigInt } from './bytes.js';
 import { hkdfSha256, utf8ToBytes } from './crypto.js';
 import { UnsupportedSuiteError } from './errors.js';
 import type { CryptoGroup, GroupName, PrimeBits } from './types.js';
@@ -6,15 +7,6 @@ import type { CryptoGroup, GroupName, PrimeBits } from './types.js';
 type GroupDefinition = Omit<CryptoGroup, 'h'>;
 
 const H_DERIVATION_SALT = utf8ToBytes('threshold-elgamal-v1-salt');
-
-const bytesToBigInt = (bytes: Uint8Array): bigint => {
-    let hex = '';
-    for (const byte of bytes) {
-        hex += byte.toString(16).padStart(2, '0');
-    }
-
-    return BigInt(`0x${hex}`);
-};
 
 const BASE_GROUPS: Record<GroupName, GroupDefinition> = {
     ffdhe2048: {
@@ -72,6 +64,14 @@ const GROUPS: Record<GroupName, CryptoGroup> = {
     }),
 };
 const GROUP_LIST = Object.freeze(Object.values(GROUPS));
+const GROUP_NAMES = new Map<GroupName | PrimeBits, GroupName>([
+    [2048, 'ffdhe2048'],
+    [3072, 'ffdhe3072'],
+    [4096, 'ffdhe4096'],
+    ['ffdhe2048', 'ffdhe2048'],
+    ['ffdhe3072', 'ffdhe3072'],
+    ['ffdhe4096', 'ffdhe4096'],
+]);
 
 const getDerivationSeed = (group: GroupDefinition): Uint8Array =>
     utf8ToBytes(`threshold-elgamal-v1-${group.name}-generator-h`);
@@ -83,30 +83,19 @@ const getDerivationInfo = (counter: number): Uint8Array =>
             : `generator-h-expansion:${counter}`,
     );
 
-const resolveGroupDefinition = (
-    input: PrimeBits | GroupName,
-): GroupDefinition => {
-    switch (input) {
-        case 2048:
-        case 'ffdhe2048':
-            return BASE_GROUPS.ffdhe2048;
-        case 3072:
-        case 'ffdhe3072':
-            return BASE_GROUPS.ffdhe3072;
-        case 4096:
-        case 'ffdhe4096':
-            return BASE_GROUPS.ffdhe4096;
-        default:
-            throw new UnsupportedSuiteError(
-                'Unsupported group: ' + String(input),
-            );
+const resolveGroupName = (input: PrimeBits | GroupName): GroupName => {
+    const groupName = GROUP_NAMES.get(input);
+    if (groupName === undefined) {
+        throw new UnsupportedSuiteError('Unsupported group: ' + String(input));
     }
+
+    return groupName;
 };
 
 export const deriveH = async (
     input: PrimeBits | GroupName,
 ): Promise<bigint> => {
-    const group = resolveGroupDefinition(input);
+    const group = BASE_GROUPS[resolveGroupName(input)];
     const outputLength = Math.ceil((group.bits + 128) / 8);
     let counter = 0;
 
@@ -131,22 +120,6 @@ export const deriveH = async (
 
 export const getGroup = (
     identifier: PrimeBits | GroupName = 2048,
-): CryptoGroup => {
-    switch (identifier) {
-        case 2048:
-        case 'ffdhe2048':
-            return GROUPS.ffdhe2048;
-        case 3072:
-        case 'ffdhe3072':
-            return GROUPS.ffdhe3072;
-        case 4096:
-        case 'ffdhe4096':
-            return GROUPS.ffdhe4096;
-        default:
-            throw new UnsupportedSuiteError(
-                'Unsupported group: ' + String(identifier),
-            );
-    }
-};
+): CryptoGroup => GROUPS[resolveGroupName(identifier)];
 
 export const listGroups = (): readonly CryptoGroup[] => GROUP_LIST;

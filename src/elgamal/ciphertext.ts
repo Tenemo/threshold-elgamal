@@ -1,6 +1,4 @@
-import { modP } from '../core/index.js';
-
-import { resolveElgamalGroup } from './group.js';
+import { combineCiphertextComponents, resolveElgamalGroup } from './helpers.js';
 import type { ElgamalCiphertext, ElgamalGroupInput } from './types.js';
 import {
     assertValidAdditiveCiphertext,
@@ -16,10 +14,7 @@ export const multiplyEncryptedValues = (
     assertValidMultiplicativeCiphertext(left, resolvedGroup);
     assertValidMultiplicativeCiphertext(right, resolvedGroup);
 
-    return {
-        c1: modP(left.c1 * right.c1, resolvedGroup.p),
-        c2: modP(left.c2 * right.c2, resolvedGroup.p),
-    };
+    return combineCiphertextComponents(left, right, resolvedGroup.p);
 };
 
 export const addEncryptedValues = (
@@ -31,8 +26,5 @@ export const addEncryptedValues = (
     assertValidAdditiveCiphertext(left, resolvedGroup);
     assertValidAdditiveCiphertext(right, resolvedGroup);
 
-    return {
-        c1: modP(left.c1 * right.c1, resolvedGroup.p),
-        c2: modP(left.c2 * right.c2, resolvedGroup.p),
-    };
+    return combineCiphertextComponents(left, right, resolvedGroup.p);
 };
