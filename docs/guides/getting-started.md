@@ -22,9 +22,9 @@ import {
     encryptAdditive,
     generateParameters,
     getGroup,
-} from 'threshold-elgamal';
+} from "threshold-elgamal";
 
-const group = 'ffdhe3072' as const;
+const group = "ffdhe3072" as const;
 const suite = getGroup(group);
 const { publicKey, privateKey } = generateParameters(group);
 const messageBound = 10n;
@@ -56,5 +56,4 @@ For example, if every ballot is in `0..10` and a final tally combines `50` ballo
 ## Where to go next
 
 - For tallying sums, read [Additive ElGamal](additive-elgamal.html).
-- For lower-level imports, read [Subpath imports](subpath-imports.html).
 - For exact signatures and types, use the [API reference](../api/index.html).
