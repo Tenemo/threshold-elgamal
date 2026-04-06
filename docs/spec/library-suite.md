@@ -6,7 +6,7 @@ This page fixes the current browser-native cryptographic suite for the shipped p
 
 - RFC 7919 FFDHE groups: `ffdhe2048`, `ffdhe3072`, `ffdhe4096`
 - Public APIs require an explicit group identifier. There is no implicit default suite.
-- Group objects expose `{ p, q, g, h, name, bits, securityEstimate }`
+- Group objects expose `{ p, q, g, h, name, bits, byteLength, securityEstimate }`
 - `h` is derived deterministically from suite parameters and validated to lie in the prime-order subgroup
 - Built-in group objects are frozen at runtime
 
