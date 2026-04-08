@@ -33,7 +33,7 @@ jobs:
       - run: pnpm run docs:build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: ./site/dist
+          path: ./docs/dist
 
   deploy:
     needs: build

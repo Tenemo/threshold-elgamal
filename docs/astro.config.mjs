@@ -20,7 +20,7 @@ export default defineConfig({
             customCss: ['./src/styles/custom.css'],
             editLink: {
                 baseUrl:
-                    'https://github.com/Tenemo/threshold-elgamal/edit/master/site/src/content/docs/',
+                    'https://github.com/Tenemo/threshold-elgamal/edit/master/docs/src/content/docs/',
             },
             sidebar: [
                 {

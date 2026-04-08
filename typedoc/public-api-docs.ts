@@ -12,8 +12,8 @@ export type PublicApiDocEntry = {
     moduleName: string;
 };
 
-export const siteDocsRoot = 'site/src/content/docs';
-export const apiDocsRoot = `${siteDocsRoot}/api`;
+export const docsContentRoot = 'docs/src/content/docs';
+export const apiDocsRoot = `${docsContentRoot}/api`;
 export const apiReferenceRoot = `${apiDocsRoot}/reference`;
 export const apiNavigationJson = `${apiReferenceRoot}/navigation.json`;
 

@@ -1,6 +1,9 @@
 # Threshold ElGamal
 
 [![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://badge.fury.io/js/threshold-elgamal)
+[![CI](https://github.com/Tenemo/threshold-elgamal/actions/workflows/ci.yml/badge.svg)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/ci.yml)
+[![Pages](https://github.com/Tenemo/threshold-elgamal/actions/workflows/pages.yml/badge.svg)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/pages.yml)
+[![License](https://img.shields.io/github/license/Tenemo/threshold-elgamal)](LICENSE)
 
 `threshold-elgamal` is a browser-native TypeScript library for finite-field ElGamal research prototypes built on native `bigint`.
 
@@ -86,7 +89,7 @@ For example, if each ballot is in `0..10` and you tally `50` ballots, encrypt ea
 - Build a voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
 - Security model: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
 - API reference: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
-- Docs source lives under `site/src/content/docs/`
+- Docs source lives under `docs/src/content/docs/`
 
 ## Changes since v0.x.x
 

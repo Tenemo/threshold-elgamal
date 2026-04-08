@@ -12,22 +12,22 @@ import typedocConfig from '../typedoc.config.mjs';
 
 import {
     apiNavigationJson,
+    docsContentRoot,
     publicApiDocs,
-    siteDocsRoot,
 } from './public-api-docs';
 
 const repoRoot = process.cwd();
-const docsRoot = path.resolve(repoRoot, siteDocsRoot);
-const publicRoot = path.resolve(repoRoot, 'site/public');
-const markdownRoots = ['README.md', siteDocsRoot];
+const docsRoot = path.resolve(repoRoot, docsContentRoot);
+const publicRoot = path.resolve(repoRoot, 'docs/public');
+const markdownRoots = ['README.md', docsContentRoot];
 const documentedPublicApi = publicApiDocs as readonly {
     apiIndexPage: string;
     moduleName: string;
 }[];
 const requiredApiEntryPages = [
-    `${siteDocsRoot}/api/index.mdx`,
-    `${siteDocsRoot}/api/root-package.mdx`,
-    `${siteDocsRoot}/api/subpath-overview.mdx`,
+    `${docsContentRoot}/api/index.mdx`,
+    `${docsContentRoot}/api/root-package.mdx`,
+    `${docsContentRoot}/api/subpath-overview.mdx`,
     ...documentedPublicApi.map((entry) => entry.apiIndexPage),
     apiNavigationJson,
 ] as const;

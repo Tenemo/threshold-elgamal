@@ -27,7 +27,7 @@ export default [
             ecmaFeatures: {
                 jsx: true,
             },
-            project: ['./tsconfig.json', './site/tsconfig.json'],
+            project: ['./tsconfig.json', './docs/tsconfig.json'],
             ecmaVersion: 2021,
         },
         plugins: ['only-error'],
@@ -118,7 +118,7 @@ export default [
         },
     },
     {
-        files: ['site/src/content.config.ts'],
+        files: ['docs/src/content.config.ts'],
         rules: {
             'import/no-unresolved': OFF,
         },
@@ -141,6 +141,6 @@ export default [
         ],
     }),
     {
-        ignores: ['node_modules/*', 'dist/*', 'site/.astro/*', 'site/dist/*'],
+        ignores: ['node_modules/*', 'dist/*', 'docs/.astro/*', 'docs/dist/*'],
     },
 ];
