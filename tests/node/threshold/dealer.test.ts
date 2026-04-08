@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import thresholdVector from '../../../test-vectors/threshold.json';
 
 import {
+    InvalidGroupElementError,
     InvalidShareError,
+    IndexOutOfRangeError,
     PlaintextDomainError,
     getGroup,
     modPowP,
@@ -244,6 +246,57 @@ describe('dealer-based threshold decryption', () => {
                 keySet.group,
             ),
         ).toThrow(InvalidShareError);
+    });
+
+    it('rejects malformed ciphertext and share inputs during threshold decryption', () => {
+        const keySet = dealerKeyGen(2, 3, 2048);
+        const ciphertext = encryptAdditive(5n, keySet.publicKey, 2048, 10n);
+
+        expect(() =>
+            createDecryptionShare(
+                { ...ciphertext, c1: 0n },
+                keySet.shares[0],
+                keySet.group,
+            ),
+        ).toThrow(InvalidGroupElementError);
+        expect(() =>
+            createDecryptionShare(
+                ciphertext,
+                { ...keySet.shares[0], index: 0 },
+                keySet.group,
+            ),
+        ).toThrow(IndexOutOfRangeError);
+
+        const validShare = createDecryptionShare(
+            ciphertext,
+            keySet.shares[0],
+            keySet.group,
+        );
+
+        expect(() =>
+            combineDecryptionShares(
+                { ...ciphertext, c2: 0n },
+                [validShare],
+                keySet.group,
+                10n,
+            ),
+        ).toThrow(InvalidGroupElementError);
+        expect(() =>
+            combineDecryptionShares(
+                ciphertext,
+                [{ ...validShare, index: 0 }],
+                keySet.group,
+                10n,
+            ),
+        ).toThrow(IndexOutOfRangeError);
+        expect(() =>
+            combineDecryptionShares(
+                ciphertext,
+                [{ ...validShare, value: 0n }],
+                keySet.group,
+                10n,
+            ),
+        ).toThrow(InvalidGroupElementError);
     });
 
     it('matches the frozen threshold vector', () => {

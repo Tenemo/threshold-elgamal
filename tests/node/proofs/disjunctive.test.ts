@@ -114,4 +114,58 @@ describe('disjunctive proofs', () => {
             ),
         ).resolves.toBe(false);
     });
+
+    it('rejects garbled branch data and malformed proof contexts', async () => {
+        const proof = await createDisjunctiveProof(
+            plaintext,
+            randomness,
+            ciphertext,
+            publicKey,
+            validValues,
+            group,
+            context,
+            createDeterministicSource(),
+        );
+
+        await expect(
+            verifyDisjunctiveProof(
+                {
+                    branches: proof.branches.slice(0, -1),
+                },
+                ciphertext,
+                publicKey,
+                validValues,
+                group,
+                context,
+            ),
+        ).resolves.toBe(false);
+        await expect(
+            verifyDisjunctiveProof(
+                {
+                    branches: proof.branches.map((branch, index) =>
+                        index === 0
+                            ? { ...branch, challenge: branch.challenge + 1n }
+                            : branch,
+                    ),
+                },
+                ciphertext,
+                publicKey,
+                validValues,
+                group,
+                context,
+            ),
+        ).resolves.toBe(false);
+        await expect(
+            createDisjunctiveProof(
+                plaintext,
+                randomness,
+                ciphertext,
+                publicKey,
+                validValues,
+                group,
+                { ...context, voterIndex: 0 },
+                createDeterministicSource(),
+            ),
+        ).rejects.toBeInstanceOf(InvalidProofError);
+    });
 });

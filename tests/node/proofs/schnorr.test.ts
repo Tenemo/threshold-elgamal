@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { getGroup, modPowP } from '#core';
+import {
+    InvalidProofError,
+    InvalidScalarError,
+    getGroup,
+    modPowP,
+} from '#core';
 import {
     createSchnorrProof,
     verifySchnorrProof,
@@ -100,5 +105,41 @@ describe('Schnorr proofs', () => {
         );
 
         expect(left).toEqual(right);
+    });
+
+    it('rejects malformed proof scalars and invalid contexts', async () => {
+        const proof = await createSchnorrProof(
+            secret,
+            statement,
+            group,
+            context,
+            createDeterministicSource(),
+        );
+
+        await expect(
+            verifySchnorrProof(
+                { ...proof, challenge: group.q },
+                statement,
+                group,
+                context,
+            ),
+        ).rejects.toBeInstanceOf(InvalidScalarError);
+        await expect(
+            verifySchnorrProof(
+                { ...proof, response: group.q },
+                statement,
+                group,
+                context,
+            ),
+        ).rejects.toBeInstanceOf(InvalidScalarError);
+        await expect(
+            createSchnorrProof(
+                secret,
+                statement,
+                group,
+                { ...context, coefficientIndex: 0 },
+                createDeterministicSource(),
+            ),
+        ).rejects.toBeInstanceOf(InvalidProofError);
     });
 });

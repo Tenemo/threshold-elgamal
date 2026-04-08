@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { getGroup, modPowP } from '#core';
+import {
+    InvalidProofError,
+    InvalidScalarError,
+    getGroup,
+    modPowP,
+} from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDLEQProof,
@@ -102,5 +107,41 @@ describe('DLEQ proofs', () => {
                 context,
             ),
         ).resolves.toBe(false);
+    });
+
+    it('rejects malformed proof scalars and invalid contexts', async () => {
+        const proof = await createDLEQProof(
+            secret,
+            statement,
+            group,
+            context,
+            createDeterministicSource(),
+        );
+
+        await expect(
+            verifyDLEQProof(
+                { ...proof, challenge: group.q },
+                statement,
+                group,
+                context,
+            ),
+        ).rejects.toBeInstanceOf(InvalidScalarError);
+        await expect(
+            verifyDLEQProof(
+                { ...proof, response: group.q },
+                statement,
+                group,
+                context,
+            ),
+        ).rejects.toBeInstanceOf(InvalidScalarError);
+        await expect(
+            createDLEQProof(
+                secret,
+                statement,
+                group,
+                { ...context, participantIndex: 0 },
+                createDeterministicSource(),
+            ),
+        ).rejects.toBeInstanceOf(InvalidProofError);
     });
 });

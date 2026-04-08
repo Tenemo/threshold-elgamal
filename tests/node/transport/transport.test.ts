@@ -99,6 +99,63 @@ describe('transport and authentication', () => {
         });
     });
 
+    it('rejects garbled transport inputs and mismatched complaint preconditions', async () => {
+        const recipient = await generateTransportKeyPair();
+        const otherRecipient = await generateTransportKeyPair();
+        const recipientPublicKey = await exportTransportPublicKey(
+            recipient.publicKey,
+        );
+        const otherRecipientPublicKey = await exportTransportPublicKey(
+            otherRecipient.publicKey,
+        );
+        const recipientPrivateKey = await exportTransportPrivateKey(
+            recipient.privateKey,
+        );
+        const plaintext = new TextEncoder().encode('share-pair');
+        const { envelope, ephemeralPrivateKey } = await encryptEnvelope(
+            plaintext,
+            recipientPublicKey,
+            {
+                sessionId: 'session-2',
+                rosterHash: 'roster-2',
+                phase: 1,
+                dealerIndex: 1,
+                recipientIndex: 2,
+                envelopeId: 'envelope-2',
+                payloadType: 'encrypted-dual-share',
+                protocolVersion: 'v2',
+                suite: recipient.suite,
+            },
+        );
+
+        await expect(
+            verifyComplaintPrecondition(
+                recipientPrivateKey,
+                otherRecipientPublicKey,
+                recipient.suite,
+            ),
+        ).resolves.toBe(false);
+        await expect(
+            decryptEnvelope(
+                { ...envelope, iv: `${envelope.iv.slice(0, -2)}00` },
+                recipientPrivateKey,
+            ),
+        ).rejects.toThrow();
+        await expect(
+            resolveDealerChallenge(
+                {
+                    ...envelope,
+                    ephemeralPublicKey: `${envelope.ephemeralPublicKey.slice(0, -2)}00`,
+                },
+                recipientPrivateKey,
+                ephemeralPrivateKey,
+            ),
+        ).resolves.toEqual({
+            valid: false,
+            fault: 'dealer',
+        });
+    });
+
     it('rejects all-zero shared secrets', () => {
         expect(() => assertNonZeroSharedSecret(new Uint8Array(32))).toThrow();
     });

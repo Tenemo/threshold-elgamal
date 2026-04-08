@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { getGroup } from '#core';
+import {
+    IndexOutOfRangeError,
+    InvalidGroupElementError,
+    getGroup,
+} from '#core';
 import { deriveSharesFromPolynomial } from '#threshold';
 import {
     derivePedersenShares,
@@ -76,5 +80,53 @@ describe('verifiable secret sharing', () => {
                 group,
             ),
         ).toBe(false);
+    });
+
+    it('rejects malformed VSS inputs and garbled commitments', () => {
+        const group = getGroup(2048);
+        const secretPolynomial = [12345n, 67890n, 13579n] as const;
+        const blindingPolynomial = [22222n, 33333n, 44444n] as const;
+        const feldmanCommitments = generateFeldmanCommitments(
+            secretPolynomial,
+            group,
+        );
+        const pedersenCommitments = generatePedersenCommitments(
+            secretPolynomial,
+            blindingPolynomial,
+            group,
+        );
+        const shares = derivePedersenShares(
+            secretPolynomial,
+            blindingPolynomial,
+            3,
+            group.q,
+        );
+
+        expect(() =>
+            generatePedersenCommitments(
+                secretPolynomial,
+                blindingPolynomial.slice(0, -1),
+                group,
+            ),
+        ).toThrow('same degree');
+        expect(() =>
+            verifyFeldmanShare(
+                { index: 0, value: shares[0].secretValue },
+                feldmanCommitments,
+                group,
+            ),
+        ).toThrow(IndexOutOfRangeError);
+        expect(() =>
+            verifyPedersenShare(
+                shares[0],
+                {
+                    commitments: [
+                        0n,
+                        ...pedersenCommitments.commitments.slice(1),
+                    ],
+                },
+                group,
+            ),
+        ).toThrow(InvalidGroupElementError);
     });
 });

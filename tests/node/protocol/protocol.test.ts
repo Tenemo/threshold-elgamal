@@ -128,6 +128,64 @@ describe('protocol payloads and transcripts', () => {
         expect(classifySlotConflict(left, right)).toBe('distinct');
     });
 
+    it('distinguishes complaint envelopes and dealer-specific share reveals', () => {
+        const leftComplaint = {
+            payload: {
+                sessionId: 'session-1',
+                manifestHash: 'manifest-1',
+                phase: 2,
+                participantIndex: 2,
+                messageType: 'complaint' as const,
+                dealerIndex: 5,
+                envelopeId: 'env-5-2',
+                reason: 'aes-gcm-failure' as const,
+            },
+            signature: 'aaaa',
+        };
+        const rightComplaint = {
+            payload: {
+                ...leftComplaint.payload,
+                envelopeId: 'env-5-3',
+            },
+            signature: 'bbbb',
+        };
+        const reveal = {
+            payload: {
+                sessionId: 'session-1',
+                manifestHash: 'manifest-1',
+                phase: 3,
+                participantIndex: 3,
+                messageType: 'feldman-share-reveal' as const,
+                dealerIndex: 5,
+                shareValue: 'abcd',
+            },
+            signature: 'cccc',
+        };
+        const equivocatedReveal = {
+            payload: {
+                ...reveal.payload,
+                shareValue: 'dcba',
+            },
+            signature: 'dddd',
+        };
+
+        expect(payloadSlotKey(leftComplaint.payload)).toBe(
+            'session-1:2:2:complaint:5:env-5-2',
+        );
+        expect(payloadSlotKey(rightComplaint.payload)).toBe(
+            'session-1:2:2:complaint:5:env-5-3',
+        );
+        expect(classifySlotConflict(leftComplaint, rightComplaint)).toBe(
+            'distinct',
+        );
+        expect(payloadSlotKey(reveal.payload)).toBe(
+            'session-1:3:3:feldman-share-reveal:5',
+        );
+        expect(classifySlotConflict(reveal, equivocatedReveal)).toBe(
+            'equivocation',
+        );
+    });
+
     it('distinguishes idempotent retransmissions from equivocation', () => {
         const identicalUnsigned: SignedPayload = {
             payload: registration,
