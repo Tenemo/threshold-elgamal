@@ -61,6 +61,10 @@ export const babyStepGiantStep = (
         );
     }
 
+    if (target === 1n) {
+        return 0n;
+    }
+
     const stepSize = integerSquareRootCeil(bound + 1n);
     const babySteps = new Map<bigint, bigint>();
     let babyStep = 1n;

@@ -5,13 +5,17 @@ import {
     assertInSubgroupOrIdentity,
     assertPlaintextAdditive,
     assertScalarInZq,
+    assertThreshold,
+    assertValidParticipantIndex,
     assertValidPublicKey,
     getGroup,
+    IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidScalarError,
     isInSubgroup,
     isInSubgroupOrIdentity,
     PlaintextDomainError,
+    ThresholdViolationError,
 } from '#core';
 
 describe('core validation', () => {
@@ -61,5 +65,24 @@ describe('core validation', () => {
             assertValidPublicKey(group.p - 1n, group.p, group.q),
         ).toThrow(InvalidGroupElementError);
         expect(() => assertValidPublicKey(4n, group.p, group.q)).not.toThrow();
+    });
+
+    it('validates threshold and participant index domains', () => {
+        expect(() => assertThreshold(3, 5)).not.toThrow();
+        expect(() => assertThreshold(0, 5)).toThrow(ThresholdViolationError);
+        expect(() => assertThreshold(6, 5)).toThrow(ThresholdViolationError);
+        expect(() => assertThreshold(2.5, 5)).toThrow(ThresholdViolationError);
+
+        expect(() => assertValidParticipantIndex(1, 5)).not.toThrow();
+        expect(() => assertValidParticipantIndex(5, 5)).not.toThrow();
+        expect(() => assertValidParticipantIndex(0, 5)).toThrow(
+            IndexOutOfRangeError,
+        );
+        expect(() => assertValidParticipantIndex(6, 5)).toThrow(
+            IndexOutOfRangeError,
+        );
+        expect(() => assertValidParticipantIndex(1.5, 5)).toThrow(
+            IndexOutOfRangeError,
+        );
     });
 });

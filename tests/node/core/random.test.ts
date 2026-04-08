@@ -94,9 +94,74 @@ describe('core randomness', () => {
     });
 
     it('uses rejection sampling for randomScalarBelow', () => {
-        const source = createSequenceSource([9], [4]);
+        const source = createSequenceSource([0xff], [0x04]);
 
         expect(randomScalarBelow(6n, source)).toBe(4n);
+    });
+
+    it('returns zero immediately for a unit upper bound', () => {
+        const source = vi.fn<RandomBytesSource>(() => {
+            throw new Error('Unit upper bounds should not consume randomness');
+        });
+
+        expect(randomScalarBelow(1n, source)).toBe(0n);
+        expect(source).not.toHaveBeenCalled();
+    });
+
+    it('handles byte-aligned mask cases without zeroing the leading byte', () => {
+        expect(randomScalarBelow(128n, createSequenceSource([0x7f]))).toBe(
+            127n,
+        );
+        expect(randomScalarBelow(256n, createSequenceSource([0xff]))).toBe(
+            255n,
+        );
+        expect(
+            randomScalarBelow(65536n, createSequenceSource([0xff, 0xff])),
+        ).toBe(65535n);
+    });
+
+    it('handles awkward non-byte-aligned rejection sampling bounds', () => {
+        expect(
+            randomScalarBelow(
+                257n,
+                createSequenceSource([0xff, 0xff], [0x01, 0x00]),
+            ),
+        ).toBe(256n);
+        expect(randomScalarBelow(7n, createSequenceSource([0x06]))).toBe(6n);
+        expect(
+            randomScalarBelow(3n, createSequenceSource([0xff], [0x02])),
+        ).toBe(2n);
+    });
+
+    it('does not mutate buffers returned by injected random sources', () => {
+        const sharedBuffer = Uint8Array.from([0xff]);
+        const source: RandomBytesSource = (length) => {
+            expect(length).toBe(1);
+            return sharedBuffer;
+        };
+
+        expect(randomScalarBelow(128n, source)).toBe(127n);
+        expect(Array.from(sharedBuffer)).toEqual([0xff]);
+    });
+
+    it('can reach every output value for small bounds', () => {
+        let next = 0;
+        const source: RandomBytesSource = (length) => {
+            const bytes = new Uint8Array(length);
+            for (let index = 0; index < length; index += 1) {
+                bytes[index] = next & 0xff;
+                next = (next + 1) & 0xff;
+            }
+
+            return bytes;
+        };
+        const seen = new Set<bigint>();
+
+        for (let index = 0; index < 10000; index += 1) {
+            seen.add(randomScalarBelow(10n, source));
+        }
+
+        expect(seen).toEqual(new Set([0n, 1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n]));
     });
 
     it('samples randomScalarInRange with min inclusive and max exclusive semantics', () => {

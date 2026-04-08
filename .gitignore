@@ -9,12 +9,14 @@ debug.log
 
 # Build
 dist/
+docs/api/
 
 # Testing
 coverage/
 
 # Miscellaneous
 .DS_Store
+__pycache__/
 temp/
 temp.*
 

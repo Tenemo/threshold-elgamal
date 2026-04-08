@@ -1,4 +1,7 @@
-import { UnsupportedSuiteError } from './errors.js';
+import { modPowP } from './bigint.js';
+import { bytesToBigInt } from './bytes.js';
+import { hkdfSha256, utf8ToBytes } from './crypto.js';
+import { InvalidGroupElementError, UnsupportedSuiteError } from './errors.js';
 import type { CryptoGroup, GroupName, PrimeBits } from './types.js';
 
 type GroupDefinition = Omit<CryptoGroup, 'h'>;
@@ -41,6 +44,10 @@ const FROZEN_H_VALUES: Record<GroupName, bigint> = {
     ffdhe4096:
         983066145307897040884741051762498409254415289996751664523175065783459495405522766384223938680787705817269163309470970263228780777192726557735534398592765101996342408421190053316710792066040994039419408864763266883411720598307904694623460008276369139713127705323912268588191928898455116354628094480177917023101215777790036669040131821951240431623141764018522265117700403995126593209373516775742720533070709022534685320920235975367462274965265914013112616839295196930563610265137194110486490468221247536153570836613006359926752496240611282835310084569865530453009028967362095005644203023702913046393330844409161242292756925081408504612679396522959967078957664606145751034639790967424475813068497746665767230505250446647729392756038557416453402972661990070298293722746236297066250355918495226246146358747600965466389789259418652806853014914246948401983166837988377077886334473871163154783783563547517530198591851073202921264614514762055095911936156378770600278644518089967358096394980689110973542151768847463380724485129032037084318064011622926337590871332245005430283741210604030291807782281546922322899828083455401376020437720766750386324680953700544681100280636448880215238518944003899154275133578259851529950423934290049519638722246n,
 };
+
+const H_DERIVATION_SALT = utf8ToBytes('threshold-elgamal-v1-salt');
+const H_DERIVATION_INFO = utf8ToBytes('generator-h-expansion');
+const H_DERIVATION_EXTRA_BYTES = 16;
 
 const freezeGroup = (group: CryptoGroup): CryptoGroup => Object.freeze(group);
 
@@ -104,3 +111,41 @@ export const getGroup = (identifier: PrimeBits | GroupName): CryptoGroup =>
  * @returns The frozen list of every built-in group definition.
  */
 export const listGroups = (): readonly CryptoGroup[] => GROUP_LIST;
+
+/**
+ * Recomputes the deterministic secondary generator `h` for a built-in suite.
+ *
+ * The derivation uses HKDF-SHA-256 over a suite-specific seed string, then
+ * maps the result into `2..p-2` before squaring into the prime-order subgroup.
+ *
+ * @param identifier Built-in suite identifier by bit size or canonical group name.
+ * @returns The recomputed deterministic subgroup generator `h`.
+ *
+ * @throws {@link UnsupportedSuiteError} When the identifier does not match one
+ * of the built-in suites.
+ * @throws {@link InvalidGroupElementError} When the derived value violates the
+ * expected subgroup invariants.
+ */
+export const deriveH = async (
+    identifier: PrimeBits | GroupName,
+): Promise<bigint> => {
+    const groupName = resolveGroupName(identifier);
+    const group = BASE_GROUPS[groupName];
+    const seed = utf8ToBytes(`threshold-elgamal-v1-${groupName}-generator-h`);
+    const derived = await hkdfSha256(
+        seed,
+        H_DERIVATION_SALT,
+        H_DERIVATION_INFO,
+        group.byteLength + H_DERIVATION_EXTRA_BYTES,
+    );
+    const z = 2n + (bytesToBigInt(derived) % (group.p - 3n));
+    const h = (z * z) % group.p;
+
+    if (h <= 1n || h === group.g || modPowP(h, group.q, group.p) !== 1n) {
+        throw new InvalidGroupElementError(
+            'Deterministic h derivation produced an invalid subgroup generator',
+        );
+    }
+
+    return h;
+};
