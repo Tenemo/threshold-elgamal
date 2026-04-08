@@ -33,8 +33,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run coverage:badge
-      - run: pnpm run docs:build
       - run: pnpm run verify:docs
+      - run: pnpm run docs:build:site
       - uses: actions/upload-pages-artifact@v4.0.0
         with:
           path: ./docs/dist

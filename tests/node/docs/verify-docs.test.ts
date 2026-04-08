@@ -4,12 +4,21 @@ import { describe, expect, it } from 'vitest';
 
 describe('documentation verification scripts', () => {
     it('keeps verify:docs self-contained while preserving a generated-only entry point', async () => {
-        const packageJson = JSON.parse(
-            await readFile(
-                new URL('../../../package.json', import.meta.url),
+        const [packageJsonRaw, ciWorkflow, pagesWorkflow] = await Promise.all([
+            readFile(new URL('../../../package.json', import.meta.url), 'utf8'),
+            readFile(
+                new URL('../../../.github/workflows/ci.yml', import.meta.url),
                 'utf8',
             ),
-        ) as {
+            readFile(
+                new URL(
+                    '../../../.github/workflows/pages.yml',
+                    import.meta.url,
+                ),
+                'utf8',
+            ),
+        ]);
+        const packageJson = JSON.parse(packageJsonRaw) as {
             scripts?: Record<string, string>;
         };
 
@@ -20,5 +29,13 @@ describe('documentation verification scripts', () => {
             'tsx ./typedoc/verify-docs.ts',
         );
         expect(packageJson.scripts?.ci).toContain('pnpm run verify:docs');
+        expect(ciWorkflow).toContain('- run: pnpm run verify:docs');
+        expect(ciWorkflow).not.toContain('- run: pnpm run docs:api');
+        expect(pagesWorkflow).toContain('- run: pnpm run verify:docs');
+        expect(pagesWorkflow).toContain('- run: pnpm run docs:build:site');
+        expect(pagesWorkflow).not.toMatch(/^\s*- run: pnpm run docs:build$/m);
+        expect(pagesWorkflow.indexOf('pnpm run verify:docs')).toBeLessThan(
+            pagesWorkflow.indexOf('pnpm run docs:build:site'),
+        );
     });
 });
