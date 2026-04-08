@@ -36,7 +36,7 @@ describe('disjunctive proofs', () => {
         group.name,
     );
     const context: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash: 'manifest-1',
         sessionId: 'session-1',

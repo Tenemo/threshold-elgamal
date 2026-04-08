@@ -182,7 +182,7 @@ const buildSchnorrContext = (
     coefficientIndex: number,
     group: CryptoGroup,
 ): ProofContext => ({
-    protocolVersion: 'v2',
+    protocolVersion: 'v1',
     suiteId: group.name,
     manifestHash: payload.manifestHash,
     sessionId: payload.sessionId,

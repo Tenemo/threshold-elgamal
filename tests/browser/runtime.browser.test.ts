@@ -41,7 +41,7 @@ const buildBrowserBallot = async (
         group.name,
     );
     const context: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',
@@ -186,7 +186,7 @@ describe('browser runtime coverage', () => {
                 recipientIndex: 2,
                 envelopeId: 'env-1-2',
                 payloadType: 'dkg-share',
-                protocolVersion: 'v2',
+                protocolVersion: 'v1',
                 rosterHash: 'roster-hash',
                 suite: resolvedSuite,
             },

@@ -8,37 +8,43 @@
 [![node](https://img.shields.io/badge/node-%E2%89%A524.14.1-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![license](https://img.shields.io/github/license/Tenemo/threshold-elgamal)](LICENSE)
 
-`threshold-elgamal` is a browser-native TypeScript library for finite-field ElGamal research prototypes built on native `bigint`.
+`threshold-elgamal` is a TypeScript library for applications where a group of
+people need to submit encrypted scores, verify a shared public record, and
+reveal only the final result once enough participants cooperate.
 
-This library ships:
+In practice, that means browser-native finite-field ElGamal research
+prototypes for verifiable voting, encrypted group decisions, and other
+small-ceremony threshold workflows built on native `bigint`.
 
-- validated RFC 7919 FFDHE groups with first-class `q`
-- deterministic suite-derived `h`
-- cryptographically secure randomness with rejection sampling
-- additive ElGamal on the safe root package
-- bounded discrete-log recovery and additive ciphertext combination helpers
-- key generation helpers for the shipped additive workflow
-- deterministic encoding helpers for serialization and challenge inputs
-- dealer-based threshold sharing and decryption under the `./threshold` subpath
-- Feldman and Pedersen VSS helpers under the `./vss` subpath
-- Schnorr, DLEQ, and disjunctive proofs under the `./proofs` subpath
-- canonical payload, transcript, manifest, and published-tally verification helpers under the `./protocol` subpath
-- authenticated transport envelopes under the `./transport` subpath
-- log-driven Joint-Feldman and GJKR reducers under the `./dkg` subpath
+This library is a hardened research prototype. It has not been audited.
 
-This library is a hardened research prototype. It is not audited production voting software.
+Start with these guides:
 
-## Release status
+- [Get started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
+- [Three-participant voting flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
+- [Security and non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
 
-This repository tracks the upcoming `1.0.0` release line. Treat any published
-`0.1.x` package as legacy and do not use it for new deployments.
+## What the library includes
 
-Confirm that you are actually installing a `1.x` package before relying on the
-typed protocol payloads, transcript-native complaint handling, or the published
-tally verification helpers described in this repository.
+### Encryption and validation
 
-Protocol payload examples still use `protocolVersion: "v2"` because that labels
-the current wire format, not the npm package version.
+- [Validated RFC 7919 FFDHE groups and subgroup checks](https://tenemo.github.io/threshold-elgamal/guides/groups-and-validation/) define the group model and the input rules the library enforces.
+- [Additive ElGamal, ciphertext combination, and bounded discrete-log recovery](https://tenemo.github.io/threshold-elgamal/guides/additive-elgamal/) cover the safe encryption path used by the root package.
+- [The safe root package API](https://tenemo.github.io/threshold-elgamal/api/root-package/) exposes the additive-only surface for encryption, decryption, encoding, and validation.
+
+### Threshold and protocol building blocks
+
+- [Threshold sharing and decryption helpers](https://tenemo.github.io/threshold-elgamal/api/reference/threshold/) provide dealer-based Shamir sharing, verified decryption shares, and aggregate decryption support.
+- [Feldman and Pedersen VSS helpers](https://tenemo.github.io/threshold-elgamal/api/reference/vss/) cover verifiable secret sharing commitments and share checks.
+- [Typed protocol payloads, manifest handling, transcript hashing, and published tally verification](https://tenemo.github.io/threshold-elgamal/api/reference/protocol/) cover the library's signed ceremony and tally surface.
+- [Log-driven Joint-Feldman and GJKR reducers](https://tenemo.github.io/threshold-elgamal/api/reference/dkg/) provide the distributed key-generation state machines behind the threshold workflow.
+
+### Proofs, transport, and runtime
+
+- [Schnorr, DLEQ, and disjunctive proofs](https://tenemo.github.io/threshold-elgamal/api/reference/proofs/) support ballot and decryption verification.
+- [Authenticated transport envelopes and complaint-resolution helpers](https://tenemo.github.io/threshold-elgamal/api/reference/transport/) cover the share-delivery layer used by the DKG flow.
+- [Runtime and browser compatibility guidance](https://tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility/) documents the supported environments and feature expectations.
+- [The subpath overview](https://tenemo.github.io/threshold-elgamal/api/subpath-overview/) shows how the public API is split between the safe root package and narrower advanced modules.
 
 ## Installation
 
@@ -52,7 +58,7 @@ pnpm add threshold-elgamal
 - Browsers need native `bigint` together with Web Crypto (`crypto.subtle` and `crypto.getRandomValues`).
 - Node requires version `24.14.1` or newer with `globalThis.crypto`.
 
-## Safe quickstart
+## Quickstart
 
 ```typescript
 import {
@@ -95,7 +101,7 @@ For example, if each ballot is in `0..10` and you tally `50` ballots, encrypt ea
 - Build a voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
 - Security model: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
 - API reference: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
-- Docs source lives under `docs/src/content/docs/`
+- Docs source: [`docs/src/content/docs/`](docs/src/content/docs/)
 
 ## Changes since v0.x.x
 

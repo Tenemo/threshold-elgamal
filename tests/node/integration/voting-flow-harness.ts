@@ -375,7 +375,7 @@ const buildManifest = (
     group: CryptoGroup,
     scenario: VotingFlowScenario,
 ): ElectionManifest => ({
-    protocolVersion: 'v2',
+    protocolVersion: 'v1',
     suiteId: group.name,
     threshold: majorityThreshold(scenario.participantCount),
     participantCount: scenario.participantCount,
@@ -493,7 +493,7 @@ const buildDealerMaterial = async (
         secretPolynomial.map(async (coefficient, coefficientIndex) => {
             const proofCoefficientIndex = coefficientIndex + 1;
             const context: ProofContext = {
-                protocolVersion: 'v2',
+                protocolVersion: 'v1',
                 suiteId: group.name,
                 manifestHash,
                 sessionId,
@@ -572,7 +572,7 @@ const buildDealerMaterial = async (
                         recipientIndex: recipient.index,
                         envelopeId: `env-${participant.index}-${recipient.index}`,
                         payloadType: 'encrypted-dual-share',
-                        protocolVersion: 'v2',
+                        protocolVersion: 'v1',
                         suite: recipient.transportSuite,
                     },
                 );
@@ -734,7 +734,7 @@ const createBallotArtifacts = async (
                 group.name,
             );
             const proofContext: ProofContext = {
-                protocolVersion: 'v2',
+                protocolVersion: 'v1',
                 suiteId: group.name,
                 manifestHash,
                 sessionId,
@@ -1415,7 +1415,7 @@ export const runVotingFlowScenario = async (
                 decryptionShare: decryptionShare.value,
             };
             const proofContext: ProofContext = {
-                protocolVersion: 'v2',
+                protocolVersion: 'v1',
                 suiteId: group.name,
                 manifestHash,
                 sessionId,

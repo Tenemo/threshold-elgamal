@@ -41,7 +41,7 @@ const buildBallot = async (
         group.name,
     );
     const context: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',
@@ -70,7 +70,7 @@ const buildBallot = async (
 const main = async (): Promise<void> => {
     const group = getGroup('ffdhe2048');
     const manifest: ElectionManifest = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         threshold: 3,
         participantCount: 5,
@@ -114,7 +114,7 @@ const main = async (): Promise<void> => {
     };
 
     const schnorrContext: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash,
         sessionId: sessionIds.left,
@@ -147,7 +147,7 @@ const main = async (): Promise<void> => {
         decryptionShare: modPowP(ciphertext.c1, dleqSecret, group.p),
     };
     const dleqContext: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash,
         sessionId: sessionIds.left,
@@ -163,7 +163,7 @@ const main = async (): Promise<void> => {
     );
 
     const disjunctiveContext: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',
