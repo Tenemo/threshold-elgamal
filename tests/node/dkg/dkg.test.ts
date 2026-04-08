@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import thresholdVector from '../../../test-vectors/threshold.json';
 
-import { getGroup } from '#core';
+import { IndexOutOfRangeError, InvalidShareError, getGroup } from '#core';
 import {
     createGjkrState,
     createJointFeldmanState,
@@ -36,6 +36,29 @@ describe('DKG state machines', () => {
         expect(reconstructSecretFromShares(subsetShares, group.q)).toBe(
             BigInt(thresholdVector.polynomial[0]),
         );
+    });
+
+    it('rejects malformed share indices during reconstruction', () => {
+        const group = getGroup(thresholdVector.group as 'ffdhe3072');
+
+        expect(() =>
+            reconstructSecretFromShares(
+                [
+                    { index: 1, value: 10n },
+                    { index: 1, value: 12n },
+                ],
+                group.q,
+            ),
+        ).toThrow(InvalidShareError);
+        expect(() =>
+            reconstructSecretFromShares(
+                [
+                    { index: 0, value: 10n },
+                    { index: 2, value: 12n },
+                ],
+                group.q,
+            ),
+        ).toThrow(IndexOutOfRangeError);
     });
 
     it('gates phase 1 on manifest acceptance', () => {
@@ -331,6 +354,98 @@ describe('DKG state machines', () => {
         expect(resumedState).toEqual(directReplay);
         expect(directReplay.phase).toBe('completed');
         expect(directReplay.qual).toEqual([1, 2, 3]);
+    });
+
+    it('ignores idempotent retransmissions without regressing the reducer phase', () => {
+        const gjkrState = createGjkrState({
+            protocol: 'gjkr',
+            sessionId: 'session-5',
+            manifestHash: 'manifest-5',
+            group: 'ffdhe2048',
+            participantCount: 2,
+        });
+        const gjkrAcceptance = signed({
+            sessionId: 'session-5',
+            manifestHash: 'manifest-5',
+            phase: 0,
+            participantIndex: 1,
+            messageType: 'manifest-acceptance',
+            rosterHash: 'roster-5',
+            assignedParticipantIndex: 1,
+        });
+        const gjkrStateAfterAcceptance = processGjkrPayload(
+            processGjkrPayload(
+                processGjkrPayload(gjkrState, gjkrAcceptance).newState,
+                signed({
+                    ...gjkrAcceptance.payload,
+                    participantIndex: 2,
+                    assignedParticipantIndex: 2,
+                }),
+            ).newState,
+            signed({
+                sessionId: 'session-5',
+                manifestHash: 'manifest-5',
+                phase: 1,
+                participantIndex: 1,
+                messageType: 'pedersen-commitment',
+                commitments: ['c-1'],
+            }),
+        ).newState;
+        const gjkrRetransmitted = processGjkrPayload(
+            gjkrStateAfterAcceptance,
+            gjkrAcceptance,
+        );
+
+        expect(gjkrStateAfterAcceptance.phase).toBe(1);
+        expect(gjkrRetransmitted.errors).toEqual([]);
+        expect(gjkrRetransmitted.newState).toBe(gjkrStateAfterAcceptance);
+        expect(gjkrRetransmitted.newState.phase).toBe(1);
+
+        const jointState = createJointFeldmanState({
+            protocol: 'joint-feldman',
+            sessionId: 'session-6',
+            manifestHash: 'manifest-6',
+            group: 'ffdhe2048',
+            participantCount: 2,
+        });
+        const jointAcceptance = signed({
+            sessionId: 'session-6',
+            manifestHash: 'manifest-6',
+            phase: 0,
+            participantIndex: 1,
+            messageType: 'manifest-acceptance',
+            rosterHash: 'roster-6',
+            assignedParticipantIndex: 1,
+        });
+        const jointStateAfterAcceptance = processJointFeldmanPayload(
+            processJointFeldmanPayload(
+                processJointFeldmanPayload(jointState, jointAcceptance)
+                    .newState,
+                signed({
+                    ...jointAcceptance.payload,
+                    participantIndex: 2,
+                    assignedParticipantIndex: 2,
+                }),
+            ).newState,
+            signed({
+                sessionId: 'session-6',
+                manifestHash: 'manifest-6',
+                phase: 1,
+                participantIndex: 1,
+                messageType: 'feldman-commitment',
+                commitments: ['c-1'],
+                proofs: [],
+            }),
+        ).newState;
+        const jointRetransmitted = processJointFeldmanPayload(
+            jointStateAfterAcceptance,
+            jointAcceptance,
+        );
+
+        expect(jointStateAfterAcceptance.phase).toBe(1);
+        expect(jointRetransmitted.errors).toEqual([]);
+        expect(jointRetransmitted.newState).toBe(jointStateAfterAcceptance);
+        expect(jointRetransmitted.newState.phase).toBe(1);
     });
 
     it('rejects equivocated payloads for the same canonical slot', () => {

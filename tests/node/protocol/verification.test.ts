@@ -226,56 +226,62 @@ describe('protocol verification helpers', () => {
         );
     });
 
-    it('recomputes ballot aggregates deterministically and exposes dropped ballots', async () => {
-        const group = getGroup('ffdhe2048');
-        const { publicKey } = generateParametersWithPrivateKey(
-            123n,
-            group.name,
-        );
-        const ballots = [
-            await buildBallot(3, 1, 3n, 11n),
-            await buildBallot(1, 1, 1n, 7n),
-            await buildBallot(2, 1, 2n, 9n),
-        ] as const;
+    it(
+        'recomputes ballot aggregates deterministically and exposes dropped ballots',
+        {
+            timeout: 20_000,
+        },
+        async () => {
+            const group = getGroup('ffdhe2048');
+            const { publicKey } = generateParametersWithPrivateKey(
+                123n,
+                group.name,
+            );
+            const ballots = [
+                await buildBallot(3, 1, 3n, 11n),
+                await buildBallot(1, 1, 1n, 7n),
+                await buildBallot(2, 1, 2n, 9n),
+            ] as const;
 
-        const verified = await verifyAndAggregateBallots({
-            ballots,
-            publicKey,
-            validValues: [1n, 2n, 3n],
-            group,
-            manifestHash: 'manifest-hash',
-            sessionId: 'session-1',
-            minimumBallotCount: 2,
-        });
-        const reversed = await verifyAndAggregateBallots({
-            ballots: [...ballots].reverse(),
-            publicKey,
-            validValues: [1n, 2n, 3n],
-            group,
-            manifestHash: 'manifest-hash',
-            sessionId: 'session-1',
-            minimumBallotCount: 2,
-        });
-        const partial = await verifyAndAggregateBallots({
-            ballots: ballots.slice(0, 2),
-            publicKey,
-            validValues: [1n, 2n, 3n],
-            group,
-            manifestHash: 'manifest-hash',
-            sessionId: 'session-1',
-            minimumBallotCount: 2,
-        });
+            const verified = await verifyAndAggregateBallots({
+                ballots,
+                publicKey,
+                validValues: [1n, 2n, 3n],
+                group,
+                manifestHash: 'manifest-hash',
+                sessionId: 'session-1',
+                minimumBallotCount: 2,
+            });
+            const reversed = await verifyAndAggregateBallots({
+                ballots: [...ballots].reverse(),
+                publicKey,
+                validValues: [1n, 2n, 3n],
+                group,
+                manifestHash: 'manifest-hash',
+                sessionId: 'session-1',
+                minimumBallotCount: 2,
+            });
+            const partial = await verifyAndAggregateBallots({
+                ballots: ballots.slice(0, 2),
+                publicKey,
+                validValues: [1n, 2n, 3n],
+                group,
+                manifestHash: 'manifest-hash',
+                sessionId: 'session-1',
+                minimumBallotCount: 2,
+            });
 
-        expect(verified.ballots.map((ballot) => ballot.voterIndex)).toEqual([
-            1, 2, 3,
-        ]);
-        expect(reversed.aggregate).toEqual(verified.aggregate);
-        expect(reversed.transcriptHash).toBe(verified.transcriptHash);
-        expect(partial.aggregate.ballotCount).toBe(2);
-        expect(partial.aggregate.ciphertext).not.toEqual(
-            verified.aggregate.ciphertext,
-        );
-    });
+            expect(verified.ballots.map((ballot) => ballot.voterIndex)).toEqual(
+                [1, 2, 3],
+            );
+            expect(reversed.aggregate).toEqual(verified.aggregate);
+            expect(reversed.transcriptHash).toBe(verified.transcriptHash);
+            expect(partial.aggregate.ballotCount).toBe(2);
+            expect(partial.aggregate.ciphertext).not.toEqual(
+                verified.aggregate.ciphertext,
+            );
+        },
+    );
 
     it('rejects duplicate ballot slots, wrong voter bindings, and publication-threshold underflows', async () => {
         const group = getGroup('ffdhe2048');

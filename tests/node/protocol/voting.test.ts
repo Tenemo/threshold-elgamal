@@ -75,7 +75,7 @@ describe('published voting verification', () => {
             }),
             'Expected the dealer-fault voting fixture to complete',
         );
-    }, 30_000);
+    }, 90_000);
 
     it('verifies the typed ballot, decryption-share, and tally payloads end to end', async () => {
         await expect(

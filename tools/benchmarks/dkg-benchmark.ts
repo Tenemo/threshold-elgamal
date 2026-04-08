@@ -30,7 +30,7 @@ const parseArgs = (): {
     const provided = process.argv
         .slice(2)
         .map((argument) => argument.trim())
-        .filter((argument) => argument !== '');
+        .filter((argument) => argument !== '' && argument !== '--');
     let group: GroupName = 'ffdhe3072';
     let transportSuite: KeyAgreementSuite = 'X25519';
 
@@ -52,7 +52,7 @@ const parseArgs = (): {
         participantArguments.length === 0
             ? [3, 11, 21, 31, 41, 51]
             : participantArguments
-                  .flatMap((argument) => argument.split(','))
+                  .flatMap((argument) => argument.split(/[,\s]+/u))
                   .map((argument) => argument.trim())
                   .filter((argument) => argument !== '')
                   .map((argument) => {

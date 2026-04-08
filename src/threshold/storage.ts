@@ -6,6 +6,7 @@ import {
 import {
     bytesToHex,
     bigintToFixedBytes,
+    encodeForChallenge,
     fixedHexToBigint,
     hexToBytes,
 } from '../serialize/index.js';
@@ -21,6 +22,9 @@ export type WrappedShareRecord = {
 
 const toBufferSource = (bytes: Uint8Array): ArrayBuffer =>
     Uint8Array.from(bytes).buffer;
+
+const shareStorageAdditionalData = (index: number): Uint8Array =>
+    encodeForChallenge('wrapped-share-index', BigInt(index));
 
 /**
  * Returns whether the current runtime exposes the minimum capabilities required
@@ -68,6 +72,9 @@ export const wrapShareForStorage = async (
             {
                 name: 'AES-GCM',
                 iv: toBufferSource(iv),
+                additionalData: toBufferSource(
+                    shareStorageAdditionalData(share.index),
+                ),
             },
             key,
             toBufferSource(bigintToFixedBytes(share.value, byteLength)),
@@ -99,6 +106,9 @@ export const unwrapShareFromStorage = async (
             {
                 name: 'AES-GCM',
                 iv: toBufferSource(hexToBytes(record.iv)),
+                additionalData: toBufferSource(
+                    shareStorageAdditionalData(record.index),
+                ),
             },
             key,
             toBufferSource(hexToBytes(record.ciphertext)),

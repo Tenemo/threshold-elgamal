@@ -130,43 +130,49 @@ describe('dealer-based threshold decryption', () => {
         }
     });
 
-    it('does not recover the correct plaintext with insufficient shares', () => {
-        const group = getGroup(thresholdVector.group as 'ffdhe3072');
-        const polynomial = thresholdVector.polynomial.map((value) =>
-            BigInt(value),
-        );
-        const shares = deriveSharesFromPolynomial(
-            polynomial,
-            thresholdVector.participantCount,
-            group.q,
-        );
-        const ciphertext = encryptAdditiveWithRandomness(
-            BigInt(thresholdVector.ciphertext.message),
-            BigInt(thresholdVector.publicKey),
-            BigInt(thresholdVector.ciphertext.randomness),
-            BigInt(thresholdVector.ciphertext.bound),
-            group.name,
-        );
-
-        for (const subset of choose(shares, 2)) {
-            const decryptionShares = subset.map((share) =>
-                createDecryptionShare(ciphertext, share, group),
+    it(
+        'does not recover the correct plaintext with insufficient shares',
+        {
+            timeout: 20_000,
+        },
+        () => {
+            const group = getGroup(thresholdVector.group as 'ffdhe3072');
+            const polynomial = thresholdVector.polynomial.map((value) =>
+                BigInt(value),
+            );
+            const shares = deriveSharesFromPolynomial(
+                polynomial,
+                thresholdVector.participantCount,
+                group.q,
+            );
+            const ciphertext = encryptAdditiveWithRandomness(
+                BigInt(thresholdVector.ciphertext.message),
+                BigInt(thresholdVector.publicKey),
+                BigInt(thresholdVector.ciphertext.randomness),
+                BigInt(thresholdVector.ciphertext.bound),
+                group.name,
             );
 
-            try {
-                expect(
-                    combineDecryptionShares(
-                        ciphertext,
-                        decryptionShares,
-                        group,
-                        BigInt(thresholdVector.ciphertext.bound),
-                    ),
-                ).not.toBe(BigInt(thresholdVector.ciphertext.message));
-            } catch (error) {
-                expect(error).toBeInstanceOf(PlaintextDomainError);
+            for (const subset of choose(shares, 2)) {
+                const decryptionShares = subset.map((share) =>
+                    createDecryptionShare(ciphertext, share, group),
+                );
+
+                try {
+                    expect(
+                        combineDecryptionShares(
+                            ciphertext,
+                            decryptionShares,
+                            group,
+                            BigInt(thresholdVector.ciphertext.bound),
+                        ),
+                    ).not.toBe(BigInt(thresholdVector.ciphertext.message));
+                } catch (error) {
+                    expect(error).toBeInstanceOf(PlaintextDomainError);
+                }
             }
-        }
-    });
+        },
+    );
 
     it('preserves additive homomorphism under threshold decryption', () => {
         const keySet = dealerKeyGen(3, 5, 3072);

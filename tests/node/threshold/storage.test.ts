@@ -41,6 +41,25 @@ describe('share storage helpers', () => {
         ).rejects.toBeInstanceOf(IndexOutOfRangeError);
     });
 
+    it('authenticates the stored share index', async () => {
+        const key = await generateShareWrappingKey();
+        const record = await wrapShareForStorage(
+            { index: 3, value: 12345n },
+            key,
+            32,
+        );
+
+        await expect(
+            unwrapShareFromStorage(
+                {
+                    ...record,
+                    index: 4,
+                },
+                key,
+            ),
+        ).rejects.toThrow();
+    });
+
     it('reports storage support based on IndexedDB availability', () => {
         expect(typeof isShareStorageSupported()).toBe('boolean');
     });

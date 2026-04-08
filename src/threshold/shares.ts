@@ -1,4 +1,5 @@
 import {
+    InvalidScalarError,
     assertScalarInZq,
     assertThreshold,
     assertValidParticipantIndex,
@@ -20,6 +21,12 @@ const createSharesFromPolynomial = (
     participantCount: number,
     q: bigint,
 ): Share[] => {
+    if (!Number.isInteger(participantCount) || participantCount < 1) {
+        throw new InvalidScalarError(
+            'Participant count must be a positive integer',
+        );
+    }
+
     const shares: Share[] = [];
 
     for (let index = 1; index <= participantCount; index += 1) {

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     IndexOutOfRangeError,
     InvalidGroupElementError,
+    InvalidScalarError,
     ThresholdViolationError,
     getGroup,
 } from '#core';
@@ -137,5 +138,11 @@ describe('verifiable secret sharing', () => {
                 group.q,
             ),
         ).toThrow(ThresholdViolationError);
+        expect(() =>
+            deriveSharesFromPolynomial(secretPolynomial, 0, group.q),
+        ).toThrow(InvalidScalarError);
+        expect(() =>
+            deriveSharesFromPolynomial(secretPolynomial, 2.5, group.q),
+        ).toThrow(InvalidScalarError);
     });
 });

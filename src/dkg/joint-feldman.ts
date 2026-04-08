@@ -127,10 +127,11 @@ export const processJointFeldmanPayload = (
     }
 
     const appended = appendTranscriptPayload(state, signedPayload);
-    if (appended.errors.length > 0 || appended.newState !== state) {
-        if (appended.newState.phase === 'aborted') {
-            return appended;
-        }
+    if (appended.errors.length > 0 || appended.newState.phase === 'aborted') {
+        return appended;
+    }
+    if (appended.newState === state) {
+        return appended;
     }
 
     const nextTranscriptState = appended.newState;

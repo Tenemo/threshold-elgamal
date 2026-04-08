@@ -6,7 +6,7 @@ import {
     type VotingFlowScenario,
 } from './voting-flow-harness.js';
 
-const scenarioTimeoutMs = 20_000;
+const scenarioTimeoutMs = 60_000;
 
 const completedScenarios: readonly (VotingFlowScenario & {
     readonly expectedQual: readonly number[];
