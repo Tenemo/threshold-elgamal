@@ -194,6 +194,73 @@ describe('DKG transcript verification', () => {
         );
     });
 
+    it('rejects self-targeted encrypted share payloads even when the payload count still matches', async () => {
+        const selfTargetIndex = completed.dkgTranscript.findIndex(
+            (entry) =>
+                entry.payload.messageType === 'encrypted-dual-share' &&
+                entry.payload.participantIndex === 1 &&
+                entry.payload.recipientIndex === 2,
+        );
+        if (selfTargetIndex < 0) {
+            throw new Error('Expected an encrypted share from dealer 1 to 2');
+        }
+
+        const selfTargetPayload = await resignPayload(completed, {
+            ...completed.dkgTranscript[selfTargetIndex].payload,
+            recipientIndex: 1,
+            envelopeId: 'env-1-1',
+        } as ProtocolPayload);
+
+        await expect(
+            verifyDKGTranscript({
+                protocol: 'gjkr',
+                transcript: completed.dkgTranscript.map((entry, index) =>
+                    index === selfTargetIndex ? selfTargetPayload : entry,
+                ),
+                manifest: completed.manifest,
+                sessionId: completed.sessionId,
+            }),
+        ).rejects.toThrow(
+            'Encrypted share payload for dealer 1 must target a different recipient',
+        );
+    });
+
+    it('rejects wrong dealer-to-recipient coverage even when the encrypted share count still matches', async () => {
+        const missingCoverageIndex = completed.dkgTranscript.findIndex(
+            (entry) =>
+                entry.payload.messageType === 'encrypted-dual-share' &&
+                entry.payload.participantIndex === 1 &&
+                entry.payload.recipientIndex === 2,
+        );
+        const duplicateCoveragePayload = completed.dkgTranscript.find(
+            (entry) =>
+                entry.payload.messageType === 'encrypted-dual-share' &&
+                entry.payload.participantIndex === 1 &&
+                entry.payload.recipientIndex === 3,
+        );
+        if (
+            missingCoverageIndex < 0 ||
+            duplicateCoveragePayload === undefined
+        ) {
+            throw new Error('Expected an encrypted share from dealer 1 to 2');
+        }
+
+        await expect(
+            verifyDKGTranscript({
+                protocol: 'gjkr',
+                transcript: completed.dkgTranscript.map((entry, index) =>
+                    index === missingCoverageIndex
+                        ? duplicateCoveragePayload
+                        : entry,
+                ),
+                manifest: completed.manifest,
+                sessionId: completed.sessionId,
+            }),
+        ).rejects.toThrow(
+            'Duplicate encrypted share payload for dealer 1 and recipient 3',
+        );
+    });
+
     it('rejects bad signatures and mismatched session identifiers', async () => {
         const badSignatureTranscript = completed.dkgTranscript.map(
             (entry, index) =>

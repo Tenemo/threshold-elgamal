@@ -1,10 +1,8 @@
-import { getWebCrypto, hkdfSha256, randomBytes } from '../core/index.js';
-import {
-    bytesToHex,
-    encodeForChallenge,
-    hexToBytes,
-} from '../serialize/index.js';
+import { toBufferSource } from '../core/bytes.js';
+import { getWebCrypto, randomBytes } from '../core/index.js';
+import { bytesToHex, hexToBytes } from '../serialize/index.js';
 
+import { deriveEnvelopeKey, encodeEnvelopeContext } from './envelope-crypto.js';
 import {
     deriveTransportSharedSecret,
     exportTransportPrivateKey,
@@ -14,55 +12,6 @@ import {
     importTransportPublicKey,
 } from './key-agreement.js';
 import type { EncryptedEnvelope, EnvelopeContext } from './types.js';
-
-const toBufferSource = (bytes: Uint8Array): ArrayBuffer =>
-    Uint8Array.from(bytes).buffer;
-
-const aadBytes = (context: EnvelopeContext): Uint8Array =>
-    encodeForChallenge(
-        context.sessionId,
-        BigInt(context.phase),
-        BigInt(context.dealerIndex),
-        BigInt(context.recipientIndex),
-        context.envelopeId,
-        context.payloadType,
-        context.protocolVersion,
-        context.suite,
-    );
-
-const hkdfInfo = (context: EnvelopeContext): Uint8Array =>
-    encodeForChallenge(
-        context.sessionId,
-        BigInt(context.phase),
-        BigInt(context.dealerIndex),
-        BigInt(context.recipientIndex),
-        context.envelopeId,
-        context.payloadType,
-        context.protocolVersion,
-        context.suite,
-    );
-
-const importAesKey = async (keyBytes: Uint8Array): Promise<CryptoKey> =>
-    getWebCrypto().subtle.importKey(
-        'raw',
-        toBufferSource(keyBytes),
-        'AES-GCM',
-        false,
-        ['encrypt', 'decrypt'],
-    );
-
-const deriveEnvelopeKey = async (
-    sharedSecret: Uint8Array,
-    context: EnvelopeContext,
-): Promise<CryptoKey> =>
-    importAesKey(
-        await hkdfSha256(
-            sharedSecret,
-            new TextEncoder().encode(context.rosterHash),
-            hkdfInfo(context),
-            32,
-        ),
-    );
 
 /**
  * Encrypts a payload into a sender-ephemeral authenticated envelope.
@@ -100,7 +49,7 @@ export const encryptEnvelope = async (
             {
                 name: 'AES-GCM',
                 iv: toBufferSource(iv),
-                additionalData: toBufferSource(aadBytes(context)),
+                additionalData: toBufferSource(encodeEnvelopeContext(context)),
             },
             key,
             toBufferSource(plaintext),
@@ -156,7 +105,7 @@ export const decryptEnvelope = async (
             {
                 name: 'AES-GCM',
                 iv: toBufferSource(hexToBytes(envelope.iv)),
-                additionalData: toBufferSource(aadBytes(envelope)),
+                additionalData: toBufferSource(encodeEnvelopeContext(envelope)),
             },
             key,
             toBufferSource(hexToBytes(envelope.ciphertext)),

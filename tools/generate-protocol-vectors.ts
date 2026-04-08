@@ -17,14 +17,10 @@ import {
     type BallotTranscriptEntry,
     type ElectionManifest,
 } from '../src/protocol/index.js';
+import { createDeterministicSource } from '../tests/helpers/deterministic.js';
 
 const bigintReplacer = (_key: string, value: unknown): unknown =>
     typeof value === 'bigint' ? value.toString() : value;
-
-const createDeterministicSource =
-    (seed: number) =>
-    (length: number): Uint8Array =>
-        Uint8Array.from({ length }, (_value, index) => (seed + index) & 0xff);
 
 const buildBallot = async (
     voterIndex: number,
@@ -62,7 +58,9 @@ const buildBallot = async (
             [1n, 2n, 3n, 4n, 5n],
             group,
             context,
-            createDeterministicSource(90 + voterIndex),
+            createDeterministicSource(90 + voterIndex, {
+                advanceBetweenCalls: false,
+            }),
         ),
     };
 };
@@ -129,7 +127,9 @@ const main = async (): Promise<void> => {
         schnorrStatement,
         group,
         schnorrContext,
-        createDeterministicSource(10),
+        createDeterministicSource(10, {
+            advanceBetweenCalls: false,
+        }),
     );
 
     const publicKey = modPowP(group.g, 123n, group.p);
@@ -159,7 +159,9 @@ const main = async (): Promise<void> => {
         dleqStatement,
         group,
         dleqContext,
-        createDeterministicSource(20),
+        createDeterministicSource(20, {
+            advanceBetweenCalls: false,
+        }),
     );
 
     const disjunctiveContext: ProofContext = {
@@ -179,7 +181,9 @@ const main = async (): Promise<void> => {
         [1n, 2n, 3n, 4n, 5n],
         group,
         disjunctiveContext,
-        createDeterministicSource(30),
+        createDeterministicSource(30, {
+            advanceBetweenCalls: false,
+        }),
     );
 
     const ballots = await Promise.all([

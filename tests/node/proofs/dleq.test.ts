@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { createDeterministicSource } from '../../helpers/deterministic.js';
+
 import {
     InvalidProofError,
     InvalidScalarError,
@@ -13,19 +15,6 @@ import {
     type DLEQStatement,
     type ProofContext,
 } from '#proofs';
-
-const createDeterministicSource = () => {
-    let counter = 0;
-
-    return (length: number): Uint8Array => {
-        const bytes = new Uint8Array(length);
-        for (let index = 0; index < length; index += 1) {
-            bytes[index] = (counter + index) & 0xff;
-        }
-        counter = (counter + length) & 0xff;
-        return bytes;
-    };
-};
 
 describe('DLEQ proofs', () => {
     const group = getGroup(2048);

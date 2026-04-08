@@ -23,69 +23,20 @@ import type {
     ManifestAcceptancePayload,
     ManifestPublicationPayload,
     PedersenCommitmentPayload,
-    ProtocolMessageType,
     RegistrationPayload,
     SignedPayload,
 } from '../protocol/types.js';
-import { verifySignedProtocolPayloads } from '../protocol/verification.js';
+import {
+    verifySignedProtocolPayloads,
+    type VerifiedProtocolSignatures,
+} from '../protocol/verification.js';
 import { bigintToFixedHex, fixedHexToBigint } from '../serialize/index.js';
 import { resolveDealerChallengeFromPublicKey } from '../transport/complaints.js';
 import { verifyPedersenShare } from '../vss/pedersen.js';
 import type { PedersenShare } from '../vss/types.js';
 
+import { expectedDkgPhase } from './phase-plan.js';
 import type { DKGProtocol } from './types.js';
-
-const expectedPhase = (
-    protocol: DKGProtocol,
-    messageType: ProtocolMessageType,
-): number | null => {
-    if (protocol === 'gjkr') {
-        switch (messageType) {
-            case 'manifest-publication':
-            case 'registration':
-            case 'manifest-acceptance':
-                return 0;
-            case 'pedersen-commitment':
-            case 'encrypted-dual-share':
-                return 1;
-            case 'complaint':
-            case 'complaint-resolution':
-                return 2;
-            case 'feldman-commitment':
-            case 'feldman-share-reveal':
-                return 3;
-            case 'key-derivation-confirmation':
-                return 4;
-            case 'ballot-submission':
-            case 'decryption-share':
-            case 'tally-publication':
-            case 'ceremony-restart':
-                return null;
-        }
-    }
-
-    switch (messageType) {
-        case 'manifest-publication':
-        case 'registration':
-        case 'manifest-acceptance':
-            return 0;
-        case 'feldman-commitment':
-        case 'encrypted-dual-share':
-            return 1;
-        case 'complaint':
-        case 'complaint-resolution':
-        case 'feldman-share-reveal':
-            return 2;
-        case 'key-derivation-confirmation':
-            return 3;
-        case 'pedersen-commitment':
-        case 'ballot-submission':
-        case 'decryption-share':
-        case 'tally-publication':
-        case 'ceremony-restart':
-            return null;
-    }
-};
 
 const assertUniqueSlots = (transcript: readonly SignedPayload[]): void => {
     for (let leftIndex = 0; leftIndex < transcript.length; leftIndex += 1) {
@@ -381,10 +332,322 @@ const complaintResolutionKey = (
     envelopeId: string,
 ): string => `${complainantIndex}:${dealerIndex}:${envelopeId}`;
 
-const parsePedersenSharePlaintext = (
+const encryptedShareSlotKey = (
+    dealerIndex: number,
+    recipientIndex: number,
+): string => `${dealerIndex}:${recipientIndex}`;
+
+type EncryptedShareMatrix = {
+    readonly encryptedShares: readonly SignedPayload<EncryptedDualSharePayload>[];
+    readonly byComplaintKey: ReadonlyMap<
+        string,
+        SignedPayload<EncryptedDualSharePayload>
+    >;
+};
+
+type ParsedFeldmanCommitment = {
+    readonly dealerIndex: number;
+    readonly commitments: readonly bigint[];
+    readonly payload: FeldmanCommitmentPayload;
+};
+
+const validateParticipantIndex = (
+    index: number,
+    participantCount: number,
+    label: string,
+): void => {
+    if (!Number.isInteger(index) || index < 1 || index > participantCount) {
+        throw new InvalidPayloadError(
+            `${label} ${index} must satisfy 1 <= j <= n (n = ${participantCount})`,
+        );
+    }
+};
+
+const validateTranscriptShape = (
+    input: VerifyDKGTranscriptInput,
+    manifestHash: string,
+): void => {
+    for (const signedPayload of input.transcript) {
+        const expected = expectedDkgPhase(
+            input.protocol,
+            signedPayload.payload.messageType,
+        );
+        if (expected === null || signedPayload.payload.phase !== expected) {
+            throw new InvalidPayloadError(
+                `Payload phase does not match the ${input.protocol} phase plan`,
+            );
+        }
+        if (signedPayload.payload.sessionId !== input.sessionId) {
+            throw new InvalidPayloadError(
+                'Payload session does not match the verification input',
+            );
+        }
+        if (signedPayload.payload.manifestHash !== manifestHash) {
+            throw new InvalidPayloadError(
+                'Payload manifest hash does not match the verification input',
+            );
+        }
+    }
+};
+
+const verifySignedRoster = async (
+    transcript: readonly SignedPayload[],
+    participantCount: number,
+    expectedRosterHash: string,
+): Promise<VerifiedProtocolSignatures> => {
+    assertUniqueSlots(transcript);
+
+    const verifiedSignatures = await verifySignedProtocolPayloads(
+        transcript,
+        participantCount,
+    );
+    if (verifiedSignatures.rosterHash !== expectedRosterHash) {
+        throw new InvalidPayloadError(
+            'Registration roster hash does not match the manifest roster hash',
+        );
+    }
+
+    return verifiedSignatures;
+};
+
+const verifyManifestPublicationPayload = async (
+    transcript: readonly SignedPayload[],
+    manifestHash: string,
+): Promise<void> => {
+    const manifestPublication = requireExactlyOnePayload(
+        transcript
+            .filter(
+                (
+                    payload,
+                ): payload is SignedPayload<ManifestPublicationPayload> =>
+                    payload.payload.messageType === 'manifest-publication',
+            )
+            .map((payload) => payload.payload),
+        'Manifest publication',
+    );
+    if (
+        (await hashElectionManifest(manifestPublication.manifest)) !==
+        manifestHash
+    ) {
+        throw new InvalidPayloadError(
+            'Manifest publication does not match the verification input manifest',
+        );
+    }
+};
+
+const verifyManifestAcceptancePayloads = (
+    transcript: readonly SignedPayload[],
+    participantCount: number,
+    expectedRosterHash: string,
+): void => {
+    const acceptances = transcript
+        .filter(
+            (payload): payload is SignedPayload<ManifestAcceptancePayload> =>
+                payload.payload.messageType === 'manifest-acceptance',
+        )
+        .map((payload) => payload.payload);
+    requireSinglePayloadPerParticipant(
+        acceptances,
+        participantCount,
+        'Manifest acceptance',
+    );
+    for (const acceptance of acceptances) {
+        if (acceptance.rosterHash !== expectedRosterHash) {
+            throw new InvalidPayloadError(
+                `Manifest acceptance roster hash mismatch for participant ${acceptance.participantIndex}`,
+            );
+        }
+        if (
+            acceptance.assignedParticipantIndex !== acceptance.participantIndex
+        ) {
+            throw new InvalidPayloadError(
+                `Participant ${acceptance.participantIndex} accepted a mismatched assigned index`,
+            );
+        }
+    }
+};
+
+const buildEncryptedShareMatrix = (
+    transcript: readonly SignedPayload[],
+    participantCount: number,
+): EncryptedShareMatrix => {
+    const encryptedShares = transcript.filter(
+        (payload): payload is SignedPayload<EncryptedDualSharePayload> =>
+            payload.payload.messageType === 'encrypted-dual-share',
+    );
+    const expectedEnvelopeCount = participantCount * (participantCount - 1);
+    if (encryptedShares.length !== expectedEnvelopeCount) {
+        throw new InvalidPayloadError(
+            `Expected ${expectedEnvelopeCount} encrypted share payloads, received ${encryptedShares.length}`,
+        );
+    }
+
+    const bySlot = new Map<string, SignedPayload<EncryptedDualSharePayload>>();
+    const byComplaintKey = new Map<
+        string,
+        SignedPayload<EncryptedDualSharePayload>
+    >();
+
+    for (const payload of encryptedShares) {
+        const dealerIndex = payload.payload.participantIndex;
+        const recipientIndex = payload.payload.recipientIndex;
+
+        validateParticipantIndex(
+            dealerIndex,
+            participantCount,
+            'Encrypted share dealer index',
+        );
+        validateParticipantIndex(
+            recipientIndex,
+            participantCount,
+            'Encrypted share recipient index',
+        );
+
+        if (dealerIndex === recipientIndex) {
+            throw new InvalidPayloadError(
+                `Encrypted share payload for dealer ${dealerIndex} must target a different recipient`,
+            );
+        }
+
+        const slotKey = encryptedShareSlotKey(dealerIndex, recipientIndex);
+        if (bySlot.has(slotKey)) {
+            throw new InvalidPayloadError(
+                `Duplicate encrypted share payload for dealer ${dealerIndex} and recipient ${recipientIndex}`,
+            );
+        }
+        bySlot.set(slotKey, payload);
+
+        const complaintKey = complaintResolutionKey(
+            recipientIndex,
+            dealerIndex,
+            payload.payload.envelopeId,
+        );
+        if (byComplaintKey.has(complaintKey)) {
+            throw new InvalidPayloadError(
+                `Duplicate encrypted share envelope ${payload.payload.envelopeId} for dealer ${dealerIndex} and recipient ${recipientIndex}`,
+            );
+        }
+        byComplaintKey.set(complaintKey, payload);
+    }
+
+    for (
+        let dealerIndex = 1;
+        dealerIndex <= participantCount;
+        dealerIndex += 1
+    ) {
+        for (
+            let recipientIndex = 1;
+            recipientIndex <= participantCount;
+            recipientIndex += 1
+        ) {
+            if (dealerIndex === recipientIndex) {
+                continue;
+            }
+
+            if (
+                !bySlot.has(encryptedShareSlotKey(dealerIndex, recipientIndex))
+            ) {
+                throw new InvalidPayloadError(
+                    `Missing encrypted share payload for dealer ${dealerIndex} and recipient ${recipientIndex}`,
+                );
+            }
+        }
+    }
+
+    return {
+        encryptedShares,
+        byComplaintKey,
+    };
+};
+
+const parsePedersenCommitmentMap = (
+    transcript: readonly SignedPayload[],
+    protocol: DKGProtocol,
+    participantCount: number,
+    threshold: number,
+    group: CryptoGroup,
+): ReadonlyMap<number, readonly bigint[]> => {
+    const pedersenCommitments = transcript.filter(
+        (payload): payload is SignedPayload<PedersenCommitmentPayload> =>
+            payload.payload.messageType === 'pedersen-commitment',
+    );
+    if (protocol === 'gjkr') {
+        requireSinglePayloadPerParticipant(
+            pedersenCommitments.map((payload) => payload.payload),
+            participantCount,
+            'Pedersen commitment',
+        );
+    } else if (pedersenCommitments.length > 0) {
+        throw new InvalidPayloadError(
+            'Joint-Feldman transcripts must not include Pedersen commitments',
+        );
+    }
+
+    const pedersenCommitmentMap = new Map<number, readonly bigint[]>();
+    for (const payload of pedersenCommitments) {
+        pedersenCommitmentMap.set(
+            payload.payload.participantIndex,
+            parseCommitmentVector(
+                payload.payload.commitments,
+                threshold,
+                group,
+                'Pedersen commitment payload',
+            ),
+        );
+    }
+
+    return pedersenCommitmentMap;
+};
+
+const buildComplaintResolutionPayloadMap = (
+    transcript: readonly SignedPayload[],
+): {
+    readonly complaintResolutionPayloads: readonly ComplaintResolutionPayload[];
+    readonly resolutionPayloadMap: ReadonlyMap<
+        string,
+        ComplaintResolutionPayload
+    >;
+} => {
+    const complaintResolutionPayloads = transcript
+        .filter(
+            (payload): payload is SignedPayload<ComplaintResolutionPayload> =>
+                payload.payload.messageType === 'complaint-resolution',
+        )
+        .map((payload) => payload.payload);
+    const resolutionPayloadMap = new Map<string, ComplaintResolutionPayload>();
+
+    for (const resolutionPayload of complaintResolutionPayloads) {
+        if (
+            resolutionPayload.participantIndex !== resolutionPayload.dealerIndex
+        ) {
+            throw new InvalidPayloadError(
+                `Complaint resolution for envelope ${resolutionPayload.envelopeId} must be authored by dealer ${resolutionPayload.dealerIndex}`,
+            );
+        }
+
+        const key = complaintResolutionKey(
+            resolutionPayload.complainantIndex,
+            resolutionPayload.dealerIndex,
+            resolutionPayload.envelopeId,
+        );
+        if (resolutionPayloadMap.has(key)) {
+            throw new InvalidPayloadError(
+                `Duplicate complaint resolution for envelope ${resolutionPayload.envelopeId}`,
+            );
+        }
+        resolutionPayloadMap.set(key, resolutionPayload);
+    }
+
+    return {
+        complaintResolutionPayloads,
+        resolutionPayloadMap,
+    };
+};
+
+function parsePedersenSharePlaintext(
     plaintext: Uint8Array,
     expectedParticipantIndex: number,
-): PedersenShare => {
+): PedersenShare {
     let parsed: {
         readonly blindingValue: string;
         readonly index: number;
@@ -414,213 +677,46 @@ const parsePedersenSharePlaintext = (
         secretValue: fixedHexToBigint(parsed.secretValue),
         blindingValue: fixedHexToBigint(parsed.blindingValue),
     };
-};
+}
 
-/**
- * Verifies a DKG transcript, its signatures, Feldman extraction proofs,
- * accepted complaint outcomes, `qualHash`, and the announced joint public key.
- *
- * @param input Transcript verification input.
- * @returns Verified transcript metadata and derived ceremony material.
- */
-export const verifyDKGTranscript = async (
+const verifyComplaintOutcomes = async (
     input: VerifyDKGTranscriptInput,
-): Promise<VerifiedDKGTranscript> => {
-    const manifestHash = await hashElectionManifest(input.manifest);
-    const group = getGroup(input.manifest.suiteId);
-    const threshold = assertMajorityThreshold(
-        input.manifest.threshold,
-        input.manifest.participantCount,
-    );
-
-    for (const signedPayload of input.transcript) {
-        const expected = expectedPhase(
-            input.protocol,
-            signedPayload.payload.messageType,
-        );
-        if (expected === null || signedPayload.payload.phase !== expected) {
-            throw new InvalidPayloadError(
-                `Payload phase does not match the ${input.protocol} phase plan`,
-            );
-        }
-        if (signedPayload.payload.sessionId !== input.sessionId) {
-            throw new InvalidPayloadError(
-                'Payload session does not match the verification input',
-            );
-        }
-        if (signedPayload.payload.manifestHash !== manifestHash) {
-            throw new InvalidPayloadError(
-                'Payload manifest hash does not match the verification input',
-            );
-        }
-    }
-
-    assertUniqueSlots(input.transcript);
-
-    const verifiedSignatures = await verifySignedProtocolPayloads(
-        input.transcript,
-        input.manifest.participantCount,
-    );
-    if (verifiedSignatures.rosterHash !== input.manifest.rosterHash) {
-        throw new InvalidPayloadError(
-            'Registration roster hash does not match the manifest roster hash',
-        );
-    }
-
-    const manifestPublication = requireExactlyOnePayload(
-        input.transcript
-            .filter(
-                (
-                    payload,
-                ): payload is SignedPayload<ManifestPublicationPayload> =>
-                    payload.payload.messageType === 'manifest-publication',
-            )
-            .map((payload) => payload.payload),
-        'Manifest publication',
-    );
-    if (
-        (await hashElectionManifest(manifestPublication.manifest)) !==
-        manifestHash
-    ) {
-        throw new InvalidPayloadError(
-            'Manifest publication does not match the verification input manifest',
-        );
-    }
-
-    const acceptances = input.transcript
-        .filter(
-            (payload): payload is SignedPayload<ManifestAcceptancePayload> =>
-                payload.payload.messageType === 'manifest-acceptance',
-        )
-        .map((payload) => payload.payload);
-    requireSinglePayloadPerParticipant(
-        acceptances,
-        input.manifest.participantCount,
-        'Manifest acceptance',
-    );
-    for (const acceptance of acceptances) {
-        if (acceptance.rosterHash !== input.manifest.rosterHash) {
-            throw new InvalidPayloadError(
-                `Manifest acceptance roster hash mismatch for participant ${acceptance.participantIndex}`,
-            );
-        }
-        if (
-            acceptance.assignedParticipantIndex !== acceptance.participantIndex
-        ) {
-            throw new InvalidPayloadError(
-                `Participant ${acceptance.participantIndex} accepted a mismatched assigned index`,
-            );
-        }
-    }
-
-    const encryptedShares = input.transcript.filter(
-        (payload): payload is SignedPayload<EncryptedDualSharePayload> =>
-            payload.payload.messageType === 'encrypted-dual-share',
-    );
-    const expectedEnvelopeCount =
-        input.manifest.participantCount * (input.manifest.participantCount - 1);
-    if (encryptedShares.length !== expectedEnvelopeCount) {
-        throw new InvalidPayloadError(
-            `Expected ${expectedEnvelopeCount} encrypted share payloads, received ${encryptedShares.length}`,
-        );
-    }
-
-    const pedersenCommitments = input.transcript.filter(
-        (payload): payload is SignedPayload<PedersenCommitmentPayload> =>
-            payload.payload.messageType === 'pedersen-commitment',
-    );
-    if (input.protocol === 'gjkr') {
-        requireSinglePayloadPerParticipant(
-            pedersenCommitments.map((payload) => payload.payload),
-            input.manifest.participantCount,
-            'Pedersen commitment',
-        );
-    } else if (pedersenCommitments.length > 0) {
-        throw new InvalidPayloadError(
-            'Joint-Feldman transcripts must not include Pedersen commitments',
-        );
-    }
-
-    const pedersenCommitmentMap = new Map<number, readonly bigint[]>();
-    for (const payload of pedersenCommitments) {
-        pedersenCommitmentMap.set(
-            payload.payload.participantIndex,
-            parseCommitmentVector(
-                payload.payload.commitments,
-                threshold,
-                group,
-                'Pedersen commitment payload',
-            ),
-        );
-    }
-
+    verifiedSignatures: VerifiedProtocolSignatures,
+    encryptedShareMatrix: EncryptedShareMatrix,
+    pedersenCommitmentMap: ReadonlyMap<number, readonly bigint[]>,
+    group: CryptoGroup,
+): Promise<readonly ComplaintPayload[]> => {
     const complaints = input.transcript
         .filter(
             (payload): payload is SignedPayload<ComplaintPayload> =>
                 payload.payload.messageType === 'complaint',
         )
         .map((payload) => payload.payload);
-    const complaintResolutionPayloads = input.transcript
-        .filter(
-            (payload): payload is SignedPayload<ComplaintResolutionPayload> =>
-                payload.payload.messageType === 'complaint-resolution',
-        )
-        .map((payload) => payload.payload);
-    const resolutionPayloadMap = new Map<string, ComplaintResolutionPayload>();
-    for (const resolutionPayload of complaintResolutionPayloads) {
-        if (
-            resolutionPayload.participantIndex !== resolutionPayload.dealerIndex
-        ) {
-            throw new InvalidPayloadError(
-                `Complaint resolution for envelope ${resolutionPayload.envelopeId} must be authored by dealer ${resolutionPayload.dealerIndex}`,
-            );
-        }
-
-        const key = complaintResolutionKey(
-            resolutionPayload.complainantIndex,
-            resolutionPayload.dealerIndex,
-            resolutionPayload.envelopeId,
-        );
-        if (resolutionPayloadMap.has(key)) {
-            throw new InvalidPayloadError(
-                `Duplicate complaint resolution for envelope ${resolutionPayload.envelopeId}`,
-            );
-        }
-        resolutionPayloadMap.set(key, resolutionPayload);
-    }
+    const { complaintResolutionPayloads, resolutionPayloadMap } =
+        buildComplaintResolutionPayloadMap(input.transcript);
+    const rosterEntryMap = new Map(
+        verifiedSignatures.rosterEntries.map((entry) => [
+            entry.participantIndex,
+            entry,
+        ]),
+    );
     const acceptedComplaints: ComplaintPayload[] = [];
     const usedResolutionKeys = new Set<string>();
 
     for (const complaint of complaints) {
-        const matchingEnvelope = encryptedShares.find(
-            (payload) => payload.payload.envelopeId === complaint.envelopeId,
-        );
-        if (matchingEnvelope === undefined) {
-            throw new InvalidPayloadError(
-                `Complaint references an unknown envelope ${complaint.envelopeId}`,
-            );
-        }
-        if (
-            matchingEnvelope.payload.participantIndex !== complaint.dealerIndex
-        ) {
-            throw new InvalidPayloadError(
-                'Complaint dealer does not match the referenced envelope author',
-            );
-        }
-        if (
-            matchingEnvelope.payload.recipientIndex !==
-            complaint.participantIndex
-        ) {
-            throw new InvalidPayloadError(
-                'Complaint complainant does not match the referenced envelope recipient',
-            );
-        }
-
         const resolutionKey = complaintResolutionKey(
             complaint.participantIndex,
             complaint.dealerIndex,
             complaint.envelopeId,
         );
+        const matchingEnvelope =
+            encryptedShareMatrix.byComplaintKey.get(resolutionKey);
+        if (matchingEnvelope === undefined) {
+            throw new InvalidPayloadError(
+                `Complaint references an unknown envelope ${complaint.envelopeId} for dealer ${complaint.dealerIndex} and complainant ${complaint.participantIndex}`,
+            );
+        }
+
         const resolutionPayload = resolutionPayloadMap.get(resolutionKey);
         if (resolutionPayload === undefined) {
             acceptedComplaints.push(complaint);
@@ -635,8 +731,8 @@ export const verifyDKGTranscript = async (
             );
         }
 
-        const complainantRosterEntry = verifiedSignatures.rosterEntries.find(
-            (entry) => entry.participantIndex === complaint.participantIndex,
+        const complainantRosterEntry = rosterEntryMap.get(
+            complaint.participantIndex,
         );
         if (complainantRosterEntry === undefined) {
             throw new InvalidPayloadError(
@@ -707,22 +803,21 @@ export const verifyDKGTranscript = async (
         }
     }
 
-    const qual = deriveQualifiedParticipantIndices(
-        input.manifest.participantCount,
-        acceptedComplaints,
-    );
-    if (qual.length < threshold) {
-        throw new InvalidPayloadError(
-            'QUAL fell below the reconstruction threshold',
-        );
-    }
+    return acceptedComplaints;
+};
 
-    const qualSet = new Set(qual);
-    const feldmanPayloads = input.transcript.filter(
+const parseQualifiedFeldmanCommitments = (
+    transcript: readonly SignedPayload[],
+    qual: readonly number[],
+    threshold: number,
+    group: CryptoGroup,
+): readonly ParsedFeldmanCommitment[] => {
+    const feldmanPayloads = transcript.filter(
         (payload): payload is SignedPayload<FeldmanCommitmentPayload> =>
             payload.payload.messageType === 'feldman-commitment',
     );
-    const feldmanCommitments = qual.map((participantIndex) => {
+
+    return qual.map((participantIndex) => {
         const payload = feldmanPayloads.find(
             (candidate) =>
                 candidate.payload.participantIndex === participantIndex,
@@ -768,7 +863,12 @@ export const verifyDKGTranscript = async (
             payload: payload.payload,
         };
     });
+};
 
+const verifyFeldmanProofs = async (
+    feldmanCommitments: readonly ParsedFeldmanCommitment[],
+    group: CryptoGroup,
+): Promise<void> => {
     for (const entry of feldmanCommitments) {
         for (const [offset, commitment] of entry.commitments.entries()) {
             const proof = entry.payload.proofs[offset];
@@ -788,9 +888,16 @@ export const verifyDKGTranscript = async (
             }
         }
     }
+};
 
-    const derivedPublicKey = deriveJointPublicKey(feldmanCommitments, group);
-    const preConfirmationTranscript = input.transcript.filter(
+const verifyKeyDerivationConfirmations = async (
+    transcript: readonly SignedPayload[],
+    qual: readonly number[],
+    derivedPublicKey: bigint,
+    group: CryptoGroup,
+): Promise<string> => {
+    const qualSet = new Set(qual);
+    const preConfirmationTranscript = transcript.filter(
         (payload) =>
             payload.payload.messageType !== 'key-derivation-confirmation',
     );
@@ -802,11 +909,11 @@ export const verifyDKGTranscript = async (
         derivedPublicKey,
         group.byteLength,
     );
-
-    const confirmations = input.transcript.filter(
+    const confirmations = transcript.filter(
         (payload): payload is SignedPayload<KeyDerivationConfirmation> =>
             payload.payload.messageType === 'key-derivation-confirmation',
     );
+
     if (confirmations.length !== qual.length) {
         throw new InvalidPayloadError(
             `Expected ${qual.length} key-derivation confirmations, received ${confirmations.length}`,
@@ -838,6 +945,83 @@ export const verifyDKGTranscript = async (
             );
         }
     }
+
+    return qualHash;
+};
+
+/**
+ * Verifies a DKG transcript, its signatures, Feldman extraction proofs,
+ * accepted complaint outcomes, `qualHash`, and the announced joint public key.
+ *
+ * @param input Transcript verification input.
+ * @returns Verified transcript metadata and derived ceremony material.
+ */
+export const verifyDKGTranscript = async (
+    input: VerifyDKGTranscriptInput,
+): Promise<VerifiedDKGTranscript> => {
+    const manifestHash = await hashElectionManifest(input.manifest);
+    const group = getGroup(input.manifest.suiteId);
+    const threshold = assertMajorityThreshold(
+        input.manifest.threshold,
+        input.manifest.participantCount,
+    );
+    validateTranscriptShape(input, manifestHash);
+
+    const verifiedSignatures = await verifySignedRoster(
+        input.transcript,
+        input.manifest.participantCount,
+        input.manifest.rosterHash,
+    );
+    await verifyManifestPublicationPayload(input.transcript, manifestHash);
+    verifyManifestAcceptancePayloads(
+        input.transcript,
+        input.manifest.participantCount,
+        input.manifest.rosterHash,
+    );
+
+    const encryptedShareMatrix = buildEncryptedShareMatrix(
+        input.transcript,
+        input.manifest.participantCount,
+    );
+    const pedersenCommitmentMap = parsePedersenCommitmentMap(
+        input.transcript,
+        input.protocol,
+        input.manifest.participantCount,
+        threshold,
+        group,
+    );
+    const acceptedComplaints = await verifyComplaintOutcomes(
+        input,
+        verifiedSignatures,
+        encryptedShareMatrix,
+        pedersenCommitmentMap,
+        group,
+    );
+    const qual = deriveQualifiedParticipantIndices(
+        input.manifest.participantCount,
+        acceptedComplaints,
+    );
+    if (qual.length < threshold) {
+        throw new InvalidPayloadError(
+            'QUAL fell below the reconstruction threshold',
+        );
+    }
+
+    const feldmanCommitments = parseQualifiedFeldmanCommitments(
+        input.transcript,
+        qual,
+        threshold,
+        group,
+    );
+    await verifyFeldmanProofs(feldmanCommitments, group);
+
+    const derivedPublicKey = deriveJointPublicKey(feldmanCommitments, group);
+    const qualHash = await verifyKeyDerivationConfirmations(
+        input.transcript,
+        qual,
+        derivedPublicKey,
+        group,
+    );
 
     return {
         acceptedComplaints,

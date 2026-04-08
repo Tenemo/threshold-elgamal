@@ -16,11 +16,15 @@ import type {
     DisjunctiveProof,
     ProofContext,
 } from '../proofs/types.js';
-import { fixedHexToBigint } from '../serialize/index.js';
+import { bigintToFixedHex, fixedHexToBigint } from '../serialize/index.js';
 import {
     combineDecryptionShares,
     type DecryptionShare,
 } from '../threshold/index.js';
+import {
+    importAuthPublicKey,
+    verifyPayloadSignature,
+} from '../transport/auth.js';
 
 import {
     verifyAndAggregateBallots,
@@ -28,6 +32,7 @@ import {
     type VerifiedBallotAggregation,
 } from './ballots.js';
 import { hashElectionManifest, validateElectionManifest } from './manifest.js';
+import { canonicalUnsignedPayloadBytes } from './payloads.js';
 import type {
     BallotSubmissionPayload,
     DecryptionSharePayload,
@@ -36,10 +41,10 @@ import type {
     EncodedCompactProof,
     EncodedDisjunctiveProof,
     ProtocolPayload,
+    RegistrationPayload,
     SignedPayload,
     TallyPublicationPayload,
 } from './types.js';
-import { verifySignedProtocolPayloads } from './verification.js';
 
 const BALLOT_SUBMISSION_PHASE = 5;
 const DECRYPTION_SHARE_PHASE = 6;
@@ -96,8 +101,8 @@ export const encodeCiphertext = (
     ciphertext: { readonly c1: bigint; readonly c2: bigint },
     byteLength: number,
 ): EncodedCiphertext => ({
-    c1: ciphertext.c1.toString(16).padStart(byteLength * 2, '0'),
-    c2: ciphertext.c2.toString(16).padStart(byteLength * 2, '0'),
+    c1: bigintToFixedHex(ciphertext.c1, byteLength),
+    c2: bigintToFixedHex(ciphertext.c2, byteLength),
 });
 
 /**
@@ -124,8 +129,8 @@ export const encodeCompactProof = (
     proof: { readonly challenge: bigint; readonly response: bigint },
     byteLength: number,
 ): EncodedCompactProof => ({
-    challenge: proof.challenge.toString(16).padStart(byteLength * 2, '0'),
-    response: proof.response.toString(16).padStart(byteLength * 2, '0'),
+    challenge: bigintToFixedHex(proof.challenge, byteLength),
+    response: bigintToFixedHex(proof.response, byteLength),
 });
 
 /**
@@ -211,6 +216,40 @@ const decryptionProofContext = (
     label: 'decryption-share-dleq',
     participantIndex: payload.participantIndex,
 });
+
+const verifyPayloadsAgainstRegistrations = async (
+    payloads: readonly SignedPayload[],
+    registrations: readonly SignedPayload<RegistrationPayload>[],
+): Promise<void> => {
+    const authKeyMap = new Map<number, CryptoKey>();
+
+    for (const registration of registrations) {
+        authKeyMap.set(
+            registration.payload.participantIndex,
+            await importAuthPublicKey(registration.payload.authPublicKey),
+        );
+    }
+
+    for (const payload of payloads) {
+        const publicKey = authKeyMap.get(payload.payload.participantIndex);
+        if (publicKey === undefined) {
+            throw new InvalidPayloadError(
+                `Missing registration for participant ${payload.payload.participantIndex}`,
+            );
+        }
+
+        const valid = await verifyPayloadSignature(
+            publicKey,
+            canonicalUnsignedPayloadBytes(payload.payload),
+            payload.signature,
+        );
+        if (!valid) {
+            throw new InvalidPayloadError(
+                `Payload signature failed verification for participant ${payload.payload.participantIndex} (${payload.payload.messageType})`,
+            );
+        }
+    }
+};
 
 /** Input bundle for verifying typed ballot payloads. */
 export type VerifyBallotSubmissionPayloadsInput = {
@@ -411,16 +450,15 @@ export const verifyPublishedVotingResult = async (
         sessionId: input.sessionId,
     });
 
-    await verifySignedProtocolPayloads(
+    await verifyPayloadsAgainstRegistrations(
         [
-            ...input.dkgTranscript,
             ...input.ballotPayloads,
             ...input.decryptionSharePayloads,
             ...(input.tallyPublication === undefined
                 ? []
                 : [input.tallyPublication]),
         ],
-        manifest.participantCount,
+        dkg.registrations,
     );
 
     const ballots = await verifyBallotSubmissionPayloads({

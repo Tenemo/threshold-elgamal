@@ -1,10 +1,8 @@
+import { toBufferSource } from '../core/bytes.js';
 import { InvalidPayloadError, getWebCrypto } from '../core/index.js';
 import { bytesToHex, hexToBytes } from '../serialize/index.js';
 
 import type { KeyAgreementSuite, TransportKeyPair } from './types.js';
-
-const toBufferSource = (bytes: Uint8Array): ArrayBuffer =>
-    Uint8Array.from(bytes).buffer;
 
 const X25519_BASE_POINT = (() => {
     const bytes = new Uint8Array(32);
@@ -268,9 +266,13 @@ export const deriveTransportPublicKey = async (
  * @returns `true` when the private key expands to `expectedPublicKeyHex`.
  */
 export const verifyLocalTransportKey = async (
-    privateKey: CryptoKey,
+    privateKey: CryptoKey | string,
     expectedPublicKeyHex: string,
     suite: KeyAgreementSuite,
 ): Promise<boolean> =>
-    (await deriveTransportPublicKey(privateKey, suite)) ===
-    expectedPublicKeyHex;
+    (await deriveTransportPublicKey(
+        typeof privateKey === 'string'
+            ? await importTransportPrivateKey(privateKey, suite)
+            : privateKey,
+        suite,
+    )) === expectedPublicKeyHex;

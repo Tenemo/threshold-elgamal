@@ -12,24 +12,8 @@ import {
     type Polynomial,
 } from '../threshold/polynomial.js';
 
+import { evaluateCommitmentProduct } from './commitment-product.js';
 import type { PedersenCommitments, PedersenShare } from './types.js';
-
-const evaluateCommitmentProduct = (
-    commitments: readonly bigint[],
-    index: number,
-    group: CryptoGroup,
-): bigint => {
-    let result = 1n;
-    let exponent = 1n;
-    const point = BigInt(index);
-
-    for (const commitment of commitments) {
-        result = modP(result * modPowP(commitment, exponent, group.p), group.p);
-        exponent = (exponent * point) % group.q;
-    }
-
-    return result;
-};
 
 /**
  * Computes Pedersen commitments for matching secret and blinding polynomials.
