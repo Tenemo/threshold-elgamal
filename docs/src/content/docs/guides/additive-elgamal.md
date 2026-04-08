@@ -1,4 +1,9 @@
-# Additive ElGamal
+---
+title: Additive ElGamal
+description: Bounds, plaintext domains, and tally planning for the safe shipped ElGamal workflow.
+sidebar:
+  order: 2
+---
 
 Additive mode is the safe shipped ElGamal mode. It encrypts a plaintext `m` as `g^m`, which makes homomorphic addition possible at the ciphertext level.
 
@@ -55,4 +60,4 @@ Do not use additive mode when:
 - Combining ciphertexts from different groups
 - Assuming the library tracks or stores the bound for you
 
-See [Groups and validation](groups-and-validation.html) for the validation helpers that back these rules.
+See [Groups and validation](/guides/groups-and-validation/) for the validation helpers that back these rules.

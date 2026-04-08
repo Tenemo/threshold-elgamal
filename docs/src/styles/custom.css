@@ -1,0 +1,182 @@
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/600.css';
+
+@layer starlight.base, starlight.core, starlight.utils;
+
+@layer starlight.base {
+    :root,
+    :root[data-theme='dark'],
+    [data-theme='dark'] ::backdrop {
+        --sl-font: 'IBM Plex Sans';
+        --sl-font-mono: 'JetBrains Mono';
+        --sl-color-gray-1: hsl(192, 20%, 92%);
+        --sl-color-gray-2: hsl(193, 14%, 74%);
+        --sl-color-gray-3: hsl(194, 12%, 56%);
+        --sl-color-gray-4: hsl(194, 10%, 36%);
+        --sl-color-gray-5: hsl(195, 15%, 20%);
+        --sl-color-gray-6: hsl(198, 22%, 13%);
+        --sl-color-black: hsl(210, 24%, 8%);
+        --sl-color-accent-low: hsl(191, 69%, 14%);
+        --sl-color-accent: hsl(191, 100%, 64%);
+        --sl-color-accent-high: hsl(187, 92%, 83%);
+        --sl-color-green-low: hsl(157, 62%, 14%);
+        --sl-color-green: hsl(157, 78%, 52%);
+        --sl-color-green-high: hsl(156, 76%, 78%);
+        --sl-color-bg: hsl(210, 24%, 8%);
+        --sl-color-bg-nav: hsla(204, 29%, 10%, 0.84);
+        --sl-color-bg-sidebar: hsla(205, 24%, 10%, 0.96);
+        --sl-color-bg-inline-code: hsl(196, 20%, 16%);
+        --sl-color-hairline-light: hsla(190, 60%, 70%, 0.2);
+        --sl-color-hairline: hsla(200, 22%, 20%, 0.9);
+        --sl-color-hairline-shade: hsl(210, 24%, 6%);
+        --sl-color-text-accent: var(--sl-color-accent);
+        --sl-shadow-sm: 0 10px 30px hsla(210, 50%, 3%, 0.28);
+        --sl-shadow-md: 0 18px 44px hsla(210, 50%, 3%, 0.32);
+        --sl-shadow-lg: 0 28px 72px hsla(210, 50%, 2%, 0.46);
+        --sl-content-width: 51rem;
+        --sl-sidebar-width: 19rem;
+        --sl-text-5xl: 3rem;
+        --sl-text-6xl: 4.6rem;
+    }
+
+    :root[data-theme='light'],
+    [data-theme='light'] ::backdrop {
+        --sl-font: 'IBM Plex Sans';
+        --sl-font-mono: 'JetBrains Mono';
+        --sl-color-accent-low: hsl(191, 92%, 92%);
+        --sl-color-accent: hsl(191, 84%, 42%);
+        --sl-color-accent-high: hsl(193, 70%, 21%);
+        --sl-color-green-low: hsl(156, 72%, 90%);
+        --sl-color-green: hsl(157, 76%, 38%);
+        --sl-color-green-high: hsl(160, 82%, 18%);
+        --sl-color-text-accent: var(--sl-color-accent);
+        --sl-color-bg-nav: hsla(0, 0%, 100%, 0.9);
+        --sl-color-bg-sidebar: hsl(210, 18%, 97%);
+        --sl-shadow-sm: 0 10px 24px hsla(210, 30%, 12%, 0.06);
+        --sl-shadow-md: 0 14px 38px hsla(210, 30%, 12%, 0.08);
+        --sl-shadow-lg: 0 22px 56px hsla(210, 30%, 12%, 0.14);
+    }
+
+    html {
+        background:
+            radial-gradient(circle at top, hsla(188, 92%, 54%, 0.12), transparent 34%),
+            radial-gradient(circle at 85% 12%, hsla(157, 72%, 46%, 0.08), transparent 28%),
+            linear-gradient(180deg, hsl(208, 27%, 10%) 0%, hsl(210, 24%, 8%) 100%);
+    }
+
+    body {
+        font-family: var(--sl-font), var(--sl-font-system);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    .site-title,
+    [data-page-title] {
+        font-family: 'Space Grotesk', var(--sl-font-system);
+        letter-spacing: -0.025em;
+    }
+
+    code,
+    pre,
+    kbd,
+    samp {
+        font-family: 'JetBrains Mono', var(--sl-font-system-mono);
+    }
+}
+
+@layer starlight.core {
+    header {
+        backdrop-filter: blur(18px);
+    }
+
+    html[data-has-hero] main {
+        position: relative;
+    }
+
+    html[data-has-hero] main::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto auto 0;
+        width: 100%;
+        height: 24rem;
+        background:
+            radial-gradient(circle at 14% 14%, hsla(191, 100%, 62%, 0.16), transparent 34%),
+            radial-gradient(circle at 86% 0%, hsla(157, 100%, 47%, 0.12), transparent 24%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    html[data-has-hero] main > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero {
+        padding: clamp(1.75rem, 3vw, 3rem);
+        border: 1px solid var(--sl-color-hairline-light);
+        border-radius: 1.5rem;
+        background:
+            linear-gradient(135deg, hsla(196, 33%, 12%, 0.98), hsla(205, 22%, 10%, 0.96)),
+            linear-gradient(180deg, transparent, hsla(191, 100%, 64%, 0.06));
+        box-shadow: var(--sl-shadow-lg);
+        overflow: hidden;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(120deg, transparent 0%, hsla(191, 100%, 64%, 0.06) 42%, transparent 65%),
+            radial-gradient(circle at top right, hsla(157, 100%, 48%, 0.12), transparent 30%);
+        pointer-events: none;
+    }
+
+    .hero .tagline {
+        max-width: 34rem;
+    }
+
+    .sl-link-card {
+        min-height: 100%;
+        border-radius: 1rem;
+        background:
+            linear-gradient(180deg, hsla(199, 24%, 15%, 0.95), hsla(206, 22%, 11%, 0.96));
+        border-color: var(--sl-color-hairline-light);
+        transition:
+            transform 160ms ease,
+            border-color 160ms ease,
+            box-shadow 160ms ease,
+            background 160ms ease;
+        box-shadow: var(--sl-shadow-md);
+    }
+
+    .sl-link-card:hover {
+        transform: translateY(-3px);
+        border-color: hsla(191, 100%, 64%, 0.42);
+        background:
+            linear-gradient(180deg, hsla(196, 26%, 17%, 0.98), hsla(205, 22%, 12%, 0.98));
+    }
+
+    .sl-markdown-content blockquote {
+        border-inline-start-color: var(--sl-color-accent);
+        background: linear-gradient(90deg, hsla(191, 100%, 64%, 0.08), transparent);
+        border-radius: 0 0.75rem 0.75rem 0;
+    }
+
+    .sl-markdown-content :is(h2, h3) {
+        scroll-margin-top: calc(var(--sl-nav-height) + 1rem);
+    }
+
+    .sl-markdown-content a {
+        text-decoration-thickness: 0.08em;
+        text-underline-offset: 0.18em;
+    }
+}

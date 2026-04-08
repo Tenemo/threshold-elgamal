@@ -1,0 +1,42 @@
+---
+title: Root package
+description: The safe additive-only root package for the mainline supported workflow.
+sidebar:
+  order: 1
+---
+
+Use the root package when you want the narrowest supported surface. It is the default choice for most readers and for most application code.
+
+## What lives here
+
+- validated RFC 7919 FFDHE groups
+- additive ElGamal encryption and decryption
+- additive ciphertext combination
+- key generation
+- validation helpers for additive keys and ciphertexts
+- fixed-width bigint encoding helpers used by the shipped surface
+
+## Typical import style
+
+```typescript
+import {
+    addEncryptedValues,
+    decryptAdditive,
+    encryptAdditive,
+    generateParameters,
+    getGroup,
+} from "threshold-elgamal";
+```
+
+## Stay on the root package when
+
+- you want the safe additive workflow
+- you do not need raw proof, transport, VSS, or DKG building blocks
+- you want the most conservative supported import surface
+
+## Go deeper when
+
+- you need threshold sharing or aggregate decryption helpers under `/api/reference/threshold/`
+- you need protocol payload verification under `/api/reference/protocol/`
+- you need transport envelopes or key agreement helpers under `/api/reference/transport/`
+- you need proofs, VSS, or log-driven DKG reducers

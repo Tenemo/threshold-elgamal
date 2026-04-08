@@ -1,4 +1,9 @@
-# Library invariants
+---
+title: Library invariants
+description: Stable rules for the shipped cryptographic surface, encoding, threshold behavior, and documentation generation.
+sidebar:
+  order: 1
+---
 
 This page records the stable invariants of the shipped v2 surface.
 

@@ -1,0 +1,55 @@
+---
+title: Threshold ElGamal documentation
+description: Browser-native threshold ElGamal documentation for verifiable voting research prototypes.
+template: splash
+editUrl: false
+hero:
+  title: Threshold ElGamal
+  tagline: Browser-native threshold ElGamal, proofs, and transcript-driven voting workflows for verifiable research prototypes.
+  actions:
+    - text: Get started
+      link: /guides/getting-started/
+      icon: right-arrow
+      variant: primary
+    - text: Build a voting flow
+      link: /guides/three-participant-voting-flow/
+      variant: secondary
+    - text: Browse the API
+      link: /api/
+      variant: minimal
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## Start here
+
+<CardGrid stagger>
+  <LinkCard
+    title="Get started"
+    href="/guides/getting-started/"
+    description="Use the safe root package, understand the supported surface, and get to a correct additive setup quickly."
+  />
+  <LinkCard
+    title="Build a voting flow"
+    href="/guides/three-participant-voting-flow/"
+    description="Walk through roster freeze, transcript setup, additive ballots, aggregate recomputation, and threshold decryption."
+  />
+  <LinkCard
+    title="Understand the security model"
+    href="/guides/security-and-non-goals/"
+    description="See the actual boundary of the library, what it guarantees, and what still belongs to the application."
+  />
+  <LinkCard
+    title="Browse the API reference"
+    href="/api/"
+    description="Start with the curated API pages and drill down into the generated symbol reference only when you need exact contracts."
+  />
+</CardGrid>
+
+## What this library is for
+
+`threshold-elgamal` is a browser-native TypeScript library for finite-field ElGamal research prototypes. It ships additive ElGamal on the safe root package, dealer threshold sharing and decryption, VSS, proofs, typed protocol payloads, transport helpers, and log-driven DKG reducers.
+
+## What it does not try to do
+
+This is a hardened research prototype, not audited production voting software. It does not claim coercion resistance, cast-as-intended guarantees, or constant-time JavaScript `bigint` arithmetic.

@@ -1,4 +1,9 @@
-# Security and non-goals
+---
+title: Security and non-goals
+description: The intended security boundary of the library and the guarantees it does not claim.
+sidebar:
+  order: 6
+---
 
 `threshold-elgamal` is a hardened research prototype for browser-native finite-field ElGamal workflows. It ships careful validation, additive-only root exports, threshold helpers, proofs, transport primitives, and log-driven DKG reducers, but it is not audited production voting software.
 
