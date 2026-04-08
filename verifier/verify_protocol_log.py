@@ -58,10 +58,32 @@ def payload_slot_key(payload: Dict[str, Any]) -> str:
         return f"{prefix}:{payload['recipientIndex']}"
     if message_type == "complaint":
         return f"{prefix}:{payload['dealerIndex']}:{payload['envelopeId']}"
+    if message_type == "complaint-resolution":
+        return (
+            f"{prefix}:{payload['dealerIndex']}:"
+            f"{payload['complainantIndex']}:{payload['envelopeId']}"
+        )
     if message_type == "feldman-share-reveal":
         return f"{prefix}:{payload['dealerIndex']}"
+    if message_type == "ballot-submission":
+        return f"{prefix}:{payload['optionIndex']}"
+    if message_type in {"decryption-share", "tally-publication"}:
+        return f"{prefix}:{payload['transcriptHash']}"
+    if message_type == "ceremony-restart":
+        return f"{prefix}:{payload['previousSessionId']}"
+    if message_type in {
+        "manifest-publication",
+        "registration",
+        "manifest-acceptance",
+        "pedersen-commitment",
+        "feldman-commitment",
+        "key-derivation-confirmation",
+    }:
+        return prefix
 
-    return prefix
+    raise ValueError(
+        f"Unsupported protocol messageType for slot-key derivation: {message_type}"
+    )
 
 
 def canonical_unsigned_payload_bytes(payload: Dict[str, Any]) -> bytes:

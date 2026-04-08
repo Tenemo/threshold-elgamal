@@ -356,6 +356,100 @@ describe('DKG state machines', () => {
         expect(directReplay.qual).toEqual([1, 2, 3]);
     });
 
+    it('ignores malformed complaint resolutions when deriving QUAL in reducers', () => {
+        const config = {
+            protocol: 'gjkr',
+            sessionId: 'session-4b',
+            manifestHash: 'manifest-4b',
+            group: 'ffdhe2048',
+            participantCount: 3,
+        } as const;
+        const acceptancePayloads = [1, 2, 3].map((participantIndex) =>
+            signed({
+                sessionId: 'session-4b',
+                manifestHash: 'manifest-4b',
+                phase: 0,
+                participantIndex,
+                messageType: 'manifest-acceptance',
+                rosterHash: 'roster-4b',
+                assignedParticipantIndex: participantIndex,
+            }),
+        );
+        const pedersenPayloads = [1, 2, 3].map((participantIndex) =>
+            signed({
+                sessionId: 'session-4b',
+                manifestHash: 'manifest-4b',
+                phase: 1,
+                participantIndex,
+                messageType: 'pedersen-commitment',
+                commitments: [`c-${participantIndex}`],
+            }),
+        );
+        const complaintPayload = signed({
+            sessionId: 'session-4b',
+            manifestHash: 'manifest-4b',
+            phase: 2,
+            participantIndex: 2,
+            messageType: 'complaint',
+            dealerIndex: 1,
+            envelopeId: 'env-1-2',
+            reason: 'aes-gcm-failure',
+        });
+        const confirmationPayloads = [2, 3].map((participantIndex) =>
+            signed({
+                sessionId: 'session-4b',
+                manifestHash: 'manifest-4b',
+                phase: 4,
+                participantIndex,
+                messageType: 'key-derivation-confirmation',
+                qualHash: 'qual',
+                publicKey: 'pk',
+            }),
+        );
+
+        const foreignResolutionState = replayGjkrTranscript(config, [
+            ...acceptancePayloads,
+            ...pedersenPayloads,
+            complaintPayload,
+            signed({
+                sessionId: 'session-4b',
+                manifestHash: 'manifest-4b',
+                phase: 2,
+                participantIndex: 3,
+                messageType: 'complaint-resolution',
+                dealerIndex: 1,
+                complainantIndex: 2,
+                envelopeId: 'env-1-2',
+                suite: 'P-256',
+                revealedEphemeralPrivateKey: 'ephemeral-private-key',
+            }),
+            ...confirmationPayloads,
+        ]);
+        const mismatchedResolutionState = replayGjkrTranscript(config, [
+            ...acceptancePayloads,
+            ...pedersenPayloads,
+            complaintPayload,
+            signed({
+                sessionId: 'session-4b',
+                manifestHash: 'manifest-4b',
+                phase: 2,
+                participantIndex: 1,
+                messageType: 'complaint-resolution',
+                dealerIndex: 1,
+                complainantIndex: 3,
+                envelopeId: 'env-1-2',
+                suite: 'P-256',
+                revealedEphemeralPrivateKey: 'ephemeral-private-key',
+            }),
+            ...confirmationPayloads,
+        ]);
+
+        expect(foreignResolutionState.phase).toBe('completed');
+        expect(foreignResolutionState.qual).toEqual([2, 3]);
+        expect(mismatchedResolutionState.phase).toBe('completed');
+        expect(mismatchedResolutionState.qual).toEqual([2, 3]);
+    });
+
     it('ignores idempotent retransmissions without regressing the reducer phase', () => {
         const gjkrState = createGjkrState({
             protocol: 'gjkr',

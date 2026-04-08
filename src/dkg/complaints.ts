@@ -10,14 +10,29 @@ import type { DKGConfig, DKGError, DKGState, DKGTransition } from './types.js';
 const allParticipants = (participantCount: number): readonly number[] =>
     Array.from({ length: participantCount }, (_value, index) => index + 1);
 
+const complaintKey = (
+    complainantIndex: number,
+    dealerIndex: number,
+    envelopeId: string,
+): string => `${complainantIndex}:${dealerIndex}:${envelopeId}`;
+
+const isParticipantIndexInRange = (
+    index: number,
+    participantCount: number,
+): boolean =>
+    Number.isInteger(index) && index >= 1 && index <= participantCount;
+
 /**
  * Computes QUAL from the frozen participant roster and accepted complaint set.
  *
  * False complainants remain in QUAL. Dealers targeted by complaints are
- * removed.
+ * removed unless a dealer-authored complaint resolution matches the same
+ * complainant, dealer, and envelope slot.
  *
  * @param participantCount Total participant count `n`.
  * @param complaints Accepted complaints.
+ * @param complaintResolutions Complaint resolutions already accepted into the
+ * transcript.
  * @returns Sorted QUAL participant indices.
  */
 export const computeQual = (
@@ -25,18 +40,54 @@ export const computeQual = (
     complaints: readonly ComplaintPayload[],
     complaintResolutions: readonly ComplaintResolutionPayload[] = [],
 ): readonly number[] => {
-    const resolvedComplaints = new Set(
-        complaintResolutions.map(
-            (resolution) =>
-                `${resolution.complainantIndex}:${resolution.dealerIndex}:${resolution.envelopeId}`,
+    const complaintKeys = new Set(
+        complaints.map((complaint) =>
+            complaintKey(
+                complaint.participantIndex,
+                complaint.dealerIndex,
+                complaint.envelopeId,
+            ),
         ),
+    );
+    const resolvedComplaints = new Set(
+        complaintResolutions
+            .filter(
+                (resolution) =>
+                    resolution.participantIndex === resolution.dealerIndex &&
+                    isParticipantIndexInRange(
+                        resolution.dealerIndex,
+                        participantCount,
+                    ) &&
+                    isParticipantIndexInRange(
+                        resolution.complainantIndex,
+                        participantCount,
+                    ) &&
+                    complaintKeys.has(
+                        complaintKey(
+                            resolution.complainantIndex,
+                            resolution.dealerIndex,
+                            resolution.envelopeId,
+                        ),
+                    ),
+            )
+            .map((resolution) =>
+                complaintKey(
+                    resolution.complainantIndex,
+                    resolution.dealerIndex,
+                    resolution.envelopeId,
+                ),
+            ),
     );
     const disqualifiedDealers = new Set(
         complaints
             .filter(
                 (complaint) =>
                     !resolvedComplaints.has(
-                        `${complaint.participantIndex}:${complaint.dealerIndex}:${complaint.envelopeId}`,
+                        complaintKey(
+                            complaint.participantIndex,
+                            complaint.dealerIndex,
+                            complaint.envelopeId,
+                        ),
                     ),
             )
             .map((complaint) => complaint.dealerIndex),

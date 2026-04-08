@@ -1,4 +1,10 @@
-import { getGroup, modInvP, modP, modPowP } from '../core/index.js';
+import {
+    assertValidParticipantIndex,
+    getGroup,
+    modInvP,
+    modP,
+    modPowP,
+} from '../core/index.js';
 import type { GroupName } from '../core/types.js';
 import { encryptAdditiveWithRandomness } from '../elgamal/additive.js';
 import { babyStepGiantStep } from '../elgamal/bsgs.js';
@@ -53,22 +59,35 @@ export type ThresholdVectorRecord = {
 };
 
 const assertVectorConfig = (config: ThresholdVectorConfig): void => {
+    const threshold = config.polynomial.length;
+
     if (config.polynomial.length === 0) {
         throw new Error(
             'Threshold vector generation requires a non-empty polynomial',
         );
     }
 
-    if (config.participantCount < config.polynomial.length) {
+    if (config.participantCount < threshold) {
         throw new Error(
             'Threshold vector participant count must be at least the threshold',
         );
     }
 
-    if (config.subsetIndices.length < config.polynomial.length) {
+    if (config.subsetIndices.length < threshold) {
         throw new Error(
             'Threshold vector subset must contain at least threshold many shares',
         );
+    }
+
+    const seenSubsetIndices = new Set<number>();
+    for (const subsetIndex of config.subsetIndices) {
+        assertValidParticipantIndex(subsetIndex, config.participantCount);
+        if (seenSubsetIndices.has(subsetIndex)) {
+            throw new Error(
+                `Threshold vector subset indices must be unique; duplicate index ${subsetIndex} encountered`,
+            );
+        }
+        seenSubsetIndices.add(subsetIndex);
     }
 };
 

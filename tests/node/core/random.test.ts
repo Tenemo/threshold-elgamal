@@ -133,6 +133,17 @@ describe('core randomness', () => {
         ).toBe(2n);
     });
 
+    it('does not mutate buffers returned by injected random sources', () => {
+        const sharedBuffer = Uint8Array.from([0xff]);
+        const source: RandomBytesSource = (length) => {
+            expect(length).toBe(1);
+            return sharedBuffer;
+        };
+
+        expect(randomScalarBelow(128n, source)).toBe(127n);
+        expect(Array.from(sharedBuffer)).toEqual([0xff]);
+    });
+
     it('can reach every output value for small bounds', () => {
         let next = 0;
         const source: RandomBytesSource = (length) => {

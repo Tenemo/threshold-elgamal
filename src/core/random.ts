@@ -89,7 +89,7 @@ export const randomScalarBelow = (
     const mask = rem === 0 ? 0xff : (1 << rem) - 1;
 
     for (;;) {
-        const bytes = randomBytes(byteLength, randomSource);
+        const bytes = Uint8Array.from(randomBytes(byteLength, randomSource));
         bytes[0] &= mask;
         const candidate = bytesToBigInt(bytes);
         if (candidate < maxExclusive) {
