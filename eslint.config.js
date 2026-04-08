@@ -141,6 +141,12 @@ export default [
         ],
     }),
     {
-        ignores: ['node_modules/*', 'dist/*', 'docs/.astro/*', 'docs/dist/*'],
+        ignores: [
+            'node_modules/*',
+            'dist/*',
+            'coverage/*',
+            'docs/.astro/*',
+            'docs/dist/*',
+        ],
     },
 ];

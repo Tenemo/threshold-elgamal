@@ -9,6 +9,7 @@ debug.log
 
 # Build
 dist/
+coverage/
 docs/.astro/
 docs/dist/
 
