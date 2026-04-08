@@ -133,11 +133,38 @@ pnpm install
 pnpm run ci
 ```
 
+## DKG benchmark
+
 For the DKG benchmark sweep, run:
 
 ```bash
 pnpm run bench:dkg -- --group=ffdhe3072 --transport=X25519 3,11,21,31,41,51
 ```
+
+Measurements were collected on this machine:
+
+- Windows 10 Pro 22H2
+- Intel Core i9-14900K
+- DDR5-5000 RAM
+
+Results:
+
+- Group: `ffdhe3072`
+- Transport: `X25519`
+- Total elapsed time: `2 h 25 min 49.572 s`
+
+| Participants (`n`) | Threshold (`k`) | Transcript messages | Full voting flow   | Transcript verification | Total              |
+| ------------------ | --------------- | ------------------- | ------------------ | ----------------------- | ------------------ |
+| 3                  | 2               | 22                  | 21.322 s           | 729.839 ms              | 22.052 s           |
+| 11                 | 6               | 166                 | 2 min 6.564 s      | 8.222 s                 | 2 min 14.786 s     |
+| 21                 | 11              | 526                 | 8 min 2.140 s      | 29.292 s                | 8 min 31.432 s     |
+| 31                 | 16              | 1086                | 19 min 55.017 s    | 1 min 5.193 s           | 21 min 0.210 s     |
+| 41                 | 21              | 1846                | 39 min 54.015 s    | 1 min 46.184 s          | 41 min 40.199 s    |
+| 51                 | 26              | 2806                | 1 h 9 min 19.986 s | 2 min 40.902 s          | 1 h 12 min 0.888 s |
+
+The sweep scales superlinearly in both transcript volume and runtime, with the
+`n=51`, `k=26` case producing `2806` transcript messages and taking just over
+`72` minutes for a full run plus verification on this hardware.
 
 ## License
 
