@@ -102,7 +102,7 @@
         "coverage:node": "vitest --project node --run --coverage",
         "coverage:badge": "pnpm run coverage:node && tsx ./tools/generate-coverage-badge.ts",
         "ci": "pnpm run check && pnpm run build:skip && pnpm run docs:api && pnpm run verify:docs && pnpm run docs:build:site",
-        "docs:api": "tsx ./node_modules/typedoc/bin/typedoc --options typedoc.config.mjs && tsx ./typedoc/postprocess-site-docs.ts",
+        "docs:api": "pnpm exec del-cli docs/src/content/docs/api/reference && tsx ./node_modules/typedoc/bin/typedoc --options typedoc.config.mjs && tsx ./typedoc/postprocess-site-docs.ts",
         "docs:dev": "pnpm run docs:api && astro dev --root docs",
         "docs:build": "pnpm run docs:api && pnpm run docs:build:site",
         "docs:build:site": "astro build --root docs",

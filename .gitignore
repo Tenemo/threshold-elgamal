@@ -12,9 +12,7 @@ dist/
 coverage/
 docs/.astro/
 docs/dist/
-
-# Testing
-coverage/
+docs/src/content/docs/api/reference/
 
 # Miscellaneous
 .DS_Store
