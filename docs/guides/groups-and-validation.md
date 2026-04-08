@@ -28,6 +28,13 @@ Useful exported helpers include:
 - `assertValidAdditiveCiphertext` and `assertValidFreshAdditiveCiphertext`
 - `assertScalarInZq`
 
+## Current primitive surface
+
+- Hashing uses SHA-256
+- HKDF uses HKDF-SHA-256
+- Encoded bigint values use fixed-width lowercase big-endian hexadecimal strings
+- Challenge and transcript inputs use injective length-prefixed `encodeForChallenge()` encoding
+
 ## Common failures
 
 - `InvalidGroupElementError` for invalid subgroup elements or public keys
@@ -35,6 +42,19 @@ Useful exported helpers include:
   invalid subgroup-or-identity components
 - `InvalidScalarError` for invalid bounds, randomness, or out-of-range scalars
 - `PlaintextDomainError` for plaintexts outside the accepted mode-specific domain
+- `UnsupportedSuiteError` for unknown group identifiers or missing Web Crypto support
+- `InvalidPayloadError` for malformed hex or challenge-encoding input
+
+## Handling validation failures
+
+- Treat `UnsupportedSuiteError` as an environment or configuration failure
+- Treat `Invalid*` and `PlaintextDomainError` as caller or input validation failures
+- Do not catch and ignore these errors silently; they indicate a violated invariant
+
+## Additive-mode failures
+
+- Additive mode rejects values outside `0..bound`
+- Additive decryption fails if the ciphertext decodes outside the supplied search bound
 
 ## Practical rule
 

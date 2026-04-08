@@ -7,5 +7,4 @@ Use these pages for task-oriented documentation. They explain how to use the cur
 - [Three-participant voting flow](three-participant-voting-flow.html)
 - [Groups and validation](groups-and-validation.html)
 - [Runtime and compatibility](runtime-and-compatibility.html)
-- [Errors and failure modes](errors-and-failure-modes.html)
 - [Security and non-goals](security-and-non-goals.html)

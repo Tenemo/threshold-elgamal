@@ -10,14 +10,12 @@ This site is split into guides, spec pages, and generated API reference. Start w
 - [Three-participant voting flow](guides/three-participant-voting-flow.html)
 - [Groups and validation](guides/groups-and-validation.html)
 - [Runtime and compatibility](guides/runtime-and-compatibility.html)
-- [Errors and failure modes](guides/errors-and-failure-modes.html)
 - [Security and non-goals](guides/security-and-non-goals.html)
 
 ## Spec
 
 - [Spec index](spec/index.html)
 - [Library invariants](spec/library-invariants.html)
-- [Current suite](spec/library-suite.html)
 - [API contract](spec/api-contract.html)
 
 ## API reference
@@ -33,9 +31,3 @@ This site is split into guides, spec pages, and generated API reference. Start w
 - [DKG subpath](api/dkg/index.html)
 - [ElGamal subpath](api/elgamal/index.html)
 - [Serialize subpath](api/serialize/index.html)
-
-## Current surface
-
-- `threshold-elgamal` is the safe root package
-- `core`, `threshold`, `vss`, `proofs`, `protocol`, `transport`, `dkg`, `elgamal`, and `serialize` are available as narrower subpath imports
-- The root package stays additive-only even though threshold, proof, transport, and DKG primitives now ship under subpaths
