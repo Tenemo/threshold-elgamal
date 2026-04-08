@@ -27,6 +27,7 @@ const aadBytes = (context: EnvelopeContext): Uint8Array =>
         context.envelopeId,
         context.payloadType,
         context.protocolVersion,
+        context.suite,
     );
 
 const hkdfInfo = (context: EnvelopeContext): Uint8Array =>
@@ -38,6 +39,7 @@ const hkdfInfo = (context: EnvelopeContext): Uint8Array =>
         context.envelopeId,
         context.payloadType,
         context.protocolVersion,
+        context.suite,
     );
 
 const importAesKey = async (keyBytes: Uint8Array): Promise<CryptoKey> =>

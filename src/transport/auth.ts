@@ -67,7 +67,7 @@ export const importAuthPublicKey = async (
  *
  * @param privateKey Authentication private key.
  * @param payloadBytes Canonical unsigned payload bytes.
- * @returns Lowercase hexadecimal P1363 signature bytes.
+ * @returns Lowercase hexadecimal raw P1363 `r || s` signature bytes.
  */
 export const signPayloadBytes = async (
     privateKey: CryptoKey,
@@ -91,7 +91,7 @@ export const signPayloadBytes = async (
  *
  * @param publicKey Authentication public key.
  * @param payloadBytes Canonical unsigned payload bytes.
- * @param signatureHex Lowercase hexadecimal P1363 signature bytes.
+ * @param signatureHex Lowercase hexadecimal raw P1363 `r || s` signature bytes.
  * @returns `true` when the signature verifies.
  */
 export const verifyPayloadSignature = async (

@@ -24,6 +24,7 @@ describe('transport and authentication', () => {
         const payload = new TextEncoder().encode('canonical-payload');
         const signature = await signPayloadBytes(auth.privateKey, payload);
 
+        expect(signature).toHaveLength(128);
         await expect(
             verifyPayloadSignature(importedPublicKey, payload, signature),
         ).resolves.toBe(true);
@@ -156,6 +157,15 @@ describe('transport and authentication', () => {
                 {
                     ...envelope,
                     payloadType: 'feldman-share-reveal',
+                },
+                recipient.privateKey,
+            ),
+        ).rejects.toThrow();
+        await expect(
+            decryptEnvelope(
+                {
+                    ...envelope,
+                    suite: recipient.suite === 'P-256' ? 'X25519' : 'P-256',
                 },
                 recipient.privateKey,
             ),

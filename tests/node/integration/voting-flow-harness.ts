@@ -130,6 +130,7 @@ export type VotingFlowScenario = {
     readonly decryptionParticipantIndices?: readonly number[];
     readonly group?: GroupName;
     readonly participantCount: number;
+    readonly scoreDomainMax?: number;
     readonly threshold?: number;
     readonly transportSuite?: KeyAgreementSuite;
     readonly votes: readonly bigint[];
@@ -196,24 +197,6 @@ export type VotingFlowResult =
     | CompletedVotingFlowResult
     | AbortedVotingFlowResult;
 
-const validScoresWithoutAbstention: readonly bigint[] = [
-    1n,
-    2n,
-    3n,
-    4n,
-    5n,
-    6n,
-    7n,
-    8n,
-    9n,
-    10n,
-] as const;
-
-const validScoresWithAbstention: readonly bigint[] = [
-    0n,
-    ...validScoresWithoutAbstention,
-] as const;
-
 const invariant: (condition: boolean, message: string) => asserts condition = (
     condition,
     message,
@@ -222,6 +205,20 @@ const invariant: (condition: boolean, message: string) => asserts condition = (
         throw new Error(message);
     }
 };
+
+const singleBallotBound = (scenario: VotingFlowScenario): bigint =>
+    BigInt(scenario.scoreDomainMax ?? 10);
+
+const validScores = (scenario: VotingFlowScenario): readonly bigint[] =>
+    Array.from(
+        {
+            length:
+                (scenario.scoreDomainMax ?? 10) -
+                (scenario.allowAbstention ? 0 : 1) +
+                1,
+        },
+        (_value, index) => BigInt(index + (scenario.allowAbstention ? 0 : 1)),
+    );
 
 const createDeterministicSource = (seed: number) => {
     let counter = seed & 0xff;
@@ -388,7 +385,7 @@ const buildManifest = (
     ),
     allowAbstention: scenario.allowAbstention ?? false,
     scoreDomainMin: scenario.allowAbstention ? 0 : 1,
-    scoreDomainMax: 10,
+    scoreDomainMax: scenario.scoreDomainMax ?? 10,
     ballotFinality: 'first-valid',
     rosterHash,
     optionList: ['Option A'],
@@ -715,6 +712,7 @@ const createBallotArtifacts = async (
     manifestHash: string,
     sessionId: string,
     validValues: readonly bigint[],
+    bound: bigint,
 ): Promise<
     readonly {
         readonly ciphertext: { readonly c1: bigint; readonly c2: bigint };
@@ -732,7 +730,7 @@ const createBallotArtifacts = async (
                 vote,
                 jointPublicKey,
                 randomness,
-                10n,
+                bound,
                 group.name,
             );
             const proofContext: ProofContext = {
@@ -890,9 +888,8 @@ export const runVotingFlowScenario = async (
         );
     }
 
-    const validValues: readonly bigint[] = scenario.allowAbstention
-        ? validScoresWithAbstention
-        : validScoresWithoutAbstention;
+    const validValues = validScores(scenario);
+    const bound = singleBallotBound(scenario);
 
     scenario.votes.forEach((vote, index) => {
         invariant(
@@ -900,7 +897,7 @@ export const runVotingFlowScenario = async (
             `Vote ${vote.toString()} for participant ${index + 1} is outside the allowed domain`,
         );
         invariant(
-            vote <= 10n,
+            vote <= bound,
             'Vote exceeds the supported single-ballot bound',
         );
     });
@@ -1315,6 +1312,7 @@ export const runVotingFlowScenario = async (
         manifestHash,
         sessionId,
         validValues,
+        bound,
     );
     const ballotPayloads = await createBallotSubmissionPayloads(
         participants,
@@ -1448,7 +1446,7 @@ export const runVotingFlowScenario = async (
         aggregate,
         thresholdShareArtifacts.map((item) => item.share),
         group,
-        BigInt(scenario.participantCount * 10),
+        BigInt(scenario.participantCount) * bound,
     );
     const recoveredWithAllShares = combineDecryptionShares(
         aggregate,
@@ -1456,7 +1454,7 @@ export const runVotingFlowScenario = async (
             createVerifiedDecryptionShare(verifiedAggregate, share, group),
         ),
         group,
-        BigInt(scenario.participantCount * 10),
+        BigInt(scenario.participantCount) * bound,
     );
     const expectedTally = scenario.votes.reduce((sum, vote) => sum + vote, 0n);
     const decryptionSharePayloads = await createDecryptionSharePayloads(

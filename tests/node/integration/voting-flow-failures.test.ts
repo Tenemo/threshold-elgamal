@@ -14,7 +14,8 @@ const abortingScenarios: readonly (VotingFlowScenario & {
     {
         name: 'aborts a 2-of-3 ceremony after two dealer complaints',
         participantCount: 3,
-        votes: [8n, 1n, 1n],
+        scoreDomainMax: 3,
+        votes: [3n, 1n, 1n],
         complaints: [
             {
                 dealerIndex: 1,
@@ -32,7 +33,8 @@ const abortingScenarios: readonly (VotingFlowScenario & {
     {
         name: 'aborts a 2-of-4 ceremony after three dealer complaints',
         participantCount: 4,
-        votes: [4n, 4n, 4n, 4n],
+        scoreDomainMax: 3,
+        votes: [3n, 3n, 3n, 3n],
         complaints: [
             {
                 dealerIndex: 1,

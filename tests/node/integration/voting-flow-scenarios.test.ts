@@ -15,42 +15,48 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 2-of-3 mixed tally',
         participantCount: 3,
-        votes: [7n, 4n, 9n],
+        scoreDomainMax: 3,
+        votes: [1n, 2n, 3n],
         decryptionParticipantIndices: [1, 3],
         expectedQual: [1, 2, 3],
     },
     {
         name: 'completes a 2-of-3 unanimous maximum tally',
         participantCount: 3,
-        votes: [10n, 10n, 10n],
+        scoreDomainMax: 3,
+        votes: [3n, 3n, 3n],
         decryptionParticipantIndices: [1, 2],
         expectedQual: [1, 2, 3],
     },
     {
         name: 'completes a 2-of-3 partial recovery flow',
         participantCount: 3,
-        votes: [2n, 5n, 8n],
+        scoreDomainMax: 3,
+        votes: [2n, 1n, 3n],
         decryptionParticipantIndices: [1, 2],
         expectedQual: [1, 2, 3],
     },
     {
         name: 'completes a 2-of-4 even-participant flow',
         participantCount: 4,
-        votes: [1n, 3n, 5n, 7n],
+        scoreDomainMax: 3,
+        votes: [1n, 2n, 3n, 1n],
         decryptionParticipantIndices: [1, 4],
         expectedQual: [1, 2, 3, 4],
     },
     {
         name: 'completes a 3-of-5 majority flow',
         participantCount: 5,
-        votes: [10n, 9n, 8n, 7n, 6n],
+        scoreDomainMax: 3,
+        votes: [3n, 2n, 1n, 3n, 2n],
         decryptionParticipantIndices: [1, 3, 5],
         expectedQual: [1, 2, 3, 4, 5],
     },
     {
         name: 'completes a 3-of-5 abstention-aware flow',
         participantCount: 5,
-        votes: [0n, 10n, 0n, 10n, 10n],
+        scoreDomainMax: 3,
+        votes: [0n, 3n, 0n, 3n, 3n],
         allowAbstention: true,
         decryptionParticipantIndices: [2, 4, 5],
         expectedQual: [1, 2, 3, 4, 5],
@@ -58,7 +64,8 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 2-of-3 flow after one dealer complaint',
         participantCount: 3,
-        votes: [6n, 1n, 5n],
+        scoreDomainMax: 3,
+        votes: [3n, 1n, 2n],
         complaints: [
             {
                 dealerIndex: 1,
@@ -72,7 +79,8 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 2-of-4 flow after one dealer complaint',
         participantCount: 4,
-        votes: [3n, 6n, 9n, 1n],
+        scoreDomainMax: 3,
+        votes: [1n, 2n, 3n, 1n],
         complaints: [
             {
                 dealerIndex: 1,
@@ -86,7 +94,8 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 2-of-3 flow after one resolved complaint',
         participantCount: 3,
-        votes: [5n, 5n, 5n],
+        scoreDomainMax: 3,
+        votes: [2n, 2n, 2n],
         complaints: [
             {
                 dealerIndex: 1,

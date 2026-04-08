@@ -60,10 +60,12 @@ describe('DKG transcript verification', () => {
     beforeAll(async () => {
         const completedResult = await runVotingFlowScenario({
             participantCount: 3,
+            scoreDomainMax: 3,
             votes: [1n, 2n, 3n],
         });
         const dealerFaultComplaintResult = await runVotingFlowScenario({
             participantCount: 3,
+            scoreDomainMax: 3,
             votes: [1n, 2n, 3n],
             complaints: [
                 {
@@ -75,6 +77,7 @@ describe('DKG transcript verification', () => {
         });
         const resolvedComplaintResult = await runVotingFlowScenario({
             participantCount: 3,
+            scoreDomainMax: 3,
             votes: [1n, 2n, 3n],
             complaints: [
                 {
