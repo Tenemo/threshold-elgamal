@@ -8,10 +8,22 @@ import type { ProtocolPayload, SignedPayload } from './types.js';
  * Computes the canonical slot key used for idempotence and equivocation checks.
  *
  * @param payload Unsigned protocol payload.
- * @returns Stable slot key for the payload author and phase slot.
+ * @returns Stable slot key for the payload author and message slot.
  */
-export const payloadSlotKey = (payload: ProtocolPayload): string =>
-    `${payload.sessionId}:${payload.phase}:${payload.participantIndex}:${payload.messageType}`;
+export const payloadSlotKey = (payload: ProtocolPayload): string => {
+    const prefix = `${payload.sessionId}:${payload.phase}:${payload.participantIndex}:${payload.messageType}`;
+
+    switch (payload.messageType) {
+        case 'encrypted-dual-share':
+            return `${prefix}:${payload.recipientIndex}`;
+        case 'complaint':
+            return `${prefix}:${payload.dealerIndex}:${payload.envelopeId}`;
+        case 'feldman-share-reveal':
+            return `${prefix}:${payload.dealerIndex}`;
+        default:
+            return prefix;
+    }
+};
 
 /**
  * Serializes the unsigned payload into canonical bytes.

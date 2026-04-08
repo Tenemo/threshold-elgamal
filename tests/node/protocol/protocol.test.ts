@@ -93,6 +93,41 @@ describe('protocol payloads and transcripts', () => {
         expect(payloadSlotKey(registration)).toBe('session-1:0:2:registration');
     });
 
+    it('uses recipient-aware slot keys for encrypted share payloads', () => {
+        const left = {
+            payload: {
+                sessionId: 'session-1',
+                manifestHash: 'manifest-1',
+                phase: 1,
+                participantIndex: 1,
+                messageType: 'encrypted-dual-share' as const,
+                recipientIndex: 2,
+                envelopeId: 'env-1-2',
+                suite: 'P-256' as const,
+                ephemeralPublicKey: 'epk',
+                iv: 'iv',
+                ciphertext: 'ciphertext',
+            },
+            signature: 'aaaa',
+        };
+        const right = {
+            payload: {
+                ...left.payload,
+                recipientIndex: 3,
+                envelopeId: 'env-1-3',
+            },
+            signature: 'bbbb',
+        };
+
+        expect(payloadSlotKey(left.payload)).toBe(
+            'session-1:1:1:encrypted-dual-share:2',
+        );
+        expect(payloadSlotKey(right.payload)).toBe(
+            'session-1:1:1:encrypted-dual-share:3',
+        );
+        expect(classifySlotConflict(left, right)).toBe('distinct');
+    });
+
     it('distinguishes idempotent retransmissions from equivocation', () => {
         const identicalUnsigned: SignedPayload = {
             payload: registration,

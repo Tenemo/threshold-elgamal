@@ -6,7 +6,7 @@
 
 # Class: PhaseViolationError
 
-Raised when a protocol phase transition violates the state machine rules.
+Raised when a protocol step transition violates the state machine rules.
 
 ## Extends
 

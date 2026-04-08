@@ -22,4 +22,4 @@ Unsigned protocol payload.
 
 `string`
 
-Stable slot key for the payload author and phase slot.
+Stable slot key for the payload author and message slot.

@@ -22,7 +22,7 @@ transport and DKG reducers.
 | [ComplaintPayload](type-aliases/ComplaintPayload.md) | Complaint payload against a dealer envelope or share. |
 | [ComplaintReason](type-aliases/ComplaintReason.md) | Complaint reasons recognized by the protocol layer. |
 | [ElectionManifest](type-aliases/ElectionManifest.md) | Canonical election-manifest shape bound into protocol transcripts. |
-| [EncryptedDualSharePayload](type-aliases/EncryptedDualSharePayload.md) | Encrypted share-envelope payload for GJKR Phase 1. |
+| [EncryptedDualSharePayload](type-aliases/EncryptedDualSharePayload.md) | Encrypted share-envelope payload for the share-distribution step. |
 | [FeldmanCommitmentPayload](type-aliases/FeldmanCommitmentPayload.md) | Broadcast payload carrying Feldman commitments and coefficient proofs. |
 | [FeldmanShareRevealPayload](type-aliases/FeldmanShareRevealPayload.md) | Public share-reveal payload used for complaint-driven reconstruction. |
 | [KeyDerivationConfirmation](type-aliases/KeyDerivationConfirmation.md) | Final key-derivation confirmation payload. |

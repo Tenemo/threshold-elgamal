@@ -28,7 +28,7 @@
     },
     "include": [
         "src/**/*",
-        "scripts/**/*",
+        "tools/**/*",
         "typedoc/**/*",
         "test-vectors/**/*",
         "tests/**/*",

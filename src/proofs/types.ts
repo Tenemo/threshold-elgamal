@@ -10,7 +10,7 @@ export type ProofContext = {
     readonly manifestHash: string;
     /** Ceremony or transcript session identifier. */
     readonly sessionId: string;
-    /** Domain-separation label for the proof type or phase. */
+    /** Domain-separation label for the proof domain. */
     readonly label: string;
     /** Optional participant index for trustee-bound proofs. */
     readonly participantIndex?: number;

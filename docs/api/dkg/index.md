@@ -17,7 +17,7 @@ along with QUAL computation and transcript replay utilities.
 | ------ | ------ |
 | [DKGConfig](type-aliases/DKGConfig.md) | Static configuration for a log-driven DKG reducer. |
 | [DKGError](type-aliases/DKGError.md) | Structured DKG reducer error. |
-| [DKGPhase](type-aliases/DKGPhase.md) | Reducer phases used by the log-driven DKG state machines. |
+| [DKGPhase](type-aliases/DKGPhase.md) | Reducer step markers used by the log-driven DKG state machines. |
 | [DKGProtocol](type-aliases/DKGProtocol.md) | Supported DKG reducer variants. |
 | [DKGState](type-aliases/DKGState.md) | Snapshot of a log-driven DKG reducer state. |
 | [DKGTransition](type-aliases/DKGTransition.md) | Deterministic state transition result for one incoming payload. |

@@ -3,7 +3,7 @@ import type { ComplaintPayload, SignedPayload } from '../protocol/types.js';
 
 /** Supported DKG reducer variants. */
 export type DKGProtocol = 'joint-feldman' | 'gjkr';
-/** Reducer phases used by the log-driven DKG state machines. */
+/** Reducer step markers used by the log-driven DKG state machines. */
 export type DKGPhase = 0 | 1 | 2 | 3 | 4 | 'aborted' | 'completed';
 
 /** Structured DKG reducer error. */

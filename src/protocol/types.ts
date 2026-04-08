@@ -55,12 +55,14 @@ export type PedersenCommitmentPayload = BaseProtocolPayload & {
     readonly commitments: readonly string[];
 };
 
-/** Encrypted share-envelope payload for GJKR Phase 1. */
+/** Encrypted share-envelope payload for the share-distribution step. */
 export type EncryptedDualSharePayload = BaseProtocolPayload & {
     readonly messageType: 'encrypted-dual-share';
     readonly recipientIndex: number;
     readonly envelopeId: string;
+    readonly suite: 'X25519' | 'P-256';
     readonly ephemeralPublicKey: string;
+    readonly iv: string;
     readonly ciphertext: string;
 };
 

@@ -75,6 +75,7 @@ For example, if each ballot is in `0..10` and you tally `50` ballots, encrypt ea
 - Start at the docs portal: [docs/index.md](docs/index.md)
 - Safe onboarding: [docs/guides/getting-started.md](docs/guides/getting-started.md)
 - Additive mode guide: [docs/guides/additive-elgamal.md](docs/guides/additive-elgamal.md)
+- Full 3-participant example: [docs/guides/three-participant-voting-flow.md](docs/guides/three-participant-voting-flow.md)
 - Threshold and proof APIs: generated subpath docs under `docs/api/threshold`, `docs/api/vss`, and `docs/api/proofs`
 - API reference: [docs/api/index.md](docs/api/index.md)
 - Spec pages: [docs/spec/index.md](docs/spec/index.md)

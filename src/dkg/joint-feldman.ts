@@ -105,7 +105,7 @@ export const processJointFeldmanPayload = (
         return withError(
             state,
             'manifest-acceptance-required',
-            'Phase 1 is gated on unanimous manifest acceptance',
+            'Setup is gated on unanimous manifest acceptance',
         );
     }
 

@@ -7,6 +7,7 @@ This site is split into guides, spec pages, and generated API reference. Start w
 - [Guide index](guides/index.html)
 - [Getting started](guides/getting-started.html)
 - [Additive ElGamal](guides/additive-elgamal.html)
+- [Three-participant voting flow](guides/three-participant-voting-flow.html)
 - [Groups and validation](guides/groups-and-validation.html)
 - [Runtime and compatibility](guides/runtime-and-compatibility.html)
 - [Errors and failure modes](guides/errors-and-failure-modes.html)
@@ -18,7 +19,6 @@ This site is split into guides, spec pages, and generated API reference. Start w
 - [Library invariants](spec/library-invariants.html)
 - [Current suite](spec/library-suite.html)
 - [API contract](spec/api-contract.html)
-- [Roadmap](spec/roadmap.html)
 
 ## API reference
 

@@ -22,7 +22,7 @@ understands which higher-level ElGamal mode they intend to build on top.
 | [InvalidProofError](classes/InvalidProofError.md) | Raised when a proof transcript or response fails verification. |
 | [InvalidScalarError](classes/InvalidScalarError.md) | Raised when a scalar value falls outside the expected mathematical domain. |
 | [InvalidShareError](classes/InvalidShareError.md) | Raised when a serialized or reconstructed share fails validation. |
-| [PhaseViolationError](classes/PhaseViolationError.md) | Raised when a protocol phase transition violates the state machine rules. |
+| [PhaseViolationError](classes/PhaseViolationError.md) | Raised when a protocol step transition violates the state machine rules. |
 | [PlaintextDomainError](classes/PlaintextDomainError.md) | Raised when a plaintext lies outside the allowed domain for the chosen mode. |
 | [ThresholdViolationError](classes/ThresholdViolationError.md) | Raised when threshold parameters do not satisfy `1 <= k <= n`. |
 | [TranscriptMismatchError](classes/TranscriptMismatchError.md) | Raised when transcript hashes or canonical bytes do not match expectations. |

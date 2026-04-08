@@ -8,7 +8,7 @@
 
 > **EncryptedDualSharePayload** = [`BaseProtocolPayload`](BaseProtocolPayload.md) & `object`
 
-Encrypted share-envelope payload for GJKR Phase 1.
+Encrypted share-envelope payload for the share-distribution step.
 
 ## Type declaration
 
@@ -24,6 +24,10 @@ Encrypted share-envelope payload for GJKR Phase 1.
 
 > `readonly` **ephemeralPublicKey**: `string`
 
+### iv
+
+> `readonly` **iv**: `string`
+
 ### messageType
 
 > `readonly` **messageType**: `"encrypted-dual-share"`
@@ -31,3 +35,7 @@ Encrypted share-envelope payload for GJKR Phase 1.
 ### recipientIndex
 
 > `readonly` **recipientIndex**: `number`
+
+### suite
+
+> `readonly` **suite**: `"X25519"` \| `"P-256"`

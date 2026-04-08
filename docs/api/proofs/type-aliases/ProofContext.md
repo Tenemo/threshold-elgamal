@@ -24,7 +24,7 @@ Optional coefficient index for Feldman coefficient proofs.
 
 > `readonly` **label**: `string`
 
-Domain-separation label for the proof type or phase.
+Domain-separation label for the proof domain.
 
 ***
 

@@ -22,7 +22,7 @@ export class UnsupportedSuiteError extends ThresholdElgamalError {}
 export class PlaintextDomainError extends ThresholdElgamalError {}
 /** Raised when a serialized or reconstructed share fails validation. */
 export class InvalidShareError extends ThresholdElgamalError {}
-/** Raised when a protocol phase transition violates the state machine rules. */
+/** Raised when a protocol step transition violates the state machine rules. */
 export class PhaseViolationError extends ThresholdElgamalError {}
 /** Raised when threshold parameters do not satisfy `1 <= k <= n`. */
 export class ThresholdViolationError extends ThresholdElgamalError {}
