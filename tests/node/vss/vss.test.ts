@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     IndexOutOfRangeError,
     InvalidGroupElementError,
+    ThresholdViolationError,
     getGroup,
 } from '#core';
 import { deriveSharesFromPolynomial } from '#threshold';
@@ -128,5 +129,13 @@ describe('verifiable secret sharing', () => {
                 group,
             ),
         ).toThrow(InvalidGroupElementError);
+        expect(() =>
+            derivePedersenShares(
+                secretPolynomial,
+                blindingPolynomial,
+                0,
+                group.q,
+            ),
+        ).toThrow(ThresholdViolationError);
     });
 });

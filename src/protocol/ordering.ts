@@ -1,3 +1,6 @@
+import { bytesToHex } from '../serialize/index.js';
+
+import { canonicalUnsignedPayloadBytes, payloadSlotKey } from './payloads.js';
 import type { ProtocolPayload } from './types.js';
 
 const compareStrings = (left: string, right: string): number => {
@@ -15,8 +18,9 @@ const compareStrings = (left: string, right: string): number => {
 /**
  * Deterministically compares payloads for transcript ordering.
  *
- * The sort order is `phase ASC, participantIndex ASC, messageType ASC`, with
- * `sessionId` used as a stable prefix when cross-session payloads are mixed.
+ * The sort order is `sessionId ASC, phase ASC, participantIndex ASC,
+ * messageType ASC`, followed by message-type-specific slot fields and finally
+ * canonical payload bytes to guarantee a total order.
  *
  * @param left Left payload.
  * @param right Right payload.
@@ -38,7 +42,21 @@ export const compareProtocolPayloads = (
         return left.participantIndex - right.participantIndex;
     }
 
-    return compareStrings(left.messageType, right.messageType);
+    if (left.messageType !== right.messageType) {
+        return compareStrings(left.messageType, right.messageType);
+    }
+
+    const leftSlotKey = payloadSlotKey(left);
+    const rightSlotKey = payloadSlotKey(right);
+
+    if (leftSlotKey !== rightSlotKey) {
+        return compareStrings(leftSlotKey, rightSlotKey);
+    }
+
+    return compareStrings(
+        bytesToHex(canonicalUnsignedPayloadBytes(left)),
+        bytesToHex(canonicalUnsignedPayloadBytes(right)),
+    );
 };
 
 /**

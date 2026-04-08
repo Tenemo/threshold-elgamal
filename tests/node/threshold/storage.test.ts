@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { IndexOutOfRangeError } from '#core';
 import {
     generateShareWrappingKey,
     isShareStorageSupported,
@@ -20,6 +21,24 @@ describe('share storage helpers', () => {
             index: 3,
             value: 12345n,
         });
+    });
+
+    it('rejects invalid participant indices in wrapped share records', async () => {
+        const key = await generateShareWrappingKey();
+
+        await expect(
+            wrapShareForStorage({ index: 0, value: 12345n }, key, 32),
+        ).rejects.toBeInstanceOf(IndexOutOfRangeError);
+        await expect(
+            unwrapShareFromStorage(
+                {
+                    index: 0,
+                    iv: '000000000000000000000000',
+                    ciphertext: '00',
+                },
+                key,
+            ),
+        ).rejects.toBeInstanceOf(IndexOutOfRangeError);
     });
 
     it('reports storage support based on IndexedDB availability', () => {

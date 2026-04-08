@@ -48,10 +48,20 @@ def canonicalize(value: Any) -> str:
 
 
 def payload_slot_key(payload: Dict[str, Any]) -> str:
-    return (
+    prefix = (
         f"{payload['sessionId']}:{payload['phase']}:"
         f"{payload['participantIndex']}:{payload['messageType']}"
     )
+
+    message_type = payload["messageType"]
+    if message_type == "encrypted-dual-share":
+        return f"{prefix}:{payload['recipientIndex']}"
+    if message_type == "complaint":
+        return f"{prefix}:{payload['dealerIndex']}:{payload['envelopeId']}"
+    if message_type == "feldman-share-reveal":
+        return f"{prefix}:{payload['dealerIndex']}"
+
+    return prefix
 
 
 def canonical_unsigned_payload_bytes(payload: Dict[str, Any]) -> bytes:
@@ -80,6 +90,8 @@ def sort_payloads(payloads: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
             item["payload"]["phase"],
             item["payload"]["participantIndex"],
             item["payload"]["messageType"],
+            payload_slot_key(item["payload"]),
+            canonical_unsigned_payload_bytes(item["payload"]),
         ),
     )
 
@@ -96,12 +108,25 @@ def session_fingerprint(transcript_digest: str) -> str:
 
 def find_conflicts(payloads: List[Dict[str, Any]]) -> List[Tuple[str, str]]:
     conflicts: List[Tuple[str, str]] = []
+    first_seen: Dict[str, bytes] = {}
 
-    for left_index, left in enumerate(payloads):
-        for right in payloads[left_index + 1 :]:
-            classification = classify_slot_conflict(left, right)
-            if classification != "distinct":
-                conflicts.append((payload_slot_key(left["payload"]), classification))
+    for item in payloads:
+        slot_key = payload_slot_key(item["payload"])
+        payload_bytes = canonical_unsigned_payload_bytes(item["payload"])
+        first_payload_bytes = first_seen.get(slot_key)
+
+        if first_payload_bytes is None:
+            first_seen[slot_key] = payload_bytes
+            continue
+
+        conflicts.append(
+            (
+                slot_key,
+                "idempotent"
+                if first_payload_bytes == payload_bytes
+                else "equivocation",
+            )
+        )
 
     return conflicts
 

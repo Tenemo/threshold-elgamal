@@ -9,6 +9,7 @@ debug.log
 
 # Build
 dist/
+docs/api/
 
 # Testing
 coverage/

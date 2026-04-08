@@ -1,4 +1,8 @@
-import { getWebCrypto, randomBytes } from '../core/index.js';
+import {
+    assertValidParticipantIndex,
+    getWebCrypto,
+    randomBytes,
+} from '../core/index.js';
 import {
     bytesToHex,
     bigintToFixedBytes,
@@ -56,6 +60,8 @@ export const wrapShareForStorage = async (
     key: CryptoKey,
     byteLength: number,
 ): Promise<WrappedShareRecord> => {
+    assertValidParticipantIndex(share.index, Number.MAX_SAFE_INTEGER);
+
     const iv = randomBytes(12);
     const ciphertext = new Uint8Array(
         await getWebCrypto().subtle.encrypt(
@@ -86,6 +92,8 @@ export const unwrapShareFromStorage = async (
     record: WrappedShareRecord,
     key: CryptoKey,
 ): Promise<Share> => {
+    assertValidParticipantIndex(record.index, Number.MAX_SAFE_INTEGER);
+
     const plaintext = new Uint8Array(
         await getWebCrypto().subtle.decrypt(
             {

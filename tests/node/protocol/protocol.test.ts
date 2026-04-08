@@ -82,6 +82,59 @@ describe('protocol payloads and transcripts', () => {
         expect(sorted).toEqual([acceptance, registration]);
     });
 
+    it('uses slot-specific tie-breakers and canonical bytes for a total transcript order', async () => {
+        const encryptedForSecond = {
+            sessionId: 'session-1',
+            manifestHash: 'manifest-1',
+            phase: 1,
+            participantIndex: 1,
+            messageType: 'encrypted-dual-share' as const,
+            recipientIndex: 2,
+            envelopeId: 'env-1-2',
+            suite: 'P-256' as const,
+            ephemeralPublicKey: 'epk-a',
+            iv: 'iv-a',
+            ciphertext: 'ciphertext-a',
+        };
+        const encryptedForThird = {
+            ...encryptedForSecond,
+            recipientIndex: 3,
+            envelopeId: 'env-1-3',
+            ephemeralPublicKey: 'epk-b',
+            iv: 'iv-b',
+            ciphertext: 'ciphertext-b',
+        };
+        const equivocatedSecond = {
+            ...encryptedForSecond,
+            ciphertext: 'ciphertext-z',
+        };
+
+        expect(
+            compareProtocolPayloads(encryptedForSecond, encryptedForThird),
+        ).toBeLessThan(0);
+        expect(
+            compareProtocolPayloads(encryptedForSecond, equivocatedSecond),
+        ).toBeLessThan(0);
+        expect(
+            sortProtocolPayloads([
+                encryptedForThird,
+                equivocatedSecond,
+                encryptedForSecond,
+            ]),
+        ).toEqual([encryptedForSecond, equivocatedSecond, encryptedForThird]);
+
+        const firstHash = await hashProtocolTranscript([
+            encryptedForThird,
+            encryptedForSecond,
+        ]);
+        const secondHash = await hashProtocolTranscript([
+            encryptedForSecond,
+            encryptedForThird,
+        ]);
+
+        expect(firstHash).toBe(secondHash);
+    });
+
     it('derives canonical unsigned payload bytes and slot keys', () => {
         expect(
             Buffer.from(canonicalUnsignedPayloadBytes(registration)).toString(

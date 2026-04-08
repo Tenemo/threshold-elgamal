@@ -2,6 +2,7 @@ import {
     assertInSubgroup,
     assertScalarInZq,
     assertValidParticipantIndex,
+    ThresholdViolationError,
     modP,
     modPowP,
     type CryptoGroup,
@@ -84,6 +85,12 @@ export const derivePedersenShares = (
     if (secretPolynomial.length !== blindingPolynomial.length) {
         throw new Error(
             'Secret and blinding polynomials must have the same degree',
+        );
+    }
+
+    if (!Number.isInteger(participantCount) || participantCount < 1) {
+        throw new ThresholdViolationError(
+            'Participant count must be a positive integer',
         );
     }
 
