@@ -27,7 +27,7 @@ export default [
             ecmaFeatures: {
                 jsx: true,
             },
-            project: './tsconfig.json',
+            project: ['./tsconfig.json', './docs/tsconfig.json'],
             ecmaVersion: 2021,
         },
         plugins: ['only-error'],
@@ -117,6 +117,12 @@ export default [
             },
         },
     },
+    {
+        files: ['docs/src/content.config.ts'],
+        rules: {
+            'import/no-unresolved': OFF,
+        },
+    },
     ...compat.config({
         extends: [
             'plugin:@typescript-eslint/recommended-requiring-type-checking', // adds @typescript-eslint plugin
@@ -135,6 +141,12 @@ export default [
         ],
     }),
     {
-        ignores: ['node_modules/*', 'docs/*', 'dist/*'],
+        ignores: [
+            'node_modules/*',
+            'dist/*',
+            'coverage/*',
+            'docs/.astro/*',
+            'docs/dist/*',
+        ],
     },
 ];

@@ -1,6 +1,13 @@
 # Threshold ElGamal
 
 [![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://badge.fury.io/js/threshold-elgamal)
+[![npm downloads](https://img.shields.io/npm/dm/threshold-elgamal)](https://www.npmjs.com/package/threshold-elgamal)
+[![passing tests](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/ci.yml?branch=master&label=passing%20tests)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/endpoint?url=https://tenemo.github.io/threshold-elgamal/coverage-badge.json)](https://tenemo.github.io/threshold-elgamal/coverage-summary.json)
+[![docs](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/pages.yml?branch=master&label=docs)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/pages.yml)
+[![node](https://img.shields.io/badge/node-%E2%89%A524.14.1-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-10.33.0-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![license](https://img.shields.io/github/license/Tenemo/threshold-elgamal)](LICENSE)
 
 `threshold-elgamal` is a browser-native TypeScript library for finite-field ElGamal research prototypes built on native `bigint`.
 
@@ -81,13 +88,12 @@ For example, if each ballot is in `0..10` and you tally `50` ballots, encrypt ea
 
 ## Documentation
 
-- Start at the docs portal: [docs/index.md](docs/index.md)
-- Safe onboarding: [docs/guides/getting-started.md](docs/guides/getting-started.md)
-- Additive mode guide: [docs/guides/additive-elgamal.md](docs/guides/additive-elgamal.md)
-- Full 3-participant example: [docs/guides/three-participant-voting-flow.md](docs/guides/three-participant-voting-flow.md)
-- Threshold and proof APIs: generated subpath docs under `docs/api/threshold`, `docs/api/vss`, and `docs/api/proofs`
-- API reference: [docs/api/index.md](docs/api/index.md)
-- Spec pages: [docs/spec/index.md](docs/spec/index.md)
+- Hosted documentation site: [tenemo.github.io/threshold-elgamal](https://tenemo.github.io/threshold-elgamal/)
+- Get started: [tenemo.github.io/threshold-elgamal/guides/getting-started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
+- Build a voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
+- Security model: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
+- API reference: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
+- Docs source lives under `docs/src/content/docs/`
 
 ## Changes since v0.x.x
 

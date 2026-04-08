@@ -1,4 +1,9 @@
-# Three-participant voting flow
+---
+title: Three-participant voting flow
+description: A complete signed and verified 3-participant voting flow from setup through tally publication.
+sidebar:
+  order: 3
+---
 
 This guide shows a full 3-participant flow for the current shipped surface:
 

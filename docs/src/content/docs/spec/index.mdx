@@ -1,0 +1,22 @@
+---
+title: Protocol spec
+description: Normative rules for the current shipped surface.
+editUrl: false
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+The protocol spec is intentionally narrower than the guides. Use it when you need stable invariants and responsibility boundaries, not onboarding.
+
+<CardGrid>
+  <LinkCard
+    title="Library invariants"
+    href="/spec/library-invariants/"
+    description="Stable rules for the shipped cryptographic surface, encoding, threshold behavior, and documentation generation."
+  />
+  <LinkCard
+    title="API contract"
+    href="/spec/api-contract/"
+    description="The boundary between library responsibilities and application responsibilities."
+  />
+</CardGrid>

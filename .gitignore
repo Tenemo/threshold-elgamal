@@ -9,10 +9,10 @@ debug.log
 
 # Build
 dist/
-docs/api/
-
-# Testing
 coverage/
+docs/.astro/
+docs/dist/
+docs/src/content/docs/api/reference/
 
 # Miscellaneous
 .DS_Store

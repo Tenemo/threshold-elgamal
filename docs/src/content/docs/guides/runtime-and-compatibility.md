@@ -1,4 +1,9 @@
-# Runtime and compatibility
+---
+title: Runtime and compatibility
+description: Browser, Node, Web Crypto, and BigInt expectations for the current shipped surface.
+sidebar:
+  order: 5
+---
 
 The current surface is browser-native and depends on two JavaScript runtime features:
 
@@ -35,4 +40,4 @@ The current package ships:
 - byte concatenation helpers
 - injective `encodeForChallenge()` encoding for future transcript and proof work
 
-For exact function contracts, use the [API reference](../api/index.html).
+For exact function contracts, use the [API reference](/api/).

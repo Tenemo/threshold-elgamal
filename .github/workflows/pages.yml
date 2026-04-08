@@ -29,15 +29,12 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run docs:api
       - run: pnpm run verify:docs
-      - uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./docs
-          destination: ./_site
+      - run: pnpm run coverage:badge
+      - run: pnpm run docs:build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: ./_site
+          path: ./docs/dist
 
   deploy:
     needs: build

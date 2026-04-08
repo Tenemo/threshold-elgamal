@@ -1,4 +1,9 @@
-# API contract
+---
+title: API contract
+description: The hard boundary between shipped library responsibilities and surrounding application responsibilities.
+sidebar:
+  order: 2
+---
 
 The current package draws a hard boundary between the shipped cryptographic library and the surrounding application.
 
