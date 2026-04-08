@@ -11,6 +11,8 @@ The current surface is browser-native and depends on two JavaScript runtime feat
 - Node must be version `24.14.1` or newer and expose `globalThis.crypto`
 - The published package is ESM-only, so consumers must use `import` rather than CommonJS `require()`
 - If Web Crypto is missing, the library raises `UnsupportedSuiteError`
+- Transport key agreement prefers `X25519` when the runtime exposes it and
+  falls back to `P-256` otherwise
 
 ## Randomness behavior
 

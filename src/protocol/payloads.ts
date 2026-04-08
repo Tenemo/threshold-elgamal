@@ -18,8 +18,17 @@ export const payloadSlotKey = (payload: ProtocolPayload): string => {
             return `${prefix}:${payload.recipientIndex}`;
         case 'complaint':
             return `${prefix}:${payload.dealerIndex}:${payload.envelopeId}`;
+        case 'complaint-resolution':
+            return `${prefix}:${payload.dealerIndex}:${payload.complainantIndex}:${payload.envelopeId}`;
         case 'feldman-share-reveal':
             return `${prefix}:${payload.dealerIndex}`;
+        case 'ballot-submission':
+            return `${prefix}:${payload.optionIndex}`;
+        case 'decryption-share':
+        case 'tally-publication':
+            return `${prefix}:${payload.transcriptHash}`;
+        case 'ceremony-restart':
+            return `${prefix}:${payload.previousSessionId}`;
         default:
             return prefix;
     }

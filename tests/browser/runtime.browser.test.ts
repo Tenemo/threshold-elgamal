@@ -21,6 +21,8 @@ import {
     exportTransportPublicKey,
     generateAuthKeyPair,
     generateTransportKeyPair,
+    isX25519Supported,
+    resolveTransportSuite,
     signPayloadBytes,
 } from '#transport';
 
@@ -160,8 +162,15 @@ describe('browser runtime coverage', () => {
         expect(verified.transcriptHash).toHaveLength(64);
     });
 
-    it('encrypts and decrypts transport envelopes in the browser', async () => {
-        const recipient = await generateTransportKeyPair({ suite: 'P-256' });
+    it('resolves the preferred transport suite and round-trips browser envelopes', async () => {
+        const resolvedSuite = await resolveTransportSuite();
+        expect(resolvedSuite).toBe(
+            (await isX25519Supported()) ? 'X25519' : 'P-256',
+        );
+
+        const recipient = await generateTransportKeyPair({
+            suite: resolvedSuite,
+        });
         const recipientPublicKey = await exportTransportPublicKey(
             recipient.publicKey,
         );
@@ -179,7 +188,7 @@ describe('browser runtime coverage', () => {
                 payloadType: 'dkg-share',
                 protocolVersion: 'v2',
                 rosterHash: 'roster-hash',
-                suite: 'P-256',
+                suite: resolvedSuite,
             },
         );
         const decrypted = await decryptEnvelope(envelope, recipient.privateKey);

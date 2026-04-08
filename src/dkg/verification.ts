@@ -10,24 +10,27 @@ import {
     type CryptoGroup,
 } from '../core/index.js';
 import { verifySchnorrProof, type ProofContext } from '../proofs/index.js';
-import {
-    hashElectionManifest,
-    hashProtocolTranscript,
-    classifySlotConflict,
-    type ComplaintPayload,
-    type ElectionManifest,
-    type EncryptedDualSharePayload,
-    type FeldmanCommitmentPayload,
-    type KeyDerivationConfirmation,
-    type ManifestAcceptancePayload,
-    type PedersenCommitmentPayload,
-    type ProtocolMessageType,
-    type RegistrationPayload,
-    type SignedPayload,
-    verifySignedProtocolPayloads,
-} from '../protocol/index.js';
+import { hashElectionManifest } from '../protocol/manifest.js';
+import { classifySlotConflict } from '../protocol/payloads.js';
+import { hashProtocolTranscript } from '../protocol/transcript.js';
+import type {
+    ComplaintPayload,
+    ComplaintResolutionPayload,
+    ElectionManifest,
+    EncryptedDualSharePayload,
+    FeldmanCommitmentPayload,
+    KeyDerivationConfirmation,
+    ManifestAcceptancePayload,
+    ManifestPublicationPayload,
+    PedersenCommitmentPayload,
+    ProtocolMessageType,
+    RegistrationPayload,
+    SignedPayload,
+} from '../protocol/types.js';
+import { verifySignedProtocolPayloads } from '../protocol/verification.js';
 import { bigintToFixedHex, fixedHexToBigint } from '../serialize/index.js';
-import type { ComplaintResolution } from '../transport/types.js';
+import { resolveDealerChallengeFromPublicKey } from '../transport/complaints.js';
+import { verifyPedersenShare } from '../vss/pedersen.js';
 import type { PedersenShare } from '../vss/types.js';
 
 import type { DKGProtocol } from './types.js';
@@ -38,6 +41,7 @@ const expectedPhase = (
 ): number | null => {
     if (protocol === 'gjkr') {
         switch (messageType) {
+            case 'manifest-publication':
             case 'registration':
             case 'manifest-acceptance':
                 return 0;
@@ -45,16 +49,23 @@ const expectedPhase = (
             case 'encrypted-dual-share':
                 return 1;
             case 'complaint':
+            case 'complaint-resolution':
                 return 2;
             case 'feldman-commitment':
             case 'feldman-share-reveal':
                 return 3;
             case 'key-derivation-confirmation':
                 return 4;
+            case 'ballot-submission':
+            case 'decryption-share':
+            case 'tally-publication':
+            case 'ceremony-restart':
+                return null;
         }
     }
 
     switch (messageType) {
+        case 'manifest-publication':
         case 'registration':
         case 'manifest-acceptance':
             return 0;
@@ -62,11 +73,16 @@ const expectedPhase = (
         case 'encrypted-dual-share':
             return 1;
         case 'complaint':
+        case 'complaint-resolution':
         case 'feldman-share-reveal':
             return 2;
         case 'key-derivation-confirmation':
             return 3;
         case 'pedersen-commitment':
+        case 'ballot-submission':
+        case 'decryption-share':
+        case 'tally-publication':
+        case 'ceremony-restart':
             return null;
     }
 };
@@ -129,6 +145,17 @@ const requireSinglePayloadPerParticipant = <
             );
         }
     }
+};
+
+const requireExactlyOnePayload = <TPayload>(
+    payloads: readonly TPayload[],
+    label: string,
+): TPayload => {
+    if (payloads.length !== 1) {
+        throw new InvalidPayloadError(`${label} requires exactly one payload`);
+    }
+
+    return payloads[0];
 };
 
 const parseCommitmentVector = (
@@ -194,19 +221,12 @@ export type AcceptedShareContribution = {
     readonly share: PedersenShare;
 };
 
-/** Complaint record paired with an externally verified resolution. */
-export type ComplaintResolutionRecord = {
-    readonly complaint: ComplaintPayload;
-    readonly resolution: ComplaintResolution;
-};
-
 /** Input bundle for verifying a DKG transcript. */
 export type VerifyDKGTranscriptInput = {
     readonly protocol: DKGProtocol;
     readonly transcript: readonly SignedPayload[];
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
-    readonly complaintResolutions?: readonly ComplaintResolutionRecord[];
 };
 
 /** Verified DKG transcript result with reusable derived ceremony material. */
@@ -355,32 +375,45 @@ export const deriveQualifiedParticipantIndices = (
     ).filter((index) => !disqualifiedDealers.has(index));
 };
 
-const verifyComplaintResolution = (
-    complaint: ComplaintPayload,
-    resolutionMap: Map<string, ComplaintResolution>,
-): boolean => {
-    const resolution = resolutionMap.get(
-        `${complaint.participantIndex}:${complaint.dealerIndex}:${complaint.envelopeId}`,
-    );
-    if (resolution === undefined) {
+const complaintResolutionKey = (
+    complainantIndex: number,
+    dealerIndex: number,
+    envelopeId: string,
+): string => `${complainantIndex}:${dealerIndex}:${envelopeId}`;
+
+const parsePedersenSharePlaintext = (
+    plaintext: Uint8Array,
+    expectedParticipantIndex: number,
+): PedersenShare => {
+    let parsed: {
+        readonly blindingValue: string;
+        readonly index: number;
+        readonly secretValue: string;
+    };
+
+    try {
+        parsed = JSON.parse(new TextDecoder().decode(plaintext)) as {
+            readonly blindingValue: string;
+            readonly index: number;
+            readonly secretValue: string;
+        };
+    } catch {
         throw new InvalidPayloadError(
-            `Missing complaint resolution for complainant ${complaint.participantIndex} against dealer ${complaint.dealerIndex}`,
+            'Complaint resolution plaintext is not valid canonical JSON',
         );
     }
 
-    if (resolution.valid === true && resolution.fault !== 'complainant') {
+    if (parsed.index !== expectedParticipantIndex) {
         throw new InvalidPayloadError(
-            'A valid complaint resolution must attribute fault to the complainant',
+            `Complaint resolution share index mismatch: expected ${expectedParticipantIndex}, received ${parsed.index}`,
         );
     }
 
-    if (resolution.valid === false && resolution.fault !== 'dealer') {
-        throw new InvalidPayloadError(
-            'An invalid complaint resolution must attribute fault to the dealer',
-        );
-    }
-
-    return resolution.valid === false;
+    return {
+        index: parsed.index,
+        secretValue: fixedHexToBigint(parsed.secretValue),
+        blindingValue: fixedHexToBigint(parsed.blindingValue),
+    };
 };
 
 /**
@@ -434,6 +467,26 @@ export const verifyDKGTranscript = async (
         );
     }
 
+    const manifestPublication = requireExactlyOnePayload(
+        input.transcript
+            .filter(
+                (
+                    payload,
+                ): payload is SignedPayload<ManifestPublicationPayload> =>
+                    payload.payload.messageType === 'manifest-publication',
+            )
+            .map((payload) => payload.payload),
+        'Manifest publication',
+    );
+    if (
+        (await hashElectionManifest(manifestPublication.manifest)) !==
+        manifestHash
+    ) {
+        throw new InvalidPayloadError(
+            'Manifest publication does not match the verification input manifest',
+        );
+    }
+
     const acceptances = input.transcript
         .filter(
             (payload): payload is SignedPayload<ManifestAcceptancePayload> =>
@@ -482,17 +535,22 @@ export const verifyDKGTranscript = async (
             input.manifest.participantCount,
             'Pedersen commitment',
         );
-        for (const payload of pedersenCommitments) {
+    } else if (pedersenCommitments.length > 0) {
+        throw new InvalidPayloadError(
+            'Joint-Feldman transcripts must not include Pedersen commitments',
+        );
+    }
+
+    const pedersenCommitmentMap = new Map<number, readonly bigint[]>();
+    for (const payload of pedersenCommitments) {
+        pedersenCommitmentMap.set(
+            payload.payload.participantIndex,
             parseCommitmentVector(
                 payload.payload.commitments,
                 threshold,
                 group,
                 'Pedersen commitment payload',
-            );
-        }
-    } else if (pedersenCommitments.length > 0) {
-        throw new InvalidPayloadError(
-            'Joint-Feldman transcripts must not include Pedersen commitments',
+            ),
         );
     }
 
@@ -502,13 +560,36 @@ export const verifyDKGTranscript = async (
                 payload.payload.messageType === 'complaint',
         )
         .map((payload) => payload.payload);
-    const resolutionMap = new Map<string, ComplaintResolution>(
-        (input.complaintResolutions ?? []).map((record) => [
-            `${record.complaint.participantIndex}:${record.complaint.dealerIndex}:${record.complaint.envelopeId}`,
-            record.resolution,
-        ]),
-    );
+    const complaintResolutionPayloads = input.transcript
+        .filter(
+            (payload): payload is SignedPayload<ComplaintResolutionPayload> =>
+                payload.payload.messageType === 'complaint-resolution',
+        )
+        .map((payload) => payload.payload);
+    const resolutionPayloadMap = new Map<string, ComplaintResolutionPayload>();
+    for (const resolutionPayload of complaintResolutionPayloads) {
+        if (
+            resolutionPayload.participantIndex !== resolutionPayload.dealerIndex
+        ) {
+            throw new InvalidPayloadError(
+                `Complaint resolution for envelope ${resolutionPayload.envelopeId} must be authored by dealer ${resolutionPayload.dealerIndex}`,
+            );
+        }
+
+        const key = complaintResolutionKey(
+            resolutionPayload.complainantIndex,
+            resolutionPayload.dealerIndex,
+            resolutionPayload.envelopeId,
+        );
+        if (resolutionPayloadMap.has(key)) {
+            throw new InvalidPayloadError(
+                `Duplicate complaint resolution for envelope ${resolutionPayload.envelopeId}`,
+            );
+        }
+        resolutionPayloadMap.set(key, resolutionPayload);
+    }
     const acceptedComplaints: ComplaintPayload[] = [];
+    const usedResolutionKeys = new Set<string>();
 
     for (const complaint of complaints) {
         const matchingEnvelope = encryptedShares.find(
@@ -535,8 +616,94 @@ export const verifyDKGTranscript = async (
             );
         }
 
-        if (verifyComplaintResolution(complaint, resolutionMap)) {
+        const resolutionKey = complaintResolutionKey(
+            complaint.participantIndex,
+            complaint.dealerIndex,
+            complaint.envelopeId,
+        );
+        const resolutionPayload = resolutionPayloadMap.get(resolutionKey);
+        if (resolutionPayload === undefined) {
             acceptedComplaints.push(complaint);
+            continue;
+        }
+
+        usedResolutionKeys.add(resolutionKey);
+
+        if (resolutionPayload.suite !== matchingEnvelope.payload.suite) {
+            throw new InvalidPayloadError(
+                `Complaint resolution suite mismatch for envelope ${complaint.envelopeId}`,
+            );
+        }
+
+        const complainantRosterEntry = verifiedSignatures.rosterEntries.find(
+            (entry) => entry.participantIndex === complaint.participantIndex,
+        );
+        if (complainantRosterEntry === undefined) {
+            throw new InvalidPayloadError(
+                `Missing roster entry for complainant ${complaint.participantIndex}`,
+            );
+        }
+
+        const resolution = await resolveDealerChallengeFromPublicKey(
+            {
+                ...matchingEnvelope.payload,
+                dealerIndex: matchingEnvelope.payload.participantIndex,
+                rosterHash: input.manifest.rosterHash,
+                payloadType: 'encrypted-dual-share',
+                protocolVersion: input.manifest.protocolVersion,
+            },
+            complainantRosterEntry.transportPublicKey,
+            resolutionPayload.revealedEphemeralPrivateKey,
+        );
+        if (resolution.valid !== true || resolution.plaintext === undefined) {
+            throw new InvalidPayloadError(
+                `Complaint resolution failed verification for complainant ${complaint.participantIndex} against dealer ${complaint.dealerIndex}`,
+            );
+        }
+
+        const decryptedShare = parsePedersenSharePlaintext(
+            resolution.plaintext,
+            complaint.participantIndex,
+        );
+        const dealerCommitments = pedersenCommitmentMap.get(
+            complaint.dealerIndex,
+        );
+        if (input.protocol === 'gjkr') {
+            if (dealerCommitments === undefined) {
+                throw new InvalidPayloadError(
+                    `Missing Pedersen commitments for dealer ${complaint.dealerIndex}`,
+                );
+            }
+            if (
+                !verifyPedersenShare(
+                    decryptedShare,
+                    {
+                        commitments: dealerCommitments,
+                    },
+                    group,
+                )
+            ) {
+                throw new InvalidPayloadError(
+                    `Complaint resolution share failed Pedersen verification for dealer ${complaint.dealerIndex} and complainant ${complaint.participantIndex}`,
+                );
+            }
+        } else if (complaint.reason === 'pedersen-failure') {
+            throw new InvalidPayloadError(
+                'Joint-Feldman transcripts cannot resolve Pedersen-failure complaints',
+            );
+        }
+    }
+
+    for (const resolutionPayload of complaintResolutionPayloads) {
+        const key = complaintResolutionKey(
+            resolutionPayload.complainantIndex,
+            resolutionPayload.dealerIndex,
+            resolutionPayload.envelopeId,
+        );
+        if (!usedResolutionKeys.has(key)) {
+            throw new InvalidPayloadError(
+                `Complaint resolution for envelope ${resolutionPayload.envelopeId} does not match any complaint`,
+            );
         }
     }
 

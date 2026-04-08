@@ -24,6 +24,7 @@ const expectedPhase = (
     messageType: SignedPayload['payload']['messageType'],
 ): number | null => {
     switch (messageType) {
+        case 'manifest-publication':
         case 'registration':
         case 'manifest-acceptance':
             return 0;
@@ -31,11 +32,16 @@ const expectedPhase = (
         case 'encrypted-dual-share':
             return 1;
         case 'complaint':
+        case 'complaint-resolution':
         case 'feldman-share-reveal':
             return 2;
         case 'key-derivation-confirmation':
             return 3;
         case 'pedersen-commitment':
+        case 'ballot-submission':
+        case 'decryption-share':
+        case 'tally-publication':
+        case 'ceremony-restart':
             return null;
     }
 };
@@ -140,7 +146,20 @@ export const processJointFeldmanPayload = (
             > => item.payload.messageType === 'complaint',
         )
         .map((item) => item.payload);
-    const qual = computeQual(state.config.participantCount, complaints);
+    const complaintResolutions = nextTranscriptState.transcript
+        .filter(
+            (
+                item,
+            ): item is SignedPayload<
+                import('../protocol/types.js').ComplaintResolutionPayload
+            > => item.payload.messageType === 'complaint-resolution',
+        )
+        .map((item) => item.payload);
+    const qual = computeQual(
+        state.config.participantCount,
+        complaints,
+        complaintResolutions,
+    );
 
     if (qual.length < state.config.threshold) {
         return {

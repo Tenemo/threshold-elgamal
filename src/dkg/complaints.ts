@@ -1,5 +1,9 @@
 import { classifySlotConflict } from '../protocol/payloads.js';
-import type { ComplaintPayload, SignedPayload } from '../protocol/types.js';
+import type {
+    ComplaintPayload,
+    ComplaintResolutionPayload,
+    SignedPayload,
+} from '../protocol/types.js';
 
 import type { DKGConfig, DKGError, DKGState, DKGTransition } from './types.js';
 
@@ -19,9 +23,23 @@ const allParticipants = (participantCount: number): readonly number[] =>
 export const computeQual = (
     participantCount: number,
     complaints: readonly ComplaintPayload[],
+    complaintResolutions: readonly ComplaintResolutionPayload[] = [],
 ): readonly number[] => {
+    const resolvedComplaints = new Set(
+        complaintResolutions.map(
+            (resolution) =>
+                `${resolution.complainantIndex}:${resolution.dealerIndex}:${resolution.envelopeId}`,
+        ),
+    );
     const disqualifiedDealers = new Set(
-        complaints.map((complaint) => complaint.dealerIndex),
+        complaints
+            .filter(
+                (complaint) =>
+                    !resolvedComplaints.has(
+                        `${complaint.participantIndex}:${complaint.dealerIndex}:${complaint.envelopeId}`,
+                    ),
+            )
+            .map((complaint) => complaint.dealerIndex),
     );
 
     return allParticipants(participantCount).filter(

@@ -18,6 +18,22 @@ const assertNonEmptyString = (value: string, label: string): void => {
 };
 
 /**
+ * Returns the minimum publication threshold compatible with the shipped
+ * honest-majority policy.
+ *
+ * The manifest threshold is the reconstruction threshold `k = t + 1`, so the
+ * small-group privacy floor `t + 2` becomes `k + 1`.
+ *
+ * @param threshold Reconstruction threshold `k`.
+ * @param participantCount Total participant count `n`.
+ * @returns Minimum accepted ballot count `k + 1`.
+ */
+export const defaultMinimumPublicationThreshold = (
+    threshold: number,
+    participantCount: number,
+): number => assertMajorityThreshold(threshold, participantCount) + 1;
+
+/**
  * Validates the supported election-manifest invariants for the shipped
  * score-voting workflow.
  *
@@ -39,11 +55,18 @@ export const validateElectionManifest = (
 
     if (
         !Number.isInteger(manifest.minimumPublicationThreshold) ||
-        manifest.minimumPublicationThreshold < manifest.threshold + 1 ||
+        manifest.minimumPublicationThreshold <
+            defaultMinimumPublicationThreshold(
+                manifest.threshold,
+                manifest.participantCount,
+            ) ||
         manifest.minimumPublicationThreshold > manifest.participantCount
     ) {
         throw new InvalidPayloadError(
-            `Minimum publication threshold must be an integer in ${manifest.threshold + 1}..${manifest.participantCount}`,
+            `Minimum publication threshold must be an integer in ${defaultMinimumPublicationThreshold(
+                manifest.threshold,
+                manifest.participantCount,
+            )}..${manifest.participantCount}`,
         );
     }
 

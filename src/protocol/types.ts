@@ -2,14 +2,20 @@ import type { GroupName } from '../core/types.js';
 
 /** Canonical protocol payload type identifiers. */
 export type ProtocolMessageType =
+    | 'manifest-publication'
     | 'registration'
     | 'manifest-acceptance'
     | 'pedersen-commitment'
     | 'encrypted-dual-share'
     | 'complaint'
+    | 'complaint-resolution'
     | 'feldman-commitment'
     | 'feldman-share-reveal'
-    | 'key-derivation-confirmation';
+    | 'key-derivation-confirmation'
+    | 'ballot-submission'
+    | 'decryption-share'
+    | 'tally-publication'
+    | 'ceremony-restart';
 
 /** Complaint reasons recognized by the protocol layer. */
 export type ComplaintReason =
@@ -31,6 +37,29 @@ export type BaseProtocolPayload = {
     readonly phase: number;
     readonly participantIndex: number;
     readonly messageType: ProtocolMessageType;
+};
+
+/** Canonical additive ciphertext encoding used by protocol payloads. */
+export type EncodedCiphertext = {
+    readonly c1: string;
+    readonly c2: string;
+};
+
+/** Canonical compact Schnorr or DLEQ proof encoding used by payloads. */
+export type EncodedCompactProof = {
+    readonly challenge: string;
+    readonly response: string;
+};
+
+/** Canonical CDS94 proof branch encoding used by ballot payloads. */
+export type EncodedDisjunctiveBranch = {
+    readonly challenge: string;
+    readonly response: string;
+};
+
+/** Canonical CDS94 proof encoding used by ballot payloads. */
+export type EncodedDisjunctiveProof = {
+    readonly branches: readonly EncodedDisjunctiveBranch[];
 };
 
 /** Registration payload carrying ceremony auth and transport keys. */
@@ -74,6 +103,19 @@ export type ComplaintPayload = BaseProtocolPayload & {
     readonly reason: ComplaintReason;
 };
 
+/**
+ * Dealer-signed complaint-resolution payload carrying the sender-ephemeral
+ * private key that lets every verifier independently resolve one complaint.
+ */
+export type ComplaintResolutionPayload = BaseProtocolPayload & {
+    readonly messageType: 'complaint-resolution';
+    readonly dealerIndex: number;
+    readonly complainantIndex: number;
+    readonly envelopeId: string;
+    readonly suite: 'X25519' | 'P-256';
+    readonly revealedEphemeralPrivateKey: string;
+};
+
 /** Broadcast payload carrying Feldman commitments and coefficient proofs. */
 export type FeldmanCommitmentPayload = BaseProtocolPayload & {
     readonly messageType: 'feldman-commitment';
@@ -99,16 +141,65 @@ export type KeyDerivationConfirmation = BaseProtocolPayload & {
     readonly publicKey: string;
 };
 
+/** Signed manifest-publication payload anchoring the frozen manifest. */
+export type ManifestPublicationPayload = BaseProtocolPayload & {
+    readonly messageType: 'manifest-publication';
+    readonly manifest: ElectionManifest;
+};
+
+/** Signed additive ballot payload for one participant and one option slot. */
+export type BallotSubmissionPayload = BaseProtocolPayload & {
+    readonly messageType: 'ballot-submission';
+    readonly optionIndex: number;
+    readonly ciphertext: EncodedCiphertext;
+    readonly proof: EncodedDisjunctiveProof;
+};
+
+/**
+ * Signed threshold decryption-share payload tied to a locally recomputed
+ * additive aggregate transcript.
+ */
+export type DecryptionSharePayload = BaseProtocolPayload & {
+    readonly messageType: 'decryption-share';
+    readonly transcriptHash: string;
+    readonly ballotCount: number;
+    readonly decryptionShare: string;
+    readonly proof: EncodedCompactProof;
+};
+
+/** Signed tally-publication payload for the recovered additive tally. */
+export type TallyPublicationPayload = BaseProtocolPayload & {
+    readonly messageType: 'tally-publication';
+    readonly transcriptHash: string;
+    readonly ballotCount: number;
+    readonly tally: string;
+    readonly decryptionParticipantIndices: readonly number[];
+};
+
+/** Signed link from a restarted ceremony to the aborted prior attempt. */
+export type CeremonyRestartPayload = BaseProtocolPayload & {
+    readonly messageType: 'ceremony-restart';
+    readonly previousSessionId: string;
+    readonly previousTranscriptHash: string;
+    readonly reason: RestartReasonCode;
+};
+
 /** Union of all unsigned protocol payload shapes. */
 export type ProtocolPayload =
+    | ManifestPublicationPayload
     | RegistrationPayload
     | ManifestAcceptancePayload
     | PedersenCommitmentPayload
     | EncryptedDualSharePayload
     | ComplaintPayload
+    | ComplaintResolutionPayload
     | FeldmanCommitmentPayload
     | FeldmanShareRevealPayload
-    | KeyDerivationConfirmation;
+    | KeyDerivationConfirmation
+    | BallotSubmissionPayload
+    | DecryptionSharePayload
+    | TallyPublicationPayload
+    | CeremonyRestartPayload;
 
 /** Unsigned protocol payload paired with an authentication signature. */
 export type SignedPayload<TPayload extends ProtocolPayload = ProtocolPayload> =

@@ -7,3 +7,4 @@ export * from './payloads.js';
 export * from './transcript.js';
 export * from './types.js';
 export * from './verification.js';
+export * from './voting.js';

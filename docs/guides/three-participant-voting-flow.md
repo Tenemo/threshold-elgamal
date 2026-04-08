@@ -8,9 +8,10 @@ This guide shows a full 3-participant flow for the current shipped surface:
 - additive ballots with disjunctive proofs
 - local aggregate recomputation
 - threshold decryption shares with DLEQ proofs
+- typed ballot, decryption-share, and tally payloads on the safe protocol path
 
 The complete tested version lives in
-`tests/node/integration/voting-flow.test.ts`. The snippets below keep the same
+`tests/node/integration/voting-flow-harness.ts`. The snippets below keep the same
 structure but omit repeated helper boilerplate.
 
 ## Imports and helper style
@@ -33,7 +34,9 @@ import {
     canonicalizeJson,
     deriveSessionId,
     hashElectionManifest,
+    hashRosterEntries,
     hashProtocolTranscript,
+    verifyPublishedVotingResult,
     type ElectionManifest,
     type ProtocolPayload,
     type SignedPayload,
@@ -86,9 +89,8 @@ const signProtocolPayload = async <TPayload extends ProtocolPayload>(
 
 ## Freeze the roster and collect setup signatures
 
-The library does not currently ship a dedicated roster-hash helper, so the
-application freezes the roster and hashes it deterministically before building
-the manifest.
+The library ships `hashRosterEntries()`, so the application can freeze the
+setup roster before building the manifest and signing the phase-0 payloads.
 
 ```typescript
 const group = getGroup("ffdhe2048");
@@ -111,7 +113,7 @@ const participants = await Promise.all(
     }),
 );
 
-const rosterHash = await hashJson(
+const rosterHash = await hashRosterEntries(
     participants.map((participant) => ({
         participantIndex: participant.index,
         authPublicKey: participant.authPublicKeyHex,
@@ -262,9 +264,10 @@ GJKR reducer and expects a completed `QUAL = [1, 2, 3]`.
 
 ## Encrypt ballots and verify score proofs
 
-The current library does not ship a dedicated ballot payload schema, so the
-application hashes its accepted ballot log itself. The ballot-level cryptography
-is already available.
+The current library ships typed ballot, decryption-share, and tally payload
+schemas together with a high-level `verifyPublishedVotingResult()` helper. The
+ballot-level cryptography is still available directly when you need to stage or
+inspect intermediate artifacts.
 
 ```typescript
 const jointPublicKey = /* product of A_i,0 from the setup transcript */;
@@ -394,6 +397,12 @@ const decryptionShares = await Promise.all(
 const tally = combineDecryptionShares(aggregate, decryptionShares, group, 30n);
 console.log(tally); // 20n
 ```
+
+On the safe published path, the application signs typed ballot payloads,
+typed decryption-share payloads, and one tally-publication payload, then calls
+`verifyPublishedVotingResult()` to replay the DKG log, recompute the ballot
+aggregate locally, verify the DLEQ proofs, and check the announced tally before
+accepting it.
 
 ## What the integration test also checks
 

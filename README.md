@@ -16,11 +16,20 @@ This library ships:
 - dealer-based threshold sharing and decryption under the `./threshold` subpath
 - Feldman and Pedersen VSS helpers under the `./vss` subpath
 - Schnorr, DLEQ, and disjunctive proofs under the `./proofs` subpath
-- canonical payload, transcript, and manifest helpers under the `./protocol` subpath
+- canonical payload, transcript, manifest, and published-tally verification helpers under the `./protocol` subpath
 - authenticated transport envelopes under the `./transport` subpath
 - log-driven Joint-Feldman and GJKR reducers under the `./dkg` subpath
 
 This library is a hardened research prototype. It is not audited production voting software.
+
+## Release status
+
+This repository tracks the `v2` line. Treat any published `0.1.x` package as
+legacy and do not use it for new deployments.
+
+Confirm that you are actually installing a `2.x` package before relying on the
+typed protocol payloads, transcript-native complaint handling, or the published
+tally verification helpers described in this repository.
 
 ## Installation
 
@@ -80,7 +89,7 @@ For example, if each ballot is in `0..10` and you tally `50` ballots, encrypt ea
 - API reference: [docs/api/index.md](docs/api/index.md)
 - Spec pages: [docs/spec/index.md](docs/spec/index.md)
 
-## Changes since v1
+## Changes since v0.x.x
 
 This library has been substantially rewritten around a smaller and stricter public surface. The current release keeps the validated group definitions, deterministic suite-derived `h`, secure randomness, additive ElGamal, key generation, threshold sharing, proofs, protocol helpers, transport primitives, and log-driven DKG reducers. Raw multiplicative mode has been removed.
 
@@ -97,6 +106,12 @@ This does create a real tradeoff: additive homomorphism gives sums and arithmeti
 ```bash
 pnpm install
 pnpm run ci
+```
+
+For the DKG benchmark sweep, run:
+
+```bash
+pnpm run bench:dkg -- --group=ffdhe3072 --transport=X25519 3,11,21,31,41,51
 ```
 
 ## License

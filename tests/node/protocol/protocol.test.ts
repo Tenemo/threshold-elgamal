@@ -6,6 +6,7 @@ import {
     canonicalizeJson,
     classifySlotConflict,
     compareProtocolPayloads,
+    defaultMinimumPublicationThreshold,
     deriveSessionId,
     formatSessionFingerprint,
     hashElectionManifest,
@@ -71,6 +72,11 @@ describe('protocol payloads and transcripts', () => {
         await expect(
             deriveSessionId('manifest-1', 'roster-1', 'nonce-1', 'ts-1'),
         ).resolves.toHaveLength(64);
+    });
+
+    it('derives the shipped publication floor as t plus two ballots', () => {
+        expect(defaultMinimumPublicationThreshold(3, 5)).toBe(4);
+        expect(defaultMinimumPublicationThreshold(26, 51)).toBe(27);
     });
 
     it('orders protocol payloads deterministically', () => {
@@ -237,6 +243,86 @@ describe('protocol payloads and transcripts', () => {
         expect(classifySlotConflict(reveal, equivocatedReveal)).toBe(
             'equivocation',
         );
+    });
+
+    it('derives slot keys for complaint resolutions and typed voting payloads', () => {
+        expect(
+            payloadSlotKey({
+                sessionId: 'session-1',
+                manifestHash: 'manifest-1',
+                phase: 2,
+                participantIndex: 5,
+                messageType: 'complaint-resolution',
+                dealerIndex: 5,
+                complainantIndex: 2,
+                envelopeId: 'env-5-2',
+                suite: 'P-256',
+                revealedEphemeralPrivateKey: 'ephemeral-private-key',
+            }),
+        ).toBe('session-1:2:5:complaint-resolution:5:2:env-5-2');
+        expect(
+            payloadSlotKey({
+                sessionId: 'session-1',
+                manifestHash: 'manifest-1',
+                phase: 5,
+                participantIndex: 3,
+                messageType: 'ballot-submission',
+                optionIndex: 2,
+                ciphertext: {
+                    c1: '01',
+                    c2: '02',
+                },
+                proof: {
+                    branches: [
+                        {
+                            challenge: '03',
+                            response: '04',
+                        },
+                    ],
+                },
+            }),
+        ).toBe('session-1:5:3:ballot-submission:2');
+        expect(
+            payloadSlotKey({
+                sessionId: 'session-1',
+                manifestHash: 'manifest-1',
+                phase: 6,
+                participantIndex: 2,
+                messageType: 'decryption-share',
+                transcriptHash: 'aa'.repeat(32),
+                ballotCount: 3,
+                decryptionShare: '05',
+                proof: {
+                    challenge: '06',
+                    response: '07',
+                },
+            }),
+        ).toBe(`session-1:6:2:decryption-share:${'aa'.repeat(32)}`);
+        expect(
+            payloadSlotKey({
+                sessionId: 'session-1',
+                manifestHash: 'manifest-1',
+                phase: 7,
+                participantIndex: 1,
+                messageType: 'tally-publication',
+                transcriptHash: 'bb'.repeat(32),
+                ballotCount: 3,
+                tally: '08',
+                decryptionParticipantIndices: [1, 3],
+            }),
+        ).toBe(`session-1:7:1:tally-publication:${'bb'.repeat(32)}`);
+        expect(
+            payloadSlotKey({
+                sessionId: 'session-2',
+                manifestHash: 'manifest-2',
+                phase: 0,
+                participantIndex: 1,
+                messageType: 'ceremony-restart',
+                previousSessionId: 'session-1',
+                previousTranscriptHash: 'cc'.repeat(32),
+                reason: 'timeout',
+            }),
+        ).toBe('session-2:0:1:ceremony-restart:session-1');
     });
 
     it('distinguishes idempotent retransmissions from equivocation', () => {

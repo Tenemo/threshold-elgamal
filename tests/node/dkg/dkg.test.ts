@@ -251,6 +251,88 @@ describe('DKG state machines', () => {
         expect(abortedState.abortReason).toBe('qual-too-small');
     });
 
+    it('resumes GJKR processing from a transcript prefix without changing the final state', () => {
+        const config = {
+            protocol: 'gjkr',
+            sessionId: 'session-4',
+            manifestHash: 'manifest-4',
+            group: 'ffdhe2048',
+            participantCount: 3,
+        } as const;
+        const transcript = [
+            ...[1, 2, 3].map((participantIndex) =>
+                signed({
+                    sessionId: 'session-4',
+                    manifestHash: 'manifest-4',
+                    phase: 0,
+                    participantIndex,
+                    messageType: 'manifest-acceptance',
+                    rosterHash: 'roster-4',
+                    assignedParticipantIndex: participantIndex,
+                }),
+            ),
+            ...[1, 2, 3].map((participantIndex) =>
+                signed({
+                    sessionId: 'session-4',
+                    manifestHash: 'manifest-4',
+                    phase: 1,
+                    participantIndex,
+                    messageType: 'pedersen-commitment',
+                    commitments: [`c-${participantIndex}`],
+                }),
+            ),
+            signed({
+                sessionId: 'session-4',
+                manifestHash: 'manifest-4',
+                phase: 2,
+                participantIndex: 2,
+                messageType: 'complaint',
+                dealerIndex: 1,
+                envelopeId: 'env-1-2',
+                reason: 'aes-gcm-failure',
+            }),
+            signed({
+                sessionId: 'session-4',
+                manifestHash: 'manifest-4',
+                phase: 2,
+                participantIndex: 1,
+                messageType: 'complaint-resolution',
+                dealerIndex: 1,
+                complainantIndex: 2,
+                envelopeId: 'env-1-2',
+                suite: 'P-256',
+                revealedEphemeralPrivateKey: 'ephemeral-private-key',
+            }),
+            ...[1, 2, 3].map((participantIndex) =>
+                signed({
+                    sessionId: 'session-4',
+                    manifestHash: 'manifest-4',
+                    phase: 4,
+                    participantIndex,
+                    messageType: 'key-derivation-confirmation',
+                    qualHash: 'qual',
+                    publicKey: 'pk',
+                }),
+            ),
+        ] as const;
+
+        const prefixState = replayGjkrTranscript(
+            config,
+            transcript.slice(0, 5),
+        );
+        let resumedState = prefixState;
+        for (const payload of transcript.slice(5)) {
+            resumedState = processGjkrPayload(resumedState, payload).newState;
+        }
+
+        const directReplay = replayGjkrTranscript(config, transcript);
+
+        expect(prefixState.phase).toBe(1);
+        expect(resumedState).toEqual(directReplay);
+        expect(directReplay.phase).toBe('completed');
+        expect(directReplay.qual).toEqual([1, 2, 3]);
+    });
+
     it('rejects equivocated payloads for the same canonical slot', () => {
         const state = createJointFeldmanState({
             protocol: 'joint-feldman',

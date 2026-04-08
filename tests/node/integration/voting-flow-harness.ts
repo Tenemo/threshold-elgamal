@@ -9,7 +9,6 @@ import {
     type GroupName,
 } from '#core';
 import {
-    type ComplaintResolutionRecord,
     deriveJointPublicKey,
     deriveTranscriptVerificationKeys,
     replayGjkrTranscript,
@@ -30,22 +29,32 @@ import {
 import {
     canonicalUnsignedPayloadBytes,
     canonicalizeJson,
+    defaultMinimumPublicationThreshold,
     deriveSessionId,
+    encodeCiphertext,
+    encodeCompactProof,
+    encodeDisjunctiveProof,
     formatSessionFingerprint,
     hashElectionManifest,
     hashRosterEntries,
     hashProtocolTranscript,
     verifyAndAggregateBallots,
+    verifyPublishedVotingResult,
+    type BallotSubmissionPayload,
     type ComplaintPayload,
+    type ComplaintResolutionPayload,
     type ElectionManifest,
     type EncryptedDualSharePayload,
+    type DecryptionSharePayload,
     type FeldmanCommitmentPayload,
     type KeyDerivationConfirmation,
     type ManifestAcceptancePayload,
+    type ManifestPublicationPayload,
     type PedersenCommitmentPayload,
     type ProtocolPayload,
     type RegistrationPayload,
     type SignedPayload,
+    type TallyPublicationPayload,
 } from '#protocol';
 import { bigintToFixedHex, fixedHexToBigint } from '#serialize';
 import {
@@ -67,6 +76,7 @@ import {
     verifyPayloadSignature,
     type ComplaintResolution,
     type EncryptedEnvelope,
+    type KeyAgreementSuite,
 } from '#transport';
 import {
     derivePedersenShares,
@@ -85,6 +95,7 @@ type ParticipantRuntime = {
     readonly index: number;
     readonly transportPrivateKey: CryptoKey;
     readonly transportPublicKeyHex: string;
+    readonly transportSuite: KeyAgreementSuite;
 };
 
 type EnvelopeArtifact = {
@@ -107,9 +118,10 @@ type DealerMaterial = {
 
 export type ComplaintInjection = {
     readonly dealerIndex: number;
-    readonly envelopeTamper: 'ciphertext' | 'ephemeralPublicKey' | 'iv';
+    readonly envelopeTamper?: 'ciphertext' | 'ephemeralPublicKey' | 'iv';
     readonly reason?: ComplaintPayload['reason'];
     readonly recipientIndex: number;
+    readonly resolutionOutcome?: 'dealer-fault' | 'complainant-fault';
 };
 
 export type VotingFlowScenario = {
@@ -119,12 +131,14 @@ export type VotingFlowScenario = {
     readonly group?: GroupName;
     readonly participantCount: number;
     readonly threshold?: number;
+    readonly transportSuite?: KeyAgreementSuite;
     readonly votes: readonly bigint[];
 };
 
 type CommonScenarioResult = {
     readonly aggregate: { readonly c1: bigint; readonly c2: bigint };
     readonly ballotLogHash?: string;
+    readonly ballotPayloads?: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly ballots: readonly {
         readonly ciphertext: { readonly c1: bigint; readonly c2: bigint };
         readonly proof: Awaited<ReturnType<typeof createDisjunctiveProof>>;
@@ -136,7 +150,7 @@ type CommonScenarioResult = {
         readonly dealerIndex: number;
         readonly recipientIndex: number;
     })[];
-    readonly complaintResolutionRecords: readonly ComplaintResolutionRecord[];
+    readonly decryptionSharePayloads?: readonly SignedPayload<DecryptionSharePayload>[];
     readonly dkgTranscript: readonly SignedPayload[];
     readonly directJointSecret?: bigint;
     readonly finalShares?: readonly Share[];
@@ -156,6 +170,7 @@ type CommonScenarioResult = {
     readonly registrations: readonly SignedPayload<RegistrationPayload>[];
     readonly sessionFingerprint: string;
     readonly sessionId: string;
+    readonly tallyPublication?: SignedPayload<TallyPublicationPayload>;
     readonly thresholdShareArtifacts?: readonly {
         readonly proof: Awaited<ReturnType<typeof createDLEQProof>>;
         readonly share: DecryptionShare;
@@ -232,6 +247,21 @@ const signPayload = async <TPayload extends ProtocolPayload>(
     ),
 });
 
+const createManifestPublicationPayload = async (
+    publisher: ParticipantRuntime,
+    sessionId: string,
+    manifestHash: string,
+    manifest: ElectionManifest,
+): Promise<SignedPayload<ManifestPublicationPayload>> =>
+    signPayload(publisher.auth.privateKey, {
+        sessionId,
+        manifestHash,
+        phase: 0,
+        participantIndex: publisher.index,
+        messageType: 'manifest-publication',
+        manifest,
+    });
+
 const verifySignedTranscript = async (
     participants: readonly ParticipantRuntime[],
     signedPayloads: readonly SignedPayload[],
@@ -297,15 +327,36 @@ const parseShareEnvelope = (
     };
 };
 
+const createComplaintResolutionPayload = async (
+    dealer: ParticipantRuntime,
+    sessionId: string,
+    manifestHash: string,
+    complainantIndex: number,
+    envelopeArtifact: EnvelopeArtifact,
+): Promise<SignedPayload<ComplaintResolutionPayload>> =>
+    signPayload(dealer.auth.privateKey, {
+        sessionId,
+        manifestHash,
+        phase: 2,
+        participantIndex: dealer.index,
+        messageType: 'complaint-resolution',
+        dealerIndex: dealer.index,
+        complainantIndex,
+        envelopeId: envelopeArtifact.envelope.envelopeId,
+        suite: envelopeArtifact.envelope.suite,
+        revealedEphemeralPrivateKey: envelopeArtifact.ephemeralPrivateKey,
+    });
+
 const createParticipants = async (
     participantCount: number,
+    transportSuite: KeyAgreementSuite,
 ): Promise<readonly ParticipantRuntime[]> =>
     Promise.all(
         Array.from({ length: participantCount }, async (_value, offset) => {
             const index = offset + 1;
             const auth = await generateAuthKeyPair();
             const transport = await generateTransportKeyPair({
-                suite: 'P-256',
+                suite: transportSuite,
                 extractable: true,
             });
 
@@ -317,6 +368,7 @@ const createParticipants = async (
                 transportPublicKeyHex: await exportTransportPublicKey(
                     transport.publicKey,
                 ),
+                transportSuite: transport.suite,
             };
         }),
     );
@@ -330,7 +382,10 @@ const buildManifest = (
     suiteId: group.name,
     threshold: majorityThreshold(scenario.participantCount),
     participantCount: scenario.participantCount,
-    minimumPublicationThreshold: scenario.participantCount,
+    minimumPublicationThreshold: defaultMinimumPublicationThreshold(
+        majorityThreshold(scenario.participantCount),
+        scenario.participantCount,
+    ),
     allowAbstention: scenario.allowAbstention ?? false,
     scoreDomainMin: scenario.allowAbstention ? 0 : 1,
     scoreDomainMax: 10,
@@ -521,7 +576,7 @@ const buildDealerMaterial = async (
                         envelopeId: `env-${participant.index}-${recipient.index}`,
                         payloadType: 'encrypted-dual-share',
                         protocolVersion: 'v2',
-                        suite: 'P-256',
+                        suite: recipient.transportSuite,
                     },
                 );
                 const decrypted = await decryptEnvelope(
@@ -543,7 +598,7 @@ const buildDealerMaterial = async (
                     await verifyComplaintPrecondition(
                         recipient.transportPrivateKey,
                         recipient.transportPublicKeyHex,
-                        'P-256',
+                        recipient.transportSuite,
                     ),
                     `Complaint precondition failed for participant ${recipient.index}`,
                 );
@@ -633,6 +688,8 @@ const tamperEnvelope = (
     envelope: EncryptedEnvelope,
     tamper: ComplaintInjection['envelopeTamper'],
 ): EncryptedEnvelope => {
+    invariant(tamper !== undefined, 'Expected an envelope tamper mode');
+
     switch (tamper) {
         case 'ciphertext':
             return {
@@ -646,6 +703,8 @@ const tamperEnvelope = (
                 ...envelope,
                 ephemeralPublicKey: mutateHexTail(envelope.ephemeralPublicKey),
             };
+        default:
+            throw new Error('Unsupported envelope tamper mode');
     }
 };
 
@@ -718,6 +777,93 @@ const createBallotArtifacts = async (
         }),
     );
 
+const createBallotSubmissionPayloads = async (
+    participants: readonly ParticipantRuntime[],
+    ballots: readonly {
+        readonly ciphertext: { readonly c1: bigint; readonly c2: bigint };
+        readonly proof: Awaited<ReturnType<typeof createDisjunctiveProof>>;
+        readonly voterIndex: number;
+    }[],
+    sessionId: string,
+    manifestHash: string,
+    group: CryptoGroup,
+): Promise<readonly SignedPayload<BallotSubmissionPayload>[]> =>
+    Promise.all(
+        ballots.map((ballot) =>
+            signPayload(participants[ballot.voterIndex - 1].auth.privateKey, {
+                sessionId,
+                manifestHash,
+                phase: 5,
+                participantIndex: ballot.voterIndex,
+                messageType: 'ballot-submission',
+                optionIndex: 1,
+                ciphertext: encodeCiphertext(
+                    ballot.ciphertext,
+                    group.byteLength,
+                ),
+                proof: encodeDisjunctiveProof(ballot.proof, group.byteLength),
+            }),
+        ),
+    );
+
+const createDecryptionSharePayloads = async (
+    participants: readonly ParticipantRuntime[],
+    shares: readonly {
+        readonly proof: Awaited<ReturnType<typeof createDLEQProof>>;
+        readonly share: DecryptionShare;
+    }[],
+    sessionId: string,
+    manifestHash: string,
+    transcriptHash: string,
+    ballotCount: number,
+    group: CryptoGroup,
+): Promise<readonly SignedPayload<DecryptionSharePayload>[]> =>
+    Promise.all(
+        shares.map((artifact) =>
+            signPayload(
+                participants[artifact.share.index - 1].auth.privateKey,
+                {
+                    sessionId,
+                    manifestHash,
+                    phase: 6,
+                    participantIndex: artifact.share.index,
+                    messageType: 'decryption-share',
+                    transcriptHash,
+                    ballotCount,
+                    decryptionShare: bigintToFixedHex(
+                        artifact.share.value,
+                        group.byteLength,
+                    ),
+                    proof: encodeCompactProof(artifact.proof, group.byteLength),
+                },
+            ),
+        ),
+    );
+
+const createTallyPublicationPayload = async (
+    publisher: ParticipantRuntime,
+    sessionId: string,
+    manifestHash: string,
+    transcriptHash: string,
+    ballotCount: number,
+    tally: bigint,
+    decryptionParticipantIndices: readonly number[],
+    group: CryptoGroup,
+): Promise<SignedPayload<TallyPublicationPayload>> =>
+    signPayload(publisher.auth.privateKey, {
+        sessionId,
+        manifestHash,
+        phase: 7,
+        participantIndex: publisher.index,
+        messageType: 'tally-publication',
+        transcriptHash,
+        ballotCount,
+        tally: bigintToFixedHex(tally, group.byteLength),
+        decryptionParticipantIndices: [...decryptionParticipantIndices].sort(
+            (left, right) => left - right,
+        ),
+    });
+
 /**
  * Runs a parameterized end-to-end voting-flow scenario.
  *
@@ -760,7 +906,10 @@ export const runVotingFlowScenario = async (
     });
 
     const group = getGroup(scenario.group ?? DEFAULT_GROUP);
-    const participants = await createParticipants(scenario.participantCount);
+    const participants = await createParticipants(
+        scenario.participantCount,
+        scenario.transportSuite ?? 'P-256',
+    );
     const rosterHash = await computeRosterHash(participants);
     const manifest = buildManifest(rosterHash, group, scenario);
     const manifestHash = await hashElectionManifest(manifest);
@@ -769,6 +918,12 @@ export const runVotingFlowScenario = async (
         rosterHash,
         `nonce-${scenario.participantCount}-${threshold}-${scenario.votes.join('-')}`,
         `2026-04-08T12:${String(scenario.participantCount).padStart(2, '0')}:00Z`,
+    );
+    const manifestPublication = await createManifestPublicationPayload(
+        participants[0],
+        sessionId,
+        manifestHash,
+        manifest,
     );
     const registrations = await createRegistrationPayloads(
         participants,
@@ -784,12 +939,15 @@ export const runVotingFlowScenario = async (
     );
 
     await verifySignedTranscript(participants, [
+        manifestPublication,
         ...registrations,
         ...acceptances,
     ]);
 
     const setupTranscriptHash = await hashProtocolTranscript(
-        [...registrations, ...acceptances].map((item) => item.payload),
+        [manifestPublication, ...registrations, ...acceptances].map(
+            (item) => item.payload,
+        ),
     );
     const sessionFingerprint = formatSessionFingerprint(setupTranscriptHash);
 
@@ -817,6 +975,8 @@ export const runVotingFlowScenario = async (
         readonly recipientIndex: number;
     })[] = [];
     const complaintPayloads: SignedPayload<ComplaintPayload>[] = [];
+    const complaintResolutionPayloads: SignedPayload<ComplaintResolutionPayload>[] =
+        [];
     const complainedDealerIndices = new Set<number>();
     const tamperedEnvelopePayloads = new Map<
         string,
@@ -824,6 +984,7 @@ export const runVotingFlowScenario = async (
     >();
 
     for (const complaint of scenario.complaints ?? []) {
+        const resolutionOutcome = complaint.resolutionOutcome ?? 'dealer-fault';
         const dealerMaterial = dealerMaterials.find(
             (dealer) => dealer.participantIndex === complaint.dealerIndex,
         );
@@ -851,62 +1012,112 @@ export const runVotingFlowScenario = async (
             await verifyComplaintPrecondition(
                 recipient.transportPrivateKey,
                 recipient.transportPublicKeyHex,
-                'P-256',
+                recipient.transportSuite,
             ),
             `Complaint precondition failed for participant ${complaint.recipientIndex}`,
         );
 
-        const tamperedEnvelope = tamperEnvelope(
-            envelopeArtifact.envelope,
-            complaint.envelopeTamper,
-        );
+        if (resolutionOutcome === 'dealer-fault') {
+            invariant(
+                complaint.envelopeTamper !== undefined,
+                'Dealer-fault complaints require a tampered envelope field',
+            );
 
-        await decryptEnvelope(
-            tamperedEnvelope,
-            recipient.transportPrivateKey,
-        ).then(
-            () => {
-                throw new Error(
-                    `Tampered envelope unexpectedly decrypted for dealer ${complaint.dealerIndex}`,
-                );
-            },
-            () => undefined,
-        );
+            const tamperedEnvelope = tamperEnvelope(
+                envelopeArtifact.envelope,
+                complaint.envelopeTamper,
+            );
 
-        const resolution = await resolveDealerChallenge(
-            tamperedEnvelope,
-            recipient.transportPrivateKey,
-            envelopeArtifact.ephemeralPrivateKey,
-        );
-        complaintResolutions.push({
-            ...resolution,
-            dealerIndex: complaint.dealerIndex,
-            recipientIndex: complaint.recipientIndex,
-        });
-        invariant(
-            resolution.valid === false && resolution.fault === 'dealer',
-            `Expected dealer fault for complaint against dealer ${complaint.dealerIndex}`,
-        );
+            await decryptEnvelope(
+                tamperedEnvelope,
+                recipient.transportPrivateKey,
+            ).then(
+                () => {
+                    throw new Error(
+                        `Tampered envelope unexpectedly decrypted for dealer ${complaint.dealerIndex}`,
+                    );
+                },
+                () => undefined,
+            );
 
-        complainedDealerIndices.add(complaint.dealerIndex);
-        tamperedEnvelopePayloads.set(
-            `${complaint.dealerIndex}:${complaint.recipientIndex}`,
-            await signPayload(
-                participants[complaint.dealerIndex - 1].auth.privateKey,
-                {
+            const resolution = await resolveDealerChallenge(
+                tamperedEnvelope,
+                recipient.transportPrivateKey,
+                envelopeArtifact.ephemeralPrivateKey,
+            );
+            complaintResolutions.push({
+                ...resolution,
+                dealerIndex: complaint.dealerIndex,
+                recipientIndex: complaint.recipientIndex,
+            });
+            invariant(
+                resolution.valid === false && resolution.fault === 'dealer',
+                `Expected dealer fault for complaint against dealer ${complaint.dealerIndex}`,
+            );
+
+            complainedDealerIndices.add(complaint.dealerIndex);
+            tamperedEnvelopePayloads.set(
+                `${complaint.dealerIndex}:${complaint.recipientIndex}`,
+                await signPayload(
+                    participants[complaint.dealerIndex - 1].auth.privateKey,
+                    {
+                        sessionId,
+                        manifestHash,
+                        phase: 1,
+                        participantIndex: complaint.dealerIndex,
+                        messageType: 'encrypted-dual-share',
+                        recipientIndex: complaint.recipientIndex,
+                        envelopeId: tamperedEnvelope.envelopeId,
+                        suite: tamperedEnvelope.suite,
+                        ephemeralPublicKey: tamperedEnvelope.ephemeralPublicKey,
+                        iv: tamperedEnvelope.iv,
+                        ciphertext: tamperedEnvelope.ciphertext,
+                    },
+                ),
+            );
+        } else {
+            invariant(
+                complaint.envelopeTamper === undefined,
+                'Complainant-fault complaints must reference the untampered envelope',
+            );
+
+            const resolution = await resolveDealerChallenge(
+                envelopeArtifact.envelope,
+                recipient.transportPrivateKey,
+                envelopeArtifact.ephemeralPrivateKey,
+            );
+            complaintResolutions.push({
+                ...resolution,
+                dealerIndex: complaint.dealerIndex,
+                recipientIndex: complaint.recipientIndex,
+            });
+            invariant(
+                resolution.valid === true &&
+                    resolution.fault === 'complainant' &&
+                    resolution.plaintext !== undefined,
+                `Expected complainant fault for complaint against dealer ${complaint.dealerIndex}`,
+            );
+
+            complaintResolutionPayloads.push(
+                await createComplaintResolutionPayload(
+                    participants[complaint.dealerIndex - 1],
                     sessionId,
                     manifestHash,
-                    phase: 1,
-                    participantIndex: complaint.dealerIndex,
-                    messageType: 'encrypted-dual-share',
-                    recipientIndex: complaint.recipientIndex,
-                    envelopeId: tamperedEnvelope.envelopeId,
-                    suite: tamperedEnvelope.suite,
-                    ephemeralPublicKey: tamperedEnvelope.ephemeralPublicKey,
-                    iv: tamperedEnvelope.iv,
-                    ciphertext: tamperedEnvelope.ciphertext,
-                },
-            ),
+                    complaint.recipientIndex,
+                    envelopeArtifact,
+                ),
+            );
+        }
+
+        const referencedEnvelopeId =
+            resolutionOutcome === 'dealer-fault'
+                ? tamperedEnvelopePayloads.get(
+                      `${complaint.dealerIndex}:${complaint.recipientIndex}`,
+                  )?.payload.envelopeId
+                : envelopeArtifact.envelope.envelopeId;
+        invariant(
+            referencedEnvelopeId !== undefined,
+            `Missing complaint envelope id for dealer ${complaint.dealerIndex} and recipient ${complaint.recipientIndex}`,
         );
         complaintPayloads.push(
             await signPayload(recipient.auth.privateKey, {
@@ -916,7 +1127,7 @@ export const runVotingFlowScenario = async (
                 participantIndex: recipient.index,
                 messageType: 'complaint',
                 dealerIndex: complaint.dealerIndex,
-                envelopeId: tamperedEnvelope.envelopeId,
+                envelopeId: referencedEnvelopeId,
                 reason: complaint.reason ?? 'aes-gcm-failure',
             }),
         );
@@ -942,11 +1153,13 @@ export const runVotingFlowScenario = async (
     );
 
     const preConfirmationTranscript = [
+        manifestPublication,
         ...registrations,
         ...acceptances,
         ...dealerMaterials.map((dealer) => dealer.pedersenCommitmentPayload),
         ...allEncryptedSharePayloads,
         ...complaintPayloads,
+        ...complaintResolutionPayloads,
         ...feldmanPayloads,
     ] as const;
     const preConfirmationQualHash = await hashProtocolTranscript(
@@ -977,20 +1190,17 @@ export const runVotingFlowScenario = async (
     );
 
     const dkgTranscript = [
+        manifestPublication,
         ...registrations,
         ...acceptances,
         ...dealerMaterials.map((dealer) => dealer.pedersenCommitmentPayload),
         ...allEncryptedSharePayloads,
         ...complaintPayloads,
+        ...complaintResolutionPayloads,
         ...feldmanPayloads,
         ...confirmations,
     ] as const;
     await verifySignedTranscript(participants, dkgTranscript);
-    const complaintResolutionRecords: readonly ComplaintResolutionRecord[] =
-        complaintPayloads.map((complaintPayload, index) => ({
-            complaint: complaintPayload.payload,
-            resolution: complaintResolutions[index],
-        }));
     const finalState = replayGjkrTranscript(
         {
             protocol: 'gjkr',
@@ -1011,7 +1221,6 @@ export const runVotingFlowScenario = async (
             aggregate: { c1: 1n, c2: 1n },
             ballots: [],
             complaintResolutions,
-            complaintResolutionRecords,
             dkgTranscript,
             manifest,
             finalState: abortedState,
@@ -1032,7 +1241,6 @@ export const runVotingFlowScenario = async (
         transcript: dkgTranscript,
         manifest,
         sessionId,
-        complaintResolutions: complaintResolutionRecords,
     });
 
     invariant(
@@ -1107,6 +1315,13 @@ export const runVotingFlowScenario = async (
         manifestHash,
         sessionId,
         validValues,
+    );
+    const ballotPayloads = await createBallotSubmissionPayloads(
+        participants,
+        ballots,
+        sessionId,
+        manifestHash,
+        group,
     );
     const verifiedBallots = await verifyAndAggregateBallots({
         ballots: ballots.map((ballot) => ({
@@ -1244,6 +1459,34 @@ export const runVotingFlowScenario = async (
         BigInt(scenario.participantCount * 10),
     );
     const expectedTally = scenario.votes.reduce((sum, vote) => sum + vote, 0n);
+    const decryptionSharePayloads = await createDecryptionSharePayloads(
+        participants,
+        thresholdShareArtifacts,
+        sessionId,
+        manifestHash,
+        ballotLogHash,
+        verifiedAggregate.ballotCount,
+        group,
+    );
+    const tallyPublication = await createTallyPublicationPayload(
+        participants[0],
+        sessionId,
+        manifestHash,
+        ballotLogHash,
+        verifiedAggregate.ballotCount,
+        recovered,
+        thresholdShareArtifacts.map((artifact) => artifact.share.index),
+        group,
+    );
+    const verifiedPublished = await verifyPublishedVotingResult({
+        protocol: 'gjkr',
+        manifest,
+        sessionId,
+        dkgTranscript,
+        ballotPayloads,
+        decryptionSharePayloads,
+        tallyPublication,
+    });
 
     invariant(
         recovered === expectedTally,
@@ -1253,13 +1496,27 @@ export const runVotingFlowScenario = async (
         recoveredWithAllShares === expectedTally,
         'All-share threshold recovery returned the wrong tally',
     );
+    invariant(
+        verifiedPublished.tally === expectedTally,
+        'Published tally verification returned the wrong tally',
+    );
+    invariant(
+        verifiedPublished.ballots.transcriptHash === ballotLogHash,
+        'Published ballot verification returned the wrong transcript hash',
+    );
+    invariant(
+        verifiedPublished.decryptionShares.length ===
+            thresholdShareArtifacts.length,
+        'Published tally verification accepted the wrong number of decryption shares',
+    );
 
     return {
         aggregate,
         ballotLogHash,
+        ballotPayloads,
         ballots,
         complaintResolutions,
-        complaintResolutionRecords,
+        decryptionSharePayloads,
         dkgTranscript,
         directJointSecret,
         expectedTally,
@@ -1279,6 +1536,7 @@ export const runVotingFlowScenario = async (
         registrations,
         sessionFingerprint,
         sessionId,
+        tallyPublication,
         thresholdShareArtifacts,
         transcriptDerivedVerificationKeys,
     };

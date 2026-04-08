@@ -83,6 +83,20 @@ const completedScenarios: readonly (VotingFlowScenario & {
         decryptionParticipantIndices: [2, 4],
         expectedQual: [2, 3, 4],
     },
+    {
+        name: 'completes a 2-of-3 flow after one resolved complaint',
+        participantCount: 3,
+        votes: [5n, 5n, 5n],
+        complaints: [
+            {
+                dealerIndex: 1,
+                recipientIndex: 2,
+                resolutionOutcome: 'complainant-fault',
+            },
+        ],
+        decryptionParticipantIndices: [1, 2],
+        expectedQual: [1, 2, 3],
+    },
 ];
 
 describe('parameterized completed voting flows', () => {
@@ -128,11 +142,20 @@ describe('parameterized completed voting flows', () => {
                 expect(completedResult.sessionFingerprint).toMatch(
                     /^[0-9A-F]{4}(?:-[0-9A-F]{4}){7}$/,
                 );
+                expect(completedResult.complaintResolutions).toHaveLength(
+                    scenario.complaints?.length ?? 0,
+                );
                 expect(
-                    completedResult.complaintResolutions.every(
-                        (resolution) => resolution.fault === 'dealer',
+                    completedResult.complaintResolutions.map(
+                        (resolution) => resolution.fault,
                     ),
-                ).toBe(true);
+                ).toEqual(
+                    (scenario.complaints ?? []).map((complaint) =>
+                        complaint.resolutionOutcome === 'complainant-fault'
+                            ? 'complainant'
+                            : 'dealer',
+                    ),
+                );
             },
         );
     }

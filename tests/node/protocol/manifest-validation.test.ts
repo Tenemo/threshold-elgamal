@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
     canonicalizeElectionManifest,
+    defaultMinimumPublicationThreshold,
     deriveSessionId,
     validateElectionManifest,
     type ElectionManifest,
@@ -76,6 +77,17 @@ describe('manifest validation', () => {
                 ],
             }),
         ).toThrow('Epoch deadlines must be strictly increasing');
+    });
+
+    it('rejects publication floors below the shipped privacy minimum', () => {
+        expect(defaultMinimumPublicationThreshold(3, 5)).toBe(4);
+
+        expect(() =>
+            validateElectionManifest({
+                ...baseManifest(),
+                minimumPublicationThreshold: 3,
+            }),
+        ).toThrow('Minimum publication threshold must be an integer in 4..5');
     });
 
     it('derives session identifiers injectively', async () => {

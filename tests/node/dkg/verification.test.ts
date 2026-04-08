@@ -54,14 +54,15 @@ const resignPayload = async (
 
 describe('DKG transcript verification', () => {
     let completed: CompletedVotingFlowResult;
-    let withComplaint: CompletedVotingFlowResult;
+    let withDealerFaultComplaint: CompletedVotingFlowResult;
+    let withResolvedComplaint: CompletedVotingFlowResult;
 
     beforeAll(async () => {
         const completedResult = await runVotingFlowScenario({
             participantCount: 3,
             votes: [1n, 2n, 3n],
         });
-        const complaintResult = await runVotingFlowScenario({
+        const dealerFaultComplaintResult = await runVotingFlowScenario({
             participantCount: 3,
             votes: [1n, 2n, 3n],
             complaints: [
@@ -72,14 +73,29 @@ describe('DKG transcript verification', () => {
                 },
             ],
         });
+        const resolvedComplaintResult = await runVotingFlowScenario({
+            participantCount: 3,
+            votes: [1n, 2n, 3n],
+            complaints: [
+                {
+                    dealerIndex: 1,
+                    recipientIndex: 2,
+                    resolutionOutcome: 'complainant-fault',
+                },
+            ],
+        });
 
         completed = expectCompleted(
             completedResult,
             'Expected the completed fixture scenario to finish',
         );
-        withComplaint = expectCompleted(
-            complaintResult,
-            'Expected the complaint fixture scenario to finish',
+        withDealerFaultComplaint = expectCompleted(
+            dealerFaultComplaintResult,
+            'Expected the dealer-fault complaint fixture scenario to finish',
+        );
+        withResolvedComplaint = expectCompleted(
+            resolvedComplaintResult,
+            'Expected the resolved complaint fixture scenario to finish',
         );
     }, 30_000);
 
@@ -89,7 +105,6 @@ describe('DKG transcript verification', () => {
             transcript: completed.dkgTranscript,
             manifest: completed.manifest,
             sessionId: completed.sessionId,
-            complaintResolutions: completed.complaintResolutionRecords,
         });
 
         expect(verified.qual).toEqual(completed.finalState.qual);
@@ -109,18 +124,29 @@ describe('DKG transcript verification', () => {
         ).toBe(completed.transcriptDerivedVerificationKeys![0].value);
     });
 
-    it('tracks accepted complaints and derived QUAL reductions', async () => {
+    it('treats unresolved complaints as dealer-fault outcomes and derives QUAL reductions', async () => {
         const verified = await verifyDKGTranscript({
             protocol: 'gjkr',
-            transcript: withComplaint.dkgTranscript,
-            manifest: withComplaint.manifest,
-            sessionId: withComplaint.sessionId,
-            complaintResolutions: withComplaint.complaintResolutionRecords,
+            transcript: withDealerFaultComplaint.dkgTranscript,
+            manifest: withDealerFaultComplaint.manifest,
+            sessionId: withDealerFaultComplaint.sessionId,
         });
 
         expect(verified.acceptedComplaints).toHaveLength(1);
         expect(verified.acceptedComplaints[0].dealerIndex).toBe(1);
         expect(verified.qual).toEqual([2, 3]);
+    });
+
+    it('accepts valid complaint resolutions and keeps the dealer in QUAL', async () => {
+        const verified = await verifyDKGTranscript({
+            protocol: 'gjkr',
+            transcript: withResolvedComplaint.dkgTranscript,
+            manifest: withResolvedComplaint.manifest,
+            sessionId: withResolvedComplaint.sessionId,
+        });
+
+        expect(verified.acceptedComplaints).toEqual([]);
+        expect(verified.qual).toEqual([1, 2, 3]);
     });
 
     it('rejects missing encrypted shares and missing Feldman commitments', async () => {
@@ -150,7 +176,6 @@ describe('DKG transcript verification', () => {
                 transcript: missingEnvelope,
                 manifest: completed.manifest,
                 sessionId: completed.sessionId,
-                complaintResolutions: completed.complaintResolutionRecords,
             }),
         ).rejects.toThrow('Expected 6 encrypted share payloads, received 5');
 
@@ -160,7 +185,6 @@ describe('DKG transcript verification', () => {
                 transcript: missingFeldman,
                 manifest: completed.manifest,
                 sessionId: completed.sessionId,
-                complaintResolutions: completed.complaintResolutionRecords,
             }),
         ).rejects.toThrow(
             'Missing Feldman commitment payload for qualified dealer 1',
@@ -184,9 +208,10 @@ describe('DKG transcript verification', () => {
                 transcript: badSignatureTranscript,
                 manifest: completed.manifest,
                 sessionId: completed.sessionId,
-                complaintResolutions: completed.complaintResolutionRecords,
             }),
-        ).rejects.toThrow('Registration signature failed verification');
+        ).rejects.toThrow(
+            'Payload signature failed verification for participant 1 (manifest-publication)',
+        );
 
         await expect(
             verifyDKGTranscript({
@@ -194,57 +219,59 @@ describe('DKG transcript verification', () => {
                 transcript: completed.dkgTranscript,
                 manifest: completed.manifest,
                 sessionId: `${completed.sessionId}-other`,
-                complaintResolutions: completed.complaintResolutionRecords,
             }),
         ).rejects.toThrow(
             'Payload session does not match the verification input',
         );
     });
 
-    it('rejects forged complaint evidence and missing complaint resolutions', async () => {
-        const complaintIndex = withComplaint.dkgTranscript.findIndex(
+    it('rejects forged complaint evidence and unmatched complaint resolutions', async () => {
+        const complaintIndex = withResolvedComplaint.dkgTranscript.findIndex(
             (entry) => entry.payload.messageType === 'complaint',
         );
         if (complaintIndex < 0) {
             throw new Error('Expected the complaint fixture transcript');
         }
 
-        const originalComplaint = withComplaint.dkgTranscript[complaintIndex];
+        const originalComplaint =
+            withResolvedComplaint.dkgTranscript[complaintIndex];
         const forgedComplaintPayload = {
             ...originalComplaint.payload,
             envelopeId: 'unknown-envelope',
         } as ProtocolPayload;
         const forgedComplaint = await resignPayload(
-            withComplaint,
+            withResolvedComplaint,
             forgedComplaintPayload,
         );
-        const forgedTranscript = withComplaint.dkgTranscript.map(
+        const forgedTranscript = withResolvedComplaint.dkgTranscript.map(
             (entry, index) =>
                 index === complaintIndex ? forgedComplaint : entry,
         );
-
-        await expect(
-            verifyDKGTranscript({
-                protocol: 'gjkr',
-                transcript: withComplaint.dkgTranscript,
-                manifest: withComplaint.manifest,
-                sessionId: withComplaint.sessionId,
-                complaintResolutions: [],
-            }),
-        ).rejects.toThrow(
-            'Missing complaint resolution for complainant 2 against dealer 1',
-        );
+        const unmatchedResolutionTranscript =
+            withResolvedComplaint.dkgTranscript.filter(
+                (entry) => entry.payload.messageType !== 'complaint',
+            );
 
         await expect(
             verifyDKGTranscript({
                 protocol: 'gjkr',
                 transcript: forgedTranscript,
-                manifest: withComplaint.manifest,
-                sessionId: withComplaint.sessionId,
-                complaintResolutions: withComplaint.complaintResolutionRecords,
+                manifest: withResolvedComplaint.manifest,
+                sessionId: withResolvedComplaint.sessionId,
             }),
         ).rejects.toThrow(
             'Complaint references an unknown envelope unknown-envelope',
+        );
+
+        await expect(
+            verifyDKGTranscript({
+                protocol: 'gjkr',
+                transcript: unmatchedResolutionTranscript,
+                manifest: withResolvedComplaint.manifest,
+                sessionId: withResolvedComplaint.sessionId,
+            }),
+        ).rejects.toThrow(
+            'Complaint resolution for envelope env-1-2 does not match any complaint',
         );
     });
 
@@ -281,7 +308,6 @@ describe('DKG transcript verification', () => {
                 ),
                 manifest: completed.manifest,
                 sessionId: completed.sessionId,
-                complaintResolutions: completed.complaintResolutionRecords,
             }),
         ).rejects.toThrow(
             `qualHash mismatch in confirmation from participant ${originalConfirmation.payload.participantIndex}`,
@@ -295,7 +321,6 @@ describe('DKG transcript verification', () => {
                 ),
                 manifest: completed.manifest,
                 sessionId: completed.sessionId,
-                complaintResolutions: completed.complaintResolutionRecords,
             }),
         ).rejects.toThrow(
             `Joint public key mismatch in confirmation from participant ${originalConfirmation.payload.participantIndex}`,
