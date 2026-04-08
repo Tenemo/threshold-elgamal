@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { InvalidPayloadError, InvalidScalarError } from '#core';
 import {
     bigintToFixedHex,
+    bigintToFixedBytes,
     bytesToHex,
     concatBytes,
     domainSeparator,
     encodeForChallenge,
+    encodeSequenceForChallenge,
     fixedHexToBigint,
     hexToBytes,
 } from '#serialize';
@@ -17,6 +19,9 @@ describe('foundational encoding', () => {
 
         expect(hex).toBe('00001234');
         expect(fixedHexToBigint(hex)).toBe(0x1234n);
+        expect(Array.from(bigintToFixedBytes(0x1234n, 4))).toEqual([
+            0x00, 0x00, 0x12, 0x34,
+        ]);
     });
 
     it('rejects invalid fixed-width hex inputs', () => {
@@ -45,6 +50,20 @@ describe('foundational encoding', () => {
                 encodeForChallenge('abc', 1n, Uint8Array.from([0x02, 0x03])),
             ),
         ).toBe('000000036162630000000101000000020203');
+    });
+
+    it('count-prefixes variable-length transcript sequences', () => {
+        const left = encodeSequenceForChallenge([
+            Uint8Array.from([0x12]),
+            Uint8Array.from([0x34, 0x56]),
+        ]);
+        const right = encodeSequenceForChallenge([
+            Uint8Array.from([0x12, 0x34]),
+            Uint8Array.from([0x56]),
+        ]);
+
+        expect(bytesToHex(left)).toBe('000000020000000112000000023456');
+        expect(bytesToHex(left)).not.toBe(bytesToHex(right));
     });
 
     it('round-trips raw hex byte helpers', () => {

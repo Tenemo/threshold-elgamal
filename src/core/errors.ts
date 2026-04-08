@@ -10,9 +10,21 @@ class ThresholdElgamalError extends Error {
 export class InvalidScalarError extends ThresholdElgamalError {}
 /** Raised when a group element is not valid for the selected finite-field suite. */
 export class InvalidGroupElementError extends ThresholdElgamalError {}
+/** Raised when a participant index falls outside the valid `1..n` range. */
+export class IndexOutOfRangeError extends ThresholdElgamalError {}
 /** Raised when serialized payload bytes do not satisfy the required encoding. */
 export class InvalidPayloadError extends ThresholdElgamalError {}
+/** Raised when a proof transcript or response fails verification. */
+export class InvalidProofError extends ThresholdElgamalError {}
 /** Raised when the requested suite or runtime capability is unavailable. */
 export class UnsupportedSuiteError extends ThresholdElgamalError {}
 /** Raised when a plaintext lies outside the allowed domain for the chosen mode. */
 export class PlaintextDomainError extends ThresholdElgamalError {}
+/** Raised when a serialized or reconstructed share fails validation. */
+export class InvalidShareError extends ThresholdElgamalError {}
+/** Raised when a protocol phase transition violates the state machine rules. */
+export class PhaseViolationError extends ThresholdElgamalError {}
+/** Raised when threshold parameters do not satisfy `1 <= k <= n`. */
+export class ThresholdViolationError extends ThresholdElgamalError {}
+/** Raised when transcript hashes or canonical bytes do not match expectations. */
+export class TranscriptMismatchError extends ThresholdElgamalError {}

@@ -90,6 +90,22 @@ export const bigintToFixedHex = (value: bigint, byteLength: number): string => {
 };
 
 /**
+ * Encodes a non-negative bigint as fixed-width big-endian bytes.
+ *
+ * @param value Non-negative bigint to encode.
+ * @param byteLength Required output width in bytes.
+ * @returns A `Uint8Array` padded to exactly `byteLength`.
+ *
+ * @throws {@link InvalidPayloadError} When `byteLength` is not positive.
+ * @throws {@link InvalidScalarError} When the value is negative or does not fit
+ * in the requested width.
+ */
+export const bigintToFixedBytes = (
+    value: bigint,
+    byteLength: number,
+): Uint8Array => hexToBytes(bigintToFixedHex(value, byteLength));
+
+/**
  * Decodes a fixed-width hexadecimal string back into a bigint.
  *
  * @param hex Lowercase or uppercase hexadecimal input.
@@ -189,3 +205,20 @@ export const encodeForChallenge = (
             );
         }),
     );
+
+/**
+ * Injectively encodes a variable-length sequence for challenge transcripts.
+ *
+ * The output starts with a 4-byte big-endian element count followed by the
+ * standard length-prefixed encoding for each element.
+ *
+ * @param elements Sequence elements to encode in order.
+ * @returns A deterministic count-prefixed byte encoding of `elements`.
+ *
+ * @throws {@link InvalidScalarError} When a bigint element is negative.
+ * @throws {@link InvalidPayloadError} When an encoded element length is invalid.
+ */
+export const encodeSequenceForChallenge = (
+    elements: readonly (bigint | Uint8Array | string)[],
+): Uint8Array =>
+    concatBytes(encodeLength(elements.length), encodeForChallenge(...elements));

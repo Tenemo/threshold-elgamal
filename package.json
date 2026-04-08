@@ -1,7 +1,7 @@
 {
     "name": "threshold-elgamal",
     "version": "2.0.0",
-    "description": "A browser-native TypeScript ElGamal library for bigint-based research prototypes, currently shipping core primitives, additive ElGamal, key generation, and serialization helpers.",
+    "description": "A browser-native TypeScript ElGamal library for bigint-based research prototypes, shipping additive ElGamal, dealer threshold decryption, VSS, proofs, protocol helpers, transport primitives, and log-driven DKG state machines.",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MPL-2.0",
     "main": "dist/index.js",
@@ -9,7 +9,13 @@
     "imports": {
         "#root": "./src/index.ts",
         "#core": "./src/core/index.ts",
+        "#dkg": "./src/dkg/index.ts",
         "#elgamal": "./src/elgamal/index.ts",
+        "#proofs": "./src/proofs/index.ts",
+        "#protocol": "./src/protocol/index.ts",
+        "#threshold": "./src/threshold/index.ts",
+        "#transport": "./src/transport/index.ts",
+        "#vss": "./src/vss/index.ts",
         "#serialize": "./src/serialize/index.ts"
     },
     "exports": {
@@ -24,6 +30,30 @@
         "./elgamal": {
             "types": "./dist/elgamal/index.d.ts",
             "import": "./dist/elgamal/index.js"
+        },
+        "./dkg": {
+            "types": "./dist/dkg/index.d.ts",
+            "import": "./dist/dkg/index.js"
+        },
+        "./proofs": {
+            "types": "./dist/proofs/index.d.ts",
+            "import": "./dist/proofs/index.js"
+        },
+        "./protocol": {
+            "types": "./dist/protocol/index.d.ts",
+            "import": "./dist/protocol/index.js"
+        },
+        "./threshold": {
+            "types": "./dist/threshold/index.d.ts",
+            "import": "./dist/threshold/index.js"
+        },
+        "./transport": {
+            "types": "./dist/transport/index.d.ts",
+            "import": "./dist/transport/index.js"
+        },
+        "./vss": {
+            "types": "./dist/vss/index.d.ts",
+            "import": "./dist/vss/index.js"
         },
         "./serialize": {
             "types": "./dist/serialize/index.d.ts",
@@ -46,7 +76,9 @@
         "typecheck": "tsc",
         "tsc": "pnpm run typecheck",
         "guard:no-math-random": "tsx ./tests/guards/check-no-math-random.ts",
-        "check": "pnpm run lint && pnpm run typecheck && pnpm run guard:no-math-random && pnpm run test",
+        "verify:h-derivation": "tsx ./scripts/verify-h-derivation.ts",
+        "vectors:threshold": "tsx ./scripts/generate-threshold-vectors.ts",
+        "check": "pnpm run lint && pnpm run typecheck && pnpm run guard:no-math-random && pnpm run verify:h-derivation && pnpm run test",
         "prebuild": "pnpm run check && del-cli dist",
         "build": "tsc --project tsconfig.build.json",
         "build:skip": "del-cli dist && tsc --project tsconfig.build.json",
@@ -56,7 +88,7 @@
         "test:watch": "vitest --project node --watch",
         "ci": "pnpm run check && pnpm run build:skip && pnpm run docs:api && pnpm run verify:docs",
         "docs:api": "tsx ./node_modules/typedoc/bin/typedoc --options typedoc.config.mjs",
-        "verify:docs": "tsx ./scripts/verify-docs.ts",
+        "verify:docs": "tsx ./typedoc/verify-docs.ts",
         "prepublish:public": "pnpm run ci",
         "publish:public": "pnpm publish --access public",
         "prepare": "husky"

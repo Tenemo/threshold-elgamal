@@ -1,14 +1,11 @@
-import { typedocEntryPoints } from './scripts/public-api-docs';
+import { typedocEntryPoints } from './typedoc/public-api-docs';
 
 /** @type {import('typedoc').TypeDocOptions} */
 const config = {
     entryPoints: typedocEntryPoints,
     entryPointStrategy: 'resolve',
     alwaysCreateEntryPointModule: true,
-    plugin: [
-        'typedoc-plugin-markdown',
-        './scripts/typedoc-sentence-case-plugin.ts',
-    ],
+    plugin: ['typedoc-plugin-markdown', './typedoc/sentence-case-plugin.ts'],
     out: 'docs/api',
     router: 'member',
     readme: 'typedoc.readme.md',

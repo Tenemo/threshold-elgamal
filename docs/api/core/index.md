@@ -16,10 +16,16 @@ understands which higher-level ElGamal mode they intend to build on top.
 
 | Class | Description |
 | ------ | ------ |
+| [IndexOutOfRangeError](classes/IndexOutOfRangeError.md) | Raised when a participant index falls outside the valid `1..n` range. |
 | [InvalidGroupElementError](classes/InvalidGroupElementError.md) | Raised when a group element is not valid for the selected finite-field suite. |
 | [InvalidPayloadError](classes/InvalidPayloadError.md) | Raised when serialized payload bytes do not satisfy the required encoding. |
+| [InvalidProofError](classes/InvalidProofError.md) | Raised when a proof transcript or response fails verification. |
 | [InvalidScalarError](classes/InvalidScalarError.md) | Raised when a scalar value falls outside the expected mathematical domain. |
+| [InvalidShareError](classes/InvalidShareError.md) | Raised when a serialized or reconstructed share fails validation. |
+| [PhaseViolationError](classes/PhaseViolationError.md) | Raised when a protocol phase transition violates the state machine rules. |
 | [PlaintextDomainError](classes/PlaintextDomainError.md) | Raised when a plaintext lies outside the allowed domain for the chosen mode. |
+| [ThresholdViolationError](classes/ThresholdViolationError.md) | Raised when threshold parameters do not satisfy `1 <= k <= n`. |
+| [TranscriptMismatchError](classes/TranscriptMismatchError.md) | Raised when transcript hashes or canonical bytes do not match expectations. |
 | [UnsupportedSuiteError](classes/UnsupportedSuiteError.md) | Raised when the requested suite or runtime capability is unavailable. |
 
 ## Type aliases
@@ -44,7 +50,10 @@ understands which higher-level ElGamal mode they intend to build on top.
 | [assertInSubgroupOrIdentity](functions/assertInSubgroupOrIdentity.md) | Validates that a value is either the subgroup identity or a non-identity subgroup element. |
 | [assertPlaintextAdditive](functions/assertPlaintextAdditive.md) | Validates the plaintext domain and caller-supplied bound for additive ElGamal. |
 | [assertScalarInZq](functions/assertScalarInZq.md) | Validates that a scalar belongs to `Z_q`. |
+| [assertThreshold](functions/assertThreshold.md) | Validates threshold parameters for `k`-of-`n` protocols. |
+| [assertValidParticipantIndex](functions/assertValidParticipantIndex.md) | Validates a 1-based participant index for a fixed participant count. |
 | [assertValidPublicKey](functions/assertValidPublicKey.md) | Validates a public key as a non-identity prime-order subgroup element. |
+| [deriveH](functions/deriveH.md) | Recomputes the deterministic secondary generator `h` for a built-in suite. |
 | [getGroup](functions/getGroup.md) | Returns one of the immutable built-in RFC 7919 group definitions. |
 | [getWebCrypto](functions/getWebCrypto.md) | Returns the runtime Web Crypto implementation used by the library. |
 | [hkdfSha256](functions/hkdfSha256.md) | Derives deterministic key material with HKDF-SHA-256. |

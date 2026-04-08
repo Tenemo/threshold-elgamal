@@ -13,6 +13,12 @@ injective challenge encoding layer used by later proof-oriented work.
 
 ## References
 
+### bigintToFixedBytes
+
+Re-exports [bigintToFixedBytes](../threshold-elgamal/functions/bigintToFixedBytes.md)
+
+***
+
 ### bigintToFixedHex
 
 Re-exports [bigintToFixedHex](../threshold-elgamal/functions/bigintToFixedHex.md)
@@ -40,6 +46,12 @@ Re-exports [domainSeparator](../threshold-elgamal/functions/domainSeparator.md)
 ### encodeForChallenge
 
 Re-exports [encodeForChallenge](../threshold-elgamal/functions/encodeForChallenge.md)
+
+***
+
+### encodeSequenceForChallenge
+
+Re-exports [encodeSequenceForChallenge](../threshold-elgamal/functions/encodeSequenceForChallenge.md)
 
 ***
 

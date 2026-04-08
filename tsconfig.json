@@ -29,6 +29,7 @@
     "include": [
         "src/**/*",
         "scripts/**/*",
+        "typedoc/**/*",
         "test-vectors/**/*",
         "tests/**/*",
         "vitest.config.ts",

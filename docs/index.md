@@ -25,11 +25,17 @@ This site is split into guides, spec pages, and generated API reference. Start w
 - [API landing page](api/index.html)
 - [Safe root package](api/threshold-elgamal/index.html)
 - [Core subpath](api/core/index.html)
+- [Threshold subpath](api/threshold/index.html)
+- [VSS subpath](api/vss/index.html)
+- [Proofs subpath](api/proofs/index.html)
+- [Protocol subpath](api/protocol/index.html)
+- [Transport subpath](api/transport/index.html)
+- [DKG subpath](api/dkg/index.html)
 - [ElGamal subpath](api/elgamal/index.html)
 - [Serialize subpath](api/serialize/index.html)
 
 ## Current surface
 
 - `threshold-elgamal` is the safe root package
-- `core`, `elgamal`, and `serialize` are available as narrower subpath imports
-- Threshold, proof, DKG, and transport APIs are not shipped yet
+- `core`, `threshold`, `vss`, `proofs`, `protocol`, `transport`, `dkg`, `elgamal`, and `serialize` are available as narrower subpath imports
+- The root package stays additive-only even though threshold, proof, transport, and DKG primitives now ship under subpaths

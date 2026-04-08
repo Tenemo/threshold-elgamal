@@ -1,16 +1,24 @@
 export {
+    IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidPayloadError,
+    InvalidProofError,
     InvalidScalarError,
+    InvalidShareError,
+    PhaseViolationError,
     PlaintextDomainError,
+    ThresholdViolationError,
+    TranscriptMismatchError,
     UnsupportedSuiteError,
 } from './core/errors.js';
-export { getGroup, listGroups } from './core/groups.js';
+export { deriveH, getGroup, listGroups } from './core/groups.js';
 export type { CryptoGroup, GroupName, PrimeBits } from './core/types.js';
 export {
     assertInSubgroup,
     assertInSubgroupOrIdentity,
     assertScalarInZq,
+    assertThreshold,
+    assertValidParticipantIndex,
     assertValidPublicKey,
     isInSubgroup,
     isInSubgroupOrIdentity,

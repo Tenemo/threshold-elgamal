@@ -31,12 +31,14 @@ helpers, and serialization helpers that are safe for the shipped package.
 | [assertValidFreshAdditiveCiphertext](functions/assertValidFreshAdditiveCiphertext.md) | Validates a freshly produced additive ciphertext with subgroup `c1`. |
 | [assertValidPrivateKey](functions/assertValidPrivateKey.md) | Validates that a private key lies in the range `1..q-1`. |
 | [babyStepGiantStep](functions/babyStepGiantStep.md) | Solves a bounded discrete logarithm with the baby-step giant-step method. |
+| [bigintToFixedBytes](functions/bigintToFixedBytes.md) | Encodes a non-negative bigint as fixed-width big-endian bytes. |
 | [bigintToFixedHex](functions/bigintToFixedHex.md) | Encodes a non-negative bigint as fixed-width lowercase hexadecimal. |
 | [bytesToHex](functions/bytesToHex.md) | Encodes raw bytes as lowercase hexadecimal. |
 | [concatBytes](functions/concatBytes.md) | Concatenates multiple byte arrays into a single contiguous buffer. |
 | [decryptAdditive](functions/decryptAdditive.md) | Decrypts an additive ciphertext and recovers the bounded plaintext with baby-step giant-step. |
 | [domainSeparator](functions/domainSeparator.md) | Encodes a domain-separation tag as UTF-8 bytes. |
 | [encodeForChallenge](functions/encodeForChallenge.md) | Injectively encodes challenge transcript elements with 4-byte big-endian length prefixes. |
+| [encodeSequenceForChallenge](functions/encodeSequenceForChallenge.md) | Injectively encodes a variable-length sequence for challenge transcripts. |
 | [encryptAdditive](functions/encryptAdditive.md) | Encrypts an additive plaintext with fresh random `r in 1..q-1`. |
 | [encryptAdditiveWithRandomness](functions/encryptAdditiveWithRandomness.md) | Encrypts an additive plaintext with caller-supplied randomness. |
 | [fixedHexToBigint](functions/fixedHexToBigint.md) | Decodes a fixed-width hexadecimal string back into a bigint. |
@@ -64,6 +66,18 @@ Re-exports [assertScalarInZq](../core/functions/assertScalarInZq.md)
 
 ***
 
+### assertThreshold
+
+Re-exports [assertThreshold](../core/functions/assertThreshold.md)
+
+***
+
+### assertValidParticipantIndex
+
+Re-exports [assertValidParticipantIndex](../core/functions/assertValidParticipantIndex.md)
+
+***
+
 ### assertValidPublicKey
 
 Re-exports [assertValidPublicKey](../core/functions/assertValidPublicKey.md)
@@ -73,6 +87,12 @@ Re-exports [assertValidPublicKey](../core/functions/assertValidPublicKey.md)
 ### CryptoGroup
 
 Re-exports [CryptoGroup](../core/type-aliases/CryptoGroup.md)
+
+***
+
+### deriveH
+
+Re-exports [deriveH](../core/functions/deriveH.md)
 
 ***
 
@@ -88,6 +108,12 @@ Re-exports [GroupName](../core/type-aliases/GroupName.md)
 
 ***
 
+### IndexOutOfRangeError
+
+Re-exports [IndexOutOfRangeError](../core/classes/IndexOutOfRangeError.md)
+
+***
+
 ### InvalidGroupElementError
 
 Re-exports [InvalidGroupElementError](../core/classes/InvalidGroupElementError.md)
@@ -100,9 +126,21 @@ Re-exports [InvalidPayloadError](../core/classes/InvalidPayloadError.md)
 
 ***
 
+### InvalidProofError
+
+Re-exports [InvalidProofError](../core/classes/InvalidProofError.md)
+
+***
+
 ### InvalidScalarError
 
 Re-exports [InvalidScalarError](../core/classes/InvalidScalarError.md)
+
+***
+
+### InvalidShareError
+
+Re-exports [InvalidShareError](../core/classes/InvalidShareError.md)
 
 ***
 
@@ -124,6 +162,12 @@ Re-exports [listGroups](../core/functions/listGroups.md)
 
 ***
 
+### PhaseViolationError
+
+Re-exports [PhaseViolationError](../core/classes/PhaseViolationError.md)
+
+***
+
 ### PlaintextDomainError
 
 Re-exports [PlaintextDomainError](../core/classes/PlaintextDomainError.md)
@@ -133,6 +177,18 @@ Re-exports [PlaintextDomainError](../core/classes/PlaintextDomainError.md)
 ### PrimeBits
 
 Re-exports [PrimeBits](../core/type-aliases/PrimeBits.md)
+
+***
+
+### ThresholdViolationError
+
+Re-exports [ThresholdViolationError](../core/classes/ThresholdViolationError.md)
+
+***
+
+### TranscriptMismatchError
+
+Re-exports [TranscriptMismatchError](../core/classes/TranscriptMismatchError.md)
 
 ***
 
