@@ -12,6 +12,11 @@ export type PublicApiDocEntry = {
     moduleName: string;
 };
 
+export const siteDocsRoot = 'site/src/content/docs';
+export const apiDocsRoot = `${siteDocsRoot}/api`;
+export const apiReferenceRoot = `${apiDocsRoot}/reference`;
+export const apiNavigationJson = `${apiReferenceRoot}/navigation.json`;
+
 const manifest = JSON.parse(
     readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
 ) as PackageManifest;
@@ -30,7 +35,7 @@ const toPublicApiDocEntry = (exportKey: string): PublicApiDocEntry => {
         exportKey,
         moduleName,
         entryPoint: `typedoc/entrypoints/${moduleName}.ts`,
-        apiIndexPage: `docs/api/${moduleName}/index.md`,
+        apiIndexPage: `${apiReferenceRoot}/${moduleName}/index.md`,
     };
 };
 

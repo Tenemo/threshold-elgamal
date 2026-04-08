@@ -10,18 +10,26 @@ import {
 
 import typedocConfig from '../typedoc.config.mjs';
 
-import { publicApiDocs } from './public-api-docs';
+import {
+    apiNavigationJson,
+    publicApiDocs,
+    siteDocsRoot,
+} from './public-api-docs';
 
 const repoRoot = process.cwd();
-const markdownRoots = ['README.md', 'docs'];
+const docsRoot = path.resolve(repoRoot, siteDocsRoot);
+const publicRoot = path.resolve(repoRoot, 'site/public');
+const markdownRoots = ['README.md', siteDocsRoot];
 const documentedPublicApi = publicApiDocs as readonly {
     apiIndexPage: string;
     moduleName: string;
 }[];
 const requiredApiEntryPages = [
-    'docs/api/index.md',
+    `${siteDocsRoot}/api/index.mdx`,
+    `${siteDocsRoot}/api/root-package.mdx`,
+    `${siteDocsRoot}/api/subpath-overview.mdx`,
     ...documentedPublicApi.map((entry) => entry.apiIndexPage),
-    'docs/api/navigation.json',
+    apiNavigationJson,
 ] as const;
 const requiredApiModules = new Set(
     documentedPublicApi.map((entry) => entry.moduleName),
@@ -57,28 +65,50 @@ const resolveLinkCandidates = (
     fromFile: string,
     normalizedTarget: string,
 ): string[] => {
-    const basePath = normalizedTarget.startsWith('/')
-        ? path.resolve(repoRoot, normalizedTarget.slice(1))
+    const fromDocsRoute =
+        normalizedTarget === '/' ||
+        normalizedTarget.startsWith('/guides/') ||
+        normalizedTarget.startsWith('/spec/') ||
+        normalizedTarget.startsWith('/api/');
+    const absoluteTarget = normalizedTarget.startsWith('/')
+        ? normalizedTarget === '/'
+            ? docsRoot
+            : path.resolve(
+                  fromDocsRoute ? docsRoot : repoRoot,
+                  normalizedTarget === '/' ? '.' : normalizedTarget.slice(1),
+              )
         : path.resolve(path.dirname(fromFile), normalizedTarget);
-    const extension = path.extname(basePath).toLowerCase();
-    const candidates = new Set<string>([basePath]);
+    const extension = path.extname(absoluteTarget).toLowerCase();
+    const candidates = new Set<string>([absoluteTarget]);
 
     if (normalizedTarget.endsWith('/')) {
-        candidates.add(path.join(basePath, 'index.md'));
-        candidates.add(path.join(basePath, 'README.md'));
+        candidates.add(path.join(absoluteTarget, 'index.md'));
+        candidates.add(path.join(absoluteTarget, 'index.mdx'));
+        candidates.add(path.join(absoluteTarget, 'README.md'));
     }
 
     if (extension === '') {
-        candidates.add(`${basePath}.md`);
-        candidates.add(path.join(basePath, 'index.md'));
-        candidates.add(path.join(basePath, 'README.md'));
+        candidates.add(`${absoluteTarget}.md`);
+        candidates.add(`${absoluteTarget}.mdx`);
+        candidates.add(path.join(absoluteTarget, 'index.md'));
+        candidates.add(path.join(absoluteTarget, 'index.mdx'));
+        candidates.add(path.join(absoluteTarget, 'README.md'));
     }
 
     if (extension === '.html') {
+        if (normalizedTarget.startsWith('/')) {
+            candidates.add(path.resolve(publicRoot, normalizedTarget.slice(1)));
+        }
         candidates.add(
             path.join(
-                path.dirname(basePath),
-                `${path.basename(basePath, '.html')}.md`,
+                path.dirname(absoluteTarget),
+                `${path.basename(absoluteTarget, '.html')}.md`,
+            ),
+        );
+        candidates.add(
+            path.join(
+                path.dirname(absoluteTarget),
+                `${path.basename(absoluteTarget, '.html')}.mdx`,
             ),
         );
     }
@@ -91,7 +121,9 @@ const collectMarkdownFiles = async (entry: string): Promise<string[]> => {
     const stats = await fs.stat(absoluteEntry);
 
     if (stats.isFile()) {
-        return absoluteEntry.endsWith('.md') ? [absoluteEntry] : [];
+        return absoluteEntry.endsWith('.md') || absoluteEntry.endsWith('.mdx')
+            ? [absoluteEntry]
+            : [];
     }
 
     const files: string[] = [];
@@ -108,7 +140,10 @@ const collectMarkdownFiles = async (entry: string): Promise<string[]> => {
             const childPath = path.join(current, child.name);
             if (child.isDirectory()) {
                 pending.push(childPath);
-            } else if (child.isFile() && childPath.endsWith('.md')) {
+            } else if (
+                child.isFile() &&
+                (childPath.endsWith('.md') || childPath.endsWith('.mdx'))
+            ) {
                 files.push(childPath);
             }
         }
@@ -163,7 +198,7 @@ const verifyApiEntryPages = async (): Promise<string[]> => {
         }
     }
 
-    const navigationPath = path.resolve(repoRoot, 'docs/api/navigation.json');
+    const navigationPath = path.resolve(repoRoot, apiNavigationJson);
     if (!(await fileExists(navigationPath))) {
         return failures;
     }

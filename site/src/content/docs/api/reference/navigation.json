@@ -1,0 +1,1628 @@
+[
+  {
+    "title": "core",
+    "kind": 2,
+    "path": "core/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Classes",
+        "children": [
+          {
+            "title": "IndexOutOfRangeError",
+            "kind": 128,
+            "path": "core/classes/IndexOutOfRangeError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "InvalidGroupElementError",
+            "kind": 128,
+            "path": "core/classes/InvalidGroupElementError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "InvalidPayloadError",
+            "kind": 128,
+            "path": "core/classes/InvalidPayloadError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "InvalidProofError",
+            "kind": 128,
+            "path": "core/classes/InvalidProofError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "InvalidScalarError",
+            "kind": 128,
+            "path": "core/classes/InvalidScalarError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "InvalidShareError",
+            "kind": 128,
+            "path": "core/classes/InvalidShareError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "PhaseViolationError",
+            "kind": 128,
+            "path": "core/classes/PhaseViolationError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "PlaintextDomainError",
+            "kind": 128,
+            "path": "core/classes/PlaintextDomainError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ThresholdViolationError",
+            "kind": 128,
+            "path": "core/classes/ThresholdViolationError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "TranscriptMismatchError",
+            "kind": 128,
+            "path": "core/classes/TranscriptMismatchError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "UnsupportedSuiteError",
+            "kind": 128,
+            "path": "core/classes/UnsupportedSuiteError.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "Brand",
+            "kind": 2097152,
+            "path": "core/type-aliases/Brand.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "CryptoGroup",
+            "kind": 2097152,
+            "path": "core/type-aliases/CryptoGroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "GroupElement",
+            "kind": 2097152,
+            "path": "core/type-aliases/GroupElement.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "GroupName",
+            "kind": 2097152,
+            "path": "core/type-aliases/GroupName.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "PrimeBits",
+            "kind": 2097152,
+            "path": "core/type-aliases/PrimeBits.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "RandomBytesSource",
+            "kind": 2097152,
+            "path": "core/type-aliases/RandomBytesSource.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ScalarQ",
+            "kind": 2097152,
+            "path": "core/type-aliases/ScalarQ.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "SubgroupElement",
+            "kind": 2097152,
+            "path": "core/type-aliases/SubgroupElement.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ValidatedPublicKey",
+            "kind": 2097152,
+            "path": "core/type-aliases/ValidatedPublicKey.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "assertInSubgroup",
+            "kind": 64,
+            "path": "core/functions/assertInSubgroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertInSubgroupOrIdentity",
+            "kind": 64,
+            "path": "core/functions/assertInSubgroupOrIdentity.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertMajorityThreshold",
+            "kind": 64,
+            "path": "core/functions/assertMajorityThreshold.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertPlaintextAdditive",
+            "kind": 64,
+            "path": "core/functions/assertPlaintextAdditive.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertPositiveParticipantIndex",
+            "kind": 64,
+            "path": "core/functions/assertPositiveParticipantIndex.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertScalarInZq",
+            "kind": 64,
+            "path": "core/functions/assertScalarInZq.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertThreshold",
+            "kind": 64,
+            "path": "core/functions/assertThreshold.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidParticipantIndex",
+            "kind": 64,
+            "path": "core/functions/assertValidParticipantIndex.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidPublicKey",
+            "kind": 64,
+            "path": "core/functions/assertValidPublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "deriveH",
+            "kind": 64,
+            "path": "core/functions/deriveH.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "getGroup",
+            "kind": 64,
+            "path": "core/functions/getGroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "getWebCrypto",
+            "kind": 64,
+            "path": "core/functions/getWebCrypto.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "hkdfSha256",
+            "kind": 64,
+            "path": "core/functions/hkdfSha256.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "isInSubgroup",
+            "kind": 64,
+            "path": "core/functions/isInSubgroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "isInSubgroupOrIdentity",
+            "kind": 64,
+            "path": "core/functions/isInSubgroupOrIdentity.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "listGroups",
+            "kind": 64,
+            "path": "core/functions/listGroups.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "majorityThreshold",
+            "kind": 64,
+            "path": "core/functions/majorityThreshold.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "mod",
+            "kind": 64,
+            "path": "core/functions/mod.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modInvP",
+            "kind": 64,
+            "path": "core/functions/modInvP.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modInvQ",
+            "kind": 64,
+            "path": "core/functions/modInvQ.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modP",
+            "kind": 64,
+            "path": "core/functions/modP.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modPowP",
+            "kind": 64,
+            "path": "core/functions/modPowP.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modQ",
+            "kind": 64,
+            "path": "core/functions/modQ.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "randomBytes",
+            "kind": 64,
+            "path": "core/functions/randomBytes.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "randomScalarBelow",
+            "kind": 64,
+            "path": "core/functions/randomScalarBelow.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "randomScalarInRange",
+            "kind": 64,
+            "path": "core/functions/randomScalarInRange.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "sha256",
+            "kind": 64,
+            "path": "core/functions/sha256.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "utf8ToBytes",
+            "kind": 64,
+            "path": "core/functions/utf8ToBytes.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "dkg",
+    "kind": 2,
+    "path": "dkg/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "AcceptedShareContribution",
+            "kind": 2097152,
+            "path": "dkg/type-aliases/AcceptedShareContribution.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "DKGConfig",
+            "kind": 2097152,
+            "path": "dkg/type-aliases/DKGConfig.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "DKGError",
+            "kind": 2097152,
+            "path": "dkg/type-aliases/DKGError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "DKGPhase",
+            "kind": 2097152,
+            "path": "dkg/type-aliases/DKGPhase.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "DKGProtocol",
+            "kind": 2097152,
+            "path": "dkg/type-aliases/DKGProtocol.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "DKGState",
+            "kind": 2097152,
+            "path": "dkg/type-aliases/DKGState.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "DKGTransition",
+            "kind": 2097152,
+            "path": "dkg/type-aliases/DKGTransition.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "MajorityDKGConfigInput",
+            "kind": 2097152,
+            "path": "dkg/type-aliases/MajorityDKGConfigInput.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifiedDKGTranscript",
+            "kind": 2097152,
+            "path": "dkg/type-aliases/VerifiedDKGTranscript.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifyDKGTranscriptInput",
+            "kind": 2097152,
+            "path": "dkg/type-aliases/VerifyDKGTranscriptInput.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "appendTranscriptPayload",
+            "kind": 64,
+            "path": "dkg/functions/appendTranscriptPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "computeQual",
+            "kind": 64,
+            "path": "dkg/functions/computeQual.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "createBaseState",
+            "kind": 64,
+            "path": "dkg/functions/createBaseState.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "createGjkrState",
+            "kind": 64,
+            "path": "dkg/functions/createGjkrState.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "createJointFeldmanState",
+            "kind": 64,
+            "path": "dkg/functions/createJointFeldmanState.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "deriveFinalShare",
+            "kind": 64,
+            "path": "dkg/functions/deriveFinalShare.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "deriveJointPublicKey",
+            "kind": 64,
+            "path": "dkg/functions/deriveJointPublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "deriveQualifiedParticipantIndices",
+            "kind": 64,
+            "path": "dkg/functions/deriveQualifiedParticipantIndices.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "deriveTranscriptVerificationKey",
+            "kind": 64,
+            "path": "dkg/functions/deriveTranscriptVerificationKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "deriveTranscriptVerificationKeys",
+            "kind": 64,
+            "path": "dkg/functions/deriveTranscriptVerificationKeys.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "processGjkrPayload",
+            "kind": 64,
+            "path": "dkg/functions/processGjkrPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "processJointFeldmanPayload",
+            "kind": 64,
+            "path": "dkg/functions/processJointFeldmanPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "reconstructSecretFromShares",
+            "kind": 64,
+            "path": "dkg/functions/reconstructSecretFromShares.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "replayGjkrTranscript",
+            "kind": 64,
+            "path": "dkg/functions/replayGjkrTranscript.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "replayJointFeldmanTranscript",
+            "kind": 64,
+            "path": "dkg/functions/replayJointFeldmanTranscript.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "validateCommonPayload",
+            "kind": 64,
+            "path": "dkg/functions/validateCommonPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyDKGTranscript",
+            "kind": 64,
+            "path": "dkg/functions/verifyDKGTranscript.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "withError",
+            "kind": 64,
+            "path": "dkg/functions/withError.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "elgamal",
+    "kind": 2,
+    "path": "elgamal/index.md",
+    "isDeprecated": false
+  },
+  {
+    "title": "proofs",
+    "kind": 2,
+    "path": "proofs/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "DisjunctiveBranch",
+            "kind": 2097152,
+            "path": "proofs/type-aliases/DisjunctiveBranch.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "DisjunctiveProof",
+            "kind": 2097152,
+            "path": "proofs/type-aliases/DisjunctiveProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "DLEQProof",
+            "kind": 2097152,
+            "path": "proofs/type-aliases/DLEQProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "DLEQStatement",
+            "kind": 2097152,
+            "path": "proofs/type-aliases/DLEQStatement.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ProofContext",
+            "kind": 2097152,
+            "path": "proofs/type-aliases/ProofContext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "SchnorrProof",
+            "kind": 2097152,
+            "path": "proofs/type-aliases/SchnorrProof.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "createDisjunctiveProof",
+            "kind": 64,
+            "path": "proofs/functions/createDisjunctiveProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "createDLEQProof",
+            "kind": 64,
+            "path": "proofs/functions/createDLEQProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "createSchnorrProof",
+            "kind": 64,
+            "path": "proofs/functions/createSchnorrProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "hedgedNonce",
+            "kind": 64,
+            "path": "proofs/functions/hedgedNonce.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyDisjunctiveProof",
+            "kind": 64,
+            "path": "proofs/functions/verifyDisjunctiveProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyDLEQProof",
+            "kind": 64,
+            "path": "proofs/functions/verifyDLEQProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifySchnorrProof",
+            "kind": 64,
+            "path": "proofs/functions/verifySchnorrProof.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "protocol",
+    "kind": 2,
+    "path": "protocol/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "BallotSubmissionPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/BallotSubmissionPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "BallotTranscriptEntry",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/BallotTranscriptEntry.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "BaseProtocolPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/BaseProtocolPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "CanonicalJsonOptions",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/CanonicalJsonOptions.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "CanonicalJsonPrimitive",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/CanonicalJsonPrimitive.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "CanonicalJsonValue",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/CanonicalJsonValue.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "CeremonyRestartPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/CeremonyRestartPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ComplaintPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/ComplaintPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ComplaintReason",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/ComplaintReason.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ComplaintResolutionPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/ComplaintResolutionPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "DecryptionSharePayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/DecryptionSharePayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ElectionManifest",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/ElectionManifest.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "EncodedCiphertext",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/EncodedCiphertext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "EncodedCompactProof",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/EncodedCompactProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "EncodedDisjunctiveBranch",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/EncodedDisjunctiveBranch.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "EncodedDisjunctiveProof",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/EncodedDisjunctiveProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "EncryptedDualSharePayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/EncryptedDualSharePayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "FeldmanCommitmentPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/FeldmanCommitmentPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "FeldmanShareRevealPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/FeldmanShareRevealPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "KeyDerivationConfirmation",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/KeyDerivationConfirmation.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ManifestAcceptancePayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/ManifestAcceptancePayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ManifestPublicationPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/ManifestPublicationPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "PedersenCommitmentPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/PedersenCommitmentPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ProtocolMessageType",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/ProtocolMessageType.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ProtocolPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/ProtocolPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "RegistrationPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/RegistrationPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "RestartReasonCode",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/RestartReasonCode.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "RosterEntry",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/RosterEntry.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "SignedPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/SignedPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "TallyPublicationPayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/TallyPublicationPayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifiedBallotAggregation",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/VerifiedBallotAggregation.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifiedDecryptionSharePayload",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/VerifiedDecryptionSharePayload.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifiedProtocolSignatures",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/VerifiedProtocolSignatures.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifiedPublishedVotingResult",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/VerifiedPublishedVotingResult.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifyAndAggregateBallotsInput",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/VerifyAndAggregateBallotsInput.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifyBallotSubmissionPayloadsInput",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/VerifyBallotSubmissionPayloadsInput.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifyDecryptionSharePayloadsInput",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/VerifyDecryptionSharePayloadsInput.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifyPublishedVotingResultInput",
+            "kind": 2097152,
+            "path": "protocol/type-aliases/VerifyPublishedVotingResultInput.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "canonicalizeElectionManifest",
+            "kind": 64,
+            "path": "protocol/functions/canonicalizeElectionManifest.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "canonicalizeJson",
+            "kind": 64,
+            "path": "protocol/functions/canonicalizeJson.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "canonicalizeRosterEntries",
+            "kind": 64,
+            "path": "protocol/functions/canonicalizeRosterEntries.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "canonicalTranscriptBytes",
+            "kind": 64,
+            "path": "protocol/functions/canonicalTranscriptBytes.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "canonicalUnsignedPayloadBytes",
+            "kind": 64,
+            "path": "protocol/functions/canonicalUnsignedPayloadBytes.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "classifySlotConflict",
+            "kind": 64,
+            "path": "protocol/functions/classifySlotConflict.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "compareProtocolPayloads",
+            "kind": 64,
+            "path": "protocol/functions/compareProtocolPayloads.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "decodeCiphertext",
+            "kind": 64,
+            "path": "protocol/functions/decodeCiphertext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "decodeCompactProof",
+            "kind": 64,
+            "path": "protocol/functions/decodeCompactProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "decodeDisjunctiveProof",
+            "kind": 64,
+            "path": "protocol/functions/decodeDisjunctiveProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "defaultMinimumPublicationThreshold",
+            "kind": 64,
+            "path": "protocol/functions/defaultMinimumPublicationThreshold.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "deriveSessionId",
+            "kind": 64,
+            "path": "protocol/functions/deriveSessionId.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encodeCiphertext",
+            "kind": 64,
+            "path": "protocol/functions/encodeCiphertext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encodeCompactProof",
+            "kind": 64,
+            "path": "protocol/functions/encodeCompactProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encodeDisjunctiveProof",
+            "kind": 64,
+            "path": "protocol/functions/encodeDisjunctiveProof.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "formatSessionFingerprint",
+            "kind": 64,
+            "path": "protocol/functions/formatSessionFingerprint.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "hashAcceptedBallots",
+            "kind": 64,
+            "path": "protocol/functions/hashAcceptedBallots.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "hashElectionManifest",
+            "kind": 64,
+            "path": "protocol/functions/hashElectionManifest.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "hashProtocolTranscript",
+            "kind": 64,
+            "path": "protocol/functions/hashProtocolTranscript.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "hashRosterEntries",
+            "kind": 64,
+            "path": "protocol/functions/hashRosterEntries.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "manifestScoreDomain",
+            "kind": 64,
+            "path": "protocol/functions/manifestScoreDomain.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "payloadSlotKey",
+            "kind": 64,
+            "path": "protocol/functions/payloadSlotKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "sortProtocolPayloads",
+            "kind": 64,
+            "path": "protocol/functions/sortProtocolPayloads.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "validateElectionManifest",
+            "kind": 64,
+            "path": "protocol/functions/validateElectionManifest.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyAndAggregateBallots",
+            "kind": 64,
+            "path": "protocol/functions/verifyAndAggregateBallots.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyBallotSubmissionPayloads",
+            "kind": 64,
+            "path": "protocol/functions/verifyBallotSubmissionPayloads.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyDecryptionSharePayloads",
+            "kind": 64,
+            "path": "protocol/functions/verifyDecryptionSharePayloads.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyPublishedVotingResult",
+            "kind": 64,
+            "path": "protocol/functions/verifyPublishedVotingResult.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifySignedProtocolPayloads",
+            "kind": 64,
+            "path": "protocol/functions/verifySignedProtocolPayloads.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "runtime",
+    "kind": 2,
+    "path": "runtime/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "ChunkedRuntimeOptions",
+            "kind": 2097152,
+            "path": "runtime/type-aliases/ChunkedRuntimeOptions.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "RuntimeProgress",
+            "kind": 2097152,
+            "path": "runtime/type-aliases/RuntimeProgress.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "forEachChunked",
+            "kind": 64,
+            "path": "runtime/functions/forEachChunked.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "mapChunked",
+            "kind": 64,
+            "path": "runtime/functions/mapChunked.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "yieldToEventLoop",
+            "kind": 64,
+            "path": "runtime/functions/yieldToEventLoop.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "serialize",
+    "kind": 2,
+    "path": "serialize/index.md",
+    "isDeprecated": false
+  },
+  {
+    "title": "threshold",
+    "kind": 2,
+    "path": "threshold/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "DecryptionShare",
+            "kind": 2097152,
+            "path": "threshold/type-aliases/DecryptionShare.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "Polynomial",
+            "kind": 2097152,
+            "path": "threshold/type-aliases/Polynomial.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "Share",
+            "kind": 2097152,
+            "path": "threshold/type-aliases/Share.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ThresholdKeySet",
+            "kind": 2097152,
+            "path": "threshold/type-aliases/ThresholdKeySet.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "VerifiedAggregateCiphertext",
+            "kind": 2097152,
+            "path": "threshold/type-aliases/VerifiedAggregateCiphertext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "WrappedShareRecord",
+            "kind": 2097152,
+            "path": "threshold/type-aliases/WrappedShareRecord.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "combineDecryptionShares",
+            "kind": 64,
+            "path": "threshold/functions/combineDecryptionShares.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "createVerifiedDecryptionShare",
+            "kind": 64,
+            "path": "threshold/functions/createVerifiedDecryptionShare.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "dealerKeyGen",
+            "kind": 64,
+            "path": "threshold/functions/dealerKeyGen.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "deriveSharesFromPolynomial",
+            "kind": 64,
+            "path": "threshold/functions/deriveSharesFromPolynomial.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "evaluatePolynomial",
+            "kind": 64,
+            "path": "threshold/functions/evaluatePolynomial.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "generatePolynomial",
+            "kind": 64,
+            "path": "threshold/functions/generatePolynomial.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "generateShareWrappingKey",
+            "kind": 64,
+            "path": "threshold/functions/generateShareWrappingKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "isShareStorageSupported",
+            "kind": 64,
+            "path": "threshold/functions/isShareStorageSupported.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "lagrangeCoefficient",
+            "kind": 64,
+            "path": "threshold/functions/lagrangeCoefficient.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "unwrapShareFromStorage",
+            "kind": 64,
+            "path": "threshold/functions/unwrapShareFromStorage.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "wrapShareForStorage",
+            "kind": 64,
+            "path": "threshold/functions/wrapShareForStorage.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "threshold-elgamal",
+    "kind": 2,
+    "path": "threshold-elgamal/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "ElgamalCiphertext",
+            "kind": 2097152,
+            "path": "threshold-elgamal/type-aliases/ElgamalCiphertext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ElgamalGroupInput",
+            "kind": 2097152,
+            "path": "threshold-elgamal/type-aliases/ElgamalGroupInput.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ElgamalKeyPair",
+            "kind": 2097152,
+            "path": "threshold-elgamal/type-aliases/ElgamalKeyPair.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ElgamalParameters",
+            "kind": 2097152,
+            "path": "threshold-elgamal/type-aliases/ElgamalParameters.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "addEncryptedValues",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/addEncryptedValues.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidAdditiveCiphertext",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/assertValidAdditiveCiphertext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidAdditivePlaintext",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/assertValidAdditivePlaintext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidAdditivePublicKey",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/assertValidAdditivePublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidFreshAdditiveCiphertext",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/assertValidFreshAdditiveCiphertext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidPrivateKey",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/assertValidPrivateKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "babyStepGiantStep",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/babyStepGiantStep.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "bigintToFixedBytes",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/bigintToFixedBytes.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "bigintToFixedHex",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/bigintToFixedHex.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "bytesToHex",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/bytesToHex.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "concatBytes",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/concatBytes.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "decryptAdditive",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/decryptAdditive.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "domainSeparator",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/domainSeparator.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encodeForChallenge",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/encodeForChallenge.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encodeSequenceForChallenge",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/encodeSequenceForChallenge.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encryptAdditive",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/encryptAdditive.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encryptAdditiveWithRandomness",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/encryptAdditiveWithRandomness.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "fixedHexToBigint",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/fixedHexToBigint.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "generateParameters",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/generateParameters.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "generateParametersWithPrivateKey",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/generateParametersWithPrivateKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "hexToBytes",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/hexToBytes.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "transport",
+    "kind": 2,
+    "path": "transport/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "ComplaintResolution",
+            "kind": 2097152,
+            "path": "transport/type-aliases/ComplaintResolution.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "EncryptedEnvelope",
+            "kind": 2097152,
+            "path": "transport/type-aliases/EncryptedEnvelope.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "EnvelopeContext",
+            "kind": 2097152,
+            "path": "transport/type-aliases/EnvelopeContext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "GenerateAuthKeyPairOptions",
+            "kind": 2097152,
+            "path": "transport/type-aliases/GenerateAuthKeyPairOptions.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "GenerateTransportKeyPairOptions",
+            "kind": 2097152,
+            "path": "transport/type-aliases/GenerateTransportKeyPairOptions.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "KeyAgreementSuite",
+            "kind": 2097152,
+            "path": "transport/type-aliases/KeyAgreementSuite.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "TransportKeyPair",
+            "kind": 2097152,
+            "path": "transport/type-aliases/TransportKeyPair.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "assertNonZeroSharedSecret",
+            "kind": 64,
+            "path": "transport/functions/assertNonZeroSharedSecret.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "decryptEnvelope",
+            "kind": 64,
+            "path": "transport/functions/decryptEnvelope.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "deriveTransportPublicKey",
+            "kind": 64,
+            "path": "transport/functions/deriveTransportPublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "deriveTransportSharedSecret",
+            "kind": 64,
+            "path": "transport/functions/deriveTransportSharedSecret.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encryptEnvelope",
+            "kind": 64,
+            "path": "transport/functions/encryptEnvelope.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "exportAuthPublicKey",
+            "kind": 64,
+            "path": "transport/functions/exportAuthPublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "exportTransportPublicKey",
+            "kind": 64,
+            "path": "transport/functions/exportTransportPublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "generateAuthKeyPair",
+            "kind": 64,
+            "path": "transport/functions/generateAuthKeyPair.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "generateTransportKeyPair",
+            "kind": 64,
+            "path": "transport/functions/generateTransportKeyPair.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "importAuthPublicKey",
+            "kind": 64,
+            "path": "transport/functions/importAuthPublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "importTransportPublicKey",
+            "kind": 64,
+            "path": "transport/functions/importTransportPublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "isX25519Supported",
+            "kind": 64,
+            "path": "transport/functions/isX25519Supported.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "resolveDealerChallenge",
+            "kind": 64,
+            "path": "transport/functions/resolveDealerChallenge.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "resolveDealerChallengeFromPublicKey",
+            "kind": 64,
+            "path": "transport/functions/resolveDealerChallengeFromPublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "resolveTransportSuite",
+            "kind": 64,
+            "path": "transport/functions/resolveTransportSuite.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "signPayloadBytes",
+            "kind": 64,
+            "path": "transport/functions/signPayloadBytes.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyComplaintPrecondition",
+            "kind": 64,
+            "path": "transport/functions/verifyComplaintPrecondition.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyLocalTransportKey",
+            "kind": 64,
+            "path": "transport/functions/verifyLocalTransportKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyPayloadSignature",
+            "kind": 64,
+            "path": "transport/functions/verifyPayloadSignature.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "advanced",
+        "kind": 2,
+        "path": "transport/advanced/index.md",
+        "isDeprecated": false,
+        "children": [
+          {
+            "title": "Functions",
+            "children": [
+              {
+                "title": "exportTransportPrivateKey",
+                "kind": 64,
+                "path": "transport/advanced/functions/exportTransportPrivateKey.md",
+                "isDeprecated": false
+              },
+              {
+                "title": "importTransportPrivateKey",
+                "kind": 64,
+                "path": "transport/advanced/functions/importTransportPrivateKey.md",
+                "isDeprecated": false
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "vss",
+    "kind": 2,
+    "path": "vss/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "FeldmanCommitments",
+            "kind": 2097152,
+            "path": "vss/type-aliases/FeldmanCommitments.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "PedersenCommitments",
+            "kind": 2097152,
+            "path": "vss/type-aliases/PedersenCommitments.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "PedersenShare",
+            "kind": 2097152,
+            "path": "vss/type-aliases/PedersenShare.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "derivePedersenShares",
+            "kind": 64,
+            "path": "vss/functions/derivePedersenShares.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "generateFeldmanCommitments",
+            "kind": 64,
+            "path": "vss/functions/generateFeldmanCommitments.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "generatePedersenCommitments",
+            "kind": 64,
+            "path": "vss/functions/generatePedersenCommitments.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyFeldmanShare",
+            "kind": 64,
+            "path": "vss/functions/verifyFeldmanShare.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "verifyPedersenShare",
+            "kind": 64,
+            "path": "vss/functions/verifyPedersenShare.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
+  }
+]

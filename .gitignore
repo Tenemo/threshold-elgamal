@@ -9,7 +9,8 @@ debug.log
 
 # Build
 dist/
-docs/api/
+site/.astro/
+site/dist/
 
 # Testing
 coverage/

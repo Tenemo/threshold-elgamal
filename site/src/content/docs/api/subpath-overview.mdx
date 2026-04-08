@@ -1,0 +1,23 @@
+---
+title: Subpath overview
+description: A concise map of the narrower subpath imports shipped by the library.
+sidebar:
+  order: 2
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Use subpath imports when you already know which lower-level surface you need. The generated reference pages behind these links contain the exact contracts.
+
+<CardGrid>
+  <LinkCard title="core" href="/api/reference/core/" description="Finite-field arithmetic, groups, randomness, validation, and exported error classes." />
+  <LinkCard title="threshold" href="/api/reference/threshold/" description="Dealer threshold sharing, additive threshold decryption, and share storage helpers." />
+  <LinkCard title="vss" href="/api/reference/vss/" description="Feldman and Pedersen VSS commitments, shares, and verification helpers." />
+  <LinkCard title="proofs" href="/api/reference/proofs/" description="Schnorr, DLEQ, and disjunctive proof builders and verifiers." />
+  <LinkCard title="protocol" href="/api/reference/protocol/" description="Typed manifest, ballot, decryption-share, tally, and transcript verification helpers." />
+  <LinkCard title="transport" href="/api/reference/transport/" description="Authentication keys, key agreement, envelopes, and complaint-resolution helpers." />
+  <LinkCard title="dkg" href="/api/reference/dkg/" description="Log-driven Joint-Feldman and GJKR reducers together with transcript verification." />
+  <LinkCard title="elgamal" href="/api/reference/elgamal/" description="Additive ElGamal helpers and bounded discrete-log recovery." />
+  <LinkCard title="serialize" href="/api/reference/serialize/" description="Fixed-width bigint encoding helpers used across the current public surface." />
+  <LinkCard title="runtime" href="/api/reference/runtime/" description="Chunked runtime helpers for long-running browser work." />
+</CardGrid>
