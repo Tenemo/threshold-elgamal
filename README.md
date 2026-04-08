@@ -81,6 +81,7 @@ For example, if each ballot is in `0..10` and you tally `50` ballots, encrypt ea
 
 ## Documentation
 
+- Hosted documentation site: [tenemo.github.io/threshold-elgamal](https://tenemo.github.io/threshold-elgamal/)
 - Start at the docs portal: [docs/index.md](docs/index.md)
 - Safe onboarding: [docs/guides/getting-started.md](docs/guides/getting-started.md)
 - Additive mode guide: [docs/guides/additive-elgamal.md](docs/guides/additive-elgamal.md)
