@@ -45,7 +45,7 @@ Use additive mode when:
 Do not use additive mode when:
 
 - the decoded result could exceed any realistic bound you are willing to search
-- you need threshold decryption or proofs today, because those APIs are not shipped yet
+- you need multiplicative or geometric-mean semantics, because those APIs are intentionally not shipped
 
 ## Common mistakes
 

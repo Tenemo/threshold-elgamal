@@ -5,4 +5,3 @@ These pages record the fixed rules for the current shipped surface. They are nor
 - [Library invariants](library-invariants.html)
 - [Current suite](library-suite.html)
 - [API contract](api-contract.html)
-- [Roadmap](roadmap.html)

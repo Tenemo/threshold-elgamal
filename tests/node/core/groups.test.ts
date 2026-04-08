@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import plainElgamalVectors from '../../../test-vectors/plain-elgamal.json';
 
-import { getGroup, listGroups, modPowP, UnsupportedSuiteError } from '#core';
+import {
+    deriveH,
+    getGroup,
+    listGroups,
+    modPowP,
+    UnsupportedSuiteError,
+} from '#core';
 
 describe('core groups', () => {
     it('returns q as (p - 1) / 2 for every supported group', () => {
@@ -24,6 +30,12 @@ describe('core groups', () => {
             plainElgamalVectors.groups,
         )) {
             expect(getGroup(groupName as never).h).toBe(BigInt(vector.h));
+        }
+    });
+
+    it('recomputes the deterministic h values from the public derivation', async () => {
+        for (const group of listGroups()) {
+            await expect(deriveH(group.name)).resolves.toBe(group.h);
         }
     });
 

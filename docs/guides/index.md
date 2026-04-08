@@ -4,6 +4,7 @@ Use these pages for task-oriented documentation. They explain how to use the cur
 
 - [Getting started](getting-started.html)
 - [Additive ElGamal](additive-elgamal.html)
+- [Three-participant voting flow](three-participant-voting-flow.html)
 - [Groups and validation](groups-and-validation.html)
 - [Runtime and compatibility](runtime-and-compatibility.html)
 - [Errors and failure modes](errors-and-failure-modes.html)

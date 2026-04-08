@@ -8,6 +8,9 @@ Use the safe root package. The current library surface is centered on additive E
 pnpm add threshold-elgamal
 ```
 
+Confirm that your installed package version is `2.x`. The legacy `0.1.x` line
+does not expose the typed protocol surface documented here.
+
 ## Runtime prerequisites
 
 - Use ESM `import` syntax. The published package does not expose CommonJS `require()` entry points.
@@ -56,4 +59,7 @@ For example, if every ballot is in `0..10` and a final tally combines `50` ballo
 ## Where to go next
 
 - For tallying sums, read [Additive ElGamal](additive-elgamal.html).
+- For the supported protocol path, use the `protocol` subpath helpers to verify
+  signed ballot payloads, signed decryption shares, and one published tally
+  from local recomputation.
 - For exact signatures and types, use the [API reference](../api/index.html).
