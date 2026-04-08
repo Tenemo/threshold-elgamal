@@ -8,14 +8,14 @@ hero:
   tagline: Browser-native threshold ElGamal, proofs, and transcript-driven voting workflows for verifiable research prototypes.
   actions:
     - text: Get started
-      link: /guides/getting-started/
+      link: ./guides/getting-started/
       icon: right-arrow
       variant: primary
     - text: Build a voting flow
-      link: /guides/three-participant-voting-flow/
+      link: ./guides/three-participant-voting-flow/
       variant: secondary
     - text: Browse the API
-      link: /api/
+      link: ./api/
       variant: minimal
 ---
 
@@ -26,22 +26,22 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 <CardGrid stagger>
   <LinkCard
     title="Get started"
-    href="/guides/getting-started/"
+    href="./guides/getting-started/"
     description="Use the safe root package, understand the supported surface, and get to a correct additive setup quickly."
   />
   <LinkCard
     title="Build a voting flow"
-    href="/guides/three-participant-voting-flow/"
+    href="./guides/three-participant-voting-flow/"
     description="Walk through roster freeze, transcript setup, additive ballots, aggregate recomputation, and threshold decryption."
   />
   <LinkCard
     title="Understand the security model"
-    href="/guides/security-and-non-goals/"
+    href="./guides/security-and-non-goals/"
     description="See the actual boundary of the library, what it guarantees, and what still belongs to the application."
   />
   <LinkCard
     title="Browse the API reference"
-    href="/api/"
+    href="./api/"
     description="Start with the curated API pages and drill down into the generated symbol reference only when you need exact contracts."
   />
 </CardGrid>

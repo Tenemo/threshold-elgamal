@@ -40,4 +40,4 @@ The current package ships:
 - byte concatenation helpers
 - injective `encodeForChallenge()` encoding for future transcript and proof work
 
-For exact function contracts, use the [API reference](/api/).
+For exact function contracts, use the [API reference](../api/).

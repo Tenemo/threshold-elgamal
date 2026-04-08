@@ -2,14 +2,11 @@
 
 [![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://badge.fury.io/js/threshold-elgamal)
 [![npm downloads](https://img.shields.io/npm/dm/threshold-elgamal)](https://www.npmjs.com/package/threshold-elgamal)
-[![Tests](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/ci.yml?branch=master&label=passing%20tests)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/ci.yml)
-[![Test coverage](https://img.shields.io/endpoint?url=https://tenemo.github.io/threshold-elgamal/coverage-badge.json)](https://tenemo.github.io/threshold-elgamal/coverage-summary.json)
-[![Docs build](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/pages.yml?branch=master&label=docs)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/pages.yml)
-[![Node version](https://img.shields.io/badge/node-%E2%89%A524.14.1-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org/)
-
----
-
-[![License](https://img.shields.io/github/license/Tenemo/threshold-elgamal)](LICENSE)
+[![passing tests](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/ci.yml?branch=master&label=passing%20tests)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/ci.yml)
+[![coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Tenemo/threshold-elgamal/master/docs/public/coverage-badge.json)](docs/public/coverage-summary.json)
+[![docs](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/pages.yml?branch=master&label=docs)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/pages.yml)
+[![node](https://img.shields.io/badge/node-%E2%89%A524.14.1-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![license](https://img.shields.io/github/license/Tenemo/threshold-elgamal)](LICENSE)
 
 `threshold-elgamal` is a browser-native TypeScript library for finite-field ElGamal research prototypes built on native `bigint`.
 
@@ -33,12 +30,15 @@ This library is a hardened research prototype. It is not audited production voti
 
 ## Release status
 
-This repository tracks the `v2` line. Treat any published `0.1.x` package as
-legacy and do not use it for new deployments.
+This repository tracks the upcoming `1.0.0` release line. Treat any published
+`0.1.x` package as legacy and do not use it for new deployments.
 
-Confirm that you are actually installing a `2.x` package before relying on the
+Confirm that you are actually installing a `1.x` package before relying on the
 typed protocol payloads, transcript-native complaint handling, or the published
 tally verification helpers described in this repository.
+
+Protocol payload examples still use `protocolVersion: "v2"` because that labels
+the current wire format, not the npm package version.
 
 ## Installation
 
