@@ -1,35 +1,19 @@
-import { generateParameters, encrypt, decrypt } from './elgamal';
-import {
-    generateKeys,
-    generateKeyShares,
-    combinePublicKeys,
-    createDecryptionShare,
-    combineDecryptionShares,
-    thresholdDecrypt,
-} from './thresholdElgamal';
-import type { EncryptedMessage, Parameters } from './types';
-import {
-    getRandomBigIntegerInRange,
-    multiplyEncryptedValues,
-    getGroup,
-    serializeEncryptedMessage,
-    deserializeEncryptedMessage,
-} from './utils/utils';
-
 export {
-    generateParameters,
-    encrypt,
-    decrypt,
-    generateKeys,
-    generateKeyShares,
-    combinePublicKeys,
-    createDecryptionShare,
-    combineDecryptionShares,
-    thresholdDecrypt,
-    getRandomBigIntegerInRange,
-    multiplyEncryptedValues,
-    getGroup,
-    serializeEncryptedMessage,
-    deserializeEncryptedMessage,
-};
-export type { EncryptedMessage, Parameters };
+    InvalidGroupElementError,
+    InvalidPayloadError,
+    InvalidScalarError,
+    PlaintextDomainError,
+    UnsupportedSuiteError,
+} from './core/errors.js';
+export { getGroup, listGroups } from './core/groups.js';
+export type { CryptoGroup, GroupName, PrimeBits } from './core/types.js';
+export {
+    assertInSubgroup,
+    assertInSubgroupOrIdentity,
+    assertScalarInZq,
+    assertValidPublicKey,
+    isInSubgroup,
+    isInSubgroupOrIdentity,
+} from './core/validation.js';
+export * from './elgamal/index.js';
+export * from './serialize/index.js';

@@ -1,7 +1,8 @@
-# NPM
+# Package managers
 node_modules/
 *.tgz
 npm-debug.log
+pnpm-debug.log*
 .tmp/
 sh.exe.stackdump
 debug.log
