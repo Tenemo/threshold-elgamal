@@ -1,0 +1,409 @@
+[
+  {
+    "title": "core",
+    "kind": 2,
+    "path": "core/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Classes",
+        "children": [
+          {
+            "title": "InvalidGroupElementError",
+            "kind": 128,
+            "path": "core/classes/InvalidGroupElementError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "InvalidPayloadError",
+            "kind": 128,
+            "path": "core/classes/InvalidPayloadError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "InvalidScalarError",
+            "kind": 128,
+            "path": "core/classes/InvalidScalarError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "PlaintextDomainError",
+            "kind": 128,
+            "path": "core/classes/PlaintextDomainError.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "UnsupportedSuiteError",
+            "kind": 128,
+            "path": "core/classes/UnsupportedSuiteError.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "Brand",
+            "kind": 2097152,
+            "path": "core/type-aliases/Brand.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "CryptoGroup",
+            "kind": 2097152,
+            "path": "core/type-aliases/CryptoGroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "GroupElement",
+            "kind": 2097152,
+            "path": "core/type-aliases/GroupElement.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "GroupName",
+            "kind": 2097152,
+            "path": "core/type-aliases/GroupName.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "PrimeBits",
+            "kind": 2097152,
+            "path": "core/type-aliases/PrimeBits.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "RandomBytesSource",
+            "kind": 2097152,
+            "path": "core/type-aliases/RandomBytesSource.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ScalarQ",
+            "kind": 2097152,
+            "path": "core/type-aliases/ScalarQ.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "SubgroupElement",
+            "kind": 2097152,
+            "path": "core/type-aliases/SubgroupElement.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ValidatedPublicKey",
+            "kind": 2097152,
+            "path": "core/type-aliases/ValidatedPublicKey.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "assertInSubgroup",
+            "kind": 64,
+            "path": "core/functions/assertInSubgroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertInSubgroupOrIdentity",
+            "kind": 64,
+            "path": "core/functions/assertInSubgroupOrIdentity.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertPlaintextAdditive",
+            "kind": 64,
+            "path": "core/functions/assertPlaintextAdditive.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertScalarInZq",
+            "kind": 64,
+            "path": "core/functions/assertScalarInZq.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidPublicKey",
+            "kind": 64,
+            "path": "core/functions/assertValidPublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "getGroup",
+            "kind": 64,
+            "path": "core/functions/getGroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "getWebCrypto",
+            "kind": 64,
+            "path": "core/functions/getWebCrypto.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "hkdfSha256",
+            "kind": 64,
+            "path": "core/functions/hkdfSha256.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "isInSubgroup",
+            "kind": 64,
+            "path": "core/functions/isInSubgroup.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "isInSubgroupOrIdentity",
+            "kind": 64,
+            "path": "core/functions/isInSubgroupOrIdentity.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "listGroups",
+            "kind": 64,
+            "path": "core/functions/listGroups.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "mod",
+            "kind": 64,
+            "path": "core/functions/mod.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modInvP",
+            "kind": 64,
+            "path": "core/functions/modInvP.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modInvQ",
+            "kind": 64,
+            "path": "core/functions/modInvQ.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modP",
+            "kind": 64,
+            "path": "core/functions/modP.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modPowP",
+            "kind": 64,
+            "path": "core/functions/modPowP.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "modQ",
+            "kind": 64,
+            "path": "core/functions/modQ.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "randomBytes",
+            "kind": 64,
+            "path": "core/functions/randomBytes.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "randomScalarBelow",
+            "kind": 64,
+            "path": "core/functions/randomScalarBelow.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "randomScalarInRange",
+            "kind": 64,
+            "path": "core/functions/randomScalarInRange.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "sha256",
+            "kind": 64,
+            "path": "core/functions/sha256.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "utf8ToBytes",
+            "kind": 64,
+            "path": "core/functions/utf8ToBytes.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "elgamal",
+    "kind": 2,
+    "path": "elgamal/index.md",
+    "isDeprecated": false
+  },
+  {
+    "title": "serialize",
+    "kind": 2,
+    "path": "serialize/index.md",
+    "isDeprecated": false
+  },
+  {
+    "title": "threshold-elgamal",
+    "kind": 2,
+    "path": "threshold-elgamal/index.md",
+    "isDeprecated": false,
+    "children": [
+      {
+        "title": "Type Aliases",
+        "children": [
+          {
+            "title": "ElgamalCiphertext",
+            "kind": 2097152,
+            "path": "threshold-elgamal/type-aliases/ElgamalCiphertext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ElgamalGroupInput",
+            "kind": 2097152,
+            "path": "threshold-elgamal/type-aliases/ElgamalGroupInput.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ElgamalKeyPair",
+            "kind": 2097152,
+            "path": "threshold-elgamal/type-aliases/ElgamalKeyPair.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "ElgamalParameters",
+            "kind": 2097152,
+            "path": "threshold-elgamal/type-aliases/ElgamalParameters.md",
+            "isDeprecated": false
+          }
+        ]
+      },
+      {
+        "title": "Functions",
+        "children": [
+          {
+            "title": "addEncryptedValues",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/addEncryptedValues.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidAdditiveCiphertext",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/assertValidAdditiveCiphertext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidAdditivePlaintext",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/assertValidAdditivePlaintext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidAdditivePublicKey",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/assertValidAdditivePublicKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidFreshAdditiveCiphertext",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/assertValidFreshAdditiveCiphertext.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "assertValidPrivateKey",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/assertValidPrivateKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "babyStepGiantStep",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/babyStepGiantStep.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "bigintToFixedHex",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/bigintToFixedHex.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "bytesToHex",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/bytesToHex.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "concatBytes",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/concatBytes.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "decryptAdditive",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/decryptAdditive.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "domainSeparator",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/domainSeparator.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encodeForChallenge",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/encodeForChallenge.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encryptAdditive",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/encryptAdditive.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "encryptAdditiveWithRandomness",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/encryptAdditiveWithRandomness.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "fixedHexToBigint",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/fixedHexToBigint.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "generateParameters",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/generateParameters.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "generateParametersWithPrivateKey",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/generateParametersWithPrivateKey.md",
+            "isDeprecated": false
+          },
+          {
+            "title": "hexToBytes",
+            "kind": 64,
+            "path": "threshold-elgamal/functions/hexToBytes.md",
+            "isDeprecated": false
+          }
+        ]
+      }
+    ]
+  }
+]

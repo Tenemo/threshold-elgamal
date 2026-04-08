@@ -1,9 +1,16 @@
 {
     "compilerOptions": {
-        "baseUrl": "./src/",
+        "baseUrl": ".",
+        "ignoreDeprecations": "6.0",
+        "paths": {
+            "#root": ["./src/index.ts"],
+            "#core": ["./src/core/index.ts"],
+            "#elgamal": ["./src/elgamal/index.ts"],
+            "#serialize": ["./src/serialize/index.ts"]
+        },
         "target": "ES2020",
         "module": "ESNext",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "removeComments": true,
         "declaration": false,
         "allowSyntheticDefaultImports": true,
@@ -19,5 +26,13 @@
         "noUnusedParameters": true,
         "noUnusedLocals": true
     },
-    "include": ["src/**/*", "eslint.config.js"]
+    "include": [
+        "src/**/*",
+        "scripts/**/*",
+        "test-vectors/**/*",
+        "tests/**/*",
+        "vitest.config.ts",
+        "eslint.config.js",
+        "typedoc.config.mjs"
+    ]
 }

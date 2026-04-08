@@ -1,0 +1,1 @@
+pnpm run check && pnpm run build:skip
