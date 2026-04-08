@@ -16,6 +16,9 @@ In practice, that means browser-native finite-field ElGamal research
 prototypes for verifiable voting, encrypted group decisions, and other
 small-ceremony threshold workflows built on native `bigint`.
 
+The published package has `0` runtime dependencies and ships as a fully
+self-contained library.
+
 This library is a hardened research prototype. It has not been audited.
 
 Start with these guides:
