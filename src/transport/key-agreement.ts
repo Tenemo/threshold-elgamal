@@ -58,6 +58,14 @@ const deriveAlgorithmForSuite = (
         ? { name: 'X25519', public: publicKey }
         : { name: 'ECDH', public: publicKey };
 
+/** Options controlling transport-key generation. */
+export type GenerateTransportKeyPairOptions = {
+    /** Requested suite, or omitted to auto-select the preferred suite. */
+    readonly suite?: KeyAgreementSuite;
+    /** Whether the generated private key should be extractable. Defaults to `false`. */
+    readonly extractable?: boolean;
+};
+
 /**
  * Rejects all-zero key-agreement secrets.
  *
@@ -112,12 +120,18 @@ export const resolveTransportSuite = async (): Promise<KeyAgreementSuite> =>
  * @returns Transport key pair tagged with the resolved suite.
  */
 export const generateTransportKeyPair = async (
-    suite?: KeyAgreementSuite,
+    suiteOrOptions?: KeyAgreementSuite | GenerateTransportKeyPairOptions,
 ): Promise<TransportKeyPair> => {
-    const resolvedSuite = suite ?? (await resolveTransportSuite());
+    const options: GenerateTransportKeyPairOptions =
+        typeof suiteOrOptions === 'string'
+            ? {
+                  suite: suiteOrOptions,
+              }
+            : (suiteOrOptions ?? {});
+    const resolvedSuite = options.suite ?? (await resolveTransportSuite());
     const keyPair = (await getWebCrypto().subtle.generateKey(
         algorithmForSuite(resolvedSuite),
-        true,
+        options.extractable ?? false,
         ['deriveBits'],
     )) as CryptoKeyPair;
 

@@ -1,14 +1,21 @@
 import {
     getGroup,
+    majorityThreshold,
     modP,
     modPowP,
     modQ,
-    sha256,
     utf8ToBytes,
     type CryptoGroup,
     type GroupName,
 } from '#core';
-import { replayGjkrTranscript, type DKGState } from '#dkg';
+import {
+    type ComplaintResolutionRecord,
+    deriveJointPublicKey,
+    deriveTranscriptVerificationKeys,
+    replayGjkrTranscript,
+    verifyDKGTranscript,
+    type DKGState,
+} from '#dkg';
 import { addEncryptedValues, encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDLEQProof,
@@ -26,7 +33,9 @@ import {
     deriveSessionId,
     formatSessionFingerprint,
     hashElectionManifest,
+    hashRosterEntries,
     hashProtocolTranscript,
+    verifyAndAggregateBallots,
     type ComplaintPayload,
     type ElectionManifest,
     type EncryptedDualSharePayload,
@@ -38,7 +47,7 @@ import {
     type RegistrationPayload,
     type SignedPayload,
 } from '#protocol';
-import { bytesToHex, fixedHexToBigint } from '#serialize';
+import { bigintToFixedHex, fixedHexToBigint } from '#serialize';
 import {
     combineDecryptionShares,
     createVerifiedDecryptionShare,
@@ -49,7 +58,6 @@ import {
     decryptEnvelope,
     encryptEnvelope,
     exportAuthPublicKey,
-    exportTransportPrivateKey,
     exportTransportPublicKey,
     generateAuthKeyPair,
     generateTransportKeyPair,
@@ -75,7 +83,7 @@ type ParticipantRuntime = {
     readonly auth: CryptoKeyPair;
     readonly authPublicKeyHex: string;
     readonly index: number;
-    readonly transportPrivateKeyHex: string;
+    readonly transportPrivateKey: CryptoKey;
     readonly transportPublicKeyHex: string;
 };
 
@@ -110,7 +118,7 @@ export type VotingFlowScenario = {
     readonly decryptionParticipantIndices?: readonly number[];
     readonly group?: GroupName;
     readonly participantCount: number;
-    readonly threshold: number;
+    readonly threshold?: number;
     readonly votes: readonly bigint[];
 };
 
@@ -128,16 +136,23 @@ type CommonScenarioResult = {
         readonly dealerIndex: number;
         readonly recipientIndex: number;
     })[];
+    readonly complaintResolutionRecords: readonly ComplaintResolutionRecord[];
+    readonly dkgTranscript: readonly SignedPayload[];
     readonly directJointSecret?: bigint;
     readonly finalShares?: readonly Share[];
     readonly finalState: DKGState;
     readonly group: CryptoGroup;
     readonly jointPublicKey?: bigint;
+    readonly manifest: ElectionManifest;
     readonly manifestHash: string;
     readonly mismatchedAggregate?: {
         readonly c1: bigint;
         readonly c2: bigint;
     };
+    readonly participantAuthKeys: readonly {
+        readonly index: number;
+        readonly privateKey: CryptoKey;
+    }[];
     readonly registrations: readonly SignedPayload<RegistrationPayload>[];
     readonly sessionFingerprint: string;
     readonly sessionId: string;
@@ -206,20 +221,6 @@ const createDeterministicSource = (seed: number) => {
     };
 };
 
-const hashCanonicalJson = async (
-    value: unknown,
-    bigintByteLength?: number,
-): Promise<string> =>
-    bytesToHex(
-        await sha256(
-            utf8ToBytes(
-                canonicalizeJson(value as never, {
-                    bigintByteLength,
-                }),
-            ),
-        ),
-    );
-
 const signPayload = async <TPayload extends ProtocolPayload>(
     privateKey: CryptoKey,
     payload: TPayload,
@@ -266,7 +267,7 @@ const verifySignedTranscript = async (
 const computeRosterHash = async (
     participants: readonly ParticipantRuntime[],
 ): Promise<string> =>
-    hashCanonicalJson(
+    hashRosterEntries(
         participants.map((participant) => ({
             participantIndex: participant.index,
             authPublicKey: participant.authPublicKeyHex,
@@ -296,29 +297,6 @@ const parseShareEnvelope = (
     };
 };
 
-const deriveVerificationKeyFromCommitments = (
-    commitmentSets: readonly (readonly bigint[])[],
-    participantIndex: number,
-    group: CryptoGroup,
-): bigint => {
-    const point = BigInt(participantIndex);
-
-    return commitmentSets.reduce((outerAccumulator, commitments) => {
-        let innerAccumulator = 1n;
-        let exponent = 1n;
-
-        for (const commitment of commitments) {
-            innerAccumulator = modP(
-                innerAccumulator * modPowP(commitment, exponent, group.p),
-                group.p,
-            );
-            exponent = modQ(exponent * point, group.q);
-        }
-
-        return modP(outerAccumulator * innerAccumulator, group.p);
-    }, 1n);
-};
-
 const createParticipants = async (
     participantCount: number,
 ): Promise<readonly ParticipantRuntime[]> =>
@@ -326,17 +304,18 @@ const createParticipants = async (
         Array.from({ length: participantCount }, async (_value, offset) => {
             const index = offset + 1;
             const auth = await generateAuthKeyPair();
-            const transport = await generateTransportKeyPair('P-256');
+            const transport = await generateTransportKeyPair({
+                suite: 'P-256',
+                extractable: true,
+            });
 
             return {
                 index,
                 auth,
                 authPublicKeyHex: await exportAuthPublicKey(auth.publicKey),
+                transportPrivateKey: transport.privateKey,
                 transportPublicKeyHex: await exportTransportPublicKey(
                     transport.publicKey,
-                ),
-                transportPrivateKeyHex: await exportTransportPrivateKey(
-                    transport.privateKey,
                 ),
             };
         }),
@@ -349,7 +328,7 @@ const buildManifest = (
 ): ElectionManifest => ({
     protocolVersion: 'v2',
     suiteId: group.name,
-    threshold: scenario.threshold,
+    threshold: majorityThreshold(scenario.participantCount),
     participantCount: scenario.participantCount,
     minimumPublicationThreshold: scenario.participantCount,
     allowAbstention: scenario.allowAbstention ?? false,
@@ -547,7 +526,7 @@ const buildDealerMaterial = async (
                 );
                 const decrypted = await decryptEnvelope(
                     envelope,
-                    recipient.transportPrivateKeyHex,
+                    recipient.transportPrivateKey,
                 );
                 const decodedShare = parseShareEnvelope(
                     decrypted,
@@ -562,7 +541,7 @@ const buildDealerMaterial = async (
                 );
                 invariant(
                     await verifyComplaintPrecondition(
-                        recipient.transportPrivateKeyHex,
+                        recipient.transportPrivateKey,
                         recipient.transportPublicKeyHex,
                         'P-256',
                     ),
@@ -607,7 +586,7 @@ const buildDealerMaterial = async (
                 participantIndex: participant.index,
                 messageType: 'pedersen-commitment',
                 commitments: pedersenCommitments.commitments.map((value) =>
-                    value.toString(16),
+                    bigintToFixedHex(value, group.byteLength),
                 ),
             },
         ),
@@ -621,12 +600,18 @@ const buildDealerMaterial = async (
                 participantIndex: participant.index,
                 messageType: 'feldman-commitment',
                 commitments: feldmanCommitments.commitments.map((value) =>
-                    value.toString(16),
+                    bigintToFixedHex(value, group.byteLength),
                 ),
                 proofs: schnorrProofs.map((proof) => ({
                     coefficientIndex: proof.coefficientIndex,
-                    challenge: proof.challenge.toString(16),
-                    response: proof.response.toString(16),
+                    challenge: bigintToFixedHex(
+                        proof.challenge,
+                        group.byteLength,
+                    ),
+                    response: bigintToFixedHex(
+                        proof.response,
+                        group.byteLength,
+                    ),
                 })),
             },
         ),
@@ -747,14 +732,17 @@ export const runVotingFlowScenario = async (
         'Integration scenarios require at least two participants',
     );
     invariant(
-        scenario.threshold >= 1 &&
-            scenario.threshold <= scenario.participantCount,
-        'Scenario threshold must satisfy 1 <= k <= n',
-    );
-    invariant(
         scenario.votes.length === scenario.participantCount,
         'Scenario votes must match the participant count',
     );
+
+    const threshold = majorityThreshold(scenario.participantCount);
+    if (scenario.threshold !== undefined) {
+        invariant(
+            scenario.threshold === threshold,
+            `Supported DKG threshold must equal ceil(n / 2) = ${threshold}`,
+        );
+    }
 
     const validValues: readonly bigint[] = scenario.allowAbstention
         ? validScoresWithAbstention
@@ -779,7 +767,7 @@ export const runVotingFlowScenario = async (
     const sessionId = await deriveSessionId(
         manifestHash,
         rosterHash,
-        `nonce-${scenario.participantCount}-${scenario.threshold}-${scenario.votes.join('-')}`,
+        `nonce-${scenario.participantCount}-${threshold}-${scenario.votes.join('-')}`,
         `2026-04-08T12:${String(scenario.participantCount).padStart(2, '0')}:00Z`,
     );
     const registrations = await createRegistrationPayloads(
@@ -819,7 +807,7 @@ export const runVotingFlowScenario = async (
                 manifestHash,
                 rosterHash,
                 group,
-                scenario.threshold,
+                threshold,
             ),
         ),
     );
@@ -861,7 +849,7 @@ export const runVotingFlowScenario = async (
         );
         invariant(
             await verifyComplaintPrecondition(
-                recipient.transportPrivateKeyHex,
+                recipient.transportPrivateKey,
                 recipient.transportPublicKeyHex,
                 'P-256',
             ),
@@ -875,7 +863,7 @@ export const runVotingFlowScenario = async (
 
         await decryptEnvelope(
             tamperedEnvelope,
-            recipient.transportPrivateKeyHex,
+            recipient.transportPrivateKey,
         ).then(
             () => {
                 throw new Error(
@@ -887,7 +875,7 @@ export const runVotingFlowScenario = async (
 
         const resolution = await resolveDealerChallenge(
             tamperedEnvelope,
-            recipient.transportPrivateKeyHex,
+            recipient.transportPrivateKey,
             envelopeArtifact.ephemeralPrivateKey,
         );
         complaintResolutions.push({
@@ -973,7 +961,17 @@ export const runVotingFlowScenario = async (
                 participantIndex,
                 messageType: 'key-derivation-confirmation',
                 qualHash: preConfirmationQualHash,
-                publicKey: 'pending',
+                publicKey: bigintToFixedHex(
+                    qualDealerMaterials.reduce(
+                        (accumulator, dealer) =>
+                            modP(
+                                accumulator * dealer.feldmanCommitments[0],
+                                group.p,
+                            ),
+                        1n,
+                    ),
+                    group.byteLength,
+                ),
             } satisfies KeyDerivationConfirmation),
         ),
     );
@@ -988,7 +986,11 @@ export const runVotingFlowScenario = async (
         ...confirmations,
     ] as const;
     await verifySignedTranscript(participants, dkgTranscript);
-
+    const complaintResolutionRecords: readonly ComplaintResolutionRecord[] =
+        complaintPayloads.map((complaintPayload, index) => ({
+            complaint: complaintPayload.payload,
+            resolution: complaintResolutions[index],
+        }));
     const finalState = replayGjkrTranscript(
         {
             protocol: 'gjkr',
@@ -996,7 +998,6 @@ export const runVotingFlowScenario = async (
             manifestHash,
             group: group.name,
             participantCount: scenario.participantCount,
-            threshold: scenario.threshold,
         },
         dkgTranscript,
     );
@@ -1010,14 +1011,29 @@ export const runVotingFlowScenario = async (
             aggregate: { c1: 1n, c2: 1n },
             ballots: [],
             complaintResolutions,
+            complaintResolutionRecords,
+            dkgTranscript,
+            manifest,
             finalState: abortedState,
             group,
             manifestHash,
+            participantAuthKeys: participants.map((participant) => ({
+                index: participant.index,
+                privateKey: participant.auth.privateKey,
+            })),
             registrations,
             sessionFingerprint,
             sessionId,
         };
     }
+
+    const verifiedTranscript = await verifyDKGTranscript({
+        protocol: 'gjkr',
+        transcript: dkgTranscript,
+        manifest,
+        sessionId,
+        complaintResolutions: complaintResolutionRecords,
+    });
 
     invariant(
         finalState.phase === 'completed',
@@ -1029,6 +1045,10 @@ export const runVotingFlowScenario = async (
     invariant(
         JSON.stringify(finalState.qual) === JSON.stringify(qual),
         'Reducer QUAL set does not match the complaint outcomes',
+    );
+    invariant(
+        JSON.stringify(verifiedTranscript.qual) === JSON.stringify(qual),
+        'Verified transcript QUAL set does not match the complaint outcomes',
     );
 
     const finalShares: readonly Share[] = qual.map((participantIndex) => ({
@@ -1043,10 +1063,12 @@ export const runVotingFlowScenario = async (
             group.q,
         ),
     }));
-    const jointPublicKey = qualDealerMaterials.reduce(
-        (accumulator, dealer) =>
-            modP(accumulator * dealer.feldmanCommitments[0], group.p),
-        1n,
+    const jointPublicKey = deriveJointPublicKey(
+        qualDealerMaterials.map((dealer) => ({
+            dealerIndex: dealer.participantIndex,
+            commitments: dealer.feldmanCommitments,
+        })),
+        group,
     );
     const directJointSecret = modQ(
         qualDealerMaterials.reduce(
@@ -1060,23 +1082,22 @@ export const runVotingFlowScenario = async (
         jointPublicKey === modPowP(group.g, directJointSecret, group.p),
         'Joint public key does not match the direct secret sum',
     );
+    invariant(
+        verifiedTranscript.derivedPublicKey === jointPublicKey,
+        'Verified transcript public key does not match the derived joint public key',
+    );
 
-    const transcriptDerivedVerificationKeys = finalShares.map((share) => {
-        const transcriptKey = deriveVerificationKeyFromCommitments(
-            qualDealerMaterials.map((dealer) => dealer.feldmanCommitments),
-            share.index,
-            group,
-        );
-
+    const transcriptDerivedVerificationKeys = deriveTranscriptVerificationKeys(
+        verifiedTranscript.feldmanCommitments,
+        finalShares.map((share) => share.index),
+        group,
+    );
+    transcriptDerivedVerificationKeys.forEach((transcriptKey, offset) => {
         invariant(
-            transcriptKey === modPowP(group.g, share.value, group.p),
-            `Transcript-derived verification key mismatch for participant ${share.index}`,
+            transcriptKey.value ===
+                modPowP(group.g, finalShares[offset].value, group.p),
+            `Transcript-derived verification key mismatch for participant ${transcriptKey.index}`,
         );
-
-        return {
-            index: share.index,
-            value: transcriptKey,
-        };
     });
 
     const ballots = await createBallotArtifacts(
@@ -1087,21 +1108,36 @@ export const runVotingFlowScenario = async (
         sessionId,
         validValues,
     );
-    const aggregate = ballots
-        .map((ballot) => ballot.ciphertext)
-        .reduce(
-            (accumulator, ciphertext) =>
-                addEncryptedValues(accumulator, ciphertext, group.name),
-            { c1: 1n, c2: 1n },
-        );
-    const reverseAggregate = [...ballots]
-        .reverse()
-        .map((ballot) => ballot.ciphertext)
-        .reduce(
-            (accumulator, ciphertext) =>
-                addEncryptedValues(accumulator, ciphertext, group.name),
-            { c1: 1n, c2: 1n },
-        );
+    const verifiedBallots = await verifyAndAggregateBallots({
+        ballots: ballots.map((ballot) => ({
+            voterIndex: ballot.voterIndex,
+            optionIndex: ballot.proofContext.optionIndex ?? 1,
+            ciphertext: ballot.ciphertext,
+            proof: ballot.proof,
+        })),
+        publicKey: jointPublicKey,
+        validValues,
+        group,
+        manifestHash,
+        sessionId,
+        minimumBallotCount: manifest.minimumPublicationThreshold,
+    });
+    const reversedVerifiedBallots = await verifyAndAggregateBallots({
+        ballots: [...ballots].reverse().map((ballot) => ({
+            voterIndex: ballot.voterIndex,
+            optionIndex: ballot.proofContext.optionIndex ?? 1,
+            ciphertext: ballot.ciphertext,
+            proof: ballot.proof,
+        })),
+        publicKey: jointPublicKey,
+        validValues,
+        group,
+        manifestHash,
+        sessionId,
+        minimumBallotCount: manifest.minimumPublicationThreshold,
+    });
+    const aggregate = verifiedBallots.aggregate.ciphertext;
+    const reverseAggregate = reversedVerifiedBallots.aggregate.ciphertext;
 
     invariant(
         reverseAggregate.c1 === aggregate.c1 &&
@@ -1124,26 +1160,14 @@ export const runVotingFlowScenario = async (
         'Dropped-ballot aggregate should not equal the full aggregate',
     );
 
-    const ballotLogHash = await hashCanonicalJson(
-        ballots.map((ballot) => ({
-            voterIndex: ballot.voterIndex,
-            optionIndex: ballot.proofContext.optionIndex,
-            ciphertext: ballot.ciphertext,
-            proof: ballot.proof,
-        })),
-        group.byteLength,
-    );
-    const verifiedAggregate = {
-        transcriptHash: ballotLogHash,
-        ciphertext: aggregate,
-    } as const;
+    const ballotLogHash = verifiedBallots.transcriptHash;
+    const verifiedAggregate = verifiedBallots.aggregate;
 
     const selectedIndices =
-        scenario.decryptionParticipantIndices ??
-        qual.slice(0, scenario.threshold);
+        scenario.decryptionParticipantIndices ?? qual.slice(0, threshold);
 
     invariant(
-        selectedIndices.length >= scenario.threshold,
+        selectedIndices.length >= threshold,
         'Scenario decryption subset must contain at least threshold participants',
     );
 
@@ -1235,14 +1259,21 @@ export const runVotingFlowScenario = async (
         ballotLogHash,
         ballots,
         complaintResolutions,
+        complaintResolutionRecords,
+        dkgTranscript,
         directJointSecret,
         expectedTally,
         finalShares,
         finalState: completedState,
         group,
         jointPublicKey,
+        manifest,
         manifestHash,
         mismatchedAggregate,
+        participantAuthKeys: participants.map((participant) => ({
+            index: participant.index,
+            privateKey: participant.auth.privateKey,
+        })),
         recovered,
         recoveredWithAllShares,
         registrations,

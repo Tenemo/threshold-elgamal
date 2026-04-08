@@ -13,8 +13,10 @@
         "#elgamal": "./src/elgamal/index.ts",
         "#proofs": "./src/proofs/index.ts",
         "#protocol": "./src/protocol/index.ts",
+        "#runtime": "./src/runtime/index.ts",
         "#threshold": "./src/threshold/index.ts",
         "#transport": "./src/transport/index.ts",
+        "#transport-advanced": "./src/transport/advanced.ts",
         "#vss": "./src/vss/index.ts",
         "#serialize": "./src/serialize/index.ts"
     },
@@ -43,6 +45,10 @@
             "types": "./dist/protocol/index.d.ts",
             "import": "./dist/protocol/index.js"
         },
+        "./runtime": {
+            "types": "./dist/runtime/index.d.ts",
+            "import": "./dist/runtime/index.js"
+        },
         "./threshold": {
             "types": "./dist/threshold/index.d.ts",
             "import": "./dist/threshold/index.js"
@@ -50,6 +56,10 @@
         "./transport": {
             "types": "./dist/transport/index.d.ts",
             "import": "./dist/transport/index.js"
+        },
+        "./transport/advanced": {
+            "types": "./dist/transport/advanced.d.ts",
+            "import": "./dist/transport/advanced.js"
         },
         "./vss": {
             "types": "./dist/vss/index.d.ts",
@@ -78,10 +88,13 @@
         "guard:no-math-random": "tsx ./tests/guards/check-no-math-random.ts",
         "verify:h-derivation": "tsx ./tools/verify-h-derivation.ts",
         "vectors:threshold": "tsx ./tools/generate-threshold-vectors.ts",
+        "vectors:protocol": "tsx ./tools/generate-protocol-vectors.ts",
+        "bench:micro": "tsx ./tools/benchmarks/microbench.ts",
+        "bench:dkg": "tsx ./tools/benchmarks/dkg-benchmark.ts",
         "check": "pnpm run lint && pnpm run typecheck && pnpm run guard:no-math-random && pnpm run verify:h-derivation && pnpm run test",
-        "prebuild": "pnpm run check && del-cli dist",
+        "prebuild": "pnpm run check && pnpm exec del-cli dist",
         "build": "tsc --project tsconfig.build.json",
-        "build:skip": "del-cli dist && tsc --project tsconfig.build.json",
+        "build:skip": "pnpm exec del-cli dist && tsc --project tsconfig.build.json",
         "test:node": "vitest --project node --run",
         "test:browser": "vitest --project browser --run",
         "test": "pnpm run test:node && pnpm run test:browser",

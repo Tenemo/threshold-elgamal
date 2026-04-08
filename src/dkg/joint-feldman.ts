@@ -1,4 +1,7 @@
-import { assertThreshold, assertValidParticipantIndex } from '../core/index.js';
+import {
+    assertValidParticipantIndex,
+    majorityThreshold,
+} from '../core/index.js';
 import type {
     ManifestAcceptancePayload,
     SignedPayload,
@@ -11,7 +14,11 @@ import {
     validateCommonPayload,
     withError,
 } from './complaints.js';
-import type { DKGConfig, DKGState, DKGTransition } from './types.js';
+import type {
+    DKGState,
+    DKGTransition,
+    MajorityDKGConfigInput,
+} from './types.js';
 
 const expectedPhase = (
     messageType: SignedPayload['payload']['messageType'],
@@ -50,10 +57,14 @@ const acceptedParticipants = (
  * @param config DKG configuration.
  * @returns Initial Joint-Feldman state.
  */
-export const createJointFeldmanState = (config: DKGConfig): DKGState => {
-    assertThreshold(config.threshold, config.participantCount);
-    return createBaseState({ ...config, protocol: 'joint-feldman' });
-};
+export const createJointFeldmanState = (
+    config: MajorityDKGConfigInput,
+): DKGState =>
+    createBaseState({
+        ...config,
+        protocol: 'joint-feldman',
+        threshold: majorityThreshold(config.participantCount),
+    });
 
 /**
  * Processes one signed payload through the Joint-Feldman log reducer.
@@ -182,7 +193,7 @@ export const processJointFeldmanPayload = (
  * @returns Final Joint-Feldman state after replay.
  */
 export const replayJointFeldmanTranscript = (
-    config: DKGConfig,
+    config: MajorityDKGConfigInput,
     transcript: readonly SignedPayload[],
 ): DKGState => {
     let state = createJointFeldmanState(config);

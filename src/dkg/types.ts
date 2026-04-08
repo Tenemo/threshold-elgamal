@@ -12,13 +12,17 @@ export type DKGError = {
     readonly message: string;
 };
 
-/** Static configuration for a log-driven DKG reducer. */
-export type DKGConfig = {
+/** Supported majority-only input for a log-driven DKG reducer. */
+export type MajorityDKGConfigInput = {
     readonly protocol: DKGProtocol;
     readonly sessionId: string;
     readonly manifestHash: string;
     readonly group: GroupName;
     readonly participantCount: number;
+};
+
+/** Resolved static configuration for a log-driven DKG reducer. */
+export type DKGConfig = MajorityDKGConfigInput & {
     readonly threshold: number;
 };
 

@@ -152,6 +152,11 @@ export const createVerifiedDecryptionShare = (
             'Verified aggregate ciphertext requires a non-empty transcript hash',
         );
     }
+    if (!Number.isInteger(aggregate.ballotCount) || aggregate.ballotCount < 1) {
+        throw new InvalidShareError(
+            'Verified aggregate ciphertext requires at least one accepted ballot',
+        );
+    }
 
     return createDecryptionShare(aggregate.ciphertext, share, group);
 };

@@ -12,9 +12,8 @@ const abortingScenarios: readonly (VotingFlowScenario & {
     readonly name: string;
 })[] = [
     {
-        name: 'aborts a 3-of-3 ceremony after one dealer complaint',
+        name: 'aborts a 2-of-3 ceremony after two dealer complaints',
         participantCount: 3,
-        threshold: 3,
         votes: [8n, 1n, 1n],
         complaints: [
             {
@@ -22,13 +21,17 @@ const abortingScenarios: readonly (VotingFlowScenario & {
                 recipientIndex: 2,
                 envelopeTamper: 'ciphertext',
             },
+            {
+                dealerIndex: 2,
+                recipientIndex: 3,
+                envelopeTamper: 'iv',
+            },
         ],
-        expectedQual: [2, 3],
+        expectedQual: [3],
     },
     {
-        name: 'aborts a 3-of-4 ceremony after two dealer complaints',
+        name: 'aborts a 2-of-4 ceremony after three dealer complaints',
         participantCount: 4,
-        threshold: 3,
         votes: [4n, 4n, 4n, 4n],
         complaints: [
             {
@@ -41,8 +44,13 @@ const abortingScenarios: readonly (VotingFlowScenario & {
                 recipientIndex: 3,
                 envelopeTamper: 'ephemeralPublicKey',
             },
+            {
+                dealerIndex: 3,
+                recipientIndex: 4,
+                envelopeTamper: 'iv',
+            },
         ],
-        expectedQual: [3, 4],
+        expectedQual: [4],
     },
 ];
 

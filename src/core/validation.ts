@@ -86,6 +86,52 @@ export const assertThreshold = (
 };
 
 /**
+ * Derives the supported honest-majority threshold `ceil(n / 2)`.
+ *
+ * @param participantCount Total participant count `n`.
+ * @returns Supported reconstruction threshold `k`.
+ *
+ * @throws {@link ThresholdViolationError} When `participantCount` is not a
+ * positive integer.
+ */
+export const majorityThreshold = (participantCount: number): number => {
+    if (!Number.isInteger(participantCount) || participantCount < 1) {
+        throw new ThresholdViolationError(
+            'Participant count must be a positive integer',
+        );
+    }
+
+    return Math.ceil(participantCount / 2);
+};
+
+/**
+ * Validates that the supplied threshold matches the supported honest-majority
+ * threshold `ceil(n / 2)`.
+ *
+ * @param threshold Claimed reconstruction threshold.
+ * @param participantCount Total participant count `n`.
+ * @returns The validated majority threshold.
+ *
+ * @throws {@link ThresholdViolationError} When the threshold does not match the
+ * supported honest-majority policy.
+ */
+export const assertMajorityThreshold = (
+    threshold: number,
+    participantCount: number,
+): number => {
+    assertThreshold(threshold, participantCount);
+
+    const expectedThreshold = majorityThreshold(participantCount);
+    if (threshold !== expectedThreshold) {
+        throw new ThresholdViolationError(
+            `Supported distributed threshold must equal ceil(n / 2) = ${expectedThreshold} for n = ${participantCount}`,
+        );
+    }
+
+    return expectedThreshold;
+};
+
+/**
  * Validates a 1-based participant index for a fixed participant count.
  *
  * @throws {@link IndexOutOfRangeError} When the inputs are not integers or

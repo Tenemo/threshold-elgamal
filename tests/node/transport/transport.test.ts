@@ -5,7 +5,6 @@ import {
     decryptEnvelope,
     encryptEnvelope,
     exportAuthPublicKey,
-    exportTransportPrivateKey,
     exportTransportPublicKey,
     generateAuthKeyPair,
     generateTransportKeyPair,
@@ -15,6 +14,7 @@ import {
     verifyComplaintPrecondition,
     verifyPayloadSignature,
 } from '#transport';
+import { exportTransportPrivateKey } from '#transport-advanced';
 
 describe('transport and authentication', () => {
     it('signs and verifies payload bytes with P-256 authentication keys', async () => {
@@ -41,9 +41,6 @@ describe('transport and authentication', () => {
         const recipientPublicKey = await exportTransportPublicKey(
             recipient.publicKey,
         );
-        const recipientPrivateKey = await exportTransportPrivateKey(
-            recipient.privateKey,
-        );
         const plaintext = new TextEncoder().encode('share-pair');
         const { envelope, ephemeralPrivateKey } = await encryptEnvelope(
             plaintext,
@@ -62,11 +59,11 @@ describe('transport and authentication', () => {
         );
 
         await expect(
-            decryptEnvelope(envelope, recipientPrivateKey),
+            decryptEnvelope(envelope, recipient.privateKey),
         ).resolves.toEqual(plaintext);
         await expect(
             verifyComplaintPrecondition(
-                recipientPrivateKey,
+                recipient.privateKey,
                 recipientPublicKey,
                 recipient.suite,
             ),
@@ -74,7 +71,7 @@ describe('transport and authentication', () => {
 
         const resolution = await resolveDealerChallenge(
             envelope,
-            recipientPrivateKey,
+            recipient.privateKey,
             ephemeralPrivateKey,
         );
 
@@ -82,7 +79,10 @@ describe('transport and authentication', () => {
         expect(resolution.fault).toBe('complainant');
         expect(resolution.plaintext).toEqual(plaintext);
 
-        const wrongEphemeral = await generateTransportKeyPair(recipient.suite);
+        const wrongEphemeral = await generateTransportKeyPair({
+            suite: recipient.suite,
+            extractable: true,
+        });
         const wrongEphemeralPrivateKey = await exportTransportPrivateKey(
             wrongEphemeral.privateKey,
         );
@@ -90,7 +90,7 @@ describe('transport and authentication', () => {
         await expect(
             resolveDealerChallenge(
                 envelope,
-                recipientPrivateKey,
+                recipient.privateKey,
                 wrongEphemeralPrivateKey,
             ),
         ).resolves.toEqual({
@@ -107,9 +107,6 @@ describe('transport and authentication', () => {
         );
         const otherRecipientPublicKey = await exportTransportPublicKey(
             otherRecipient.publicKey,
-        );
-        const recipientPrivateKey = await exportTransportPrivateKey(
-            recipient.privateKey,
         );
         const plaintext = new TextEncoder().encode('share-pair');
         const { envelope, ephemeralPrivateKey } = await encryptEnvelope(
@@ -130,7 +127,7 @@ describe('transport and authentication', () => {
 
         await expect(
             verifyComplaintPrecondition(
-                recipientPrivateKey,
+                recipient.privateKey,
                 otherRecipientPublicKey,
                 recipient.suite,
             ),
@@ -138,7 +135,7 @@ describe('transport and authentication', () => {
         await expect(
             decryptEnvelope(
                 { ...envelope, iv: `${envelope.iv.slice(0, -2)}00` },
-                recipientPrivateKey,
+                recipient.privateKey,
             ),
         ).rejects.toThrow();
         await expect(
@@ -147,7 +144,7 @@ describe('transport and authentication', () => {
                     ...envelope,
                     ephemeralPublicKey: `${envelope.ephemeralPublicKey.slice(0, -2)}00`,
                 },
-                recipientPrivateKey,
+                recipient.privateKey,
                 ephemeralPrivateKey,
             ),
         ).resolves.toEqual({

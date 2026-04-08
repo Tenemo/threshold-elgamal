@@ -1,5 +1,8 @@
 /** Public dealer threshold decryption exports. */
-export * from './decrypt.js';
+export {
+    combineDecryptionShares,
+    createVerifiedDecryptionShare,
+} from './decrypt.js';
 export * from './lagrange.js';
 export * from './polynomial.js';
 export * from './shares.js';

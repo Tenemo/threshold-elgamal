@@ -11,7 +11,6 @@ import {
     reconstructSecretFromShares,
     replayGjkrTranscript,
     replayJointFeldmanTranscript,
-    type DKGConfig,
 } from '#dkg';
 import type { ProtocolPayload, SignedPayload } from '#protocol';
 
@@ -46,7 +45,6 @@ describe('DKG state machines', () => {
             manifestHash: 'manifest-1',
             group: 'ffdhe2048',
             participantCount: 3,
-            threshold: 2,
         });
         const transition = processGjkrPayload(
             state,
@@ -65,14 +63,13 @@ describe('DKG state machines', () => {
     });
 
     it('replays Joint-Feldman transcripts deterministically', () => {
-        const config: DKGConfig = {
+        const config = {
             protocol: 'joint-feldman',
             sessionId: 'session-1',
             manifestHash: 'manifest-1',
             group: 'ffdhe2048',
             participantCount: 3,
-            threshold: 2,
-        };
+        } as const;
         const transcript = [
             signed({
                 sessionId: 'session-1',
@@ -166,14 +163,13 @@ describe('DKG state machines', () => {
     });
 
     it('replays GJKR transcripts, keeps false complainants in QUAL, and aborts when QUAL drops below k', () => {
-        const config: DKGConfig = {
+        const config = {
             protocol: 'gjkr',
             sessionId: 'session-2',
             manifestHash: 'manifest-2',
             group: 'ffdhe2048',
             participantCount: 5,
-            threshold: 3,
-        };
+        } as const;
         const transcript = [
             ...[1, 2, 3, 4, 5].map((participantIndex) =>
                 signed({
@@ -226,11 +222,30 @@ describe('DKG state machines', () => {
         expect(finalState.qual).toContain(2);
         expect(finalState.qual).not.toContain(5);
 
-        const abortConfig: DKGConfig = {
-            ...config,
-            threshold: 5,
-        };
-        const abortedState = replayGjkrTranscript(abortConfig, transcript);
+        const abortedState = replayGjkrTranscript(config, [
+            ...transcript.slice(0, -4),
+            signed({
+                sessionId: 'session-2',
+                manifestHash: 'manifest-2',
+                phase: 2,
+                participantIndex: 3,
+                messageType: 'complaint',
+                dealerIndex: 3,
+                envelopeId: 'env-3',
+                reason: 'pedersen-failure',
+            }),
+            signed({
+                sessionId: 'session-2',
+                manifestHash: 'manifest-2',
+                phase: 2,
+                participantIndex: 4,
+                messageType: 'complaint',
+                dealerIndex: 4,
+                envelopeId: 'env-4',
+                reason: 'pedersen-failure',
+            }),
+            ...transcript.slice(-4),
+        ]);
 
         expect(abortedState.phase).toBe('aborted');
         expect(abortedState.abortReason).toBe('qual-too-small');
@@ -243,7 +258,6 @@ describe('DKG state machines', () => {
             manifestHash: 'manifest-3',
             group: 'ffdhe2048',
             participantCount: 2,
-            threshold: 2,
         });
         const accepted = processJointFeldmanPayload(
             state,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { createDecryptionShare } from '../../../src/threshold/decrypt.js';
 import thresholdVector from '../../../test-vectors/threshold.json';
 
 import {
@@ -17,7 +18,6 @@ import {
 } from '#elgamal';
 import {
     combineDecryptionShares,
-    createDecryptionShare,
     createVerifiedDecryptionShare,
     dealerKeyGen,
     deriveSharesFromPolynomial,
@@ -241,7 +241,13 @@ describe('dealer-based threshold decryption', () => {
 
         expect(() =>
             createVerifiedDecryptionShare(
-                { transcriptHash: '   ', ciphertext },
+                {
+                    transcriptHash: '   ',
+                    ciphertext,
+                    ballotCount: 1,
+                } as unknown as Parameters<
+                    typeof createVerifiedDecryptionShare
+                >[0],
                 keySet.shares[0],
                 keySet.group,
             ),

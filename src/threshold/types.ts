@@ -31,10 +31,16 @@ export type DecryptionShare = {
     readonly value: bigint;
 };
 
+declare const verifiedAggregateBrand: unique symbol;
+
 /** A threshold aggregate tied to a verified additive ciphertext. */
 export type VerifiedAggregateCiphertext = {
     /** Canonical transcript hash that anchors the accepted ballot log. */
     readonly transcriptHash: string;
     /** Aggregate ciphertext recomputed from the accepted ballot log. */
     readonly ciphertext: ElgamalCiphertext;
+    /** Number of accepted ciphertexts that contributed to the aggregate. */
+    readonly ballotCount: number;
+    /** Opaque brand preventing arbitrary object-literal construction. */
+    readonly [verifiedAggregateBrand]: true;
 };

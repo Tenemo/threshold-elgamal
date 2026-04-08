@@ -19,13 +19,16 @@ import type {
  * @returns `true` when the local key material matches the registration.
  */
 export const verifyComplaintPrecondition = async (
-    privateKeyHex: string,
+    privateKey: CryptoKey | string,
     expectedPublicKeyHex: string,
     suite: KeyAgreementSuite,
 ): Promise<boolean> => {
-    const privateKey = await importTransportPrivateKey(privateKeyHex, suite);
+    const resolvedPrivateKey =
+        typeof privateKey === 'string'
+            ? await importTransportPrivateKey(privateKey, suite)
+            : privateKey;
     return (
-        (await deriveTransportPublicKey(privateKey, suite)) ===
+        (await deriveTransportPublicKey(resolvedPrivateKey, suite)) ===
         expectedPublicKeyHex
     );
 };
@@ -44,7 +47,7 @@ export const verifyComplaintPrecondition = async (
  */
 export const resolveDealerChallenge = async (
     envelope: EncryptedEnvelope,
-    recipientPrivateKeyHex: string,
+    recipientPrivateKey: CryptoKey | string,
     revealedEphemeralPrivateKeyHex: string,
 ): Promise<ComplaintResolution> => {
     const revealedPrivateKey = await importTransportPrivateKey(
@@ -67,7 +70,7 @@ export const resolveDealerChallenge = async (
         return {
             valid: true,
             fault: 'complainant',
-            plaintext: await decryptEnvelope(envelope, recipientPrivateKeyHex),
+            plaintext: await decryptEnvelope(envelope, recipientPrivateKey),
         };
     } catch {
         return {

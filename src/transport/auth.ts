@@ -4,18 +4,26 @@ import { bytesToHex, hexToBytes } from '../serialize/index.js';
 const toBufferSource = (bytes: Uint8Array): ArrayBuffer =>
     Uint8Array.from(bytes).buffer;
 
+/** Options controlling authentication-key generation. */
+export type GenerateAuthKeyPairOptions = {
+    /** Whether the generated private key should be extractable. Defaults to `false`. */
+    readonly extractable?: boolean;
+};
+
 /**
  * Generates a fresh per-ceremony ECDSA P-256 authentication key pair.
  *
  * @returns Extractable authentication key pair.
  */
-export const generateAuthKeyPair = async (): Promise<CryptoKeyPair> =>
+export const generateAuthKeyPair = async (
+    options: GenerateAuthKeyPairOptions = {},
+): Promise<CryptoKeyPair> =>
     getWebCrypto().subtle.generateKey(
         {
             name: 'ECDSA',
             namedCurve: 'P-256',
         },
-        true,
+        options.extractable ?? false,
         ['sign', 'verify'],
     );
 
