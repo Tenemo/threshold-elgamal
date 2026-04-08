@@ -1,7 +1,7 @@
 import {
     assertInSubgroup,
+    assertPositiveParticipantIndex,
     assertScalarInZq,
-    assertValidParticipantIndex,
     modP,
     modPowP,
     type CryptoGroup,
@@ -57,7 +57,7 @@ export const verifyFeldmanShare = (
     commitments: FeldmanCommitments,
     group: CryptoGroup,
 ): boolean => {
-    assertValidParticipantIndex(share.index, Number.MAX_SAFE_INTEGER);
+    assertPositiveParticipantIndex(share.index);
     assertScalarInZq(share.value, group.q);
     commitments.commitments.forEach((commitment) =>
         assertInSubgroup(commitment, group.p, group.q),

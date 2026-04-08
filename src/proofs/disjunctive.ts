@@ -1,6 +1,7 @@
 import {
     assertInSubgroup,
     assertInSubgroupOrIdentity,
+    assertScalarInZq,
     InvalidProofError,
     modInvP,
     modP,
@@ -228,6 +229,15 @@ export const verifyDisjunctiveProof = async (
         validValues.length === 0
     ) {
         return false;
+    }
+
+    for (const branch of proof.branches) {
+        try {
+            assertScalarInZq(branch.challenge, group.q);
+            assertScalarInZq(branch.response, group.q);
+        } catch {
+            return false;
+        }
     }
 
     const commitments = proof.branches.map((branch, index) => {

@@ -13,7 +13,7 @@ import type {
  * Verifies that the local recipient transport key still matches the registered
  * public key before filing a transport complaint.
  *
- * @param privateKeyHex Recipient transport private key.
+ * @param privateKey Recipient transport private key.
  * @param expectedPublicKeyHex Registered recipient public key.
  * @param suite Transport key-agreement suite.
  * @returns `true` when the local key material matches the registration.
@@ -41,7 +41,7 @@ export const verifyComplaintPrecondition = async (
  * fault. Successful decryption resolves the complaint in the dealer's favor.
  *
  * @param envelope Committed encrypted envelope.
- * @param recipientPrivateKeyHex Recipient transport private key.
+ * @param recipientPrivateKey Recipient transport private key.
  * @param revealedEphemeralPrivateKeyHex Revealed sender-ephemeral private key.
  * @returns Complaint resolution result.
  */

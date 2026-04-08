@@ -1,7 +1,7 @@
 import {
     assertInSubgroup,
+    assertPositiveParticipantIndex,
     assertScalarInZq,
-    assertValidParticipantIndex,
     ThresholdViolationError,
     modP,
     modPowP,
@@ -124,7 +124,7 @@ export const verifyPedersenShare = (
     commitments: PedersenCommitments,
     group: CryptoGroup,
 ): boolean => {
-    assertValidParticipantIndex(share.index, Number.MAX_SAFE_INTEGER);
+    assertPositiveParticipantIndex(share.index);
     assertScalarInZq(share.secretValue, group.q);
     assertScalarInZq(share.blindingValue, group.q);
     commitments.commitments.forEach((commitment) =>

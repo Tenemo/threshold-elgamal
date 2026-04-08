@@ -171,10 +171,40 @@ const verifyApiEntryPages = async (): Promise<string[]> => {
     const navigationJson = JSON.parse(
         await fs.readFile(navigationPath, 'utf8'),
     ) as {
+        children?: unknown;
         title?: string;
         path?: string;
     }[];
-    const seenModules = new Set(navigationJson.map((item) => item.title));
+    const seenModules = new Set<string>();
+
+    const visitNavigationItems = (
+        items: readonly {
+            children?: unknown;
+            title?: string;
+            path?: string;
+        }[],
+    ): void => {
+        for (const item of items) {
+            if (
+                typeof item.path === 'string' &&
+                item.path.endsWith('/index.md')
+            ) {
+                seenModules.add(item.path.slice(0, -'/index.md'.length));
+            }
+
+            if (Array.isArray(item.children)) {
+                visitNavigationItems(
+                    item.children as {
+                        children?: unknown;
+                        title?: string;
+                        path?: string;
+                    }[],
+                );
+            }
+        }
+    };
+
+    visitNavigationItems(navigationJson);
 
     for (const moduleName of requiredApiModules) {
         if (!seenModules.has(moduleName)) {

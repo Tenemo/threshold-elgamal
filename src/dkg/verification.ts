@@ -2,7 +2,7 @@ import {
     InvalidPayloadError,
     assertInSubgroup,
     assertMajorityThreshold,
-    assertValidParticipantIndex,
+    assertPositiveParticipantIndex,
     getGroup,
     modP,
     modPowP,
@@ -169,7 +169,7 @@ const deriveTranscriptVerificationKeyInternal = (
     participantIndex: number,
     group: CryptoGroup,
 ): bigint => {
-    assertValidParticipantIndex(participantIndex, Number.MAX_SAFE_INTEGER);
+    assertPositiveParticipantIndex(participantIndex);
     const point = BigInt(participantIndex);
 
     return commitmentSets.reduce((outerAccumulator, commitments) => {
@@ -308,7 +308,7 @@ export const deriveFinalShare = (
     participantIndex: number,
     q: bigint,
 ): { readonly index: number; readonly value: bigint } => {
-    assertValidParticipantIndex(participantIndex, Number.MAX_SAFE_INTEGER);
+    assertPositiveParticipantIndex(participantIndex);
     const qualSet = new Set(qual);
     const relevant = contributions.filter(
         (contribution) =>

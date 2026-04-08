@@ -151,6 +151,15 @@ describe('transport and authentication', () => {
             valid: false,
             fault: 'dealer',
         });
+        await expect(
+            decryptEnvelope(
+                {
+                    ...envelope,
+                    payloadType: 'feldman-share-reveal',
+                },
+                recipient.privateKey,
+            ),
+        ).rejects.toThrow();
     });
 
     it('rejects all-zero shared secrets', () => {

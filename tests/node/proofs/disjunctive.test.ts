@@ -168,4 +168,46 @@ describe('disjunctive proofs', () => {
             ),
         ).rejects.toBeInstanceOf(InvalidProofError);
     });
+
+    it('rejects branch scalars outside Z_q without throwing', async () => {
+        const proof = await createDisjunctiveProof(
+            plaintext,
+            randomness,
+            ciphertext,
+            publicKey,
+            validValues,
+            group,
+            context,
+            createDeterministicSource(),
+        );
+
+        await expect(
+            verifyDisjunctiveProof(
+                {
+                    branches: proof.branches.map((branch, index) =>
+                        index === 0 ? { ...branch, challenge: -1n } : branch,
+                    ),
+                },
+                ciphertext,
+                publicKey,
+                validValues,
+                group,
+                context,
+            ),
+        ).resolves.toBe(false);
+        await expect(
+            verifyDisjunctiveProof(
+                {
+                    branches: proof.branches.map((branch, index) =>
+                        index === 1 ? { ...branch, response: group.q } : branch,
+                    ),
+                },
+                ciphertext,
+                publicKey,
+                validValues,
+                group,
+                context,
+            ),
+        ).resolves.toBe(false);
+    });
 });

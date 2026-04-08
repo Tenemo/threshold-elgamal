@@ -1,5 +1,5 @@
 import {
-    assertValidParticipantIndex,
+    assertPositiveParticipantIndex,
     getWebCrypto,
     randomBytes,
 } from '../core/index.js';
@@ -60,7 +60,7 @@ export const wrapShareForStorage = async (
     key: CryptoKey,
     byteLength: number,
 ): Promise<WrappedShareRecord> => {
-    assertValidParticipantIndex(share.index, Number.MAX_SAFE_INTEGER);
+    assertPositiveParticipantIndex(share.index);
 
     const iv = randomBytes(12);
     const ciphertext = new Uint8Array(
@@ -92,7 +92,7 @@ export const unwrapShareFromStorage = async (
     record: WrappedShareRecord,
     key: CryptoKey,
 ): Promise<Share> => {
-    assertValidParticipantIndex(record.index, Number.MAX_SAFE_INTEGER);
+    assertPositiveParticipantIndex(record.index);
 
     const plaintext = new Uint8Array(
         await getWebCrypto().subtle.decrypt(

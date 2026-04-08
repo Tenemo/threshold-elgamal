@@ -25,22 +25,22 @@ from typing import Any, Dict, Iterable, List, Tuple
 
 def canonicalize(value: Any) -> str:
     if value is None or isinstance(value, bool):
-        return json.dumps(value)
+        return json.dumps(value, ensure_ascii=False)
 
     if isinstance(value, (int, float)):
         if isinstance(value, float) and (value != value or value in (float("inf"), float("-inf"))):
             raise ValueError("Canonical JSON numbers must be finite")
-        return json.dumps(value)
+        return json.dumps(value, ensure_ascii=False)
 
     if isinstance(value, str):
-        return json.dumps(value)
+        return json.dumps(value, ensure_ascii=False)
 
     if isinstance(value, list):
         return "[" + ",".join(canonicalize(item) for item in value) + "]"
 
     if isinstance(value, dict):
         return "{" + ",".join(
-            json.dumps(key) + ":" + canonicalize(value[key])
+            json.dumps(key, ensure_ascii=False) + ":" + canonicalize(value[key])
             for key in sorted(value.keys())
         ) + "}"
 
@@ -154,6 +154,7 @@ def main() -> int:
             ],
         },
         indent=2,
+        ensure_ascii=False,
     ))
     return 0
 

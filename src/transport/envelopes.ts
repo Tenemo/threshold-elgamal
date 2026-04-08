@@ -36,6 +36,7 @@ const hkdfInfo = (context: EnvelopeContext): Uint8Array =>
         BigInt(context.dealerIndex),
         BigInt(context.recipientIndex),
         context.envelopeId,
+        context.payloadType,
         context.protocolVersion,
     );
 
@@ -123,7 +124,7 @@ export const encryptEnvelope = async (
  * Decrypts an authenticated envelope with the recipient transport private key.
  *
  * @param envelope Authenticated encrypted envelope.
- * @param recipientPrivateKeyHex Recipient transport private key.
+ * @param recipientPrivateKey Recipient transport private key.
  * @returns Decrypted plaintext bytes.
  */
 export const decryptEnvelope = async (

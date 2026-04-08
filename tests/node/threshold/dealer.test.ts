@@ -46,35 +46,39 @@ const choose = <T>(items: readonly T[], size: number): T[][] => {
 };
 
 describe('dealer-based threshold decryption', () => {
-    it('round-trips representative threshold settings', () => {
-        const scenarios = [
-            {
-                group: 2048 as const,
-                threshold: 2,
-                participantCount: 3,
-                message: 9n,
-            },
-            {
-                group: 3072 as const,
-                threshold: 3,
-                participantCount: 5,
-                message: 11n,
-            },
-            {
-                group: 4096 as const,
-                threshold: 5,
-                participantCount: 10,
-                message: 13n,
-            },
-            {
-                group: 2048 as const,
-                threshold: 26,
-                participantCount: 51,
-                message: 10n,
-            },
-        ];
+    const roundTripScenarios = [
+        {
+            label: '2-of-3 in ffdhe2048',
+            group: 2048 as const,
+            threshold: 2,
+            participantCount: 3,
+            message: 9n,
+        },
+        {
+            label: '3-of-5 in ffdhe3072',
+            group: 3072 as const,
+            threshold: 3,
+            participantCount: 5,
+            message: 11n,
+        },
+        {
+            label: '5-of-10 in ffdhe4096',
+            group: 4096 as const,
+            threshold: 5,
+            participantCount: 10,
+            message: 13n,
+        },
+        {
+            label: '26-of-51 in ffdhe2048',
+            group: 2048 as const,
+            threshold: 26,
+            participantCount: 51,
+            message: 10n,
+        },
+    ] as const;
 
-        for (const scenario of scenarios) {
+    for (const scenario of roundTripScenarios) {
+        it(`round-trips representative threshold settings for ${scenario.label}`, () => {
             const keySet = dealerKeyGen(
                 scenario.threshold,
                 scenario.participantCount,
@@ -100,8 +104,8 @@ describe('dealer-based threshold decryption', () => {
                     scenario.message,
                 ),
             ).toBe(scenario.message);
-        }
-    });
+        }, 20_000);
+    }
 
     it('recovers the same plaintext for every 3-of-5 subset', () => {
         const keySet = dealerKeyGen(3, 5, 2048);

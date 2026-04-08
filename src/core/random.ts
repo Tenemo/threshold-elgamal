@@ -79,6 +79,10 @@ export const randomScalarBelow = (
         throw new InvalidScalarError('Upper bound must be positive');
     }
 
+    if (maxExclusive === 1n) {
+        return 0n;
+    }
+
     const bits = bitLength(maxExclusive - 1n);
     const byteLength = Math.max(1, Math.ceil(bits / 8));
     const rem = bits % 8;

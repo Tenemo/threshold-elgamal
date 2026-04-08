@@ -132,6 +132,24 @@ export const assertMajorityThreshold = (
 };
 
 /**
+ * Validates a 1-based participant index without assuming a fixed participant
+ * count.
+ *
+ * @throws {@link IndexOutOfRangeError} When `index` is not a positive integer.
+ */
+export const assertPositiveParticipantIndex = (index: number): void => {
+    if (!Number.isInteger(index)) {
+        throw new IndexOutOfRangeError('Participant index must be an integer');
+    }
+
+    if (index < 1) {
+        throw new IndexOutOfRangeError(
+            'Participant index must be a positive integer',
+        );
+    }
+};
+
+/**
  * Validates a 1-based participant index for a fixed participant count.
  *
  * @throws {@link IndexOutOfRangeError} When the inputs are not integers or

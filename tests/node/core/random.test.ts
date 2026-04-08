@@ -99,6 +99,15 @@ describe('core randomness', () => {
         expect(randomScalarBelow(6n, source)).toBe(4n);
     });
 
+    it('returns zero immediately for a unit upper bound', () => {
+        const source = vi.fn<RandomBytesSource>(() => {
+            throw new Error('Unit upper bounds should not consume randomness');
+        });
+
+        expect(randomScalarBelow(1n, source)).toBe(0n);
+        expect(source).not.toHaveBeenCalled();
+    });
+
     it('handles byte-aligned mask cases without zeroing the leading byte', () => {
         expect(randomScalarBelow(128n, createSequenceSource([0x7f]))).toBe(
             127n,

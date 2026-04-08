@@ -116,7 +116,7 @@ export const resolveTransportSuite = async (): Promise<KeyAgreementSuite> =>
  * Generates a transport key pair for the requested or preferred supported
  * suite.
  *
- * @param suite Requested suite, or omitted to auto-select the preferred suite.
+ * @param suiteOrOptions Requested suite or generation options.
  * @returns Transport key pair tagged with the resolved suite.
  */
 export const generateTransportKeyPair = async (

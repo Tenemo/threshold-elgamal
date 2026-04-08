@@ -8,6 +8,7 @@ export {
     deriveTransportSharedSecret,
     exportTransportPublicKey,
     generateTransportKeyPair,
+    type GenerateTransportKeyPairOptions,
     importTransportPublicKey,
     isX25519Supported,
     resolveTransportSuite,
