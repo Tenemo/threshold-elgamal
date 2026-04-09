@@ -3,8 +3,8 @@ import { getWebCrypto } from '../core/index.js';
 import { hexToBytes } from '../serialize/index.js';
 
 import { deriveEnvelopeKey, encodeEnvelopeContext } from './envelope-crypto.js';
+import { decryptEnvelope } from './envelopes.js';
 import {
-    deriveTransportPublicKey,
     deriveTransportSharedSecret,
     importTransportPrivateKey,
     importTransportPublicKey,
@@ -126,19 +126,39 @@ export const resolveDealerChallenge = async (
     recipientPrivateKey: CryptoKey | string,
     revealedEphemeralPrivateKeyHex: string,
 ): Promise<ComplaintResolution> => {
-    const recipientPublicKeyHex = await deriveTransportPublicKey(
+    const resolvedRecipientPrivateKey =
         typeof recipientPrivateKey === 'string'
             ? await importTransportPrivateKey(
                   recipientPrivateKey,
                   envelope.suite,
               )
-            : recipientPrivateKey,
+            : recipientPrivateKey;
+    const ephemeralKeyMatches = await verifyLocalTransportKey(
+        revealedEphemeralPrivateKeyHex,
+        envelope.ephemeralPublicKey,
         envelope.suite,
     );
 
-    return resolveDealerChallengeFromPublicKey(
-        envelope,
-        recipientPublicKeyHex,
-        revealedEphemeralPrivateKeyHex,
-    );
+    if (!ephemeralKeyMatches) {
+        return {
+            valid: false,
+            fault: 'dealer',
+        };
+    }
+
+    try {
+        return {
+            valid: true,
+            fault: 'complainant',
+            plaintext: await decryptEnvelope(
+                envelope,
+                resolvedRecipientPrivateKey,
+            ),
+        };
+    } catch {
+        return {
+            valid: false,
+            fault: 'dealer',
+        };
+    }
 };

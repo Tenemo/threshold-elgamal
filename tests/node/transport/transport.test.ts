@@ -100,6 +100,99 @@ describe('transport and authentication', () => {
         });
     });
 
+    it('verifies complaint preconditions for non-extractable P-256 recipient keys', async () => {
+        const recipient = await generateTransportKeyPair({
+            suite: 'P-256',
+        });
+        const recipientPublicKey = await exportTransportPublicKey(
+            recipient.publicKey,
+        );
+
+        await expect(
+            verifyComplaintPrecondition(
+                recipient.privateKey,
+                recipientPublicKey,
+                'P-256',
+            ),
+        ).resolves.toBe(true);
+    });
+
+    it('resolves P-256 complaint challenges without exporting the recipient key', async () => {
+        const recipient = await generateTransportKeyPair({
+            suite: 'P-256',
+        });
+        const recipientPublicKey = await exportTransportPublicKey(
+            recipient.publicKey,
+        );
+        const plaintext = new TextEncoder().encode('share-pair');
+        const { envelope, ephemeralPrivateKey } = await encryptEnvelope(
+            plaintext,
+            recipientPublicKey,
+            {
+                sessionId: 'session-p256',
+                rosterHash: 'roster-p256',
+                phase: 1,
+                dealerIndex: 1,
+                recipientIndex: 2,
+                envelopeId: 'envelope-p256',
+                payloadType: 'encrypted-dual-share',
+                protocolVersion: 'v1',
+                suite: 'P-256',
+            },
+        );
+
+        await expect(
+            resolveDealerChallenge(
+                envelope,
+                recipient.privateKey,
+                ephemeralPrivateKey,
+            ),
+        ).resolves.toEqual({
+            valid: true,
+            fault: 'complainant',
+            plaintext,
+        });
+    });
+
+    it('treats malformed P-256 complaint keys as dealer faults instead of throwing', async () => {
+        const recipient = await generateTransportKeyPair({
+            suite: 'P-256',
+        });
+        const recipientPublicKey = await exportTransportPublicKey(
+            recipient.publicKey,
+        );
+        const plaintext = new TextEncoder().encode('share-pair');
+        const { envelope, ephemeralPrivateKey } = await encryptEnvelope(
+            plaintext,
+            recipientPublicKey,
+            {
+                sessionId: 'session-p256-malformed',
+                rosterHash: 'roster-p256-malformed',
+                phase: 1,
+                dealerIndex: 1,
+                recipientIndex: 2,
+                envelopeId: 'envelope-p256-malformed',
+                payloadType: 'encrypted-dual-share',
+                protocolVersion: 'v1',
+                suite: 'P-256',
+            },
+        );
+
+        await expect(
+            resolveDealerChallenge(
+                {
+                    ...envelope,
+                    ephemeralPublicKey: `${envelope.ephemeralPublicKey.slice(0, -2)}00`,
+                },
+                recipient.privateKey,
+                ephemeralPrivateKey,
+            ),
+        ).resolves.toEqual({
+            valid: false,
+            fault: 'dealer',
+        });
+    });
+
     it('rejects garbled transport inputs and mismatched complaint preconditions', async () => {
         const recipient = await generateTransportKeyPair();
         const otherRecipient = await generateTransportKeyPair();

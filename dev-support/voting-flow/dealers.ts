@@ -1,4 +1,5 @@
-import { createDeterministicSource } from '../../../helpers/deterministic.js';
+import { encodePedersenShareEnvelope } from '../../src/dkg/pedersen-share-codec.js';
+import { createDeterministicSource } from '../deterministic.js';
 
 import {
     createComplaintResolutionPayload,
@@ -18,12 +19,11 @@ import {
     verifySchnorrProof,
     type ProofContext,
 } from '#proofs';
-import {
-    canonicalizeJson,
-    type ComplaintPayload,
-    type ComplaintResolutionPayload,
-    type EncryptedDualSharePayload,
-    type SignedPayload,
+import type {
+    ComplaintPayload,
+    ComplaintResolutionPayload,
+    EncryptedDualSharePayload,
+    SignedPayload,
 } from '#protocol';
 import { bigintToFixedHex } from '#serialize';
 import {
@@ -162,16 +162,7 @@ export const buildDealerMaterial = async (
             .map(async (recipient) => {
                 const share = pedersenShares[recipient.index - 1];
                 const plaintext = utf8ToBytes(
-                    canonicalizeJson(
-                        {
-                            index: recipient.index,
-                            secretValue: share.secretValue,
-                            blindingValue: share.blindingValue,
-                        },
-                        {
-                            bigintByteLength: group.byteLength,
-                        },
-                    ),
+                    encodePedersenShareEnvelope(share, group.byteLength),
                 );
                 const { envelope, ephemeralPrivateKey } = await encryptEnvelope(
                     plaintext,
