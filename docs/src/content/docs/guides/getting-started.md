@@ -2,12 +2,10 @@
 title: Get started
 description: The shortest safe path into the additive-only root package and the current protocol surface.
 sidebar:
-  order: 1
+    order: 1
 ---
 
 Use the safe root package. The current public surface is centered on additive ElGamal, while threshold sharing, proofs, transport, protocol helpers, and DKG reducers live under narrower subpaths.
-
-Before using the typed protocol payloads documented in this site, confirm that your installed package version is `1.x`. The legacy `0.1.x` line does not expose the same surface.
 
 ## Where to go next
 
