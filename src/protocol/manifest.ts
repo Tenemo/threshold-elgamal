@@ -19,7 +19,7 @@ const assertNonEmptyString = (value: string, label: string): void => {
 
 /**
  * Returns the minimum publication threshold compatible with the shipped
- * honest-majority policy.
+ * strict-majority threshold policy.
  *
  * The manifest threshold is the reconstruction threshold `k = t + 1`, so the
  * small-group privacy floor `t + 2` becomes `k + 1`.

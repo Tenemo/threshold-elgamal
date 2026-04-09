@@ -7,6 +7,7 @@ import { runVotingFlowScenario } from '../../tests/node/integration/voting-flow-
 
 type BenchmarkRow = {
     readonly group: GroupName;
+    readonly optionCount: number;
     readonly participantCount: number;
     readonly threshold: number;
     readonly transcriptMessages: number;
@@ -47,8 +48,19 @@ const buildVotes = (participantCount: number): readonly bigint[] =>
         BigInt((index % 10) + 1),
     );
 
+const buildVotesByOption = (
+    participantCount: number,
+    optionCount: number,
+): readonly (readonly bigint[])[] =>
+    Array.from({ length: optionCount }, (_value, optionOffset) =>
+        Array.from({ length: participantCount }, (_entry, participantOffset) =>
+            BigInt(((participantOffset + optionOffset * 3) % 10) + 1),
+        ),
+    );
+
 const parseArgs = (): {
     readonly group: GroupName;
+    readonly optionCount: number;
     readonly participantCounts: readonly number[];
     readonly transportSuite: KeyAgreementSuite;
 } => {
@@ -57,11 +69,16 @@ const parseArgs = (): {
         .map((argument) => argument.trim())
         .filter((argument) => argument !== '' && argument !== '--');
     let group: GroupName = 'ffdhe3072';
+    let optionCount = 1;
     let transportSuite: KeyAgreementSuite = 'X25519';
 
     const participantArguments = provided.filter((argument) => {
         if (argument.startsWith('--group=')) {
             group = argument.slice('--group='.length) as GroupName;
+            return false;
+        }
+        if (argument.startsWith('--options=')) {
+            optionCount = Number(argument.slice('--options='.length));
             return false;
         }
         if (argument.startsWith('--transport=')) {
@@ -75,7 +92,7 @@ const parseArgs = (): {
     });
     const participantCounts =
         participantArguments.length === 0
-            ? [3, 11, 21, 31, 41, 51]
+            ? [3, 11, 21, 31, 41, 50]
             : participantArguments
                   .flatMap((argument) => argument.split(/[,\s]+/u))
                   .map((argument) => argument.trim())
@@ -84,25 +101,31 @@ const parseArgs = (): {
                       const participantCount = Number(argument);
                       if (
                           !Number.isInteger(participantCount) ||
-                          participantCount < 2
+                          participantCount < 3
                       ) {
                           throw new Error(
-                              `Invalid participant count "${argument}". Use integers >= 2.`,
+                              `Invalid participant count "${argument}". Use integers >= 3.`,
                           );
                       }
 
                       return participantCount;
                   });
 
+    if (!Number.isInteger(optionCount) || optionCount < 1) {
+        throw new Error('Invalid option count. Use an integer >= 1.');
+    }
+
     return {
         group,
+        optionCount,
         participantCounts,
         transportSuite,
     };
 };
 
 const main = async (): Promise<void> => {
-    const { participantCounts, group, transportSuite } = parseArgs();
+    const { participantCounts, group, optionCount, transportSuite } =
+        parseArgs();
     const rows: BenchmarkRow[] = [];
     const benchmarkStart = performance.now();
 
@@ -112,14 +135,24 @@ const main = async (): Promise<void> => {
         const totalSteps = participantCounts.length;
 
         console.log(
-            `[${step}/${totalSteps}] Starting n=${participantCount}, k=${threshold}, group=${group}, transport=${transportSuite}`,
+            `[${step}/${totalSteps}] Starting n=${participantCount}, k=${threshold}, options=${optionCount}, group=${group}, transport=${transportSuite}`,
         );
         console.log(`[${step}/${totalSteps}] Stage 1/2: full voting flow`);
 
         const votingFlowStart = performance.now();
+        const votes = buildVotes(participantCount);
+        const votesByOption =
+            optionCount === 1
+                ? undefined
+                : buildVotesByOption(participantCount, optionCount);
         const result = await runVotingFlowScenario({
             participantCount,
-            votes: buildVotes(participantCount),
+            optionList: Array.from(
+                { length: optionCount },
+                (_value, optionOffset) => `Option ${optionOffset + 1}`,
+            ),
+            votes,
+            votesByOption,
             group,
             transportSuite,
         });
@@ -160,6 +193,7 @@ const main = async (): Promise<void> => {
 
         rows.push({
             group,
+            optionCount,
             participantCount,
             threshold,
             transcriptMessages: result.dkgTranscript.length,

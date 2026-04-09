@@ -8,6 +8,7 @@ import {
 
 import {
     canonicalUnsignedPayloadBytes,
+    verifyPublishedVotingResults,
     verifyPublishedVotingResult,
     type ProtocolPayload,
     type SignedPayload,
@@ -49,6 +50,7 @@ const resignPayload = async <TPayload extends ProtocolPayload>(
 
 describe('published voting verification', () => {
     let completed: CompletedVotingFlowResult;
+    let multiOption: CompletedVotingFlowResult;
     let withDealerFaultComplaint: CompletedVotingFlowResult;
 
     beforeAll(async () => {
@@ -76,6 +78,21 @@ describe('published voting verification', () => {
                 decryptionParticipantIndices: [2, 3],
             }),
             'Expected the dealer-fault voting fixture to complete',
+        );
+        multiOption = expectCompleted(
+            await runVotingFlowScenario({
+                participantCount: 5,
+                scoreDomainMax: 3,
+                optionList: ['Alpha', 'Beta', 'Gamma'],
+                votes: [3n, 2n, 1n, 3n, 2n],
+                votesByOption: [
+                    [3n, 2n, 1n, 3n, 2n],
+                    [1n, 3n, 2n, 1n, 2n],
+                    [2n, 1n, 3n, 2n, 1n],
+                ],
+                decryptionParticipantIndices: [1, 3, 5],
+            }),
+            'Expected the multi-option voting fixture to complete',
         );
     }, 90_000);
 
@@ -202,6 +219,234 @@ describe('published voting verification', () => {
                 }),
             ).rejects.toThrow(
                 'Tally publication does not match the recomputed tally',
+            );
+        },
+    );
+
+    it(
+        'verifies multi-option published tallies and supports arithmetic-mean derivation in the caller',
+        {
+            timeout: 30_000,
+        },
+        async () => {
+            const verified = await verifyPublishedVotingResults({
+                protocol: 'gjkr',
+                manifest: multiOption.manifest,
+                sessionId: multiOption.sessionId,
+                dkgTranscript: multiOption.dkgTranscript,
+                ballotPayloads: multiOption.ballotPayloads!,
+                decryptionSharePayloads: multiOption.decryptionSharePayloads!,
+                tallyPublications: multiOption.tallyPublications,
+            });
+
+            expect(verified.options.map((entry) => entry.optionIndex)).toEqual([
+                1, 2, 3,
+            ]);
+            expect(verified.options.map((entry) => entry.tally)).toEqual([
+                11n,
+                9n,
+                9n,
+            ]);
+            expect(
+                verified.options.map(
+                    (entry) =>
+                        Number(entry.tally) /
+                        entry.ballots.aggregate.ballotCount,
+                ),
+            ).toEqual([2.2, 1.8, 1.8]);
+        },
+    );
+
+    it(
+        'rejects the single-option wrapper when the manifest carries multiple options',
+        {
+            timeout: 20_000,
+        },
+        async () => {
+            await expect(
+                verifyPublishedVotingResult({
+                    protocol: 'gjkr',
+                    manifest: multiOption.manifest,
+                    sessionId: multiOption.sessionId,
+                    dkgTranscript: multiOption.dkgTranscript,
+                    ballotPayloads: multiOption.ballotPayloads!,
+                    decryptionSharePayloads:
+                        multiOption.decryptionSharePayloads!,
+                    tallyPublication: multiOption.tallyPublication,
+                }),
+            ).rejects.toThrow(
+                'verifyPublishedVotingResult requires a single-option manifest',
+            );
+        },
+    );
+
+    it(
+        'rejects wrong ballot option bindings and duplicate per-option ballot slots',
+        {
+            timeout: 30_000,
+        },
+        async () => {
+            const wrongBinding = await resignPayload(multiOption, {
+                ...multiOption.ballotPayloads![0].payload,
+                optionIndex: 2,
+            });
+
+            await expect(
+                verifyPublishedVotingResults({
+                    protocol: 'gjkr',
+                    manifest: multiOption.manifest,
+                    sessionId: multiOption.sessionId,
+                    dkgTranscript: multiOption.dkgTranscript,
+                    ballotPayloads: [
+                        wrongBinding,
+                        ...multiOption.ballotPayloads!.slice(1),
+                    ],
+                    decryptionSharePayloads:
+                        multiOption.decryptionSharePayloads!,
+                    tallyPublications: multiOption.tallyPublications,
+                }),
+            ).rejects.toThrow(
+                'Option 2 ballot verification failed: Ballot proof failed verification for voter 1 option 2',
+            );
+
+            await expect(
+                verifyPublishedVotingResults({
+                    protocol: 'gjkr',
+                    manifest: multiOption.manifest,
+                    sessionId: multiOption.sessionId,
+                    dkgTranscript: multiOption.dkgTranscript,
+                    ballotPayloads: [
+                        ...multiOption.ballotPayloads!,
+                        multiOption.ballotPayloads![0],
+                    ],
+                    decryptionSharePayloads:
+                        multiOption.decryptionSharePayloads!,
+                    tallyPublications: multiOption.tallyPublications,
+                }),
+            ).rejects.toThrow(
+                'Option 1 ballot verification failed: Duplicate ballot slot 1:1 is not allowed',
+            );
+        },
+    );
+
+    it(
+        'rejects invalid option indices with protocol payload errors',
+        {
+            timeout: 30_000,
+        },
+        async () => {
+            const invalidOptionIndex = await resignPayload(multiOption, {
+                ...multiOption.ballotPayloads![0].payload,
+                optionIndex: 0,
+            });
+
+            await expect(
+                verifyPublishedVotingResults({
+                    protocol: 'gjkr',
+                    manifest: multiOption.manifest,
+                    sessionId: multiOption.sessionId,
+                    dkgTranscript: multiOption.dkgTranscript,
+                    ballotPayloads: [
+                        invalidOptionIndex,
+                        ...multiOption.ballotPayloads!.slice(1),
+                    ],
+                    decryptionSharePayloads:
+                        multiOption.decryptionSharePayloads!,
+                    tallyPublications: multiOption.tallyPublications,
+                }),
+            ).rejects.toThrow(
+                'Ballot submission option index must be a positive integer',
+            );
+        },
+    );
+
+    it(
+        'adds option context when a multi-option ballot set falls below the publication floor',
+        {
+            timeout: 30_000,
+        },
+        async () => {
+            await expect(
+                verifyPublishedVotingResults({
+                    protocol: 'gjkr',
+                    manifest: multiOption.manifest,
+                    sessionId: multiOption.sessionId,
+                    dkgTranscript: multiOption.dkgTranscript,
+                    ballotPayloads: multiOption.ballotPayloads!.filter(
+                        (entry) => entry.payload.optionIndex !== 3,
+                    ),
+                    decryptionSharePayloads:
+                        multiOption.decryptionSharePayloads!,
+                    tallyPublications: multiOption.tallyPublications,
+                }),
+            ).rejects.toThrow(
+                'Option 3 ballot verification failed: Accepted ballot count 0 is below the minimum publication threshold 4',
+            );
+        },
+    );
+
+    it(
+        'rejects per-option transcript mismatches and insufficient per-option decryption subsets',
+        {
+            timeout: 30_000,
+        },
+        async () => {
+            const optionOne = multiOption.optionResults?.find(
+                (entry) => entry.optionIndex === 1,
+            );
+            const optionTwoShare = multiOption.decryptionSharePayloads?.find(
+                (entry) => entry.payload.optionIndex === 2,
+            );
+            const optionThreeShares =
+                multiOption.decryptionSharePayloads?.filter(
+                    (entry) => entry.payload.optionIndex === 3,
+                ) ?? [];
+
+            expect(optionOne).toBeDefined();
+            expect(optionTwoShare).toBeDefined();
+            expect(optionThreeShares).toHaveLength(3);
+
+            const wrongShare = await resignPayload(multiOption, {
+                ...optionTwoShare!.payload,
+                transcriptHash: optionOne!.ballotLogHash,
+            });
+
+            await expect(
+                verifyPublishedVotingResults({
+                    protocol: 'gjkr',
+                    manifest: multiOption.manifest,
+                    sessionId: multiOption.sessionId,
+                    dkgTranscript: multiOption.dkgTranscript,
+                    ballotPayloads: multiOption.ballotPayloads!,
+                    decryptionSharePayloads: [
+                        ...multiOption.decryptionSharePayloads!.filter(
+                            (entry) => entry !== optionTwoShare,
+                        ),
+                        wrongShare,
+                    ],
+                    tallyPublications: multiOption.tallyPublications,
+                }),
+            ).rejects.toThrow(
+                'Decryption share transcript hash mismatch for participant 1 and option 2',
+            );
+
+            await expect(
+                verifyPublishedVotingResults({
+                    protocol: 'gjkr',
+                    manifest: multiOption.manifest,
+                    sessionId: multiOption.sessionId,
+                    dkgTranscript: multiOption.dkgTranscript,
+                    ballotPayloads: multiOption.ballotPayloads!,
+                    decryptionSharePayloads:
+                        multiOption.decryptionSharePayloads!.filter(
+                            (entry) =>
+                                entry.payload.optionIndex !== 3 ||
+                                entry !== optionThreeShares[0],
+                        ),
+                    tallyPublications: multiOption.tallyPublications,
+                }),
+            ).rejects.toThrow(
+                'At least 3 decryption shares are required for option 3',
             );
         },
     );

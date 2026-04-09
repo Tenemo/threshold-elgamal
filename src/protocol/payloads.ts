@@ -26,7 +26,7 @@ export const payloadSlotKey = (payload: ProtocolPayload): string => {
             return `${prefix}:${payload.optionIndex}`;
         case 'decryption-share':
         case 'tally-publication':
-            return `${prefix}:${payload.transcriptHash}`;
+            return `${prefix}:${payload.optionIndex}:${payload.transcriptHash}`;
         case 'ceremony-restart':
             return `${prefix}:${payload.previousSessionId}`;
         default:

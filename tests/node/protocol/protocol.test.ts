@@ -289,6 +289,7 @@ describe('protocol payloads and transcripts', () => {
                 phase: 6,
                 participantIndex: 2,
                 messageType: 'decryption-share',
+                optionIndex: 2,
                 transcriptHash: 'aa'.repeat(32),
                 ballotCount: 3,
                 decryptionShare: '05',
@@ -297,7 +298,7 @@ describe('protocol payloads and transcripts', () => {
                     response: '07',
                 },
             }),
-        ).toBe(`session-1:6:2:decryption-share:${'aa'.repeat(32)}`);
+        ).toBe(`session-1:6:2:decryption-share:2:${'aa'.repeat(32)}`);
         expect(
             payloadSlotKey({
                 sessionId: 'session-1',
@@ -305,12 +306,13 @@ describe('protocol payloads and transcripts', () => {
                 phase: 7,
                 participantIndex: 1,
                 messageType: 'tally-publication',
+                optionIndex: 2,
                 transcriptHash: 'bb'.repeat(32),
                 ballotCount: 3,
                 tally: '08',
                 decryptionParticipantIndices: [1, 3],
             }),
-        ).toBe(`session-1:7:1:tally-publication:${'bb'.repeat(32)}`);
+        ).toBe(`session-1:7:1:tally-publication:2:${'bb'.repeat(32)}`);
         expect(
             payloadSlotKey({
                 sessionId: 'session-2',

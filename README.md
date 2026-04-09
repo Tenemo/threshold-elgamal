@@ -29,6 +29,12 @@ self-contained library.
 
 This library is a hardened research prototype. It has not been audited.
 
+The current `1.x` scope is additive score voting with public rosters, private
+ballots, strict-majority threshold decryption, and locally verifiable per-option
+sum tallies that callers can interpret as arithmetic means. The current DKG path
+is intended for roughly 50 all-equal participants, not thousands-participant
+symmetric ceremonies.
+
 Start with these guides:
 
 - [Get started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
@@ -47,7 +53,7 @@ Start with these guides:
 
 - [Threshold sharing and decryption helpers](https://tenemo.github.io/threshold-elgamal/api/reference/threshold/) provide dealer-based Shamir sharing, verified decryption shares, and aggregate decryption support.
 - [Feldman and Pedersen VSS helpers](https://tenemo.github.io/threshold-elgamal/api/reference/vss/) cover verifiable secret sharing commitments and share checks.
-- [Typed protocol payloads, manifest handling, transcript hashing, and published tally verification](https://tenemo.github.io/threshold-elgamal/api/reference/protocol/) cover the library's signed ceremony and tally surface.
+- [Typed protocol payloads, manifest handling, transcript hashing, and per-option published tally verification](https://tenemo.github.io/threshold-elgamal/api/reference/protocol/) cover the library's signed ceremony and tally surface.
 - [Log-driven Joint-Feldman and GJKR reducers](https://tenemo.github.io/threshold-elgamal/api/reference/dkg/) provide the distributed key-generation state machines behind the threshold workflow.
 
 ### Proofs, transport, and runtime
@@ -135,10 +141,10 @@ pnpm run ci
 
 ## DKG benchmark
 
-For the DKG benchmark sweep, run:
+For a thesis-scale regression benchmark, run:
 
 ```bash
-pnpm run bench:dkg -- --group=ffdhe3072 --transport=X25519 3,11,21,31,41,51
+pnpm run bench:dkg -- --group=ffdhe3072 --transport=X25519 --options=3 10
 ```
 
 Measurements were collected on this machine:
@@ -151,20 +157,18 @@ Results:
 
 - Group: `ffdhe3072`
 - Transport: `X25519`
-- Total elapsed time: `2 h 25 min 49.572 s`
+- Options: `3`
+- Participants: `10`
+- Threshold: `6`
+- Total elapsed time: `3 min 37.963 s`
 
-| Participants (`n`) | Threshold (`k`) | Transcript messages | Full voting flow   | Transcript verification | Total              |
-| ------------------ | --------------- | ------------------- | ------------------ | ----------------------- | ------------------ |
-| 3                  | 2               | 22                  | 21.322 s           | 729.839 ms              | 22.052 s           |
-| 11                 | 6               | 166                 | 2 min 6.564 s      | 8.222 s                 | 2 min 14.786 s     |
-| 21                 | 11              | 526                 | 8 min 2.140 s      | 29.292 s                | 8 min 31.432 s     |
-| 31                 | 16              | 1086                | 19 min 55.017 s    | 1 min 5.193 s           | 21 min 0.210 s     |
-| 41                 | 21              | 1846                | 39 min 54.015 s    | 1 min 46.184 s          | 41 min 40.199 s    |
-| 51                 | 26              | 2806                | 1 h 9 min 19.986 s | 2 min 40.902 s          | 1 h 12 min 0.888 s |
+| Participants (`n`) | Threshold (`k`) | Options | Transcript messages | Full voting flow | Transcript verification | Total          |
+| ------------------ | --------------- | ------- | ------------------- | ---------------- | ----------------------- | -------------- |
+| 10                 | 6               | 3       | 141                 | 3 min 31.215 s   | 6.748 s                 | 3 min 37.963 s |
 
-The sweep scales superlinearly in both transcript volume and runtime, with the
-`n=51`, `k=26` case producing `2806` transcript messages and taking just over
-`72` minutes for a full run plus verification on this hardware.
+The current DKG path is still all-to-all in the setup phase, so this benchmark
+is a readiness spot check for roughly thesis-scale ceremonies, not evidence
+that the symmetric all-equal flow is suitable for thousands of participants.
 
 ## License
 

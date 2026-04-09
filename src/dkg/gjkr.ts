@@ -4,11 +4,7 @@ import {
     createMajorityDkgState,
     processMajorityDkgPayload,
 } from './majority-reducer.js';
-import type {
-    DKGState,
-    DKGTransition,
-    MajorityDKGConfigInput,
-} from './types.js';
+import type { DKGConfigInput, DKGState, DKGTransition } from './types.js';
 
 /**
  * Creates an empty GJKR state.
@@ -16,7 +12,7 @@ import type {
  * @param config DKG configuration.
  * @returns Initial GJKR state.
  */
-export const createGjkrState = (config: MajorityDKGConfigInput): DKGState =>
+export const createGjkrState = (config: DKGConfigInput): DKGState =>
     createMajorityDkgState(config, 'gjkr');
 
 /**
@@ -39,7 +35,7 @@ export const processGjkrPayload = (
  * @returns Final GJKR state after replay.
  */
 export const replayGjkrTranscript = (
-    config: MajorityDKGConfigInput,
+    config: DKGConfigInput,
     transcript: readonly SignedPayload[],
 ): DKGState => {
     let state = createGjkrState(config);
