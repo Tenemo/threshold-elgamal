@@ -5,7 +5,7 @@ type PackageManifest = {
     name: string;
 };
 
-export type PublicApiDocEntry = {
+type PublicApiDocEntry = {
     apiIndexPage: string;
     entryPoint: string;
     exportKey: string;
@@ -13,7 +13,7 @@ export type PublicApiDocEntry = {
 };
 
 export const docsContentRoot = 'docs/src/content/docs';
-export const apiDocsRoot = `${docsContentRoot}/api`;
+const apiDocsRoot = `${docsContentRoot}/api`;
 export const apiReferenceRoot = `${apiDocsRoot}/reference`;
 export const apiNavigationJson = `${apiReferenceRoot}/navigation.json`;
 
