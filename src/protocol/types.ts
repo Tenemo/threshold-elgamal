@@ -161,6 +161,7 @@ export type BallotSubmissionPayload = BaseProtocolPayload & {
  */
 export type DecryptionSharePayload = BaseProtocolPayload & {
     readonly messageType: 'decryption-share';
+    readonly optionIndex: number;
     readonly transcriptHash: string;
     readonly ballotCount: number;
     readonly decryptionShare: string;
@@ -170,6 +171,7 @@ export type DecryptionSharePayload = BaseProtocolPayload & {
 /** Signed tally-publication payload for the recovered additive tally. */
 export type TallyPublicationPayload = BaseProtocolPayload & {
     readonly messageType: 'tally-publication';
+    readonly optionIndex: number;
     readonly transcriptHash: string;
     readonly ballotCount: number;
     readonly tally: string;

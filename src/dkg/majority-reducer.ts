@@ -1,6 +1,6 @@
 import {
+    assertMajorityThreshold,
     assertValidParticipantIndex,
-    majorityThreshold,
 } from '../core/index.js';
 import type {
     ComplaintPayload,
@@ -21,7 +21,7 @@ import type {
     DKGProtocol,
     DKGState,
     DKGTransition,
-    MajorityDKGConfigInput,
+    DKGConfigInput,
 } from './types.js';
 
 const protocolLabel = (protocol: DKGProtocol): string =>
@@ -59,14 +59,16 @@ const complaintResolutionsFromTranscript = (
         .map((item) => item.payload);
 
 export const createMajorityDkgState = (
-    config: MajorityDKGConfigInput,
+    config: DKGConfigInput,
     protocol: DKGProtocol,
-): DKGState =>
-    createBaseState({
+): DKGState => {
+    assertMajorityThreshold(config.threshold, config.participantCount);
+
+    return createBaseState({
         ...config,
         protocol,
-        threshold: majorityThreshold(config.participantCount),
     });
+};
 
 export const processMajorityDkgPayload = (
     state: DKGState,

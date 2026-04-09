@@ -31,7 +31,7 @@ const abortingScenarios: readonly (VotingFlowScenario & {
         expectedQual: [3],
     },
     {
-        name: 'aborts a 2-of-4 ceremony after three dealer complaints',
+        name: 'aborts a 3-of-4 ceremony after three dealer complaints',
         participantCount: 4,
         scoreDomainMax: 3,
         votes: [3n, 3n, 3n, 3n],
@@ -52,7 +52,7 @@ const abortingScenarios: readonly (VotingFlowScenario & {
                 envelopeTamper: 'iv',
             },
         ],
-        expectedQual: [4],
+        expectedQual: [3, 4],
     },
 ];
 

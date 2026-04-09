@@ -270,9 +270,11 @@ GJKR reducer and expects a completed `QUAL = [1, 2, 3]`.
 ## Encrypt ballots and verify score proofs
 
 The current library ships typed ballot, decryption-share, and tally payload
-schemas together with a high-level `verifyPublishedVotingResult()` helper. The
-ballot-level cryptography is still available directly when you need to stage or
-inspect intermediate artifacts.
+schemas together with high-level published-result verifiers. Use
+`verifyPublishedVotingResult()` for a single-option manifest or
+`verifyPublishedVotingResults()` for per-option verification across a
+multi-option manifest. The ballot-level cryptography is still available directly
+when you need to stage or inspect intermediate artifacts.
 
 ```typescript
 const jointPublicKey = /* product of A_i,0 from the setup transcript */;
@@ -404,10 +406,11 @@ console.log(tally); // 20n
 ```
 
 On the safe published path, the application signs typed ballot payloads,
-typed decryption-share payloads, and one tally-publication payload, then calls
-`verifyPublishedVotingResult()` to replay the DKG log, recompute the ballot
-aggregate locally, verify the DLEQ proofs, and check the announced tally before
-accepting it.
+typed decryption-share payloads, and one tally-publication payload per option,
+then calls `verifyPublishedVotingResult()` for a single-option manifest or
+`verifyPublishedVotingResults()` for a multi-option manifest. The verifier
+replays the DKG log, recomputes the ballot aggregate locally, verifies the DLEQ
+proofs, and checks the announced tally before accepting it.
 
 ## What the integration test also checks
 

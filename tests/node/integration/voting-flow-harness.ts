@@ -42,8 +42,8 @@ import {
     formatSessionFingerprint,
     hashElectionManifest,
     hashProtocolTranscript,
-    verifyAndAggregateBallots,
-    verifyPublishedVotingResult,
+    verifyBallotSubmissionPayloadsByOption,
+    verifyPublishedVotingResults,
     type KeyDerivationConfirmation,
 } from '#protocol';
 import { bigintToFixedHex } from '#serialize';
@@ -75,6 +75,14 @@ const validScores = (scenario: VotingFlowScenario): readonly bigint[] =>
         (_value, index) => BigInt(index + (scenario.allowAbstention ? 0 : 1)),
     );
 
+const normalizedVotesByOption = (
+    scenario: VotingFlowScenario,
+): readonly (readonly bigint[])[] => scenario.votesByOption ?? [scenario.votes];
+
+const votesFingerprint = (
+    votesByOption: readonly (readonly bigint[])[],
+): string => votesByOption.map((votes) => votes.join('-')).join('|');
+
 /**
  * Runs a parameterized end-to-end voting-flow scenario.
  *
@@ -85,34 +93,44 @@ export const runVotingFlowScenario = async (
     scenario: VotingFlowScenario,
 ): Promise<VotingFlowResult> => {
     invariant(
-        scenario.participantCount >= 2,
-        'Integration scenarios require at least two participants',
+        scenario.participantCount >= 3,
+        'Integration scenarios require at least three participants',
     );
+    const votesByOption = normalizedVotesByOption(scenario);
+
     invariant(
-        scenario.votes.length === scenario.participantCount,
-        'Scenario votes must match the participant count',
+        scenario.optionList === undefined ||
+            scenario.optionList.length === votesByOption.length,
+        'Scenario option list must match the number of option vote sets',
     );
 
-    const threshold = majorityThreshold(scenario.participantCount);
-    if (scenario.threshold !== undefined) {
-        invariant(
-            scenario.threshold === threshold,
-            `Supported DKG threshold must equal ceil(n / 2) = ${threshold}`,
-        );
-    }
+    const threshold =
+        scenario.threshold ?? majorityThreshold(scenario.participantCount);
+    invariant(
+        threshold >= majorityThreshold(scenario.participantCount) &&
+            threshold <= scenario.participantCount - 1,
+        `Supported DKG threshold must satisfy floor(n / 2) + 1 <= k <= n - 1 (received ${threshold} for n = ${scenario.participantCount})`,
+    );
 
     const validValues = validScores(scenario);
     const bound = singleBallotBound(scenario);
 
-    scenario.votes.forEach((vote, index) => {
+    votesByOption.forEach((votes, optionOffset) => {
         invariant(
-            validValues.includes(vote),
-            `Vote ${vote.toString()} for participant ${index + 1} is outside the allowed domain`,
+            votes.length === scenario.participantCount,
+            `Scenario votes for option ${optionOffset + 1} must match the participant count`,
         );
-        invariant(
-            vote <= bound,
-            'Vote exceeds the supported single-ballot bound',
-        );
+
+        votes.forEach((vote, index) => {
+            invariant(
+                validValues.includes(vote),
+                `Vote ${vote.toString()} for participant ${index + 1} and option ${optionOffset + 1} is outside the allowed domain`,
+            );
+            invariant(
+                vote <= bound,
+                'Vote exceeds the supported single-ballot bound',
+            );
+        });
     });
 
     const group = getGroup(scenario.group ?? DEFAULT_GROUP);
@@ -126,7 +144,7 @@ export const runVotingFlowScenario = async (
     const sessionId = await deriveSessionId(
         manifestHash,
         rosterHash,
-        `nonce-${scenario.participantCount}-${threshold}-${scenario.votes.join('-')}`,
+        `nonce-${scenario.participantCount}-${threshold}-${votesFingerprint(votesByOption)}`,
         `2026-04-08T12:${String(scenario.participantCount).padStart(2, '0')}:00Z`,
     );
     const manifestPublication = await createManifestPublicationPayload(
@@ -259,6 +277,7 @@ export const runVotingFlowScenario = async (
             manifestHash,
             group: group.name,
             participantCount: scenario.participantCount,
+            threshold,
         },
         dkgTranscript,
     );
@@ -359,15 +378,21 @@ export const runVotingFlowScenario = async (
         );
     });
 
-    const ballots = await createBallotArtifacts(
-        scenario.votes,
-        jointPublicKey,
-        group,
-        manifestHash,
-        sessionId,
-        validValues,
-        bound,
+    const ballotsByOption = await Promise.all(
+        votesByOption.map((votes, optionOffset) =>
+            createBallotArtifacts(
+                votes,
+                jointPublicKey,
+                group,
+                manifestHash,
+                sessionId,
+                validValues,
+                bound,
+                optionOffset + 1,
+            ),
+        ),
     );
+    const ballots = ballotsByOption.flat();
     const ballotPayloads = await createBallotSubmissionPayloads(
         participants,
         ballots,
@@ -375,60 +400,39 @@ export const runVotingFlowScenario = async (
         manifestHash,
         group,
     );
-    const verifiedBallots = await verifyAndAggregateBallots({
-        ballots: ballots.map((ballot) => ({
-            voterIndex: ballot.voterIndex,
-            optionIndex: ballot.proofContext.optionIndex ?? 1,
-            ciphertext: ballot.ciphertext,
-            proof: ballot.proof,
-        })),
-        publicKey: jointPublicKey,
-        validValues,
-        group,
-        manifestHash,
-        sessionId,
-        minimumBallotCount: manifest.minimumPublicationThreshold,
-    });
-    const reversedVerifiedBallots = await verifyAndAggregateBallots({
-        ballots: [...ballots].reverse().map((ballot) => ({
-            voterIndex: ballot.voterIndex,
-            optionIndex: ballot.proofContext.optionIndex ?? 1,
-            ciphertext: ballot.ciphertext,
-            proof: ballot.proof,
-        })),
-        publicKey: jointPublicKey,
-        validValues,
-        group,
-        manifestHash,
-        sessionId,
-        minimumBallotCount: manifest.minimumPublicationThreshold,
-    });
-    const aggregate = verifiedBallots.aggregate.ciphertext;
-    const reverseAggregate = reversedVerifiedBallots.aggregate.ciphertext;
+    const verifiedBallotsByOption =
+        await verifyBallotSubmissionPayloadsByOption({
+            ballotPayloads,
+            publicKey: jointPublicKey,
+            manifest,
+            sessionId,
+        });
+    const reversedVerifiedBallotsByOption =
+        await verifyBallotSubmissionPayloadsByOption({
+            ballotPayloads: [...ballotPayloads].reverse(),
+            publicKey: jointPublicKey,
+            manifest,
+            sessionId,
+        });
 
-    invariant(
-        reverseAggregate.c1 === aggregate.c1 &&
-            reverseAggregate.c2 === aggregate.c2,
-        'Aggregate recomputation must be order-independent',
-    );
-
-    const mismatchedAggregate = ballots
-        .slice(0, -1)
-        .map((ballot) => ballot.ciphertext)
-        .reduce(
-            (accumulator, ciphertext) =>
-                addEncryptedValues(accumulator, ciphertext, group.name),
-            { c1: 1n, c2: 1n },
+    verifiedBallotsByOption.forEach((verifiedBallots, offset) => {
+        const reversedBallots = reversedVerifiedBallotsByOption[offset];
+        invariant(
+            reversedBallots !== undefined,
+            `Missing reversed ballot verification for option ${verifiedBallots.optionIndex}`,
         );
-
-    invariant(
-        mismatchedAggregate.c1 !== aggregate.c1 ||
-            mismatchedAggregate.c2 !== aggregate.c2,
-        'Dropped-ballot aggregate should not equal the full aggregate',
-    );
-
-    const ballotLogHash = verifiedBallots.transcriptHash;
-    const verifiedAggregate = verifiedBallots.aggregate;
+        invariant(
+            reversedBallots.aggregate.ciphertext.c1 ===
+                verifiedBallots.aggregate.ciphertext.c1 &&
+                reversedBallots.aggregate.ciphertext.c2 ===
+                    verifiedBallots.aggregate.ciphertext.c2,
+            `Aggregate recomputation must be order-independent for option ${verifiedBallots.optionIndex}`,
+        );
+        invariant(
+            reversedBallots.transcriptHash === verifiedBallots.transcriptHash,
+            `Transcript hashing must be order-independent for option ${verifiedBallots.optionIndex}`,
+        );
+    });
 
     const selectedIndices =
         scenario.decryptionParticipantIndices ?? qual.slice(0, threshold);
@@ -447,109 +451,187 @@ export const runVotingFlowScenario = async (
         return share;
     });
 
-    const thresholdShareArtifacts = await createThresholdShareArtifacts(
-        selectedShares,
-        verifiedAggregate,
-        transcriptDerivedVerificationKeys,
-        group,
-        manifestHash,
-        sessionId,
+    const optionResults = await Promise.all(
+        verifiedBallotsByOption.map(async (verifiedBallots, offset) => {
+            const optionBallots = ballotsByOption[offset] ?? [];
+            const optionIndex = verifiedBallots.optionIndex;
+            const aggregate = verifiedBallots.aggregate.ciphertext;
+            const mismatchedAggregate = optionBallots
+                .slice(0, -1)
+                .map((ballot) => ballot.ciphertext)
+                .reduce(
+                    (accumulator, ciphertext) =>
+                        addEncryptedValues(accumulator, ciphertext, group.name),
+                    { c1: 1n, c2: 1n },
+                );
+
+            invariant(
+                mismatchedAggregate.c1 !== aggregate.c1 ||
+                    mismatchedAggregate.c2 !== aggregate.c2,
+                `Dropped-ballot aggregate should not equal the full aggregate for option ${optionIndex}`,
+            );
+
+            const thresholdShareArtifacts = await createThresholdShareArtifacts(
+                selectedShares,
+                verifiedBallots.aggregate,
+                transcriptDerivedVerificationKeys,
+                group,
+                manifestHash,
+                sessionId,
+                optionIndex,
+            );
+            const recovered = combineDecryptionShares(
+                aggregate,
+                thresholdShareArtifacts.map((item) => item.share),
+                group,
+                BigInt(verifiedBallots.aggregate.ballotCount) * bound,
+            );
+            const recoveredWithAllShares = combineDecryptionShares(
+                aggregate,
+                finalShares.map((share) =>
+                    createVerifiedDecryptionShare(
+                        verifiedBallots.aggregate,
+                        share,
+                        group,
+                    ),
+                ),
+                group,
+                BigInt(verifiedBallots.aggregate.ballotCount) * bound,
+            );
+            const expectedTally = votesByOption[offset].reduce(
+                (sum, vote) => sum + vote,
+                0n,
+            );
+            const decryptionSharePayloads = await createDecryptionSharePayloads(
+                participants,
+                thresholdShareArtifacts,
+                sessionId,
+                manifestHash,
+                verifiedBallots.transcriptHash,
+                verifiedBallots.aggregate.ballotCount,
+                group,
+                optionIndex,
+            );
+            const tallyPublication = await createTallyPublicationPayload(
+                participants[0],
+                sessionId,
+                manifestHash,
+                verifiedBallots.transcriptHash,
+                verifiedBallots.aggregate.ballotCount,
+                recovered,
+                thresholdShareArtifacts.map((artifact) => artifact.share.index),
+                group,
+                optionIndex,
+            );
+
+            invariant(
+                recovered === expectedTally,
+                `Threshold subset recovered the wrong tally for option ${optionIndex}`,
+            );
+            invariant(
+                recoveredWithAllShares === expectedTally,
+                `All-share threshold recovery returned the wrong tally for option ${optionIndex}`,
+            );
+
+            return {
+                optionIndex,
+                aggregate,
+                ballotLogHash: verifiedBallots.transcriptHash,
+                ballots: optionBallots,
+                expectedTally,
+                mismatchedAggregate,
+                recovered,
+                recoveredWithAllShares,
+                tallyPublication,
+                thresholdShareArtifacts,
+                decryptionSharePayloads,
+            };
+        }),
     );
 
-    const recovered = combineDecryptionShares(
-        aggregate,
-        thresholdShareArtifacts.map((item) => item.share),
-        group,
-        BigInt(scenario.participantCount) * bound,
+    const decryptionSharePayloads = optionResults.flatMap(
+        (result) => result.decryptionSharePayloads,
     );
-    const recoveredWithAllShares = combineDecryptionShares(
-        aggregate,
-        finalShares.map((share) =>
-            createVerifiedDecryptionShare(verifiedAggregate, share, group),
-        ),
-        group,
-        BigInt(scenario.participantCount) * bound,
+    const tallyPublications = optionResults.map(
+        (result) => result.tallyPublication,
     );
-    const expectedTally = scenario.votes.reduce((sum, vote) => sum + vote, 0n);
-    const decryptionSharePayloads = await createDecryptionSharePayloads(
-        participants,
-        thresholdShareArtifacts,
-        sessionId,
-        manifestHash,
-        ballotLogHash,
-        verifiedAggregate.ballotCount,
-        group,
-    );
-    const tallyPublication = await createTallyPublicationPayload(
-        participants[0],
-        sessionId,
-        manifestHash,
-        ballotLogHash,
-        verifiedAggregate.ballotCount,
-        recovered,
-        thresholdShareArtifacts.map((artifact) => artifact.share.index),
-        group,
-    );
-    const verifiedPublished = await verifyPublishedVotingResult({
+    const verifiedPublished = await verifyPublishedVotingResults({
         protocol: 'gjkr',
         manifest,
         sessionId,
         dkgTranscript,
         ballotPayloads,
         decryptionSharePayloads,
-        tallyPublication,
+        tallyPublications,
     });
 
-    invariant(
-        recovered === expectedTally,
-        'Threshold subset recovered the wrong tally',
-    );
-    invariant(
-        recoveredWithAllShares === expectedTally,
-        'All-share threshold recovery returned the wrong tally',
-    );
-    invariant(
-        verifiedPublished.tally === expectedTally,
-        'Published tally verification returned the wrong tally',
-    );
-    invariant(
-        verifiedPublished.ballots.transcriptHash === ballotLogHash,
-        'Published ballot verification returned the wrong transcript hash',
-    );
-    invariant(
-        verifiedPublished.decryptionShares.length ===
-            thresholdShareArtifacts.length,
-        'Published tally verification accepted the wrong number of decryption shares',
-    );
+    optionResults.forEach((result) => {
+        const verifiedOption = verifiedPublished.options.find(
+            (entry) => entry.optionIndex === result.optionIndex,
+        );
+
+        invariant(
+            verifiedOption !== undefined,
+            `Missing verified published tally for option ${result.optionIndex}`,
+        );
+        invariant(
+            verifiedOption.tally === result.expectedTally,
+            `Published tally verification returned the wrong tally for option ${result.optionIndex}`,
+        );
+        invariant(
+            verifiedOption.ballots.transcriptHash === result.ballotLogHash,
+            `Published ballot verification returned the wrong transcript hash for option ${result.optionIndex}`,
+        );
+        invariant(
+            verifiedOption.decryptionShares.length ===
+                result.thresholdShareArtifacts.length,
+            `Published tally verification accepted the wrong number of decryption shares for option ${result.optionIndex}`,
+        );
+    });
+
+    const primaryOption = optionResults[0];
 
     return {
-        aggregate,
-        ballotLogHash,
+        aggregate: primaryOption.aggregate,
+        ballotLogHash: primaryOption.ballotLogHash,
         ballotPayloads,
         ballots,
         complaintResolutions,
         decryptionSharePayloads,
         dkgTranscript,
         directJointSecret,
-        expectedTally,
+        expectedTally: primaryOption.expectedTally,
         finalShares,
         finalState: completedState,
         group,
         jointPublicKey,
         manifest,
         manifestHash,
-        mismatchedAggregate,
+        mismatchedAggregate: primaryOption.mismatchedAggregate,
+        optionResults: optionResults.map((result) => ({
+            aggregate: result.aggregate,
+            ballotLogHash: result.ballotLogHash,
+            ballots: result.ballots,
+            expectedTally: result.expectedTally,
+            mismatchedAggregate: result.mismatchedAggregate,
+            optionIndex: result.optionIndex,
+            recovered: result.recovered,
+            recoveredWithAllShares: result.recoveredWithAllShares,
+            tallyPublication: result.tallyPublication,
+            thresholdShareArtifacts: result.thresholdShareArtifacts,
+        })),
         participantAuthKeys: participants.map((participant) => ({
             index: participant.index,
             privateKey: participant.auth.privateKey,
         })),
-        recovered,
-        recoveredWithAllShares,
+        recovered: primaryOption.recovered,
+        recoveredWithAllShares: primaryOption.recoveredWithAllShares,
         registrations,
         sessionFingerprint,
         sessionId,
-        tallyPublication,
-        thresholdShareArtifacts,
+        tallyPublication: primaryOption.tallyPublication,
+        tallyPublications,
+        thresholdShareArtifacts: primaryOption.thresholdShareArtifacts,
         transcriptDerivedVerificationKeys,
     } satisfies CompletedVotingFlowResult;
 };

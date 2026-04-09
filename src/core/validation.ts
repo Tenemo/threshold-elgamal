@@ -85,10 +85,10 @@ export const assertThreshold = (
 };
 
 /**
- * Derives the supported honest-majority threshold `ceil(n / 2)`.
+ * Derives the minimum strict-majority threshold `floor(n / 2) + 1`.
  *
  * @param participantCount Total participant count `n`.
- * @returns Supported reconstruction threshold `k`.
+ * @returns Minimum supported reconstruction threshold `k`.
  *
  * @throws {@link ThresholdViolationError} When `participantCount` is not a
  * positive integer.
@@ -100,19 +100,19 @@ export const majorityThreshold = (participantCount: number): number => {
         );
     }
 
-    return Math.ceil(participantCount / 2);
+    return Math.floor(participantCount / 2) + 1;
 };
 
 /**
- * Validates that the supplied threshold matches the supported honest-majority
- * threshold `ceil(n / 2)`.
+ * Validates that the supplied threshold satisfies the shipped strict-majority
+ * policy.
  *
  * @param threshold Claimed reconstruction threshold.
  * @param participantCount Total participant count `n`.
- * @returns The validated majority threshold.
+ * @returns The validated reconstruction threshold.
  *
- * @throws {@link ThresholdViolationError} When the threshold does not match the
- * supported honest-majority policy.
+ * @throws {@link ThresholdViolationError} When the threshold falls outside the
+ * supported strict-majority policy.
  */
 export const assertMajorityThreshold = (
     threshold: number,
@@ -120,14 +120,21 @@ export const assertMajorityThreshold = (
 ): number => {
     assertThreshold(threshold, participantCount);
 
-    const expectedThreshold = majorityThreshold(participantCount);
-    if (threshold !== expectedThreshold) {
+    if (participantCount < 2) {
         throw new ThresholdViolationError(
-            `Supported distributed threshold must equal ceil(n / 2) = ${expectedThreshold} for n = ${participantCount}`,
+            'Distributed threshold workflows require at least two participants',
         );
     }
 
-    return expectedThreshold;
+    const minimumThreshold = majorityThreshold(participantCount);
+    const maximumThreshold = participantCount - 1;
+    if (threshold < minimumThreshold || threshold > maximumThreshold) {
+        throw new ThresholdViolationError(
+            `Supported distributed threshold must satisfy floor(n / 2) + 1 <= k <= n - 1 (minimum ${minimumThreshold}, maximum ${maximumThreshold} for n = ${participantCount})`,
+        );
+    }
+
+    return threshold;
 };
 
 /**
