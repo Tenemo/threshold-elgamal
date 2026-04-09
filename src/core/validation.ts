@@ -120,9 +120,9 @@ export const assertMajorityThreshold = (
 ): number => {
     assertThreshold(threshold, participantCount);
 
-    if (participantCount < 2) {
+    if (participantCount < 3) {
         throw new ThresholdViolationError(
-            'Distributed threshold workflows require at least two participants',
+            'Distributed threshold workflows require at least three participants',
         );
     }
 

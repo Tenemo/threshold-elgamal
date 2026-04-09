@@ -306,7 +306,7 @@ describe('published voting verification', () => {
                     tallyPublications: multiOption.tallyPublications,
                 }),
             ).rejects.toThrow(
-                'Ballot proof failed verification for voter 1 option 2',
+                'Option 2 ballot verification failed: Ballot proof failed verification for voter 1 option 2',
             );
 
             await expect(
@@ -323,7 +323,65 @@ describe('published voting verification', () => {
                         multiOption.decryptionSharePayloads!,
                     tallyPublications: multiOption.tallyPublications,
                 }),
-            ).rejects.toThrow('Duplicate ballot slot 1:1 is not allowed');
+            ).rejects.toThrow(
+                'Option 1 ballot verification failed: Duplicate ballot slot 1:1 is not allowed',
+            );
+        },
+    );
+
+    it(
+        'rejects invalid option indices with protocol payload errors',
+        {
+            timeout: 30_000,
+        },
+        async () => {
+            const invalidOptionIndex = await resignPayload(multiOption, {
+                ...multiOption.ballotPayloads![0].payload,
+                optionIndex: 0,
+            });
+
+            await expect(
+                verifyPublishedVotingResults({
+                    protocol: 'gjkr',
+                    manifest: multiOption.manifest,
+                    sessionId: multiOption.sessionId,
+                    dkgTranscript: multiOption.dkgTranscript,
+                    ballotPayloads: [
+                        invalidOptionIndex,
+                        ...multiOption.ballotPayloads!.slice(1),
+                    ],
+                    decryptionSharePayloads:
+                        multiOption.decryptionSharePayloads!,
+                    tallyPublications: multiOption.tallyPublications,
+                }),
+            ).rejects.toThrow(
+                'Ballot submission option index must be a positive integer',
+            );
+        },
+    );
+
+    it(
+        'adds option context when a multi-option ballot set falls below the publication floor',
+        {
+            timeout: 30_000,
+        },
+        async () => {
+            await expect(
+                verifyPublishedVotingResults({
+                    protocol: 'gjkr',
+                    manifest: multiOption.manifest,
+                    sessionId: multiOption.sessionId,
+                    dkgTranscript: multiOption.dkgTranscript,
+                    ballotPayloads: multiOption.ballotPayloads!.filter(
+                        (entry) => entry.payload.optionIndex !== 3,
+                    ),
+                    decryptionSharePayloads:
+                        multiOption.decryptionSharePayloads!,
+                    tallyPublications: multiOption.tallyPublications,
+                }),
+            ).rejects.toThrow(
+                'Option 3 ballot verification failed: Accepted ballot count 0 is below the minimum publication threshold 4',
+            );
         },
     );
 

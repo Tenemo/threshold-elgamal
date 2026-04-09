@@ -96,7 +96,11 @@ const assertValidOptionIndex = (
     optionCount: number,
     label: string,
 ): void => {
-    assertPositiveParticipantIndex(optionIndex);
+    if (!Number.isInteger(optionIndex) || optionIndex < 1) {
+        throw new InvalidPayloadError(
+            `${label} option index must be a positive integer`,
+        );
+    }
 
     if (optionIndex > optionCount) {
         throw new InvalidPayloadError(

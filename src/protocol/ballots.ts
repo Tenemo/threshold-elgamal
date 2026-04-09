@@ -232,10 +232,23 @@ export const verifyAndAggregateBallotsByOption = async (
         optionIndex += 1
     ) {
         const ballots = ballotsByOption.get(optionIndex) ?? [];
-        const aggregation = await verifyAndAggregateBallots({
-            ...input,
-            ballots,
-        });
+        let aggregation: VerifiedBallotAggregation;
+        try {
+            aggregation = await verifyAndAggregateBallots({
+                ...input,
+                ballots,
+            });
+        } catch (error) {
+            if (input.optionCount === 1) {
+                throw error;
+            }
+
+            const message =
+                error instanceof Error ? error.message : String(error);
+            throw new InvalidPayloadError(
+                `Option ${optionIndex} ballot verification failed: ${message}`,
+            );
+        }
 
         aggregations.push({
             ...aggregation,

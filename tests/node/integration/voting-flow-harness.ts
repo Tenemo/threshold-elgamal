@@ -97,6 +97,10 @@ export const runVotingFlowScenario = async (
         'Integration scenarios require at least three participants',
     );
     const votesByOption = normalizedVotesByOption(scenario);
+    invariant(
+        votesByOption.length >= 1,
+        'Scenario must define at least one option vote set',
+    );
 
     invariant(
         scenario.optionList === undefined ||

@@ -57,6 +57,19 @@ describe('manifest validation', () => {
         );
     });
 
+    it('rejects distributed manifests with fewer than three participants', () => {
+        const manifest = {
+            ...baseManifest(),
+            participantCount: 2,
+            threshold: 1,
+            minimumPublicationThreshold: 2,
+        };
+
+        expect(() => validateElectionManifest(manifest)).toThrow(
+            'Distributed threshold workflows require at least three participants',
+        );
+    });
+
     it('accepts organizer-selected strict-majority thresholds above the floor', () => {
         const manifest = {
             ...baseManifest(),

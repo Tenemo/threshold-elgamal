@@ -83,4 +83,15 @@ describe('parameterized aborting voting flows', () => {
             },
         );
     }
+
+    it('rejects scenarios that define no option vote sets', async () => {
+        await expect(
+            runVotingFlowScenario({
+                participantCount: 3,
+                scoreDomainMax: 3,
+                votes: [3n, 2n, 1n],
+                votesByOption: [],
+            }),
+        ).rejects.toThrow('Scenario must define at least one option vote set');
+    });
 });

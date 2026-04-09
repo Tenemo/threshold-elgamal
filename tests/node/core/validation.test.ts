@@ -97,6 +97,15 @@ describe('core validation', () => {
         expect(() => assertMajorityThreshold(3, 4)).not.toThrow();
     });
 
+    it('rejects distributed thresholds when the ceremony is too small', () => {
+        expect(() => assertMajorityThreshold(1, 2)).toThrow(
+            'Distributed threshold workflows require at least three participants',
+        );
+        expect(() => assertMajorityThreshold(2, 2)).toThrow(
+            'Distributed threshold workflows require at least three participants',
+        );
+    });
+
     it('accepts organizer-selected strict-majority thresholds above the minimum', () => {
         expect(majorityThreshold(6)).toBe(4);
         expect(() => assertMajorityThreshold(4, 6)).not.toThrow();
