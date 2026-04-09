@@ -1,13 +1,13 @@
 import { deriveH, getGroup, listGroups } from './groups.js';
 
-export type FrozenHDerivationCheck = {
+type FrozenHDerivationCheck = {
     readonly derived: bigint;
     readonly frozen: bigint;
     readonly groupName: string;
     readonly matches: boolean;
 };
 
-export const verifyFrozenHDerivations = async (): Promise<
+const verifyFrozenHDerivations = async (): Promise<
     readonly FrozenHDerivationCheck[]
 > =>
     Promise.all(

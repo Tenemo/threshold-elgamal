@@ -120,8 +120,6 @@ jobs:
           echo "dist_tag=${DIST_TAG}" >> "${GITHUB_OUTPUT}"
           echo "prerelease=${PRERELEASE}" >> "${GITHUB_OUTPUT}"
 
-      - run: pnpm install --lockfile-only
-
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm exec playwright install --with-deps chromium
@@ -143,10 +141,19 @@ jobs:
           git commit -m "chore(release): ${{ steps.metadata.outputs.tag }}"
           git tag -a "${{ steps.metadata.outputs.tag }}" -m "Release ${{ steps.metadata.outputs.tag }}"
 
-      - name: push release commit and tag
+      - name: verify remote release target
         run: |
-          git push origin HEAD:master
-          git push origin "refs/tags/${{ steps.metadata.outputs.tag }}"
+          git fetch origin master --tags
+
+          if [[ "$(git rev-parse HEAD^)" != "$(git rev-parse origin/master)" ]]; then
+            echo "origin/master moved during the release run. Start a new release from the updated master." >&2
+            exit 1
+          fi
+
+          if git ls-remote --exit-code --tags origin "${{ steps.metadata.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.metadata.outputs.tag }} already exists on origin." >&2
+            exit 1
+          fi
 
       - name: publish to npm
         run: |
@@ -155,6 +162,10 @@ jobs:
           else
             npm publish --provenance --tag "${{ steps.metadata.outputs.dist_tag }}"
           fi
+
+      - name: push release commit and tag
+        run: |
+          git push --atomic origin HEAD:master "refs/tags/${{ steps.metadata.outputs.tag }}"
 
       - name: create GitHub release
         env:

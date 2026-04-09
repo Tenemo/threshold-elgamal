@@ -1,4 +1,4 @@
-export type CreateDeterministicSourceOptions = {
+type CreateDeterministicSourceOptions = {
     readonly advanceBetweenCalls?: boolean;
     readonly postCallOffset?: number;
 };

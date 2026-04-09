@@ -54,8 +54,6 @@ import {
 } from '#threshold';
 
 export type {
-    AbortedVotingFlowResult,
-    ComplaintInjection,
     CompletedVotingFlowResult,
     VotingFlowScenario,
     VotingFlowResult,
