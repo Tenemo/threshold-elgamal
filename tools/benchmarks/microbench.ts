@@ -50,7 +50,7 @@ const main = async (): Promise<void> => {
     const group = getGroup('ffdhe2048');
     const publicKey = modPowP(group.g, 123n, group.p);
     const proofContext: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash: 'manifest-hash',
         sessionId: 'session-bench',
@@ -94,7 +94,7 @@ const main = async (): Promise<void> => {
         recipientIndex: 2,
         envelopeId: 'env-1-2',
         payloadType: 'dkg-share',
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         rosterHash: 'roster-hash',
         suite: 'P-256' as const,
     };

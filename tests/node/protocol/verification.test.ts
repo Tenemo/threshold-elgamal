@@ -53,7 +53,7 @@ const buildBallot = async (
         group.name,
     );
     const context: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',

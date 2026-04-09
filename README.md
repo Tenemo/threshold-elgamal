@@ -2,41 +2,60 @@
 
 [![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://badge.fury.io/js/threshold-elgamal)
 [![npm downloads](https://img.shields.io/npm/dm/threshold-elgamal)](https://www.npmjs.com/package/threshold-elgamal)
-[![passing tests](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/ci.yml?branch=master&label=passing%20tests)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/ci.yml)
-[![coverage](https://img.shields.io/endpoint?url=https://tenemo.github.io/threshold-elgamal/coverage-badge.json)](https://tenemo.github.io/threshold-elgamal/coverage-summary.json)
-[![docs](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/pages.yml?branch=master&label=docs)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/pages.yml)
-[![node](https://img.shields.io/badge/node-%E2%89%A524.14.1-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-10.33.0-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
-[![license](https://img.shields.io/github/license/Tenemo/threshold-elgamal)](LICENSE)
 
-`threshold-elgamal` is a browser-native TypeScript library for finite-field ElGamal research prototypes built on native `bigint`.
+---
 
-This library ships:
+[![CI](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/ci.yml?branch=master&label=passing%20tests)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/ci.yml)
+[![Tests coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/Tenemo/threshold-elgamal/master/docs/public/coverage-badge.json)](docs/public/coverage-summary.json)
+[![Documentation build](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/pages.yml?branch=master&label=docs)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/pages.yml)
 
-- validated RFC 7919 FFDHE groups with first-class `q`
-- deterministic suite-derived `h`
-- cryptographically secure randomness with rejection sampling
-- additive ElGamal on the safe root package
-- bounded discrete-log recovery and additive ciphertext combination helpers
-- key generation helpers for the shipped additive workflow
-- deterministic encoding helpers for serialization and challenge inputs
-- dealer-based threshold sharing and decryption under the `./threshold` subpath
-- Feldman and Pedersen VSS helpers under the `./vss` subpath
-- Schnorr, DLEQ, and disjunctive proofs under the `./proofs` subpath
-- canonical payload, transcript, manifest, and published-tally verification helpers under the `./protocol` subpath
-- authenticated transport envelopes under the `./transport` subpath
-- log-driven Joint-Feldman and GJKR reducers under the `./dkg` subpath
+---
 
-This library is a hardened research prototype. It is not audited production voting software.
+[![Node version](https://img.shields.io/badge/node-%E2%89%A524.14.1-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![License](https://img.shields.io/github/license/Tenemo/threshold-elgamal)](LICENSE)
 
-## Release status
+---
 
-This repository tracks the `v2` line. Treat any published `0.1.x` package as
-legacy and do not use it for new deployments.
+`threshold-elgamal` is a TypeScript library for applications where a group of
+people need to submit encrypted scores, verify a shared public record, and
+reveal only the final result once enough participants cooperate.
 
-Confirm that you are actually installing a `2.x` package before relying on the
-typed protocol payloads, transcript-native complaint handling, or the published
-tally verification helpers described in this repository.
+In practice, that means browser-native finite-field ElGamal research
+prototypes for verifiable voting, encrypted group decisions, and other
+small-ceremony threshold workflows built on native `bigint`.
+
+The published package has `0` runtime dependencies and ships as a fully
+self-contained library.
+
+This library is a hardened research prototype. It has not been audited.
+
+Start with these guides:
+
+- [Get started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
+- [Three-participant voting flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
+- [Security and non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
+
+## What the library includes
+
+### Encryption and validation
+
+- [Validated RFC 7919 FFDHE groups and subgroup checks](https://tenemo.github.io/threshold-elgamal/guides/groups-and-validation/) define the group model and the input rules the library enforces.
+- [Additive ElGamal, ciphertext combination, and bounded discrete-log recovery](https://tenemo.github.io/threshold-elgamal/guides/additive-elgamal/) cover the safe encryption path used by the root package.
+- [The safe root package API](https://tenemo.github.io/threshold-elgamal/api/root-package/) exposes the additive-only surface for encryption, decryption, encoding, and validation.
+
+### Threshold and protocol building blocks
+
+- [Threshold sharing and decryption helpers](https://tenemo.github.io/threshold-elgamal/api/reference/threshold/) provide dealer-based Shamir sharing, verified decryption shares, and aggregate decryption support.
+- [Feldman and Pedersen VSS helpers](https://tenemo.github.io/threshold-elgamal/api/reference/vss/) cover verifiable secret sharing commitments and share checks.
+- [Typed protocol payloads, manifest handling, transcript hashing, and published tally verification](https://tenemo.github.io/threshold-elgamal/api/reference/protocol/) cover the library's signed ceremony and tally surface.
+- [Log-driven Joint-Feldman and GJKR reducers](https://tenemo.github.io/threshold-elgamal/api/reference/dkg/) provide the distributed key-generation state machines behind the threshold workflow.
+
+### Proofs, transport, and runtime
+
+- [Schnorr, DLEQ, and disjunctive proofs](https://tenemo.github.io/threshold-elgamal/api/reference/proofs/) support ballot and decryption verification.
+- [Authenticated transport envelopes and complaint-resolution helpers](https://tenemo.github.io/threshold-elgamal/api/reference/transport/) cover the share-delivery layer used by the DKG flow.
+- [Runtime and browser compatibility guidance](https://tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility/) documents the supported environments and feature expectations.
+- [The subpath overview](https://tenemo.github.io/threshold-elgamal/api/subpath-overview/) shows how the public API is split between the safe root package and narrower advanced modules.
 
 ## Installation
 
@@ -50,7 +69,7 @@ pnpm add threshold-elgamal
 - Browsers need native `bigint` together with Web Crypto (`crypto.subtle` and `crypto.getRandomValues`).
 - Node requires version `24.14.1` or newer with `globalThis.crypto`.
 
-## Safe quickstart
+## Quickstart
 
 ```typescript
 import {
@@ -93,7 +112,7 @@ For example, if each ballot is in `0..10` and you tally `50` ballots, encrypt ea
 - Build a voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
 - Security model: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
 - API reference: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
-- Docs source lives under `docs/src/content/docs/`
+- Docs source: [`docs/src/content/docs/`](docs/src/content/docs/)
 
 ## Changes since v0.x.x
 
@@ -114,11 +133,38 @@ pnpm install
 pnpm run ci
 ```
 
+## DKG benchmark
+
 For the DKG benchmark sweep, run:
 
 ```bash
 pnpm run bench:dkg -- --group=ffdhe3072 --transport=X25519 3,11,21,31,41,51
 ```
+
+Measurements were collected on this machine:
+
+- Windows 10 Pro 22H2
+- Intel Core i9-14900K
+- DDR5-5000 RAM
+
+Results:
+
+- Group: `ffdhe3072`
+- Transport: `X25519`
+- Total elapsed time: `2 h 25 min 49.572 s`
+
+| Participants (`n`) | Threshold (`k`) | Transcript messages | Full voting flow   | Transcript verification | Total              |
+| ------------------ | --------------- | ------------------- | ------------------ | ----------------------- | ------------------ |
+| 3                  | 2               | 22                  | 21.322 s           | 729.839 ms              | 22.052 s           |
+| 11                 | 6               | 166                 | 2 min 6.564 s      | 8.222 s                 | 2 min 14.786 s     |
+| 21                 | 11              | 526                 | 8 min 2.140 s      | 29.292 s                | 8 min 31.432 s     |
+| 31                 | 16              | 1086                | 19 min 55.017 s    | 1 min 5.193 s           | 21 min 0.210 s     |
+| 41                 | 21              | 1846                | 39 min 54.015 s    | 1 min 46.184 s          | 41 min 40.199 s    |
+| 51                 | 26              | 2806                | 1 h 9 min 19.986 s | 2 min 40.902 s          | 1 h 12 min 0.888 s |
+
+The sweep scales superlinearly in both transcript volume and runtime, with the
+`n=51`, `k=26` case producing `2806` transcript messages and taking just over
+`72` minutes for a full run plus verification on this hardware.
 
 ## License
 

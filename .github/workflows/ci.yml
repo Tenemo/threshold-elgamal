@@ -6,15 +6,18 @@ on:
       - master
   pull_request:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   node:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v5
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v5.0.0
         with:
           run_install: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6.3.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -24,17 +27,16 @@ jobs:
       - run: pnpm run guard:no-math-random
       - run: pnpm run test:node
       - run: pnpm run build:skip
-      - run: pnpm run docs:api
       - run: pnpm run verify:docs
 
   browser:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v5
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v5.0.0
         with:
           run_install: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6.3.0
         with:
           node-version-file: .nvmrc
           cache: pnpm

@@ -185,6 +185,115 @@ describe('DKG state machines', () => {
         expect(secondReplay).toEqual(finalState);
     });
 
+    it('keeps shared QUAL and terminal-state behavior aligned across both majority reducers', () => {
+        const baseConfig = {
+            sessionId: 'session-shared',
+            manifestHash: 'manifest-shared',
+            group: 'ffdhe2048',
+            participantCount: 3,
+        } as const;
+        const jointTranscript = [
+            ...[1, 2, 3].map((participantIndex) =>
+                signed({
+                    sessionId: baseConfig.sessionId,
+                    manifestHash: baseConfig.manifestHash,
+                    phase: 0,
+                    participantIndex,
+                    messageType: 'manifest-acceptance',
+                    rosterHash: 'roster-shared',
+                    assignedParticipantIndex: participantIndex,
+                }),
+            ),
+            ...[1, 2, 3].map((participantIndex) =>
+                signed({
+                    sessionId: baseConfig.sessionId,
+                    manifestHash: baseConfig.manifestHash,
+                    phase: 1,
+                    participantIndex,
+                    messageType: 'feldman-commitment',
+                    commitments: [`c-${participantIndex}`],
+                    proofs: [],
+                }),
+            ),
+            signed({
+                sessionId: baseConfig.sessionId,
+                manifestHash: baseConfig.manifestHash,
+                phase: 2,
+                participantIndex: 2,
+                messageType: 'complaint',
+                dealerIndex: 1,
+                envelopeId: 'env-1-2',
+                reason: 'aes-gcm-failure',
+            }),
+            signed({
+                sessionId: baseConfig.sessionId,
+                manifestHash: baseConfig.manifestHash,
+                phase: 2,
+                participantIndex: 1,
+                messageType: 'complaint-resolution',
+                dealerIndex: 1,
+                complainantIndex: 2,
+                envelopeId: 'env-1-2',
+                suite: 'P-256',
+                revealedEphemeralPrivateKey: 'ephemeral-private-key',
+            }),
+            ...[1, 2, 3].map((participantIndex) =>
+                signed({
+                    sessionId: baseConfig.sessionId,
+                    manifestHash: baseConfig.manifestHash,
+                    phase: 3,
+                    participantIndex,
+                    messageType: 'key-derivation-confirmation',
+                    qualHash: 'qual',
+                    publicKey: 'pk',
+                }),
+            ),
+        ] as const;
+        const gjkrTranscript = [
+            ...jointTranscript.slice(0, 3),
+            ...[1, 2, 3].map((participantIndex) =>
+                signed({
+                    sessionId: baseConfig.sessionId,
+                    manifestHash: baseConfig.manifestHash,
+                    phase: 1,
+                    participantIndex,
+                    messageType: 'pedersen-commitment',
+                    commitments: [`pc-${participantIndex}`],
+                }),
+            ),
+            ...jointTranscript.slice(6, 8),
+            ...jointTranscript.slice(8).map((entry) =>
+                entry.payload.messageType === 'key-derivation-confirmation'
+                    ? signed({
+                          ...entry.payload,
+                          phase: 4,
+                      })
+                    : entry,
+            ),
+        ] as const;
+
+        const gjkrState = replayGjkrTranscript(
+            {
+                ...baseConfig,
+                protocol: 'gjkr',
+            },
+            gjkrTranscript,
+        );
+        const jointState = replayJointFeldmanTranscript(
+            {
+                ...baseConfig,
+                protocol: 'joint-feldman',
+            },
+            jointTranscript,
+        );
+
+        expect(gjkrState.phase).toBe('completed');
+        expect(jointState.phase).toBe('completed');
+        expect(gjkrState.qual).toEqual([1, 2, 3]);
+        expect(jointState.qual).toEqual(gjkrState.qual);
+        expect(jointState.manifestAccepted).toEqual(gjkrState.manifestAccepted);
+    });
+
     it('replays GJKR transcripts, keeps false complainants in QUAL, and aborts when QUAL drops below k', () => {
         const config = {
             protocol: 'gjkr',

@@ -127,7 +127,7 @@ const rosterHash = await hashRosterEntries(
 );
 
 const manifest: ElectionManifest = {
-    protocolVersion: "v2",
+    protocolVersion: "v1",
     suiteId: group.name,
     threshold: 2,
     participantCount: 3,
@@ -187,7 +187,7 @@ for (const dealer of dealerInputs) {
         const proofCoefficientIndex = coefficientIndex + 1;
         const statement = feldmanCommitments.commitments[coefficientIndex];
         const proofContext: ProofContext = {
-            protocolVersion: "v2",
+            protocolVersion: "v1",
             suiteId: group.name,
             manifestHash,
             sessionId,
@@ -234,7 +234,7 @@ for (const dealer of dealerInputs) {
                 recipientIndex: recipient.index,
                 envelopeId: `env-${dealer.participantIndex}-${recipient.index}`,
                 payloadType: "encrypted-dual-share",
-                protocolVersion: "v2",
+                protocolVersion: "v1",
                 suite: "P-256",
             },
         );
@@ -290,7 +290,7 @@ const ballots = await Promise.all(
             group.name,
         );
         const proofContext: ProofContext = {
-            protocolVersion: "v2",
+            protocolVersion: "v1",
             suiteId: group.name,
             manifestHash,
             sessionId,
@@ -377,7 +377,7 @@ const decryptionShares = await Promise.all(
             decryptionShare: partial.value,
         };
         const proofContext: ProofContext = {
-            protocolVersion: "v2",
+            protocolVersion: "v1",
             suiteId: group.name,
             manifestHash,
             sessionId,
@@ -422,3 +422,4 @@ The tested end-to-end flow does more than the snippets above:
 - verifies the same tally with a threshold subset and with all shares
 - exercises an AES-GCM complaint path where a malformed dealer envelope
   disqualifies the dealer and aborts a 3-of-3 ceremony
+

@@ -37,6 +37,11 @@ const requiredApiModules = new Set(
 
 const markdownLinkPattern = /!?\[[^\]]*]\(([^)]+)\)/g;
 const linkTargetPattern = /^([^\s]+)(?:\s+["'][^"']*["'])?$/;
+const baseUnsafePatterns = [
+    /\]\((\/(?!\/)[^)]+)\)/g,
+    /href="(\/(?!\/)[^"]+)"/g,
+    /\blink:\s*(\/(?!\/)\S*)/g,
+] as const;
 
 const isExternalLink = (target: string): boolean =>
     target.startsWith('#') ||
@@ -188,6 +193,28 @@ const verifyLinks = async (): Promise<string[]> => {
     return failures;
 };
 
+const verifyBaseAwareLinks = async (): Promise<string[]> => {
+    const markdownFiles = await collectMarkdownFiles(docsContentRoot);
+    const failures: string[] = [];
+
+    for (const file of markdownFiles) {
+        const content = await fs.readFile(file, 'utf8');
+        const lines = content.split(/\r?\n/u);
+
+        lines.forEach((line, index) => {
+            for (const pattern of baseUnsafePatterns) {
+                for (const match of line.matchAll(pattern)) {
+                    failures.push(
+                        `${toRepoRelativePath(file)}:${index + 1} -> ${match[1]}`,
+                    );
+                }
+            }
+        });
+    }
+
+    return failures;
+};
+
 const verifyApiEntryPages = async (): Promise<string[]> => {
     const failures: string[] = [];
 
@@ -320,6 +347,7 @@ const verifyTypedocSummaries = async (): Promise<string[]> => {
 
 const main = async (): Promise<void> => {
     const linkFailures = await verifyLinks();
+    const baseAwareFailures = await verifyBaseAwareLinks();
     const apiFailures = await verifyApiEntryPages();
     const summaryFailures = await verifyTypedocSummaries();
 
@@ -328,6 +356,11 @@ const main = async (): Promise<void> => {
     if (linkFailures.length > 0) {
         failures.push('Broken relative links:');
         failures.push(...linkFailures.map((failure) => `- ${failure}`));
+    }
+
+    if (baseAwareFailures.length > 0) {
+        failures.push('Base-unsafe internal docs links:');
+        failures.push(...baseAwareFailures.map((failure) => `- ${failure}`));
     }
 
     if (apiFailures.length > 0) {
