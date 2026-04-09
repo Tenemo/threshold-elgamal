@@ -1,13 +1,31 @@
 name: release
 
+run-name: release ${{ inputs.release_type }} from ${{ github.ref_name }}
+
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_type:
+        description: Version bump to apply
+        required: true
+        type: choice
+        options:
+          - beta next
+          - promote beta to stable
+          - beta from patch
+          - beta from minor
+          - beta from major
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
   id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -15,27 +33,75 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
     steps:
+      - name: ensure master dispatch
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" != "branch" || "${GITHUB_REF_NAME}" != "master" ]]; then
+            echo "Releases must be started from the master branch." >&2
+            exit 1
+          fi
+
       - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
+          ref: ${{ github.ref_name }}
+
       - uses: pnpm/action-setup@v5.0.0
         with:
           run_install: false
+
       - uses: actions/setup-node@v6.3.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
           registry-url: 'https://registry.npmjs.org'
-      - name: derive release metadata
-        id: metadata
-        shell: bash
-        run: |
-          VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version)")
-          EXPECTED_TAG="v${VERSION}"
 
-          if [[ "${GITHUB_REF_NAME}" != "${EXPECTED_TAG}" ]]; then
-            echo "Git tag ${GITHUB_REF_NAME} does not match package version ${EXPECTED_TAG}" >&2
+      - name: bump release version
+        id: metadata
+        run: |
+          CURRENT_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version)")
+          RELEASE_TYPE="${{ inputs.release_type }}"
+
+          case "${RELEASE_TYPE}" in
+            "beta next")
+              if [[ ! "${CURRENT_VERSION}" =~ -beta\.[0-9]+$ ]]; then
+                echo "beta next requires an existing beta version." >&2
+                exit 1
+              fi
+              npm version prerelease --preid beta --no-git-tag-version
+              ;;
+            "promote beta to stable")
+              if [[ ! "${CURRENT_VERSION}" =~ -beta\.[0-9]+$ ]]; then
+                echo "promote beta to stable requires an existing beta version." >&2
+                exit 1
+              fi
+              npm version "${CURRENT_VERSION%%-*}" --no-git-tag-version
+              ;;
+            "beta from patch")
+              npm version prepatch --preid beta --no-git-tag-version
+              ;;
+            "beta from minor")
+              npm version preminor --preid beta --no-git-tag-version
+              ;;
+            "beta from major")
+              npm version premajor --preid beta --no-git-tag-version
+              ;;
+            "patch" | "minor" | "major")
+              npm version "${RELEASE_TYPE}" --no-git-tag-version
+              ;;
+            *)
+              echo "Unsupported release type: ${RELEASE_TYPE}" >&2
+              exit 1
+              ;;
+          esac
+
+          VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version)")
+
+          if [[ "${VERSION}" == "${CURRENT_VERSION}" ]]; then
+            echo "Release version did not change." >&2
             exit 1
           fi
 
@@ -48,32 +114,61 @@ jobs:
             PRERELEASE=false
           fi
 
+          echo "previous_version=${CURRENT_VERSION}" >> "${GITHUB_OUTPUT}"
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "tag=v${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "dist_tag=${DIST_TAG}" >> "${GITHUB_OUTPUT}"
           echo "prerelease=${PRERELEASE}" >> "${GITHUB_OUTPUT}"
+
+      - run: pnpm install --lockfile-only
+
       - run: pnpm install --frozen-lockfile
+
       - run: pnpm exec playwright install --with-deps chromium
+
       - run: pnpm run ci
+
+      - name: commit release metadata
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add package.json pnpm-lock.yaml
+
+          if git diff --cached --quiet; then
+            echo "No release metadata changes were staged." >&2
+            exit 1
+          fi
+
+          git commit -m "chore(release): ${{ steps.metadata.outputs.tag }}"
+          git tag -a "${{ steps.metadata.outputs.tag }}" -m "Release ${{ steps.metadata.outputs.tag }}"
+
+      - name: push release commit and tag
+        run: |
+          git push origin HEAD:master
+          git push origin "refs/tags/${{ steps.metadata.outputs.tag }}"
+
       - name: publish to npm
-        shell: bash
         run: |
           if [[ "${{ steps.metadata.outputs.dist_tag }}" == "latest" ]]; then
-            npm publish
+            npm publish --provenance
           else
-            npm publish --tag "${{ steps.metadata.outputs.dist_tag }}"
+            npm publish --provenance --tag "${{ steps.metadata.outputs.dist_tag }}"
           fi
+
       - name: create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        shell: bash
         run: |
           if [[ "${{ steps.metadata.outputs.prerelease }}" == "true" ]]; then
-            gh release create "${GITHUB_REF_NAME}" \
-              --title "${GITHUB_REF_NAME}" \
+            gh release create "${{ steps.metadata.outputs.tag }}" \
+              --verify-tag \
+              --title "${{ steps.metadata.outputs.tag }}" \
               --generate-notes \
               --prerelease
           else
-            gh release create "${GITHUB_REF_NAME}" \
-              --title "${GITHUB_REF_NAME}" \
+            gh release create "${{ steps.metadata.outputs.tag }}" \
+              --verify-tag \
+              --title "${{ steps.metadata.outputs.tag }}" \
               --generate-notes
           fi
