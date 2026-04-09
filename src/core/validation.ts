@@ -47,7 +47,7 @@ export const assertAdditiveBound = (bound: bigint, q: bigint): void =>
  * ElGamal.
  *
  * @throws {@link InvalidScalarError} When `bound` is outside `0..q-1`.
- * @throws When `value` is outside `0..bound`.
+ * @throws {@link PlaintextDomainError} When `value` is outside `0..bound`.
  */
 export const assertPlaintextAdditive = (
     value: bigint,

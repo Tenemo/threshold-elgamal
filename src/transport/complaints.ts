@@ -65,28 +65,24 @@ export const resolveDealerChallengeFromPublicKey = async (
     recipientPublicKeyHex: string,
     revealedEphemeralPrivateKeyHex: string,
 ): Promise<ComplaintResolution> => {
-    const derivedPublicKey = await verifyLocalTransportKey(
+    const ephemeralKeyMatches = await verifyLocalTransportKey(
         revealedEphemeralPrivateKeyHex,
         envelope.ephemeralPublicKey,
         envelope.suite,
     );
 
-    if (!derivedPublicKey) {
+    if (!ephemeralKeyMatches) {
         return {
             valid: false,
             fault: 'dealer',
         };
     }
 
-    const revealedPrivateKey =
-        typeof revealedEphemeralPrivateKeyHex === 'string'
-            ? await importTransportPrivateKey(
-                  revealedEphemeralPrivateKeyHex,
-                  envelope.suite,
-              )
-            : revealedEphemeralPrivateKeyHex;
-
     try {
+        const revealedPrivateKey = await importTransportPrivateKey(
+            revealedEphemeralPrivateKeyHex,
+            envelope.suite,
+        );
         const recipientPublicKey = await importTransportPublicKey(
             recipientPublicKeyHex,
             envelope.suite,
