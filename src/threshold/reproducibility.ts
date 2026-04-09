@@ -13,7 +13,7 @@ import { combineDecryptionShares, createDecryptionShare } from './decrypt.js';
 import { lagrangeCoefficient } from './lagrange.js';
 import { deriveSharesFromPolynomial } from './shares.js';
 
-export type ThresholdVectorConfig = {
+type ThresholdVectorConfig = {
     readonly bound: bigint;
     readonly groupName: GroupName;
     readonly message: bigint;
@@ -23,7 +23,7 @@ export type ThresholdVectorConfig = {
     readonly subsetIndices: readonly number[];
 };
 
-export type ThresholdVectorRecord = {
+type ThresholdVectorRecord = {
     readonly ciphertext: {
         readonly bound: bigint;
         readonly c1: bigint;

@@ -293,7 +293,7 @@ const mutateHexTail = (value: string): string => {
     return `${value.slice(0, -2)}${replacement}`;
 };
 
-export const tamperEnvelope = (
+const tamperEnvelope = (
     envelope: EncryptedEnvelope,
     tamper: ComplaintInjection['envelopeTamper'],
 ): EncryptedEnvelope => {
@@ -317,7 +317,7 @@ export const tamperEnvelope = (
     }
 };
 
-export type ComplaintArtifacts = {
+type ComplaintArtifacts = {
     readonly allEncryptedSharePayloads: readonly SignedPayload<EncryptedDualSharePayload>[];
     readonly complainedDealerIndices: ReadonlySet<number>;
     readonly complaintPayloads: readonly SignedPayload<ComplaintPayload>[];
