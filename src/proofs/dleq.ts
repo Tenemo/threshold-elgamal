@@ -4,6 +4,7 @@ import {
     assertScalarInZq,
     fixedBaseModPow,
     multiExponentiate,
+    modPowP,
     modQ,
     type CryptoGroup,
     type RandomBytesSource,
@@ -94,7 +95,7 @@ export const createDLEQProof = async (
         randomSource,
     );
     const a1 = fixedBaseModPow(group.g, nonce, group.p);
-    const a2 = fixedBaseModPow(statement.ciphertext.c1, nonce, group.p);
+    const a2 = modPowP(statement.ciphertext.c1, nonce, group.p);
     const challenge = await hashChallenge(
         challengePayload(statement, a1, a2, group, context),
         group.q,

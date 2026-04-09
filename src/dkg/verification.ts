@@ -324,6 +324,10 @@ const encryptedShareSlotKey = (
 
 type EncryptedShareMatrix = {
     readonly encryptedShares: readonly SignedPayload<EncryptedDualSharePayload>[];
+    readonly bySlot: ReadonlyMap<
+        string,
+        SignedPayload<EncryptedDualSharePayload>
+    >;
     readonly byComplaintKey: ReadonlyMap<
         string,
         SignedPayload<EncryptedDualSharePayload>
@@ -647,6 +651,7 @@ const buildEncryptedShareMatrix = (
 
     return {
         encryptedShares,
+        bySlot,
         byComplaintKey,
     };
 };
@@ -662,10 +667,8 @@ const assertEncryptedShareCoverage = (
             }
 
             if (
-                !encryptedShareMatrix.encryptedShares.some(
-                    (payload) =>
-                        payload.payload.participantIndex === dealerIndex &&
-                        payload.payload.recipientIndex === recipientIndex,
+                !encryptedShareMatrix.bySlot.has(
+                    encryptedShareSlotKey(dealerIndex, recipientIndex),
                 )
             ) {
                 throw new InvalidPayloadError(

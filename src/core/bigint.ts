@@ -16,6 +16,7 @@ export type BigintMathBackend = {
 };
 
 const fixedBasePowerCache = new Map<string, bigint[]>();
+const maxFixedBaseCacheEntries = 16;
 
 let currentBackend: BigintMathBackend = Object.freeze({});
 
@@ -104,6 +105,12 @@ const ensureFixedBasePowers = (
     }
 
     fixedBasePowerCache.set(key, existing);
+    if (fixedBasePowerCache.size > maxFixedBaseCacheEntries) {
+        const oldestKey = fixedBasePowerCache.keys().next().value;
+        if (typeof oldestKey === 'string') {
+            fixedBasePowerCache.delete(oldestKey);
+        }
+    }
 
     return existing;
 };
@@ -146,6 +153,9 @@ export const resetBigintMathBackend = (): void => {
 /**
  * Computes `base^exponent mod modulus` using a fixed-base cache when the
  * built-in JavaScript backend is active.
+ *
+ * The cache is bounded and intended for genuinely reused bases such as frozen
+ * generators. Variable bases should prefer `modPowP()`.
  *
  * @throws {@link InvalidScalarError} When `modulus` is not positive or
  * `exponent` is negative.
@@ -218,7 +228,7 @@ export const multiExponentiate = (
         return 1n;
     }
     if (normalizedTerms.length === 1) {
-        return fixedBaseModPow(
+        return modPowWithBackend(
             normalizedTerms[0].base,
             normalizedTerms[0].exponent,
             modulus,

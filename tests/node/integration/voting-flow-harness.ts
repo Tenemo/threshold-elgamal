@@ -297,29 +297,31 @@ export const runVotingFlowScenario = async (
             !missingPedersenCommitmentIndices.has(participantIndex) &&
             !missingEncryptedShareDealerIndices.has(participantIndex),
     );
-    const phase1CheckpointSigners = checkpointSigners(
-        phase1Qual.length >= threshold ? phase1Qual : phase0Qual,
-        threshold,
-        new Set(missingCheckpointSignerIndices[1] ?? []),
-    );
     const phase1CheckpointTranscript = [
         ...phase0CheckpointTranscript,
         ...phase0Checkpoints,
         ...pedersenPayloads,
         ...encryptedSharePayloads,
     ] as const;
-    const phase1Checkpoints = await Promise.all(
-        phase1CheckpointSigners.map((participantIndex) =>
-            createPhaseCheckpointPayload(
-                participants[participantIndex - 1],
-                sessionId,
-                manifestHash,
-                phase1CheckpointTranscript,
-                1,
-                phase1Qual,
-            ),
-        ),
-    );
+    const phase1Checkpoints =
+        phase1Qual.length >= threshold
+            ? await Promise.all(
+                  checkpointSigners(
+                      phase1Qual,
+                      threshold,
+                      new Set(missingCheckpointSignerIndices[1] ?? []),
+                  ).map((participantIndex) =>
+                      createPhaseCheckpointPayload(
+                          participants[participantIndex - 1],
+                          sessionId,
+                          manifestHash,
+                          phase1CheckpointTranscript,
+                          1,
+                          phase1Qual,
+                      ),
+                  ),
+              )
+            : [];
 
     const complaintQual = phase1Qual.filter(
         (participantIndex) => !complainedDealerIndices.has(participantIndex),

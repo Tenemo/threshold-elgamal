@@ -72,11 +72,18 @@ const latestCheckpointQual = (
     transcript: readonly SignedPayload[],
     protocol: DKGProtocol,
     threshold: number,
-): readonly number[] | null =>
-    contiguousFinalizedCheckpoints(transcript, protocol, threshold)[
-        contiguousFinalizedCheckpoints(transcript, protocol, threshold).length -
-            1
-    ]?.payload.qualParticipantIndices ?? null;
+): readonly number[] | null => {
+    const checkpoints = contiguousFinalizedCheckpoints(
+        transcript,
+        protocol,
+        threshold,
+    );
+
+    return (
+        checkpoints[checkpoints.length - 1]?.payload.qualParticipantIndices ??
+        null
+    );
+};
 
 const hasCheckpointFlow = (
     transcript: readonly SignedPayload[],
@@ -280,19 +287,14 @@ export const processMajorityDkgPayload = (
             )
             .map((item) => item.payload.participantIndex),
     );
+    const contiguousCheckpoints = contiguousFinalizedCheckpoints(
+        nextTranscriptState.transcript,
+        state.config.protocol,
+        state.config.threshold,
+    );
     const completedByCheckpoint =
-        contiguousFinalizedCheckpoints(
-            nextTranscriptState.transcript,
-            state.config.protocol,
-            state.config.threshold,
-        )[
-            contiguousFinalizedCheckpoints(
-                nextTranscriptState.transcript,
-                state.config.protocol,
-                state.config.threshold,
-            ).length - 1
-        ]?.payload.checkpointPhase ===
-        finalCheckpointPhase(state.config.protocol);
+        contiguousCheckpoints[contiguousCheckpoints.length - 1]?.payload
+            .checkpointPhase === finalCheckpointPhase(state.config.protocol);
     const completed =
         completedByCheckpoint ||
         (!hasCheckpointFlow(nextTranscriptState.transcript) &&

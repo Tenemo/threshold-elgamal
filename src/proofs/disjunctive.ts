@@ -6,6 +6,7 @@ import {
     InvalidProofError,
     modInvP,
     modP,
+    modPowP,
     multiExponentiate,
     modQ,
     randomScalarBelow,
@@ -140,7 +141,7 @@ export const createDisjunctiveProof = async (
             responses.push(nonce);
             commitments.push({
                 a1: fixedBaseModPow(group.g, nonce, group.p),
-                a2: fixedBaseModPow(publicKey, nonce, group.p),
+                a2: modPowP(publicKey, nonce, group.p),
             });
             continue;
         }
