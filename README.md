@@ -31,9 +31,11 @@ This library is a hardened research prototype. It has not been audited.
 
 The current `1.x` scope is additive score voting with public rosters, private
 ballots, strict-majority threshold decryption, and locally verifiable per-option
-sum tallies that callers can interpret as arithmetic means. The current DKG path
-is intended for roughly 50 all-equal participants, not thousands-participant
-symmetric ceremonies.
+sum tallies that callers can interpret as arithmetic means. The current
+checkpointed DKG path is intended for small thesis-scale all-equal ceremonies.
+Treat `10` participants as the recommended default size for regression testing
+and mobile-first deployments today. Treat `50` all-equal participants as an
+experimental upper target, not the default operating point.
 
 Start with these guides:
 
@@ -54,7 +56,7 @@ Start with these guides:
 - [Threshold sharing and decryption helpers](https://tenemo.github.io/threshold-elgamal/api/reference/threshold/) provide dealer-based Shamir sharing, verified decryption shares, and aggregate decryption support.
 - [Feldman and Pedersen VSS helpers](https://tenemo.github.io/threshold-elgamal/api/reference/vss/) cover verifiable secret sharing commitments and share checks.
 - [Typed protocol payloads, manifest handling, transcript hashing, and per-option published tally verification](https://tenemo.github.io/threshold-elgamal/api/reference/protocol/) cover the library's signed ceremony and tally surface.
-- [Log-driven Joint-Feldman and GJKR reducers](https://tenemo.github.io/threshold-elgamal/api/reference/dkg/) provide the distributed key-generation state machines behind the threshold workflow.
+- [Log-driven Joint-Feldman and GJKR reducers](https://tenemo.github.io/threshold-elgamal/api/reference/dkg/) provide the distributed key-generation state machines behind the threshold workflow, including checkpointed phase closure and verifier-side `QUAL` reduction when setup participants drop out.
 
 ### Proofs, transport, and runtime
 
@@ -74,6 +76,12 @@ pnpm add threshold-elgamal
 - Use ESM imports such as `import { encryptAdditive } from 'threshold-elgamal'`. The published package does not expose CommonJS `require()` entry points.
 - Browsers need native `bigint` together with Web Crypto (`crypto.subtle` and `crypto.getRandomValues`).
 - Node requires version `24.14.1` or newer with `globalThis.crypto`.
+
+## Performance model
+
+- Keep worker orchestration in the application. `threshold-elgamal` stays pure and importable inside a Web Worker, while the app decides pool size, chunking, and lifecycle.
+- The library now exposes a pluggable bigint backend through `setBigintMathBackend()` in `threshold-elgamal/core`. JavaScript remains the default backend. Optional WASM acceleration should be installed explicitly by the caller.
+- `minimumPublicationThreshold` is a publication privacy floor for tally release. It is not the DKG reconstruction threshold.
 
 ## Quickstart
 
@@ -141,7 +149,7 @@ pnpm run ci
 
 ## DKG benchmark
 
-For a thesis-scale regression benchmark, run:
+For the recommended default regression benchmark, run:
 
 ```bash
 pnpm run bench:dkg -- --group=ffdhe3072 --transport=X25519 --options=3 10
@@ -160,15 +168,16 @@ Results:
 - Options: `3`
 - Participants: `10`
 - Threshold: `6`
-- Total elapsed time: `3 min 37.963 s`
+- Total elapsed time: `2 min 36.369 s`
 
 | Participants (`n`) | Threshold (`k`) | Options | Transcript messages | Full voting flow | Transcript verification | Total          |
 | ------------------ | --------------- | ------- | ------------------- | ---------------- | ----------------------- | -------------- |
-| 10                 | 6               | 3       | 141                 | 3 min 31.215 s   | 6.748 s                 | 3 min 37.963 s |
+| 10                 | 6               | 3       | 155                 | 2 min 31.076 s   | 5.294 s                 | 2 min 36.369 s |
 
 The current DKG path is still all-to-all in the setup phase, so this benchmark
-is a readiness spot check for roughly thesis-scale ceremonies, not evidence
-that the symmetric all-equal flow is suitable for thousands of participants.
+is a readiness spot check for a recommended default size of `10` participants,
+not evidence that the symmetric all-equal flow is suitable for thousands of
+participants.
 
 ## License
 

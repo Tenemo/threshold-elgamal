@@ -2,10 +2,12 @@ import type { EnvelopeArtifact, ParticipantRuntime } from './types.js';
 
 import {
     canonicalUnsignedPayloadBytes,
+    hashProtocolPhaseSnapshot,
     hashRosterEntries,
     type ComplaintResolutionPayload,
     type ElectionManifest,
     type ManifestPublicationPayload,
+    type PhaseCheckpointPayload,
     type ProtocolPayload,
     type SignedPayload,
 } from '#protocol';
@@ -131,4 +133,26 @@ export const createComplaintResolutionPayload = async (
         envelopeId: envelopeArtifact.envelope.envelopeId,
         suite: envelopeArtifact.envelope.suite,
         revealedEphemeralPrivateKey: envelopeArtifact.ephemeralPrivateKey,
+    });
+
+export const createPhaseCheckpointPayload = async (
+    signer: ParticipantRuntime,
+    sessionId: string,
+    manifestHash: string,
+    transcript: readonly SignedPayload[],
+    checkpointPhase: 0 | 1 | 2 | 3,
+    qualParticipantIndices: readonly number[],
+): Promise<SignedPayload<PhaseCheckpointPayload>> =>
+    signPayload(signer.auth.privateKey, {
+        sessionId,
+        manifestHash,
+        phase: checkpointPhase,
+        participantIndex: signer.index,
+        messageType: 'phase-checkpoint',
+        checkpointPhase,
+        checkpointTranscriptHash: await hashProtocolPhaseSnapshot(
+            transcript.map((entry) => entry.payload),
+            checkpointPhase,
+        ),
+        qualParticipantIndices,
     });

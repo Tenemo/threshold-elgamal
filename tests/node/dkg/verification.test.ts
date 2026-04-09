@@ -54,6 +54,7 @@ const resignPayload = async (
 
 describe('DKG transcript verification', () => {
     let completed: CompletedVotingFlowResult;
+    let completedWithoutConfirmations: CompletedVotingFlowResult;
     let withDealerFaultComplaint: CompletedVotingFlowResult;
     let withResolvedComplaint: CompletedVotingFlowResult;
 
@@ -62,7 +63,15 @@ describe('DKG transcript verification', () => {
             participantCount: 3,
             scoreDomainMax: 3,
             votes: [1n, 2n, 3n],
+            includeKeyDerivationConfirmations: true,
         });
+        const completedWithoutConfirmationsResult = await runVotingFlowScenario(
+            {
+                participantCount: 3,
+                scoreDomainMax: 3,
+                votes: [1n, 2n, 3n],
+            },
+        );
         const dealerFaultComplaintResult = await runVotingFlowScenario({
             participantCount: 3,
             scoreDomainMax: 3,
@@ -91,6 +100,10 @@ describe('DKG transcript verification', () => {
         completed = expectCompleted(
             completedResult,
             'Expected the completed fixture scenario to finish',
+        );
+        completedWithoutConfirmations = expectCompleted(
+            completedWithoutConfirmationsResult,
+            'Expected the no-confirmation fixture scenario to finish',
         );
         withDealerFaultComplaint = expectCompleted(
             dealerFaultComplaintResult,
@@ -125,6 +138,22 @@ describe('DKG transcript verification', () => {
                 completed.group,
             ),
         ).toBe(completed.transcriptDerivedVerificationKeys![0].value);
+    });
+
+    it('accepts checkpointed transcripts without key-derivation confirmations', async () => {
+        const verified = await verifyDKGTranscript({
+            protocol: 'gjkr',
+            transcript: completedWithoutConfirmations.dkgTranscript,
+            manifest: completedWithoutConfirmations.manifest,
+            sessionId: completedWithoutConfirmations.sessionId,
+        });
+
+        expect(verified.qual).toEqual(
+            completedWithoutConfirmations.finalState.qual,
+        );
+        expect(verified.derivedPublicKey).toBe(
+            completedWithoutConfirmations.jointPublicKey,
+        );
     });
 
     it('treats unresolved complaints as dealer-fault outcomes and derives QUAL reductions', async () => {
@@ -180,7 +209,9 @@ describe('DKG transcript verification', () => {
                 manifest: completed.manifest,
                 sessionId: completed.sessionId,
             }),
-        ).rejects.toThrow('Expected 6 encrypted share payloads, received 5');
+        ).rejects.toThrow(
+            'Phase 1 checkpoint transcript hash does not match the signed transcript snapshot',
+        );
 
         await expect(
             verifyDKGTranscript({
@@ -190,7 +221,7 @@ describe('DKG transcript verification', () => {
                 sessionId: completed.sessionId,
             }),
         ).rejects.toThrow(
-            'Missing Feldman commitment payload for qualified dealer 1',
+            'Phase 3 checkpoint transcript hash does not match the signed transcript snapshot',
         );
     });
 

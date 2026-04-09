@@ -5,6 +5,10 @@ import { canonicalizeJson } from './canonical-json.js';
 import { sortProtocolPayloads } from './ordering.js';
 import type { ProtocolPayload } from './types.js';
 
+const isProtocolPhasePayload = (payload: ProtocolPayload): boolean =>
+    payload.messageType !== 'phase-checkpoint' &&
+    payload.messageType !== 'ceremony-restart';
+
 /**
  * Canonically serializes the ordered unsigned payload set for a transcript.
  *
@@ -35,6 +39,45 @@ export const hashProtocolTranscript = async (
 ): Promise<string> =>
     bytesToHex(
         await sha256(canonicalTranscriptBytes(payloads, bigintByteLength)),
+    );
+
+/**
+ * Returns the canonical unsigned transcript prefix for one closed phase.
+ *
+ * Phase-checkpoint payloads are excluded so the checkpoint can sign the phase
+ * snapshot without circularly including itself.
+ *
+ * @param payloads Full unsigned transcript payloads.
+ * @param phase Highest DKG phase included in the snapshot.
+ * @returns Sorted unsigned payloads up to `phase`.
+ */
+export const protocolPhaseSnapshotPayloads = (
+    payloads: readonly ProtocolPayload[],
+    phase: number,
+): readonly ProtocolPayload[] =>
+    sortProtocolPayloads(
+        payloads.filter(
+            (payload) =>
+                isProtocolPhasePayload(payload) && payload.phase <= phase,
+        ),
+    );
+
+/**
+ * Hashes the canonical unsigned transcript prefix for one closed phase.
+ *
+ * @param payloads Full unsigned transcript payloads.
+ * @param phase Highest DKG phase included in the snapshot.
+ * @param bigintByteLength Fixed byte width used for bigint fields.
+ * @returns Lowercase hexadecimal phase-snapshot digest.
+ */
+export const hashProtocolPhaseSnapshot = async (
+    payloads: readonly ProtocolPayload[],
+    phase: number,
+    bigintByteLength?: number,
+): Promise<string> =>
+    hashProtocolTranscript(
+        protocolPhaseSnapshotPayloads(payloads, phase),
+        bigintByteLength,
     );
 
 /**

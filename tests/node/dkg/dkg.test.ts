@@ -9,6 +9,7 @@ import {
     majorityThreshold,
 } from '#core';
 import {
+    collectCheckpointVariants,
     createGjkrState,
     createJointFeldmanState,
     processGjkrPayload,
@@ -678,6 +679,49 @@ describe('DKG state machines', () => {
         expect(jointRetransmitted.errors).toEqual([]);
         expect(jointRetransmitted.newState).toBe(jointStateAfterCommitment);
         expect(jointRetransmitted.newState.phase).toBe(1);
+    });
+
+    it('groups matching phase checkpoints across multiple signers into one variant', () => {
+        const transcript = [
+            signed({
+                sessionId: 'session-checkpoint',
+                manifestHash: 'manifest-checkpoint',
+                phase: 0,
+                participantIndex: 1,
+                messageType: 'phase-checkpoint',
+                checkpointPhase: 0,
+                checkpointTranscriptHash: 'hash-a',
+                qualParticipantIndices: [1, 2, 3],
+            }),
+            signed({
+                sessionId: 'session-checkpoint',
+                manifestHash: 'manifest-checkpoint',
+                phase: 0,
+                participantIndex: 2,
+                messageType: 'phase-checkpoint',
+                checkpointPhase: 0,
+                checkpointTranscriptHash: 'hash-a',
+                qualParticipantIndices: [1, 2, 3],
+            }),
+            signed({
+                sessionId: 'session-checkpoint',
+                manifestHash: 'manifest-checkpoint',
+                phase: 0,
+                participantIndex: 3,
+                messageType: 'phase-checkpoint',
+                checkpointPhase: 0,
+                checkpointTranscriptHash: 'hash-b',
+                qualParticipantIndices: [1, 2],
+            }),
+        ] as const;
+
+        const grouped = collectCheckpointVariants(transcript, 0);
+
+        expect(grouped).toHaveLength(2);
+        expect(grouped[0]?.signers).toEqual([1, 2]);
+        expect(grouped[0]?.payload.checkpointTranscriptHash).toBe('hash-a');
+        expect(grouped[1]?.signers).toEqual([3]);
+        expect(grouped[1]?.payload.checkpointTranscriptHash).toBe('hash-b');
     });
 
     it('rejects equivocated payloads for the same canonical slot', () => {

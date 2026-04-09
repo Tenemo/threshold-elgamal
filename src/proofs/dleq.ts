@@ -2,7 +2,8 @@ import {
     assertInSubgroup,
     assertInSubgroupOrIdentity,
     assertScalarInZq,
-    modP,
+    fixedBaseModPow,
+    multiExponentiate,
     modPowP,
     modQ,
     type CryptoGroup,
@@ -93,7 +94,7 @@ export const createDLEQProof = async (
         group,
         randomSource,
     );
-    const a1 = modPowP(group.g, nonce, group.p);
+    const a1 = fixedBaseModPow(group.g, nonce, group.p);
     const a2 = modPowP(statement.ciphertext.c1, nonce, group.p);
     const challenge = await hashChallenge(
         challengePayload(statement, a1, a2, group, context),
@@ -129,22 +130,24 @@ export const verifyDLEQProof = async (
     assertInSubgroupOrIdentity(statement.ciphertext.c2, group.p, group.q);
     assertInSubgroupOrIdentity(statement.decryptionShare, group.p, group.q);
 
-    const a1 = modP(
-        modPowP(group.g, proof.response, group.p) *
-            modPowP(
-                statement.publicKey,
-                negateExponent(proof.challenge, group.q),
-                group.p,
-            ),
+    const a1 = multiExponentiate(
+        [
+            { base: group.g, exponent: proof.response },
+            {
+                base: statement.publicKey,
+                exponent: negateExponent(proof.challenge, group.q),
+            },
+        ],
         group.p,
     );
-    const a2 = modP(
-        modPowP(statement.ciphertext.c1, proof.response, group.p) *
-            modPowP(
-                statement.decryptionShare,
-                negateExponent(proof.challenge, group.q),
-                group.p,
-            ),
+    const a2 = multiExponentiate(
+        [
+            { base: statement.ciphertext.c1, exponent: proof.response },
+            {
+                base: statement.decryptionShare,
+                exponent: negateExponent(proof.challenge, group.q),
+            },
+        ],
         group.p,
     );
     const expected = await hashChallenge(

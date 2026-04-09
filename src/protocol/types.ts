@@ -5,6 +5,7 @@ export type ProtocolMessageType =
     | 'manifest-publication'
     | 'registration'
     | 'manifest-acceptance'
+    | 'phase-checkpoint'
     | 'pedersen-commitment'
     | 'encrypted-dual-share'
     | 'complaint'
@@ -78,6 +79,14 @@ export type ManifestAcceptancePayload = BaseProtocolPayload & {
     readonly accountIdHash?: string;
 };
 
+/** Signed checkpoint payload that closes one DKG epoch on a threshold-supported shared snapshot. */
+export type PhaseCheckpointPayload = BaseProtocolPayload & {
+    readonly messageType: 'phase-checkpoint';
+    readonly checkpointPhase: 0 | 1 | 2 | 3;
+    readonly checkpointTranscriptHash: string;
+    readonly qualParticipantIndices: readonly number[];
+};
+
 /** Broadcast payload carrying Pedersen coefficient commitments. */
 export type PedersenCommitmentPayload = BaseProtocolPayload & {
     readonly messageType: 'pedersen-commitment';
@@ -134,7 +143,7 @@ export type FeldmanShareRevealPayload = BaseProtocolPayload & {
     readonly shareValue: string;
 };
 
-/** Final key-derivation confirmation payload. */
+/** Optional final key-derivation confirmation payload for the derived joint key. */
 export type KeyDerivationConfirmation = BaseProtocolPayload & {
     readonly messageType: 'key-derivation-confirmation';
     readonly qualHash: string;
@@ -191,6 +200,7 @@ export type ProtocolPayload =
     | ManifestPublicationPayload
     | RegistrationPayload
     | ManifestAcceptancePayload
+    | PhaseCheckpointPayload
     | PedersenCommitmentPayload
     | EncryptedDualSharePayload
     | ComplaintPayload
@@ -217,6 +227,7 @@ export type ElectionManifest = {
     readonly suiteId: GroupName;
     readonly threshold: number;
     readonly participantCount: number;
+    /** Minimum accepted ballot count required before publication, separate from the DKG threshold. */
     readonly minimumPublicationThreshold: number;
     readonly allowAbstention: boolean;
     readonly scoreDomainMin: number;
@@ -224,5 +235,6 @@ export type ElectionManifest = {
     readonly ballotFinality: 'first-valid';
     readonly rosterHash: string;
     readonly optionList: readonly string[];
+    /** Application coordination deadlines carried in the manifest but not yet enforced by transcript verification. */
     readonly epochDeadlines: readonly string[];
 };

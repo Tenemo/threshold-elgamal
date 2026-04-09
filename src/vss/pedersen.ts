@@ -3,8 +3,7 @@ import {
     assertPositiveParticipantIndex,
     assertScalarInZq,
     ThresholdViolationError,
-    modP,
-    modPowP,
+    multiExponentiate,
     type CryptoGroup,
 } from '../core/index.js';
 import {
@@ -41,9 +40,11 @@ export const generatePedersenCommitments = (
             assertScalarInZq(coefficient, group.q);
             assertScalarInZq(blinding, group.q);
 
-            return modP(
-                modPowP(group.g, coefficient, group.p) *
-                    modPowP(group.h, blinding, group.p),
+            return multiExponentiate(
+                [
+                    { base: group.g, exponent: coefficient },
+                    { base: group.h, exponent: blinding },
+                ],
                 group.p,
             );
         }),
@@ -116,9 +117,11 @@ export const verifyPedersenShare = (
     );
 
     return (
-        modP(
-            modPowP(group.g, share.secretValue, group.p) *
-                modPowP(group.h, share.blindingValue, group.p),
+        multiExponentiate(
+            [
+                { base: group.g, exponent: share.secretValue },
+                { base: group.h, exponent: share.blindingValue },
+            ],
             group.p,
         ) ===
         evaluateCommitmentProduct(commitments.commitments, share.index, group)
