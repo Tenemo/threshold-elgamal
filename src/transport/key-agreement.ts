@@ -231,9 +231,19 @@ export const deriveTransportSharedSecret = async (
     return sharedSecret;
 };
 
-const sameBytes = (left: Uint8Array, right: Uint8Array): boolean =>
-    left.length === right.length &&
-    left.every((byte, index) => byte === right[index]);
+const sameBytes = (left: Uint8Array, right: Uint8Array): boolean => {
+    if (left.length !== right.length) {
+        return false;
+    }
+
+    let difference = 0;
+
+    for (let index = 0; index < left.length; index += 1) {
+        difference |= left[index] ^ right[index];
+    }
+
+    return difference === 0;
+};
 
 const privateKeyMatchesPublicKey = async (
     privateKey: CryptoKey,
@@ -310,11 +320,26 @@ export const verifyLocalTransportKey = async (
     privateKey: CryptoKey | string,
     expectedPublicKeyHex: string,
     suite: KeyAgreementSuite,
-): Promise<boolean> =>
-    privateKeyMatchesPublicKey(
+): Promise<boolean> => {
+    const resolvedPrivateKey =
         typeof privateKey === 'string'
             ? await importTransportPrivateKey(privateKey, suite)
-            : privateKey,
+            : privateKey;
+
+    if (suite === 'X25519' || resolvedPrivateKey.extractable) {
+        try {
+            return (
+                (await deriveTransportPublicKey(resolvedPrivateKey, suite)) ===
+                expectedPublicKeyHex
+            );
+        } catch {
+            return false;
+        }
+    }
+
+    return privateKeyMatchesPublicKey(
+        resolvedPrivateKey,
         expectedPublicKeyHex,
         suite,
     );
+};
