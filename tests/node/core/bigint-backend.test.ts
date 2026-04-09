@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createDeterministicSource } from '../../helpers/deterministic.js';
+import { createDeterministicSource } from '../../../dev-support/deterministic.js';
 
 import {
     fixedBaseModPow,

@@ -1,3 +1,5 @@
+import { decodePedersenShareEnvelope } from '../../src/dkg/pedersen-share-codec.js';
+
 import type { EnvelopeArtifact, ParticipantRuntime } from './types.js';
 
 import {
@@ -11,7 +13,6 @@ import {
     type ProtocolPayload,
     type SignedPayload,
 } from '#protocol';
-import { fixedHexToBigint } from '#serialize';
 import { signPayloadBytes, verifyPayloadSignature } from '#transport';
 import type { PedersenShare } from '#vss';
 
@@ -96,24 +97,12 @@ export const computeRosterHash = async (
 export const parseShareEnvelope = (
     plaintext: Uint8Array,
     expectedIndex: number,
-): PedersenShare => {
-    const parsed = JSON.parse(new TextDecoder().decode(plaintext)) as {
-        readonly blindingValue: string;
-        readonly index: number;
-        readonly secretValue: string;
-    };
-
-    invariant(
-        parsed.index === expectedIndex,
-        `Expected share envelope for participant ${expectedIndex}, received ${parsed.index}`,
+): PedersenShare =>
+    decodePedersenShareEnvelope(
+        plaintext,
+        expectedIndex,
+        'Expected share envelope',
     );
-
-    return {
-        index: parsed.index,
-        secretValue: fixedHexToBigint(parsed.secretValue),
-        blindingValue: fixedHexToBigint(parsed.blindingValue),
-    };
-};
 
 export const createComplaintResolutionPayload = async (
     dealer: ParticipantRuntime,

@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 
+import { createDeterministicSource } from '../dev-support/deterministic.js';
 import { getGroup, modPowP } from '../src/core/index.js';
 import { encryptAdditiveWithRandomness } from '../src/elgamal/index.js';
 import {
@@ -17,7 +18,6 @@ import {
     type BallotTranscriptEntry,
     type ElectionManifest,
 } from '../src/protocol/index.js';
-import { createDeterministicSource } from '../tests/helpers/deterministic.js';
 
 const bigintReplacer = (_key: string, value: unknown): unknown =>
     typeof value === 'bigint' ? value.toString() : value;

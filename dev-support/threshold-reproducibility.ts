@@ -4,14 +4,16 @@ import {
     modInvP,
     modP,
     modPowP,
-} from '../core/index.js';
-import type { GroupName } from '../core/types.js';
-import { encryptAdditiveWithRandomness } from '../elgamal/additive.js';
-import { babyStepGiantStep } from '../elgamal/bsgs.js';
-
-import { combineDecryptionShares, createDecryptionShare } from './decrypt.js';
-import { lagrangeCoefficient } from './lagrange.js';
-import { deriveSharesFromPolynomial } from './shares.js';
+} from '../src/core/index.js';
+import type { GroupName } from '../src/core/types.js';
+import { encryptAdditiveWithRandomness } from '../src/elgamal/additive.js';
+import { babyStepGiantStep } from '../src/elgamal/bsgs.js';
+import {
+    combineDecryptionShares,
+    createDecryptionShare,
+} from '../src/threshold/decrypt.js';
+import { lagrangeCoefficient } from '../src/threshold/lagrange.js';
+import { deriveSharesFromPolynomial } from '../src/threshold/shares.js';
 
 type ThresholdVectorConfig = {
     readonly bound: bigint;

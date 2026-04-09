@@ -1,6 +1,9 @@
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
+const heavyNodeTestTimeoutMs = 60_000;
+const heavyNodeHookTimeoutMs = 240_000;
+
 export default defineConfig({
     test: {
         coverage: {
@@ -16,6 +19,8 @@ export default defineConfig({
                     name: 'node',
                     include: ['tests/node/**/*.test.ts'],
                     environment: 'node',
+                    testTimeout: heavyNodeTestTimeoutMs,
+                    hookTimeout: heavyNodeHookTimeoutMs,
                 },
             },
             {

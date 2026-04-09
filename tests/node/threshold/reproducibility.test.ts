@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { generateThresholdVectorRecord } from '../../../dev-support/threshold-reproducibility.js';
 import { IndexOutOfRangeError } from '../../../src/core/index.js';
-import { generateThresholdVectorRecord } from '../../../src/threshold/reproducibility.js';
 
 describe('threshold vector reproducibility', () => {
     const baseConfig = {

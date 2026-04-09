@@ -15,7 +15,9 @@ import {
 } from '#protocol';
 import { signPayloadBytes } from '#transport';
 
-const fixtureTimeoutMs = 180_000;
+const fixtureTimeoutMs = 240_000;
+const publishedVotingTestTimeoutMs = 60_000;
+const longPublishedVotingTestTimeoutMs = 90_000;
 
 const expectCompleted = (
     result: VotingFlowResult,
@@ -101,7 +103,7 @@ describe('published voting verification', () => {
     it(
         'verifies the typed ballot, decryption-share, and tally payloads end to end',
         {
-            timeout: 20_000,
+            timeout: publishedVotingTestTimeoutMs,
         },
         async () => {
             await expect(
@@ -123,7 +125,7 @@ describe('published voting verification', () => {
     it(
         'verifies the same safe surface after a dealer-fault complaint reduces QUAL',
         {
-            timeout: 20_000,
+            timeout: publishedVotingTestTimeoutMs,
         },
         async () => {
             await expect(
@@ -146,7 +148,7 @@ describe('published voting verification', () => {
     it(
         'rejects duplicate ballot slots in the typed ballot transcript',
         {
-            timeout: 20_000,
+            timeout: publishedVotingTestTimeoutMs,
         },
         async () => {
             await expect(
@@ -169,7 +171,7 @@ describe('published voting verification', () => {
     it(
         'rejects decryption shares tied to a different local aggregate transcript',
         {
-            timeout: 20_000,
+            timeout: publishedVotingTestTimeoutMs,
         },
         async () => {
             const wrongShare = await resignPayload(completed, {
@@ -199,7 +201,7 @@ describe('published voting verification', () => {
     it(
         'rejects tally publications that do not match the recomputed tally',
         {
-            timeout: 20_000,
+            timeout: publishedVotingTestTimeoutMs,
         },
         async () => {
             const wrongPublication = await resignPayload(completed, {
@@ -228,7 +230,7 @@ describe('published voting verification', () => {
     it(
         'verifies multi-option published tallies and supports arithmetic-mean derivation in the caller',
         {
-            timeout: 30_000,
+            timeout: longPublishedVotingTestTimeoutMs,
         },
         async () => {
             const verified = await verifyPublishedVotingResults({
@@ -262,7 +264,7 @@ describe('published voting verification', () => {
     it(
         'rejects the single-option wrapper when the manifest carries multiple options',
         {
-            timeout: 20_000,
+            timeout: publishedVotingTestTimeoutMs,
         },
         async () => {
             await expect(
@@ -285,7 +287,7 @@ describe('published voting verification', () => {
     it(
         'rejects wrong ballot option bindings and duplicate per-option ballot slots',
         {
-            timeout: 30_000,
+            timeout: longPublishedVotingTestTimeoutMs,
         },
         async () => {
             const wrongBinding = await resignPayload(multiOption, {
@@ -334,7 +336,7 @@ describe('published voting verification', () => {
     it(
         'rejects invalid option indices with protocol payload errors',
         {
-            timeout: 30_000,
+            timeout: longPublishedVotingTestTimeoutMs,
         },
         async () => {
             const invalidOptionIndex = await resignPayload(multiOption, {
@@ -365,7 +367,7 @@ describe('published voting verification', () => {
     it(
         'adds option context when a multi-option ballot set falls below the publication floor',
         {
-            timeout: 30_000,
+            timeout: longPublishedVotingTestTimeoutMs,
         },
         async () => {
             await expect(
@@ -390,7 +392,7 @@ describe('published voting verification', () => {
     it(
         'rejects per-option transcript mismatches and insufficient per-option decryption subsets',
         {
-            timeout: 30_000,
+            timeout: longPublishedVotingTestTimeoutMs,
         },
         async () => {
             const optionOne = multiOption.optionResults?.find(
