@@ -52,6 +52,7 @@ jobs:
           echo "dist_tag=${DIST_TAG}" >> "${GITHUB_OUTPUT}"
           echo "prerelease=${PRERELEASE}" >> "${GITHUB_OUTPUT}"
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run ci
       - name: publish to npm
         shell: bash

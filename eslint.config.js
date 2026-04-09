@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 
 import { FlatCompat } from '@eslint/eslintrc';
 import eslintJs from '@eslint/js';
+import { createNodeResolver } from 'eslint-plugin-import-x';
 import errorOnlyPlugin from 'eslint-plugin-only-error';
 import prettierPluginRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
@@ -19,7 +20,7 @@ const compat = new FlatCompat({
 
 export default [
     ...compat.config({
-        extends: ['plugin:import/errors', 'plugin:import/warnings'],
+        extends: ['plugin:import-x/errors', 'plugin:import-x/warnings'],
         parser: '@typescript-eslint/parser',
         parserOptions: {
             parser: '@typescript-eslint/parser',
@@ -35,9 +36,48 @@ export default [
             react: {
                 version: 'detect',
             },
-            'import/resolver': {
-                typescript: {},
-            },
+            'import-x/resolver-next': [
+                createNodeResolver({
+                    extensions: [
+                        '.ts',
+                        '.tsx',
+                        '.d.ts',
+                        '.js',
+                        '.jsx',
+                        '.json',
+                        '.node',
+                    ],
+                    extensionAlias: {
+                        '.js': ['.ts', '.tsx', '.d.ts', '.js'],
+                        '.jsx': ['.tsx', '.d.ts', '.jsx'],
+                        '.cjs': ['.cts', '.d.cts', '.cjs'],
+                        '.mjs': ['.mts', '.d.mts', '.mjs'],
+                    },
+                    conditionNames: [
+                        'types',
+                        'import',
+                        'esm2020',
+                        'es2020',
+                        'es2015',
+                        'require',
+                        'node',
+                        'node-addons',
+                        'browser',
+                        'default',
+                    ],
+                    mainFields: [
+                        'types',
+                        'typings',
+                        'fesm2020',
+                        'fesm2015',
+                        'esm2020',
+                        'es2020',
+                        'module',
+                        'jsnext:main',
+                        'main',
+                    ],
+                }),
+            ],
         },
     }),
     prettierPluginRecommended,
@@ -77,13 +117,13 @@ export default [
                 },
             ],
 
-            // eslint-plugin-import
-            'import/no-extraneous-dependencies': [
+            // eslint-plugin-import-x
+            'import-x/no-extraneous-dependencies': [
                 ERROR,
                 { devDependencies: true },
             ],
-            'import/prefer-default-export': OFF,
-            'import/extensions': [
+            'import-x/prefer-default-export': OFF,
+            'import-x/extensions': [
                 ERROR,
                 'ignorePackages',
                 {
@@ -93,7 +133,7 @@ export default [
                     tsx: 'never',
                 },
             ],
-            'import/order': [
+            'import-x/order': [
                 'error',
                 {
                     'newlines-between': 'always',
@@ -120,14 +160,14 @@ export default [
     {
         files: ['docs/src/content.config.ts'],
         rules: {
-            'import/no-unresolved': OFF,
+            'import-x/no-unresolved': OFF,
         },
     },
     ...compat.config({
         extends: [
             'plugin:@typescript-eslint/recommended-requiring-type-checking', // adds @typescript-eslint plugin
             'plugin:@typescript-eslint/stylistic-type-checked',
-            'plugin:import/typescript',
+            'plugin:import-x/typescript',
         ],
         overrides: [
             {

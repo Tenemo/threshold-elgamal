@@ -1,12 +1,12 @@
 import mdx from '@astrojs/mdx';
-import starlight from '@astrojs/starlight';
+import StarlightIntegration from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
 export default defineConfig({
     site: 'https://tenemo.github.io',
     base: '/threshold-elgamal',
     integrations: [
-        starlight({
+        StarlightIntegration({
             title: 'Threshold ElGamal',
             description:
                 'Browser-native threshold ElGamal documentation for verifiable voting research prototypes.',
