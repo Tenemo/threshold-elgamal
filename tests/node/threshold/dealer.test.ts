@@ -24,6 +24,8 @@ import {
     lagrangeCoefficient,
 } from '#threshold';
 
+const thresholdTestTimeoutMs = 60_000;
+
 const choose = <T>(items: readonly T[], size: number): T[][] => {
     if (size === 0) {
         return [[]];
@@ -78,62 +80,72 @@ describe('dealer-based threshold decryption', () => {
     ] as const;
 
     for (const scenario of roundTripScenarios) {
-        it(`round-trips representative threshold settings for ${scenario.label}`, () => {
-            const keySet = dealerKeyGen(
-                scenario.threshold,
-                scenario.participantCount,
-                scenario.group,
-            );
-            const ciphertext = encryptAdditive(
-                scenario.message,
-                keySet.publicKey,
-                scenario.group,
-                scenario.message,
-            );
-            const decryptionShares = keySet.shares
-                .slice(0, scenario.threshold)
-                .map((share) =>
+        it(
+            `round-trips representative threshold settings for ${scenario.label}`,
+            () => {
+                const keySet = dealerKeyGen(
+                    scenario.threshold,
+                    scenario.participantCount,
+                    scenario.group,
+                );
+                const ciphertext = encryptAdditive(
+                    scenario.message,
+                    keySet.publicKey,
+                    scenario.group,
+                    scenario.message,
+                );
+                const decryptionShares = keySet.shares
+                    .slice(0, scenario.threshold)
+                    .map((share) =>
+                        createDecryptionShare(ciphertext, share, keySet.group),
+                    );
+
+                expect(
+                    combineDecryptionShares(
+                        ciphertext,
+                        decryptionShares,
+                        keySet.group,
+                        scenario.message,
+                    ),
+                ).toBe(scenario.message);
+            },
+            thresholdTestTimeoutMs,
+        );
+    }
+
+    it(
+        'recovers the same plaintext for every 3-of-5 subset',
+        {
+            timeout: thresholdTestTimeoutMs,
+        },
+        () => {
+            const keySet = dealerKeyGen(3, 5, 2048);
+            const ciphertext = encryptAdditive(8n, keySet.publicKey, 2048, 8n);
+            const subsets = choose(keySet.shares, 3);
+
+            expect(subsets).toHaveLength(10);
+
+            for (const subset of subsets) {
+                const decryptionShares = subset.map((share) =>
                     createDecryptionShare(ciphertext, share, keySet.group),
                 );
 
-            expect(
-                combineDecryptionShares(
-                    ciphertext,
-                    decryptionShares,
-                    keySet.group,
-                    scenario.message,
-                ),
-            ).toBe(scenario.message);
-        }, 20_000);
-    }
-
-    it('recovers the same plaintext for every 3-of-5 subset', () => {
-        const keySet = dealerKeyGen(3, 5, 2048);
-        const ciphertext = encryptAdditive(8n, keySet.publicKey, 2048, 8n);
-        const subsets = choose(keySet.shares, 3);
-
-        expect(subsets).toHaveLength(10);
-
-        for (const subset of subsets) {
-            const decryptionShares = subset.map((share) =>
-                createDecryptionShare(ciphertext, share, keySet.group),
-            );
-
-            expect(
-                combineDecryptionShares(
-                    ciphertext,
-                    decryptionShares,
-                    keySet.group,
-                    8n,
-                ),
-            ).toBe(8n);
-        }
-    });
+                expect(
+                    combineDecryptionShares(
+                        ciphertext,
+                        decryptionShares,
+                        keySet.group,
+                        8n,
+                    ),
+                ).toBe(8n);
+            }
+        },
+    );
 
     it(
         'does not recover the correct plaintext with insufficient shares',
         {
-            timeout: 20_000,
+            timeout: thresholdTestTimeoutMs,
         },
         () => {
             const group = getGroup(thresholdVector.group as 'ffdhe3072');

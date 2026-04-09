@@ -1,4 +1,4 @@
-import { assertFrozenHDerivationsMatch } from '../src/core/reproducibility.js';
+import { assertFrozenHDerivationsMatch } from '../dev-support/core-reproducibility.js';
 
 const main = async (): Promise<void> => {
     await assertFrozenHDerivationsMatch();

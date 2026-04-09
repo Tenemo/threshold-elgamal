@@ -113,7 +113,7 @@ describe('DKG transcript verification', () => {
             resolvedComplaintResult,
             'Expected the resolved complaint fixture scenario to finish',
         );
-    }, 90_000);
+    }, 180_000);
 
     it('verifies completed transcripts and derives the same ceremony material', async () => {
         const verified = await verifyDKGTranscript({

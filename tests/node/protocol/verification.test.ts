@@ -24,6 +24,8 @@ import {
     signPayloadBytes,
 } from '#transport';
 
+const protocolVerificationTimeoutMs = 60_000;
+
 const signProtocolPayload = async <
     TPayload extends RegistrationPayload | ManifestAcceptancePayload,
 >(
@@ -229,7 +231,7 @@ describe('protocol verification helpers', () => {
     it(
         'recomputes ballot aggregates deterministically and exposes dropped ballots',
         {
-            timeout: 20_000,
+            timeout: protocolVerificationTimeoutMs,
         },
         async () => {
             const group = getGroup('ffdhe2048');

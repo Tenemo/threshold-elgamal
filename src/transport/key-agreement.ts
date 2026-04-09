@@ -231,6 +231,41 @@ export const deriveTransportSharedSecret = async (
     return sharedSecret;
 };
 
+const sameBytes = (left: Uint8Array, right: Uint8Array): boolean =>
+    left.length === right.length &&
+    left.every((byte, index) => byte === right[index]);
+
+const privateKeyMatchesPublicKey = async (
+    privateKey: CryptoKey,
+    expectedPublicKeyHex: string,
+    suite: KeyAgreementSuite,
+): Promise<boolean> => {
+    try {
+        const expectedPublicKey = await importTransportPublicKey(
+            expectedPublicKeyHex,
+            suite,
+        );
+        const verificationPeer = await generateTransportKeyPair({ suite });
+        const [derivedFromPrivateKey, derivedFromExpectedPublicKey] =
+            await Promise.all([
+                deriveTransportSharedSecret(
+                    privateKey,
+                    verificationPeer.publicKey,
+                    suite,
+                ),
+                deriveTransportSharedSecret(
+                    verificationPeer.privateKey,
+                    expectedPublicKey,
+                    suite,
+                ),
+            ]);
+
+        return sameBytes(derivedFromPrivateKey, derivedFromExpectedPublicKey);
+    } catch {
+        return false;
+    }
+};
+
 /**
  * Re-derives the raw public key from a transport private key.
  *
@@ -253,6 +288,12 @@ export const deriveTransportPublicKey = async (
         );
     }
 
+    if (!privateKey.extractable) {
+        throw new InvalidPayloadError(
+            'P-256 public-key derivation requires an extractable private key; use the registered public key or import an extractable private key instead',
+        );
+    }
+
     const jwk = await getWebCrypto().subtle.exportKey('jwk', privateKey);
     return bytesToHex(buildP256RawPublicKey(jwk));
 };
@@ -270,9 +311,10 @@ export const verifyLocalTransportKey = async (
     expectedPublicKeyHex: string,
     suite: KeyAgreementSuite,
 ): Promise<boolean> =>
-    (await deriveTransportPublicKey(
+    privateKeyMatchesPublicKey(
         typeof privateKey === 'string'
             ? await importTransportPrivateKey(privateKey, suite)
             : privateKey,
+        expectedPublicKeyHex,
         suite,
-    )) === expectedPublicKeyHex;
+    );

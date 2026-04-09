@@ -1,4 +1,4 @@
-import { createDeterministicSource } from '../../../helpers/deterministic.js';
+import { createDeterministicSource } from '../deterministic.js';
 
 import { invariant, signPayload } from './common.js';
 import type {

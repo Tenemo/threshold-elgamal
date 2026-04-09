@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 
-import { generateThresholdVectorRecord } from '../src/threshold/reproducibility.js';
+import { generateThresholdVectorRecord } from '../dev-support/threshold-reproducibility.js';
 
 const bigintReplacer = (_key: string, value: unknown): unknown =>
     typeof value === 'bigint' ? value.toString() : value;
