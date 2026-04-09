@@ -7,6 +7,7 @@ import type {
     ElectionManifest,
     EncryptedDualSharePayload,
     FeldmanCommitmentPayload,
+    PhaseCheckpointPayload,
     PedersenCommitmentPayload,
     RegistrationPayload,
     SignedPayload,
@@ -63,6 +64,14 @@ export type VotingFlowScenario = {
     readonly complaints?: readonly ComplaintInjection[];
     readonly decryptionParticipantIndices?: readonly number[];
     readonly group?: GroupName;
+    readonly includeKeyDerivationConfirmations?: boolean;
+    readonly missingEncryptedShareDealerIndices?: readonly number[];
+    readonly missingFeldmanCommitmentParticipantIndices?: readonly number[];
+    readonly missingKeyDerivationConfirmationParticipantIndices?: readonly number[];
+    readonly missingPedersenCommitmentParticipantIndices?: readonly number[];
+    readonly missingPhaseCheckpointSignerIndices?: Partial<
+        Record<0 | 1 | 2 | 3, readonly number[]>
+    >;
     readonly optionList?: readonly string[];
     readonly participantCount: number;
     readonly scoreDomainMax?: number;
@@ -112,6 +121,7 @@ type CommonScenarioResult = {
     })[];
     readonly decryptionSharePayloads?: readonly SignedPayload<DecryptionSharePayload>[];
     readonly dkgTranscript: readonly SignedPayload[];
+    readonly dkgPhaseCheckpoints?: readonly SignedPayload<PhaseCheckpointPayload>[];
     readonly directJointSecret?: bigint;
     readonly finalShares?: readonly Share[];
     readonly finalState: DKGState;

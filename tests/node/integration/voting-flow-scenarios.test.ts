@@ -9,6 +9,8 @@ import {
 const scenarioTimeoutMs = 60_000;
 
 const completedScenarios: readonly (VotingFlowScenario & {
+    readonly expectedConfirmationCount?: number;
+    readonly expectedCheckpointPhases?: readonly number[];
     readonly expectedQual: readonly number[];
     readonly name: string;
 })[] = [
@@ -106,6 +108,51 @@ const completedScenarios: readonly (VotingFlowScenario & {
         decryptionParticipantIndices: [1, 2],
         expectedQual: [1, 2, 3],
     },
+    {
+        name: 'completes a 3-of-4 flow when one dealer misses encrypted-share rows',
+        participantCount: 4,
+        scoreDomainMax: 3,
+        votes: [3n, 2n, 1n, 3n],
+        missingEncryptedShareDealerIndices: [4],
+        decryptionParticipantIndices: [1, 2, 3],
+        expectedQual: [1, 2, 3],
+    },
+    {
+        name: 'completes a 3-of-4 flow when one dealer misses Pedersen commitments',
+        participantCount: 4,
+        scoreDomainMax: 3,
+        votes: [1n, 3n, 2n, 1n],
+        missingPedersenCommitmentParticipantIndices: [4],
+        decryptionParticipantIndices: [1, 2, 3],
+        expectedQual: [1, 2, 3],
+    },
+    {
+        name: 'completes a 3-of-4 flow when one dealer misses Feldman commitments',
+        participantCount: 4,
+        scoreDomainMax: 3,
+        votes: [2n, 3n, 1n, 2n],
+        missingFeldmanCommitmentParticipantIndices: [4],
+        decryptionParticipantIndices: [1, 2, 3],
+        expectedQual: [1, 2, 3],
+    },
+    {
+        name: 'completes a 3-of-4 flow with threshold-only checkpoints and confirmations',
+        participantCount: 4,
+        scoreDomainMax: 3,
+        votes: [2n, 1n, 3n, 2n],
+        includeKeyDerivationConfirmations: true,
+        missingKeyDerivationConfirmationParticipantIndices: [4],
+        missingPhaseCheckpointSignerIndices: {
+            0: [4],
+            1: [4],
+            2: [4],
+            3: [4],
+        },
+        decryptionParticipantIndices: [1, 2, 3],
+        expectedCheckpointPhases: [0, 1, 2, 3],
+        expectedConfirmationCount: 3,
+        expectedQual: [1, 2, 3, 4],
+    },
 ];
 
 describe('parameterized completed voting flows', () => {
@@ -148,6 +195,7 @@ describe('parameterized completed voting flows', () => {
                 expect(
                     completedResult.transcriptDerivedVerificationKeys,
                 ).toHaveLength(scenario.expectedQual.length);
+                expect(completedResult.dkgPhaseCheckpoints).toBeDefined();
                 expect(completedResult.sessionFingerprint).toMatch(
                     /^[0-9A-F]{4}(?:-[0-9A-F]{4}){7}$/,
                 );
@@ -165,6 +213,27 @@ describe('parameterized completed voting flows', () => {
                             : 'dealer',
                     ),
                 );
+
+                const checkpointPhases = [
+                    ...new Set(
+                        (completedResult.dkgPhaseCheckpoints ?? []).map(
+                            (checkpoint) => checkpoint.payload.checkpointPhase,
+                        ),
+                    ),
+                ].sort((left, right) => left - right);
+                expect(checkpointPhases).toEqual(
+                    scenario.expectedCheckpointPhases ?? [0, 1, 2, 3],
+                );
+
+                if (scenario.expectedConfirmationCount !== undefined) {
+                    expect(
+                        completedResult.dkgTranscript.filter(
+                            (entry) =>
+                                entry.payload.messageType ===
+                                'key-derivation-confirmation',
+                        ),
+                    ).toHaveLength(scenario.expectedConfirmationCount);
+                }
             },
         );
     }

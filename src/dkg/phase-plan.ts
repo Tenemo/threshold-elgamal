@@ -1,4 +1,7 @@
-import type { ProtocolMessageType } from '../protocol/types.js';
+import type {
+    ProtocolMessageType,
+    PhaseCheckpointPayload,
+} from '../protocol/types.js';
 
 import type { DKGProtocol } from './types.js';
 
@@ -6,6 +9,7 @@ const GJKR_PHASE_PLAN: Readonly<Record<ProtocolMessageType, number | null>> = {
     'manifest-publication': 0,
     registration: 0,
     'manifest-acceptance': 0,
+    'phase-checkpoint': null,
     'pedersen-commitment': 1,
     'encrypted-dual-share': 1,
     complaint: 2,
@@ -25,6 +29,7 @@ const JOINT_FELDMAN_PHASE_PLAN: Readonly<
     'manifest-publication': 0,
     registration: 0,
     'manifest-acceptance': 0,
+    'phase-checkpoint': null,
     'pedersen-commitment': null,
     'encrypted-dual-share': 1,
     complaint: 2,
@@ -41,7 +46,10 @@ const JOINT_FELDMAN_PHASE_PLAN: Readonly<
 export const expectedDkgPhase = (
     protocol: DKGProtocol,
     messageType: ProtocolMessageType,
+    payload?: PhaseCheckpointPayload,
 ): number | null =>
-    protocol === 'gjkr'
-        ? GJKR_PHASE_PLAN[messageType]
-        : JOINT_FELDMAN_PHASE_PLAN[messageType];
+    messageType === 'phase-checkpoint'
+        ? (payload?.checkpointPhase ?? null)
+        : protocol === 'gjkr'
+          ? GJKR_PHASE_PLAN[messageType]
+          : JOINT_FELDMAN_PHASE_PLAN[messageType];

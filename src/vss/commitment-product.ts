@@ -1,18 +1,21 @@
-import { modP, modPowP, type CryptoGroup } from '../core/index.js';
+import { multiExponentiate, type CryptoGroup } from '../core/index.js';
 
 export const evaluateCommitmentProduct = (
     commitments: readonly bigint[],
     index: number,
     group: CryptoGroup,
 ): bigint => {
-    let result = 1n;
+    const terms: { base: bigint; exponent: bigint }[] = [];
     let exponent = 1n;
     const point = BigInt(index);
 
     for (const commitment of commitments) {
-        result = modP(result * modPowP(commitment, exponent, group.p), group.p);
+        terms.push({
+            base: commitment,
+            exponent,
+        });
         exponent = (exponent * point) % group.q;
     }
 
-    return result;
+    return multiExponentiate(terms, group.p);
 };

@@ -18,6 +18,8 @@ static-adversary model with a strict-majority threshold policy
 - Threshold decryption helpers carry participant indices explicitly and reject malformed or duplicate share sets.
 - Proof helpers bind protocol version, suite, manifest hash, session id, and any participant- or ballot-specific context you supply.
 - Transport envelopes authenticate context through HKDF info and AES-GCM additional data.
+- Checkpointed DKG transcripts close each setup phase on a threshold-supported
+  snapshot hash, so clients can compare the same board view before progressing.
 - The protocol subpath can recompute ballot aggregates locally and verify one
   published tally per option from signed ballot, decryption-share, and tally
   payloads.
@@ -36,7 +38,10 @@ static-adversary model with a strict-majority threshold policy
 - Recompute aggregates locally instead of trusting server-provided aggregates,
   or call the shipped published-tally verifier that does this for you.
 - Verify all proofs and signatures before accepting ciphertexts or decryption shares.
+- Treat `minimumPublicationThreshold` as a tally-publication privacy floor. It
+  is not the DKG reconstruction threshold.
 - Keep threshold shares and transport keys in the narrowest possible storage scope.
 - Treat small-group exact tallies as potentially privacy-sensitive even when the cryptography is correct.
-- Treat the current DKG path as a thesis-scale research workflow for roughly 50
-  all-equal participants, not a thousands-voter symmetric ceremony.
+- Treat the current DKG path as a thesis-scale research workflow. The
+  recommended default size today is `10` all-equal participants. Larger
+  symmetric ceremonies remain experimental.

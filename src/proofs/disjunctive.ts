@@ -2,10 +2,11 @@ import {
     assertInSubgroup,
     assertInSubgroupOrIdentity,
     assertScalarInZq,
+    fixedBaseModPow,
     InvalidProofError,
     modInvP,
     modP,
-    modPowP,
+    multiExponentiate,
     modQ,
     randomScalarBelow,
     type CryptoGroup,
@@ -41,7 +42,7 @@ const candidateEncoding = (
 ): bigint =>
     modP(
         ciphertext.c2 *
-            modInvP(modPowP(group.g, candidateValue, group.p), group.p),
+            modInvP(fixedBaseModPow(group.g, candidateValue, group.p), group.p),
         group.p,
     );
 
@@ -138,8 +139,8 @@ export const createDisjunctiveProof = async (
             );
             responses.push(nonce);
             commitments.push({
-                a1: modPowP(group.g, nonce, group.p),
-                a2: modPowP(publicKey, nonce, group.p),
+                a1: fixedBaseModPow(group.g, nonce, group.p),
+                a2: fixedBaseModPow(publicKey, nonce, group.p),
             });
             continue;
         }
@@ -150,18 +151,24 @@ export const createDisjunctiveProof = async (
         challenges.push(challenge);
         responses.push(response);
         commitments.push({
-            a1: modP(
-                modPowP(group.g, response, group.p) *
-                    modPowP(
-                        ciphertext.c1,
-                        negateExponent(challenge, group.q),
-                        group.p,
-                    ),
+            a1: multiExponentiate(
+                [
+                    { base: group.g, exponent: response },
+                    {
+                        base: ciphertext.c1,
+                        exponent: negateExponent(challenge, group.q),
+                    },
+                ],
                 group.p,
             ),
-            a2: modP(
-                modPowP(publicKey, response, group.p) *
-                    modPowP(beta, negateExponent(challenge, group.q), group.p),
+            a2: multiExponentiate(
+                [
+                    { base: publicKey, exponent: response },
+                    {
+                        base: beta,
+                        exponent: negateExponent(challenge, group.q),
+                    },
+                ],
                 group.p,
             ),
         });
@@ -244,22 +251,24 @@ export const verifyDisjunctiveProof = async (
         const beta = candidateEncoding(ciphertext, validValues[index], group);
 
         return {
-            a1: modP(
-                modPowP(group.g, branch.response, group.p) *
-                    modPowP(
-                        ciphertext.c1,
-                        negateExponent(branch.challenge, group.q),
-                        group.p,
-                    ),
+            a1: multiExponentiate(
+                [
+                    { base: group.g, exponent: branch.response },
+                    {
+                        base: ciphertext.c1,
+                        exponent: negateExponent(branch.challenge, group.q),
+                    },
+                ],
                 group.p,
             ),
-            a2: modP(
-                modPowP(publicKey, branch.response, group.p) *
-                    modPowP(
-                        beta,
-                        negateExponent(branch.challenge, group.q),
-                        group.p,
-                    ),
+            a2: multiExponentiate(
+                [
+                    { base: publicKey, exponent: branch.response },
+                    {
+                        base: beta,
+                        exponent: negateExponent(branch.challenge, group.q),
+                    },
+                ],
                 group.p,
             ),
         };

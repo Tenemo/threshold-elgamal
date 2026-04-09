@@ -10,9 +10,17 @@ import type {
 } from '../protocol/types.js';
 
 import {
+    finalCheckpointPhase,
+    isPhaseCheckpointPayload,
+    requiredCheckpointPhases,
+    resolveFinalizedPhaseCheckpoint,
+    type FinalizedPhaseCheckpoint,
+} from './checkpoints.js';
+import {
     appendTranscriptPayload,
     computeQual,
     createBaseState,
+    reduceQualByComplaints,
     validateCommonPayload,
     withError,
 } from './complaints.js';
@@ -37,6 +45,45 @@ const acceptedParticipants = (
         )
         .map((item) => item.payload.participantIndex)
         .sort((left, right) => left - right);
+
+const contiguousFinalizedCheckpoints = (
+    transcript: readonly SignedPayload[],
+    protocol: DKGProtocol,
+    threshold: number,
+): readonly FinalizedPhaseCheckpoint[] => {
+    const resolved: FinalizedPhaseCheckpoint[] = [];
+
+    for (const checkpointPhase of requiredCheckpointPhases(protocol)) {
+        const checkpoint = resolveFinalizedPhaseCheckpoint(
+            transcript,
+            checkpointPhase,
+            threshold,
+        );
+        if (checkpoint === null) {
+            break;
+        }
+        resolved.push(checkpoint);
+    }
+
+    return resolved;
+};
+
+const latestCheckpointQual = (
+    transcript: readonly SignedPayload[],
+    protocol: DKGProtocol,
+    threshold: number,
+): readonly number[] | null =>
+    contiguousFinalizedCheckpoints(transcript, protocol, threshold)[
+        contiguousFinalizedCheckpoints(transcript, protocol, threshold).length -
+            1
+    ]?.payload.qualParticipantIndices ?? null;
+
+const hasCheckpointFlow = (
+    transcript: readonly SignedPayload[],
+    payload?: SignedPayload,
+): boolean =>
+    transcript.some(isPhaseCheckpointPayload) ||
+    (payload !== undefined && isPhaseCheckpointPayload(payload));
 
 const complaintsFromTranscript = (
     transcript: readonly SignedPayload[],
@@ -84,6 +131,19 @@ export const processMajorityDkgPayload = (
         );
     }
 
+    if (
+        isPhaseCheckpointPayload(signedPayload) &&
+        !requiredCheckpointPhases(state.config.protocol).includes(
+            signedPayload.payload.checkpointPhase,
+        )
+    ) {
+        return withError(
+            state,
+            'checkpoint-phase-out-of-range',
+            `Checkpoint phase ${signedPayload.payload.checkpointPhase} is not part of the ${label} phase plan`,
+        );
+    }
+
     const validationError = validateCommonPayload(state, signedPayload);
     if (validationError !== null) {
         return {
@@ -96,6 +156,9 @@ export const processMajorityDkgPayload = (
     const phase = expectedDkgPhase(
         state.config.protocol,
         signedPayload.payload.messageType,
+        isPhaseCheckpointPayload(signedPayload)
+            ? signedPayload.payload
+            : undefined,
     );
     if (phase === null || signedPayload.payload.phase !== phase) {
         return withError(
@@ -110,16 +173,46 @@ export const processMajorityDkgPayload = (
         state.config.participantCount,
     );
 
-    if (
-        phase > 0 &&
-        acceptedParticipants(state.transcript).length !==
+    if (isPhaseCheckpointPayload(signedPayload)) {
+        if (
+            signedPayload.payload.checkpointPhase > 0 &&
+            resolveFinalizedPhaseCheckpoint(
+                state.transcript,
+                signedPayload.payload.checkpointPhase - 1,
+                state.config.threshold,
+            ) === null
+        ) {
+            return withError(
+                state,
+                'checkpoint-prerequisite-required',
+                'Each checkpoint requires the previous DKG phase to be checkpointed first',
+            );
+        }
+    } else if (phase > 0) {
+        if (hasCheckpointFlow(state.transcript, signedPayload)) {
+            if (
+                resolveFinalizedPhaseCheckpoint(
+                    state.transcript,
+                    phase - 1,
+                    state.config.threshold,
+                ) === null
+            ) {
+                return withError(
+                    state,
+                    'phase-checkpoint-required',
+                    `Phase ${phase} requires a finalized checkpoint for phase ${phase - 1}`,
+                );
+            }
+        } else if (
+            acceptedParticipants(state.transcript).length !==
             state.config.participantCount
-    ) {
-        return withError(
-            state,
-            'manifest-acceptance-required',
-            'Setup is gated on unanimous manifest acceptance',
-        );
+        ) {
+            return withError(
+                state,
+                'manifest-acceptance-required',
+                'Setup is gated on unanimous manifest acceptance',
+            );
+        }
     }
 
     const appended = appendTranscriptPayload(state, signedPayload);
@@ -135,11 +228,29 @@ export const processMajorityDkgPayload = (
         nextTranscriptState.transcript,
     );
     const complaints = complaintsFromTranscript(nextTranscriptState.transcript);
-    const qual = computeQual(
-        state.config.participantCount,
-        complaints,
-        complaintResolutionsFromTranscript(nextTranscriptState.transcript),
+    const latestCheckpointQualIndices = latestCheckpointQual(
+        nextTranscriptState.transcript,
+        state.config.protocol,
+        state.config.threshold,
     );
+    const qual =
+        latestCheckpointQualIndices === null
+            ? computeQual(
+                  state.config.participantCount,
+                  complaints,
+                  complaintResolutionsFromTranscript(
+                      nextTranscriptState.transcript,
+                  ),
+              )
+            : latestCheckpointQualIndices.length > 0
+              ? reduceQualByComplaints(
+                    latestCheckpointQualIndices,
+                    complaints,
+                    complaintResolutionsFromTranscript(
+                        nextTranscriptState.transcript,
+                    ),
+                )
+              : latestCheckpointQualIndices;
 
     if (qual.length < state.config.threshold) {
         return {
@@ -169,7 +280,23 @@ export const processMajorityDkgPayload = (
             )
             .map((item) => item.payload.participantIndex),
     );
-    const completed = qual.every((index) => confirmedParticipants.has(index));
+    const completedByCheckpoint =
+        contiguousFinalizedCheckpoints(
+            nextTranscriptState.transcript,
+            state.config.protocol,
+            state.config.threshold,
+        )[
+            contiguousFinalizedCheckpoints(
+                nextTranscriptState.transcript,
+                state.config.protocol,
+                state.config.threshold,
+            ).length - 1
+        ]?.payload.checkpointPhase ===
+        finalCheckpointPhase(state.config.protocol);
+    const completed =
+        completedByCheckpoint ||
+        (!hasCheckpointFlow(nextTranscriptState.transcript) &&
+            qual.every((index) => confirmedParticipants.has(index)));
 
     return {
         newState: {
