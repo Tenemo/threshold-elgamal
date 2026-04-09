@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-This page records the stable invariants of the shipped 1.0.0 surface.
+This page records the stable invariants of the current 1.x surface.
 
 ## Cryptographic surface
 

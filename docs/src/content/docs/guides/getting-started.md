@@ -7,8 +7,6 @@ sidebar:
 
 Use the safe root package. The current public surface is centered on additive ElGamal, while threshold sharing, proofs, transport, protocol helpers, and DKG reducers live under narrower subpaths.
 
-Before using the typed protocol payloads documented in this site, confirm that your installed package version is `1.x`. The legacy `0.1.x` line does not expose the same surface.
-
 ## Where to go next
 
 - For installation, runtime expectations, and the root-package quickstart, start with [README.md](https://github.com/Tenemo/threshold-elgamal#readme).
