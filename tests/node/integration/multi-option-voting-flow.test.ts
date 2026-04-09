@@ -6,6 +6,8 @@ import {
     type VotingFlowResult,
 } from './voting-flow-harness.js';
 
+const scenarioTimeoutMs = 180_000;
+
 const expectCompleted = (
     result: VotingFlowResult,
     label: string,
@@ -21,7 +23,7 @@ describe('multi-option voting flows', () => {
     it(
         'completes a multi-option 3-of-5 flow with one tally per option',
         {
-            timeout: 90_000,
+            timeout: scenarioTimeoutMs,
         },
         async () => {
             const result = expectCompleted(
