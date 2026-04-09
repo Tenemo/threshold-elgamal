@@ -10,8 +10,9 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  node:
+  node-fast:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: pnpm/action-setup@v5.0.0
@@ -25,12 +26,45 @@ jobs:
       - run: pnpm run lint
       - run: pnpm run typecheck
       - run: pnpm run guard:no-math-random
-      - run: pnpm run test:node
+      - run: pnpm run verify:h-derivation
+      - run: pnpm run verify:vectors
+      - run: pnpm run test:node:fast
       - run: pnpm run build:skip
+
+  node-heavy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          run_install: false
+      - uses: actions/setup-node@v6.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:node:heavy
+
+  docs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          run_install: false
+      - uses: actions/setup-node@v6.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm run verify:docs
+      - run: pnpm run docs:build:site
 
   browser:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: pnpm/action-setup@v5.0.0
@@ -43,3 +77,20 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run test:browser
+
+  release-smoke:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          run_install: false
+      - uses: actions/setup-node@v6.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm run ci:release-smoke
