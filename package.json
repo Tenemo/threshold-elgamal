@@ -1,6 +1,6 @@
 {
     "name": "threshold-elgamal",
-    "version": "1.0.0-beta.0",
+    "version": "1.0.0-beta.1",
     "description": "A browser-native TypeScript ElGamal library for bigint-based research prototypes, shipping additive ElGamal, dealer threshold decryption, VSS, proofs, protocol helpers, transport primitives, and log-driven DKG state machines.",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MPL-2.0",
@@ -130,8 +130,7 @@
         "del-cli": "^7.0.0",
         "eslint": "^10.2.0",
         "eslint-config-prettier": "^10.1.8",
-        "eslint-import-resolver-typescript": "^4.4.4",
-        "eslint-plugin-import": "^2.32.0",
+        "eslint-plugin-import-x": "^4.16.2",
         "eslint-plugin-only-error": "^1.0.2",
         "eslint-plugin-prettier": "^5.5.5",
         "globals": "^17.4.0",

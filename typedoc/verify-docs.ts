@@ -8,7 +8,7 @@ import {
     type DeclarationReflection,
 } from 'typedoc';
 
-import typedocConfig from '../typedoc.config.mjs';
+import config from '../typedoc.config.mjs';
 
 import {
     apiNavigationJson,
@@ -304,7 +304,7 @@ const publicReflectionKinds =
     ReflectionKind.Variable;
 
 const verifyTypedocSummaries = async (): Promise<string[]> => {
-    const app = await Application.bootstrapWithPlugins(typedocConfig);
+    const app = await Application.bootstrapWithPlugins(config);
     const project = await app.convert();
 
     if (project === undefined) {
