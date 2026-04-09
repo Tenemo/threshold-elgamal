@@ -135,7 +135,7 @@ jobs:
 
       - run: pnpm exec playwright install --with-deps chromium
 
-      - run: pnpm run ci
+      - run: pnpm run ci:release-smoke
 
       - name: commit release metadata
         run: |
