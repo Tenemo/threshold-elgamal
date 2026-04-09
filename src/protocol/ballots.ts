@@ -46,6 +46,11 @@ export type VerifiedBallotAggregation = {
     readonly transcriptHash: string;
 };
 
+/** Verified additive ballot aggregation for one manifest option slot. */
+export type VerifiedOptionBallotAggregation = VerifiedBallotAggregation & {
+    readonly optionIndex: number;
+};
+
 /** Input bundle for ballot verification and aggregation. */
 export type VerifyAndAggregateBallotsInput = {
     readonly ballots: readonly BallotTranscriptEntry[];
@@ -57,6 +62,12 @@ export type VerifyAndAggregateBallotsInput = {
     readonly minimumBallotCount: number;
     readonly label?: string;
 };
+
+/** Input bundle for per-option ballot verification and aggregation. */
+export type VerifyAndAggregateBallotsByOptionInput =
+    VerifyAndAggregateBallotsInput & {
+        readonly optionCount: number;
+    };
 
 const canonicalBallotJson = (
     ballots: readonly BallotTranscriptEntry[],
@@ -178,4 +189,72 @@ export const verifyAndAggregateBallots = async (
         ballots: sortedBallots,
         transcriptHash,
     };
+};
+
+/**
+ * Verifies typed ballots for every manifest option and recomputes one additive
+ * aggregate per option slot.
+ *
+ * @param input Ballot transcript verification input.
+ * @returns Ordered per-option verified aggregates.
+ */
+export const verifyAndAggregateBallotsByOption = async (
+    input: VerifyAndAggregateBallotsByOptionInput,
+): Promise<readonly VerifiedOptionBallotAggregation[]> => {
+    if (!Number.isInteger(input.optionCount) || input.optionCount < 1) {
+        throw new InvalidPayloadError('optionCount must be a positive integer');
+    }
+
+    const ballotsByOption = new Map<number, BallotTranscriptEntry[]>();
+    for (
+        let optionIndex = 1;
+        optionIndex <= input.optionCount;
+        optionIndex += 1
+    ) {
+        ballotsByOption.set(optionIndex, []);
+    }
+
+    for (const ballot of input.ballots) {
+        assertPositiveInteger(ballot.optionIndex, 'Ballot option index');
+        if (ballot.optionIndex > input.optionCount) {
+            throw new InvalidPayloadError(
+                `Ballot option index ${ballot.optionIndex} exceeds the manifest option count ${input.optionCount}`,
+            );
+        }
+
+        ballotsByOption.get(ballot.optionIndex)?.push(ballot);
+    }
+
+    const aggregations: VerifiedOptionBallotAggregation[] = [];
+    for (
+        let optionIndex = 1;
+        optionIndex <= input.optionCount;
+        optionIndex += 1
+    ) {
+        const ballots = ballotsByOption.get(optionIndex) ?? [];
+        let aggregation: VerifiedBallotAggregation;
+        try {
+            aggregation = await verifyAndAggregateBallots({
+                ...input,
+                ballots,
+            });
+        } catch (error) {
+            if (input.optionCount === 1) {
+                throw error;
+            }
+
+            const message =
+                error instanceof Error ? error.message : String(error);
+            throw new InvalidPayloadError(
+                `Option ${optionIndex} ballot verification failed: ${message}`,
+            );
+        }
+
+        aggregations.push({
+            ...aggregation,
+            optionIndex,
+        });
+    }
+
+    return aggregations;
 };

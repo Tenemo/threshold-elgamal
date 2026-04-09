@@ -38,6 +38,7 @@ export const createBallotArtifacts = async (
     sessionId: string,
     validValues: readonly bigint[],
     bound: bigint,
+    optionIndex = 1,
 ): Promise<readonly BallotArtifact[]> =>
     Promise.all(
         votes.map(async (vote, offset) => {
@@ -57,7 +58,7 @@ export const createBallotArtifacts = async (
                 sessionId,
                 label: 'ballot-range-proof',
                 voterIndex,
-                optionIndex: 1,
+                optionIndex,
             };
             const proof = await createDisjunctiveProof(
                 vote,
@@ -109,7 +110,7 @@ export const createBallotSubmissionPayloads = async (
                 phase: 5,
                 participantIndex: ballot.voterIndex,
                 messageType: 'ballot-submission',
-                optionIndex: 1,
+                optionIndex: ballot.proofContext.optionIndex ?? 1,
                 ciphertext: encodeCiphertext(
                     ballot.ciphertext,
                     group.byteLength,
@@ -129,6 +130,7 @@ export const createThresholdShareArtifacts = async (
     group: CryptoGroup,
     manifestHash: string,
     sessionId: string,
+    optionIndex = 1,
 ): Promise<readonly ThresholdShareArtifact[]> =>
     Promise.all(
         selectedShares.map(async (share) => {
@@ -158,6 +160,7 @@ export const createThresholdShareArtifacts = async (
                 sessionId,
                 label: 'decryption-share-dleq',
                 participantIndex: share.index,
+                optionIndex,
             };
             const proof = await createDLEQProof(
                 share.value,
@@ -189,6 +192,7 @@ export const createDecryptionSharePayloads = async (
     transcriptHash: string,
     ballotCount: number,
     group: CryptoGroup,
+    optionIndex = 1,
 ): Promise<readonly SignedPayload<DecryptionSharePayload>[]> =>
     Promise.all(
         shares.map((artifact) =>
@@ -200,6 +204,7 @@ export const createDecryptionSharePayloads = async (
                     phase: 6,
                     participantIndex: artifact.share.index,
                     messageType: 'decryption-share',
+                    optionIndex,
                     transcriptHash,
                     ballotCount,
                     decryptionShare: bigintToFixedHex(
@@ -221,6 +226,7 @@ export const createTallyPublicationPayload = async (
     tally: bigint,
     decryptionParticipantIndices: readonly number[],
     group: CryptoGroup,
+    optionIndex = 1,
 ): Promise<SignedPayload<TallyPublicationPayload>> =>
     signPayload(publisher.auth.privateKey, {
         sessionId,
@@ -228,6 +234,7 @@ export const createTallyPublicationPayload = async (
         phase: 7,
         participantIndex: publisher.index,
         messageType: 'tally-publication',
+        optionIndex,
         transcriptHash,
         ballotCount,
         tally: bigintToFixedHex(tally, group.byteLength),

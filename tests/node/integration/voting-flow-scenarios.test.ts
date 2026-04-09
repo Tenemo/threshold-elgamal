@@ -37,11 +37,11 @@ const completedScenarios: readonly (VotingFlowScenario & {
         expectedQual: [1, 2, 3],
     },
     {
-        name: 'completes a 2-of-4 even-participant flow',
+        name: 'completes a 3-of-4 even-participant flow',
         participantCount: 4,
         scoreDomainMax: 3,
         votes: [1n, 2n, 3n, 1n],
-        decryptionParticipantIndices: [1, 4],
+        decryptionParticipantIndices: [1, 3, 4],
         expectedQual: [1, 2, 3, 4],
     },
     {
@@ -77,7 +77,7 @@ const completedScenarios: readonly (VotingFlowScenario & {
         expectedQual: [2, 3],
     },
     {
-        name: 'completes a 2-of-4 flow after one dealer complaint',
+        name: 'completes a 3-of-4 flow after one dealer complaint',
         participantCount: 4,
         scoreDomainMax: 3,
         votes: [1n, 2n, 3n, 1n],
@@ -88,7 +88,7 @@ const completedScenarios: readonly (VotingFlowScenario & {
                 envelopeTamper: 'iv',
             },
         ],
-        decryptionParticipantIndices: [2, 4],
+        decryptionParticipantIndices: [2, 3, 4],
         expectedQual: [2, 3, 4],
     },
     {

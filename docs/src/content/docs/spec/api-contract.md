@@ -20,13 +20,14 @@ The current package draws a hard boundary between the shipped cryptographic libr
   payload schemas
 - Transcript-native complaint-resolution verification
 - A high-level published-tally verifier that replays the DKG transcript,
-  recomputes the accepted ballot aggregate locally, verifies decryption-share
-  proofs, and checks one published tally
+  recomputes the accepted ballot aggregates locally, verifies decryption-share
+  proofs, and checks one published tally per option
 
 ## Application responsibilities
 
 - Bulletin-board storage, deployment-specific transport plumbing, and operational policy
-- Tally policy, additive bound selection, and result interpretation
+- Tally policy, additive bound selection, arithmetic-mean interpretation, and
+  result presentation
 - UI, orchestration, retries, and deadline handling
 - Final application decisions about enrollment, trustee workflows, deadlines,
   retries, and publication timing

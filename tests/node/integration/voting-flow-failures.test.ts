@@ -31,7 +31,7 @@ const abortingScenarios: readonly (VotingFlowScenario & {
         expectedQual: [3],
     },
     {
-        name: 'aborts a 2-of-4 ceremony after three dealer complaints',
+        name: 'aborts a 3-of-4 ceremony after three dealer complaints',
         participantCount: 4,
         scoreDomainMax: 3,
         votes: [3n, 3n, 3n, 3n],
@@ -52,7 +52,7 @@ const abortingScenarios: readonly (VotingFlowScenario & {
                 envelopeTamper: 'iv',
             },
         ],
-        expectedQual: [4],
+        expectedQual: [3, 4],
     },
 ];
 
@@ -83,4 +83,15 @@ describe('parameterized aborting voting flows', () => {
             },
         );
     }
+
+    it('rejects scenarios that define no option vote sets', async () => {
+        await expect(
+            runVotingFlowScenario({
+                participantCount: 3,
+                scoreDomainMax: 3,
+                votes: [3n, 2n, 1n],
+                votesByOption: [],
+            }),
+        ).rejects.toThrow('Scenario must define at least one option vote set');
+    });
 });

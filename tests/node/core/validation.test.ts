@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    assertMajorityThreshold,
     assertInSubgroup,
     assertInSubgroupOrIdentity,
     assertPlaintextAdditive,
@@ -14,6 +15,7 @@ import {
     InvalidScalarError,
     isInSubgroup,
     isInSubgroupOrIdentity,
+    majorityThreshold,
     PlaintextDomainError,
     ThresholdViolationError,
 } from '#core';
@@ -84,5 +86,29 @@ describe('core validation', () => {
         expect(() => assertValidParticipantIndex(1.5, 5)).toThrow(
             IndexOutOfRangeError,
         );
+    });
+
+    it('enforces strict-majority distributed thresholds for even groups', () => {
+        expect(majorityThreshold(4)).toBe(3);
+
+        expect(() => assertMajorityThreshold(2, 4)).toThrow(
+            'Supported distributed threshold must satisfy floor(n / 2) + 1 <= k <= n - 1 (minimum 3, maximum 3 for n = 4)',
+        );
+        expect(() => assertMajorityThreshold(3, 4)).not.toThrow();
+    });
+
+    it('rejects distributed thresholds when the ceremony is too small', () => {
+        expect(() => assertMajorityThreshold(1, 2)).toThrow(
+            'Distributed threshold workflows require at least three participants',
+        );
+        expect(() => assertMajorityThreshold(2, 2)).toThrow(
+            'Distributed threshold workflows require at least three participants',
+        );
+    });
+
+    it('accepts organizer-selected strict-majority thresholds above the minimum', () => {
+        expect(majorityThreshold(6)).toBe(4);
+        expect(() => assertMajorityThreshold(4, 6)).not.toThrow();
+        expect(() => assertMajorityThreshold(5, 6)).not.toThrow();
     });
 });

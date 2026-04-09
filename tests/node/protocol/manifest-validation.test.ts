@@ -24,7 +24,7 @@ const baseManifest = (): ElectionManifest => ({
 });
 
 describe('manifest validation', () => {
-    it('accepts supported honest-majority score-voting manifests', () => {
+    it('accepts supported strict-majority score-voting manifests', () => {
         const manifest = baseManifest();
 
         expect(validateElectionManifest(manifest)).toBe(manifest);
@@ -33,15 +33,52 @@ describe('manifest validation', () => {
         );
     });
 
-    it('rejects thresholds outside the supported honest-majority policy', () => {
+    it('rejects thresholds outside the supported strict-majority policy', () => {
         const manifest = {
             ...baseManifest(),
-            threshold: 4,
+            threshold: 2,
         };
 
         expect(() => validateElectionManifest(manifest)).toThrow(
-            'Supported distributed threshold must equal ceil(n / 2) = 3 for n = 5',
+            'Supported distributed threshold must satisfy floor(n / 2) + 1 <= k <= n - 1 (minimum 3, maximum 4 for n = 5)',
         );
+    });
+
+    it('rejects 50 percent thresholds for even-sized ceremonies', () => {
+        const manifest = {
+            ...baseManifest(),
+            participantCount: 4,
+            threshold: 2,
+            minimumPublicationThreshold: 3,
+        };
+
+        expect(() => validateElectionManifest(manifest)).toThrow(
+            'Supported distributed threshold must satisfy floor(n / 2) + 1 <= k <= n - 1 (minimum 3, maximum 3 for n = 4)',
+        );
+    });
+
+    it('rejects distributed manifests with fewer than three participants', () => {
+        const manifest = {
+            ...baseManifest(),
+            participantCount: 2,
+            threshold: 1,
+            minimumPublicationThreshold: 2,
+        };
+
+        expect(() => validateElectionManifest(manifest)).toThrow(
+            'Distributed threshold workflows require at least three participants',
+        );
+    });
+
+    it('accepts organizer-selected strict-majority thresholds above the floor', () => {
+        const manifest = {
+            ...baseManifest(),
+            participantCount: 6,
+            threshold: 5,
+            minimumPublicationThreshold: 6,
+        };
+
+        expect(validateElectionManifest(manifest)).toBe(manifest);
     });
 
     it('rejects invalid score, finality, option, and deadline invariants', () => {

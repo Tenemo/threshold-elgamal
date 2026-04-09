@@ -8,7 +8,8 @@ sidebar:
 `threshold-elgamal` is a hardened research prototype for browser-native finite-field ElGamal workflows. It ships careful validation, additive-only root exports, threshold helpers, proofs, transport primitives, and log-driven DKG reducers, but it is not audited production voting software.
 
 Its intended security boundary is still an honest-origin, honest-client,
-static-adversary model with an honest-majority threshold.
+static-adversary model with a strict-majority threshold policy
+`floor(n / 2) + 1 <= k <= n - 1`.
 
 ## What the library tries to guarantee
 
@@ -18,7 +19,8 @@ static-adversary model with an honest-majority threshold.
 - Proof helpers bind protocol version, suite, manifest hash, session id, and any participant- or ballot-specific context you supply.
 - Transport envelopes authenticate context through HKDF info and AES-GCM additional data.
 - The protocol subpath can recompute ballot aggregates locally and verify one
-  published tally from signed ballot, decryption-share, and tally payloads.
+  published tally per option from signed ballot, decryption-share, and tally
+  payloads.
 
 ## What the library does not guarantee by itself
 
@@ -36,3 +38,5 @@ static-adversary model with an honest-majority threshold.
 - Verify all proofs and signatures before accepting ciphertexts or decryption shares.
 - Keep threshold shares and transport keys in the narrowest possible storage scope.
 - Treat small-group exact tallies as potentially privacy-sensitive even when the cryptography is correct.
+- Treat the current DKG path as a thesis-scale research workflow for roughly 50
+  all-equal participants, not a thousands-voter symmetric ceremony.

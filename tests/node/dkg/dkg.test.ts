@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import thresholdVector from '../../../test-vectors/threshold.json';
 
-import { IndexOutOfRangeError, InvalidShareError, getGroup } from '#core';
+import {
+    IndexOutOfRangeError,
+    InvalidShareError,
+    getGroup,
+    majorityThreshold,
+} from '#core';
 import {
     createGjkrState,
     createJointFeldmanState,
@@ -68,6 +73,7 @@ describe('DKG state machines', () => {
             manifestHash: 'manifest-1',
             group: 'ffdhe2048',
             participantCount: 3,
+            threshold: majorityThreshold(3),
         });
         const transition = processGjkrPayload(
             state,
@@ -92,6 +98,7 @@ describe('DKG state machines', () => {
             manifestHash: 'manifest-1',
             group: 'ffdhe2048',
             participantCount: 3,
+            threshold: majorityThreshold(3),
         } as const;
         const transcript = [
             signed({
@@ -191,6 +198,7 @@ describe('DKG state machines', () => {
             manifestHash: 'manifest-shared',
             group: 'ffdhe2048',
             participantCount: 3,
+            threshold: majorityThreshold(3),
         } as const;
         const jointTranscript = [
             ...[1, 2, 3].map((participantIndex) =>
@@ -301,6 +309,7 @@ describe('DKG state machines', () => {
             manifestHash: 'manifest-2',
             group: 'ffdhe2048',
             participantCount: 5,
+            threshold: majorityThreshold(5),
         } as const;
         const transcript = [
             ...[1, 2, 3, 4, 5].map((participantIndex) =>
@@ -390,6 +399,7 @@ describe('DKG state machines', () => {
             manifestHash: 'manifest-4',
             group: 'ffdhe2048',
             participantCount: 3,
+            threshold: majorityThreshold(3),
         } as const;
         const transcript = [
             ...[1, 2, 3].map((participantIndex) =>
@@ -472,6 +482,7 @@ describe('DKG state machines', () => {
             manifestHash: 'manifest-4b',
             group: 'ffdhe2048',
             participantCount: 3,
+            threshold: majorityThreshold(3),
         } as const;
         const acceptancePayloads = [1, 2, 3].map((participantIndex) =>
             signed({
@@ -565,7 +576,8 @@ describe('DKG state machines', () => {
             sessionId: 'session-5',
             manifestHash: 'manifest-5',
             group: 'ffdhe2048',
-            participantCount: 2,
+            participantCount: 3,
+            threshold: majorityThreshold(3),
         });
         const gjkrAcceptance = signed({
             sessionId: 'session-5',
@@ -586,6 +598,14 @@ describe('DKG state machines', () => {
                 }),
             ).newState,
             signed({
+                ...gjkrAcceptance.payload,
+                participantIndex: 3,
+                assignedParticipantIndex: 3,
+            }),
+        ).newState;
+        const gjkrStateAfterCommitment = processGjkrPayload(
+            gjkrStateAfterAcceptance,
+            signed({
                 sessionId: 'session-5',
                 manifestHash: 'manifest-5',
                 phase: 1,
@@ -595,13 +615,13 @@ describe('DKG state machines', () => {
             }),
         ).newState;
         const gjkrRetransmitted = processGjkrPayload(
-            gjkrStateAfterAcceptance,
+            gjkrStateAfterCommitment,
             gjkrAcceptance,
         );
 
-        expect(gjkrStateAfterAcceptance.phase).toBe(1);
+        expect(gjkrStateAfterCommitment.phase).toBe(1);
         expect(gjkrRetransmitted.errors).toEqual([]);
-        expect(gjkrRetransmitted.newState).toBe(gjkrStateAfterAcceptance);
+        expect(gjkrRetransmitted.newState).toBe(gjkrStateAfterCommitment);
         expect(gjkrRetransmitted.newState.phase).toBe(1);
 
         const jointState = createJointFeldmanState({
@@ -609,7 +629,8 @@ describe('DKG state machines', () => {
             sessionId: 'session-6',
             manifestHash: 'manifest-6',
             group: 'ffdhe2048',
-            participantCount: 2,
+            participantCount: 3,
+            threshold: majorityThreshold(3),
         });
         const jointAcceptance = signed({
             sessionId: 'session-6',
@@ -631,6 +652,14 @@ describe('DKG state machines', () => {
                 }),
             ).newState,
             signed({
+                ...jointAcceptance.payload,
+                participantIndex: 3,
+                assignedParticipantIndex: 3,
+            }),
+        ).newState;
+        const jointStateAfterCommitment = processJointFeldmanPayload(
+            jointStateAfterAcceptance,
+            signed({
                 sessionId: 'session-6',
                 manifestHash: 'manifest-6',
                 phase: 1,
@@ -641,13 +670,13 @@ describe('DKG state machines', () => {
             }),
         ).newState;
         const jointRetransmitted = processJointFeldmanPayload(
-            jointStateAfterAcceptance,
+            jointStateAfterCommitment,
             jointAcceptance,
         );
 
-        expect(jointStateAfterAcceptance.phase).toBe(1);
+        expect(jointStateAfterCommitment.phase).toBe(1);
         expect(jointRetransmitted.errors).toEqual([]);
-        expect(jointRetransmitted.newState).toBe(jointStateAfterAcceptance);
+        expect(jointRetransmitted.newState).toBe(jointStateAfterCommitment);
         expect(jointRetransmitted.newState.phase).toBe(1);
     });
 
@@ -657,7 +686,8 @@ describe('DKG state machines', () => {
             sessionId: 'session-3',
             manifestHash: 'manifest-3',
             group: 'ffdhe2048',
-            participantCount: 2,
+            participantCount: 3,
+            threshold: majorityThreshold(3),
         });
         const accepted = processJointFeldmanPayload(
             state,

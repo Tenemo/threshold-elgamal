@@ -27,9 +27,10 @@ import {
 } from '../transport/auth.js';
 
 import {
-    verifyAndAggregateBallots,
+    verifyAndAggregateBallotsByOption,
     type BallotTranscriptEntry,
     type VerifiedBallotAggregation,
+    type VerifiedOptionBallotAggregation,
 } from './ballots.js';
 import { hashElectionManifest, validateElectionManifest } from './manifest.js';
 import { canonicalUnsignedPayloadBytes } from './payloads.js';
@@ -87,6 +88,35 @@ const assertUniqueSortedIndices = (
         }
         seen.add(index);
         previous = index;
+    }
+};
+
+const assertValidOptionIndex = (
+    optionIndex: number,
+    optionCount: number,
+    label: string,
+): void => {
+    if (!Number.isInteger(optionIndex) || optionIndex < 1) {
+        throw new InvalidPayloadError(
+            `${label} option index must be a positive integer`,
+        );
+    }
+
+    if (optionIndex > optionCount) {
+        throw new InvalidPayloadError(
+            `${label} option index ${optionIndex} exceeds the manifest option count ${optionCount}`,
+        );
+    }
+};
+
+const assertSingleOptionManifest = (
+    manifest: ElectionManifest,
+    label: string,
+): void => {
+    if (manifest.optionList.length !== 1) {
+        throw new InvalidPayloadError(
+            `${label} requires a single-option manifest; use the per-option verification helpers instead`,
+        );
     }
 };
 
@@ -193,9 +223,14 @@ export const manifestScoreDomain = (
 
 const decodeBallotPayload = (
     payload: BallotSubmissionPayload,
+    optionCount: number,
 ): BallotTranscriptEntry => {
     assertPhase(payload, BALLOT_SUBMISSION_PHASE, 'Ballot submission');
-    assertPositiveParticipantIndex(payload.optionIndex);
+    assertValidOptionIndex(
+        payload.optionIndex,
+        optionCount,
+        'Ballot submission',
+    );
 
     return {
         voterIndex: payload.participantIndex,
@@ -215,6 +250,7 @@ const decryptionProofContext = (
     sessionId: payload.sessionId,
     label: 'decryption-share-dleq',
     participantIndex: payload.participantIndex,
+    optionIndex: payload.optionIndex,
 });
 
 const verifyPayloadsAgainstRegistrations = async (
@@ -251,7 +287,36 @@ const verifyPayloadsAgainstRegistrations = async (
     }
 };
 
-/** Input bundle for verifying typed ballot payloads. */
+const buildOptionAggregateMap = (
+    aggregates: readonly OptionAggregateInput[],
+    optionCount: number,
+): ReadonlyMap<number, OptionAggregateInput> => {
+    const aggregateMap = new Map<number, OptionAggregateInput>();
+
+    for (const aggregate of aggregates) {
+        assertValidOptionIndex(aggregate.optionIndex, optionCount, 'Aggregate');
+        if (aggregateMap.has(aggregate.optionIndex)) {
+            throw new InvalidPayloadError(
+                `Duplicate aggregate for option ${aggregate.optionIndex} is not allowed`,
+            );
+        }
+        aggregateMap.set(aggregate.optionIndex, aggregate);
+    }
+
+    for (let optionIndex = 1; optionIndex <= optionCount; optionIndex += 1) {
+        if (!aggregateMap.has(optionIndex)) {
+            throw new InvalidPayloadError(
+                `Missing verified aggregate for option ${optionIndex}`,
+            );
+        }
+    }
+
+    return aggregateMap;
+};
+
+/**
+ * Input bundle for verifying typed ballot payloads.
+ */
 export type VerifyBallotSubmissionPayloadsInput = {
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly publicKey: bigint;
@@ -259,21 +324,26 @@ export type VerifyBallotSubmissionPayloadsInput = {
     readonly sessionId: string;
 };
 
+/** Input bundle for verifying typed ballot payloads across all options. */
+export type VerifyBallotSubmissionPayloadsByOptionInput =
+    VerifyBallotSubmissionPayloadsInput;
+
 /**
- * Verifies typed ballot-submission payloads and recomputes the aggregate tally
- * ciphertext from the accepted ballot transcript.
+ * Verifies typed ballot-submission payloads and recomputes one aggregate tally
+ * ciphertext per manifest option.
  *
  * Signatures are expected to have been checked already against the frozen
  * registration roster.
  *
  * @param input Typed ballot verification input.
- * @returns Verified additive ballot aggregation.
+ * @returns Ordered per-option additive ballot aggregations.
  */
-export const verifyBallotSubmissionPayloads = async (
-    input: VerifyBallotSubmissionPayloadsInput,
-): Promise<VerifiedBallotAggregation> => {
+export const verifyBallotSubmissionPayloadsByOption = async (
+    input: VerifyBallotSubmissionPayloadsByOptionInput,
+): Promise<readonly VerifiedOptionBallotAggregation[]> => {
     const manifest = validateElectionManifest(input.manifest);
     const manifestHash = await hashElectionManifest(manifest);
+    const optionCount = manifest.optionList.length;
     const ballotEntries = input.ballotPayloads.map((payload) => {
         if (payload.payload.sessionId !== input.sessionId) {
             throw new InvalidPayloadError(
@@ -286,10 +356,10 @@ export const verifyBallotSubmissionPayloads = async (
             );
         }
 
-        return decodeBallotPayload(payload.payload);
+        return decodeBallotPayload(payload.payload, optionCount);
     });
 
-    return verifyAndAggregateBallots({
+    return verifyAndAggregateBallotsByOption({
         ballots: ballotEntries,
         publicKey: input.publicKey,
         validValues: manifestScoreDomain(manifest),
@@ -297,13 +367,47 @@ export const verifyBallotSubmissionPayloads = async (
         manifestHash,
         sessionId: input.sessionId,
         minimumBallotCount: manifest.minimumPublicationThreshold,
+        optionCount,
     });
+};
+
+/**
+ * Verifies typed ballot-submission payloads and recomputes the aggregate tally
+ * ciphertext for a single-option manifest.
+ *
+ * @param input Typed ballot verification input.
+ * @returns Verified additive ballot aggregation.
+ */
+export const verifyBallotSubmissionPayloads = async (
+    input: VerifyBallotSubmissionPayloadsInput,
+): Promise<VerifiedBallotAggregation> => {
+    const manifest = validateElectionManifest(input.manifest);
+    assertSingleOptionManifest(manifest, 'verifyBallotSubmissionPayloads');
+
+    const aggregations = await verifyBallotSubmissionPayloadsByOption({
+        ...input,
+        manifest,
+    });
+
+    return aggregations[0];
 };
 
 /** Verified typed decryption-share payload. */
 export type VerifiedDecryptionSharePayload = {
     readonly payload: SignedPayload<DecryptionSharePayload>;
     readonly share: DecryptionShare;
+};
+
+/** Verified aggregate input for one option slot. */
+export type OptionAggregateInput = {
+    readonly optionIndex: number;
+    readonly aggregate: VerifiedBallotAggregation['aggregate'];
+};
+
+/** Verified decryption shares grouped by option slot. */
+export type VerifiedOptionDecryptionShares = {
+    readonly optionIndex: number;
+    readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
 };
 
 /** Input bundle for verifying typed decryption-share payloads. */
@@ -315,12 +419,159 @@ export type VerifyDecryptionSharePayloadsInput = {
     readonly sessionId: string;
 };
 
+/** Input bundle for verifying typed decryption-share payloads by option. */
+export type VerifyDecryptionSharePayloadsByOptionInput = {
+    readonly aggregates: readonly OptionAggregateInput[];
+    readonly dkg: VerifiedDKGTranscript;
+    readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
+    readonly manifest: ElectionManifest;
+    readonly sessionId: string;
+};
+
 /**
  * Verifies typed decryption-share payloads against the DKG transcript-derived
- * trustee keys and one locally recomputed aggregate ciphertext.
+ * trustee keys and one locally recomputed aggregate ciphertext per option slot.
  *
  * Signatures are expected to have been checked already against the frozen
  * registration roster.
+ *
+ * @param input Typed decryption-share verification input.
+ * @returns Verified decryption shares grouped by option.
+ */
+export const verifyDecryptionSharePayloadsByOption = async (
+    input: VerifyDecryptionSharePayloadsByOptionInput,
+): Promise<readonly VerifiedOptionDecryptionShares[]> => {
+    const manifest = validateElectionManifest(input.manifest);
+    const manifestHash = await hashElectionManifest(manifest);
+    const qualSet = new Set(input.dkg.qual);
+    const optionCount = manifest.optionList.length;
+    const aggregateMap = buildOptionAggregateMap(input.aggregates, optionCount);
+    const payloadsByOption = new Map<
+        number,
+        SignedPayload<DecryptionSharePayload>[]
+    >();
+
+    for (let optionIndex = 1; optionIndex <= optionCount; optionIndex += 1) {
+        payloadsByOption.set(optionIndex, []);
+    }
+
+    for (const signedPayload of input.decryptionSharePayloads) {
+        const payload = signedPayload.payload;
+        assertPhase(payload, DECRYPTION_SHARE_PHASE, 'Decryption share');
+        assertValidOptionIndex(
+            payload.optionIndex,
+            optionCount,
+            'Decryption share',
+        );
+        payloadsByOption.get(payload.optionIndex)?.push(signedPayload);
+    }
+
+    const verifiedShares: VerifiedOptionDecryptionShares[] = [];
+    for (let optionIndex = 1; optionIndex <= optionCount; optionIndex += 1) {
+        const optionAggregate = aggregateMap.get(optionIndex);
+        const optionPayloads = payloadsByOption.get(optionIndex) ?? [];
+
+        if (optionAggregate === undefined) {
+            throw new InvalidPayloadError(
+                `Missing verified aggregate for option ${optionIndex}`,
+            );
+        }
+        if (optionPayloads.length < manifest.threshold) {
+            throw new InvalidPayloadError(
+                `At least ${manifest.threshold} decryption shares are required for option ${optionIndex}`,
+            );
+        }
+
+        const seenParticipants = new Set<number>();
+        const optionVerifiedShares: VerifiedDecryptionSharePayload[] = [];
+        for (const signedPayload of optionPayloads) {
+            const payload = signedPayload.payload;
+            if (payload.sessionId !== input.sessionId) {
+                throw new InvalidPayloadError(
+                    'Decryption-share payload session does not match the verification input',
+                );
+            }
+            if (payload.manifestHash !== manifestHash) {
+                throw new InvalidPayloadError(
+                    'Decryption-share payload manifest hash does not match the verification input',
+                );
+            }
+            if (!qualSet.has(payload.participantIndex)) {
+                throw new InvalidPayloadError(
+                    `Decryption share came from non-qualified participant ${payload.participantIndex}`,
+                );
+            }
+            if (seenParticipants.has(payload.participantIndex)) {
+                throw new InvalidPayloadError(
+                    `Duplicate decryption share for participant ${payload.participantIndex} and option ${optionIndex} is not allowed`,
+                );
+            }
+            seenParticipants.add(payload.participantIndex);
+
+            assertNonEmptyString(
+                payload.transcriptHash,
+                'Decryption transcript hash',
+            );
+            if (
+                payload.transcriptHash !==
+                optionAggregate.aggregate.transcriptHash
+            ) {
+                throw new InvalidPayloadError(
+                    `Decryption share transcript hash mismatch for participant ${payload.participantIndex} and option ${optionIndex}`,
+                );
+            }
+            if (payload.ballotCount !== optionAggregate.aggregate.ballotCount) {
+                throw new InvalidPayloadError(
+                    `Decryption share ballot count mismatch for participant ${payload.participantIndex} and option ${optionIndex}`,
+                );
+            }
+
+            const decryptionShare = {
+                index: payload.participantIndex,
+                value: fixedHexToBigint(payload.decryptionShare),
+            } satisfies DecryptionShare;
+            const statement: DLEQStatement = {
+                publicKey: deriveTranscriptVerificationKey(
+                    input.dkg.feldmanCommitments,
+                    payload.participantIndex,
+                    input.dkg.group,
+                ),
+                ciphertext: optionAggregate.aggregate.ciphertext,
+                decryptionShare: decryptionShare.value,
+            };
+            const proof = decodeCompactProof(payload.proof);
+            const valid = await verifyDLEQProof(
+                proof,
+                statement,
+                input.dkg.group,
+                decryptionProofContext(payload, input.dkg.group),
+            );
+
+            if (!valid) {
+                throw new InvalidPayloadError(
+                    `Decryption-share proof failed verification for participant ${payload.participantIndex} and option ${optionIndex}`,
+                );
+            }
+
+            optionVerifiedShares.push({
+                payload: signedPayload,
+                share: decryptionShare,
+            });
+        }
+
+        verifiedShares.push({
+            optionIndex,
+            decryptionShares: optionVerifiedShares,
+        });
+    }
+
+    return verifiedShares;
+};
+
+/**
+ * Verifies typed decryption-share payloads against the DKG transcript-derived
+ * trustee keys and one locally recomputed aggregate ciphertext for a
+ * single-option manifest.
  *
  * @param input Typed decryption-share verification input.
  * @returns Verified decryption shares ready for threshold recombination.
@@ -329,86 +580,25 @@ export const verifyDecryptionSharePayloads = async (
     input: VerifyDecryptionSharePayloadsInput,
 ): Promise<readonly VerifiedDecryptionSharePayload[]> => {
     const manifest = validateElectionManifest(input.manifest);
-    const manifestHash = await hashElectionManifest(manifest);
-    const qualSet = new Set(input.dkg.qual);
+    assertSingleOptionManifest(manifest, 'verifyDecryptionSharePayloads');
 
-    if (input.decryptionSharePayloads.length < manifest.threshold) {
-        throw new InvalidPayloadError(
-            `At least ${manifest.threshold} decryption shares are required`,
-        );
-    }
+    const verifiedShares = await verifyDecryptionSharePayloadsByOption({
+        aggregates: [
+            {
+                optionIndex: 1,
+                aggregate: input.aggregate,
+            },
+        ],
+        dkg: input.dkg,
+        decryptionSharePayloads: input.decryptionSharePayloads,
+        manifest,
+        sessionId: input.sessionId,
+    });
 
-    const verifiedShares: VerifiedDecryptionSharePayload[] = [];
-    for (const signedPayload of input.decryptionSharePayloads) {
-        const payload = signedPayload.payload;
-        assertPhase(payload, DECRYPTION_SHARE_PHASE, 'Decryption share');
-        if (payload.sessionId !== input.sessionId) {
-            throw new InvalidPayloadError(
-                'Decryption-share payload session does not match the verification input',
-            );
-        }
-        if (payload.manifestHash !== manifestHash) {
-            throw new InvalidPayloadError(
-                'Decryption-share payload manifest hash does not match the verification input',
-            );
-        }
-        if (!qualSet.has(payload.participantIndex)) {
-            throw new InvalidPayloadError(
-                `Decryption share came from non-qualified participant ${payload.participantIndex}`,
-            );
-        }
-        assertNonEmptyString(
-            payload.transcriptHash,
-            'Decryption transcript hash',
-        );
-        if (payload.transcriptHash !== input.aggregate.transcriptHash) {
-            throw new InvalidPayloadError(
-                `Decryption share transcript hash mismatch for participant ${payload.participantIndex}`,
-            );
-        }
-        if (payload.ballotCount !== input.aggregate.ballotCount) {
-            throw new InvalidPayloadError(
-                `Decryption share ballot count mismatch for participant ${payload.participantIndex}`,
-            );
-        }
-
-        const decryptionShare = {
-            index: payload.participantIndex,
-            value: fixedHexToBigint(payload.decryptionShare),
-        } satisfies DecryptionShare;
-        const statement: DLEQStatement = {
-            publicKey: deriveTranscriptVerificationKey(
-                input.dkg.feldmanCommitments,
-                payload.participantIndex,
-                input.dkg.group,
-            ),
-            ciphertext: input.aggregate.ciphertext,
-            decryptionShare: decryptionShare.value,
-        };
-        const proof = decodeCompactProof(payload.proof);
-        const valid = await verifyDLEQProof(
-            proof,
-            statement,
-            input.dkg.group,
-            decryptionProofContext(payload, input.dkg.group),
-        );
-
-        if (!valid) {
-            throw new InvalidPayloadError(
-                `Decryption-share proof failed verification for participant ${payload.participantIndex}`,
-            );
-        }
-
-        verifiedShares.push({
-            payload: signedPayload,
-            share: decryptionShare,
-        });
-    }
-
-    return verifiedShares;
+    return verifiedShares[0].decryptionShares;
 };
 
-/** Input bundle for verifying one full published tally. */
+/** Input bundle for verifying one published tally. */
 export type VerifyPublishedVotingResultInput = {
     readonly protocol: DKGProtocol;
     readonly manifest: ElectionManifest;
@@ -417,6 +607,31 @@ export type VerifyPublishedVotingResultInput = {
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
     readonly tallyPublication?: SignedPayload<TallyPublicationPayload>;
+};
+
+/** Input bundle for verifying one full published tally set across all options. */
+export type VerifyPublishedVotingResultsInput = {
+    readonly protocol: DKGProtocol;
+    readonly manifest: ElectionManifest;
+    readonly sessionId: string;
+    readonly dkgTranscript: readonly SignedPayload[];
+    readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
+    readonly tallyPublications?: readonly SignedPayload<TallyPublicationPayload>[];
+};
+
+/** Verified published tally for one option slot. */
+export type VerifiedPublishedOptionVotingResult = {
+    readonly optionIndex: number;
+    readonly ballots: VerifiedOptionBallotAggregation;
+    readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
+    readonly tally: bigint;
+};
+
+/** Verified published tallies and reusable transcript sub-results. */
+export type VerifiedPublishedVotingResults = {
+    readonly dkg: VerifiedDKGTranscript;
+    readonly options: readonly VerifiedPublishedOptionVotingResult[];
 };
 
 /** Verified published tally and all of its reusable sub-results. */
@@ -428,13 +643,191 @@ export type VerifiedPublishedVotingResult = {
 };
 
 /**
- * Verifies one published tally from the signed DKG log, typed ballot payloads,
- * typed decryption-share payloads, and an optional tally-publication record.
+ * Verifies published tallies from the signed DKG log, typed ballot payloads,
+ * typed decryption-share payloads, and optional tally-publication records.
  *
  * The helper intentionally recomputes everything locally: it verifies the DKG
- * transcript, recomputes the aggregate from the accepted ballots, verifies each
- * DLEQ proof against transcript-derived trustee keys, and only then combines
- * shares into the final tally.
+ * transcript, recomputes one aggregate per option from the accepted ballots,
+ * verifies each DLEQ proof against transcript-derived trustee keys, and only
+ * then combines shares into the final tallies.
+ *
+ * @param input Published tally verification input.
+ * @returns Fully verified per-option tally results.
+ */
+export const verifyPublishedVotingResults = async (
+    input: VerifyPublishedVotingResultsInput,
+): Promise<VerifiedPublishedVotingResults> => {
+    const manifest = validateElectionManifest(input.manifest);
+    const manifestHash = await hashElectionManifest(manifest);
+    const dkg = await verifyDKGTranscript({
+        protocol: input.protocol,
+        transcript: input.dkgTranscript,
+        manifest,
+        sessionId: input.sessionId,
+    });
+    const optionCount = manifest.optionList.length;
+    const tallyPublications =
+        input.tallyPublications === undefined ||
+        input.tallyPublications.length === 0
+            ? undefined
+            : input.tallyPublications;
+
+    await verifyPayloadsAgainstRegistrations(
+        [
+            ...input.ballotPayloads,
+            ...input.decryptionSharePayloads,
+            ...(tallyPublications ?? []),
+        ],
+        dkg.registrations,
+    );
+
+    const ballots = await verifyBallotSubmissionPayloadsByOption({
+        ballotPayloads: input.ballotPayloads,
+        publicKey: dkg.derivedPublicKey,
+        manifest,
+        sessionId: input.sessionId,
+    });
+    const decryptionShares = await verifyDecryptionSharePayloadsByOption({
+        aggregates: ballots.map((optionBallots) => ({
+            optionIndex: optionBallots.optionIndex,
+            aggregate: optionBallots.aggregate,
+        })),
+        dkg,
+        decryptionSharePayloads: input.decryptionSharePayloads,
+        manifest,
+        sessionId: input.sessionId,
+    });
+
+    const tallyPublicationMap = new Map<
+        number,
+        SignedPayload<TallyPublicationPayload>
+    >();
+    if (tallyPublications !== undefined) {
+        if (tallyPublications.length !== optionCount) {
+            throw new InvalidPayloadError(
+                `Expected ${optionCount} tally-publication payloads, received ${tallyPublications.length}`,
+            );
+        }
+
+        for (const signedPayload of tallyPublications) {
+            const payload = signedPayload.payload;
+            assertPhase(payload, TALLY_PUBLICATION_PHASE, 'Tally publication');
+            if (payload.sessionId !== input.sessionId) {
+                throw new InvalidPayloadError(
+                    'Tally publication session does not match the verification input',
+                );
+            }
+            if (payload.manifestHash !== manifestHash) {
+                throw new InvalidPayloadError(
+                    'Tally publication manifest hash does not match the verification input',
+                );
+            }
+            assertValidOptionIndex(
+                payload.optionIndex,
+                optionCount,
+                'Tally publication',
+            );
+            if (tallyPublicationMap.has(payload.optionIndex)) {
+                throw new InvalidPayloadError(
+                    `Duplicate tally publication for option ${payload.optionIndex} is not allowed`,
+                );
+            }
+            tallyPublicationMap.set(payload.optionIndex, signedPayload);
+        }
+    }
+
+    const results: VerifiedPublishedOptionVotingResult[] = [];
+    for (let optionIndex = 1; optionIndex <= optionCount; optionIndex += 1) {
+        const optionBallots = ballots.find(
+            (entry) => entry.optionIndex === optionIndex,
+        );
+        const optionDecryptionShares = decryptionShares.find(
+            (entry) => entry.optionIndex === optionIndex,
+        );
+
+        if (optionBallots === undefined) {
+            throw new InvalidPayloadError(
+                `Missing verified ballots for option ${optionIndex}`,
+            );
+        }
+        if (optionDecryptionShares === undefined) {
+            throw new InvalidPayloadError(
+                `Missing verified decryption shares for option ${optionIndex}`,
+            );
+        }
+
+        const bound =
+            BigInt(optionBallots.aggregate.ballotCount) *
+            BigInt(manifest.scoreDomainMax);
+        const tally = combineDecryptionShares(
+            optionBallots.aggregate.ciphertext,
+            optionDecryptionShares.decryptionShares.map((entry) => entry.share),
+            dkg.group,
+            bound,
+        );
+
+        const publication = tallyPublicationMap.get(optionIndex);
+        if (tallyPublications !== undefined && publication === undefined) {
+            throw new InvalidPayloadError(
+                `Missing tally publication for option ${optionIndex}`,
+            );
+        }
+        if (publication !== undefined) {
+            const payload = publication.payload;
+
+            if (
+                payload.transcriptHash !==
+                optionBallots.aggregate.transcriptHash
+            ) {
+                throw new InvalidPayloadError(
+                    `Tally publication transcript hash does not match the accepted ballot transcript for option ${optionIndex}`,
+                );
+            }
+            if (payload.ballotCount !== optionBallots.aggregate.ballotCount) {
+                throw new InvalidPayloadError(
+                    `Tally publication ballot count does not match the accepted ballot transcript for option ${optionIndex}`,
+                );
+            }
+            if (fixedHexToBigint(payload.tally) !== tally) {
+                throw new InvalidPayloadError(
+                    `Tally publication does not match the recomputed tally for option ${optionIndex}`,
+                );
+            }
+            assertUniqueSortedIndices(
+                payload.decryptionParticipantIndices,
+                'Tally publication decryption participant',
+            );
+            const actualIndices = optionDecryptionShares.decryptionShares
+                .map((entry) => entry.share.index)
+                .sort((left, right) => left - right);
+            if (
+                JSON.stringify(payload.decryptionParticipantIndices) !==
+                JSON.stringify(actualIndices)
+            ) {
+                throw new InvalidPayloadError(
+                    `Tally publication decryption participant set does not match the supplied decryption shares for option ${optionIndex}`,
+                );
+            }
+        }
+
+        results.push({
+            optionIndex,
+            ballots: optionBallots,
+            decryptionShares: optionDecryptionShares.decryptionShares,
+            tally,
+        });
+    }
+
+    return {
+        dkg,
+        options: results,
+    };
+};
+
+/**
+ * Verifies one published tally from the signed DKG log, typed ballot payloads,
+ * typed decryption-share payloads, and an optional tally-publication record for
+ * a single-option manifest.
  *
  * @param input Published tally verification input.
  * @returns Fully verified tally result.
@@ -443,96 +836,26 @@ export const verifyPublishedVotingResult = async (
     input: VerifyPublishedVotingResultInput,
 ): Promise<VerifiedPublishedVotingResult> => {
     const manifest = validateElectionManifest(input.manifest);
-    const dkg = await verifyDKGTranscript({
+    assertSingleOptionManifest(manifest, 'verifyPublishedVotingResult');
+
+    const results = await verifyPublishedVotingResults({
         protocol: input.protocol,
-        transcript: input.dkgTranscript,
         manifest,
         sessionId: input.sessionId,
-    });
-
-    await verifyPayloadsAgainstRegistrations(
-        [
-            ...input.ballotPayloads,
-            ...input.decryptionSharePayloads,
-            ...(input.tallyPublication === undefined
-                ? []
-                : [input.tallyPublication]),
-        ],
-        dkg.registrations,
-    );
-
-    const ballots = await verifyBallotSubmissionPayloads({
+        dkgTranscript: input.dkgTranscript,
         ballotPayloads: input.ballotPayloads,
-        publicKey: dkg.derivedPublicKey,
-        manifest,
-        sessionId: input.sessionId,
-    });
-    const decryptionShares = await verifyDecryptionSharePayloads({
-        aggregate: ballots.aggregate,
-        dkg,
         decryptionSharePayloads: input.decryptionSharePayloads,
-        manifest,
-        sessionId: input.sessionId,
+        tallyPublications:
+            input.tallyPublication === undefined
+                ? undefined
+                : [input.tallyPublication],
     });
-    const bound =
-        BigInt(ballots.aggregate.ballotCount) * BigInt(manifest.scoreDomainMax);
-    const tally = combineDecryptionShares(
-        ballots.aggregate.ciphertext,
-        decryptionShares.map((entry) => entry.share),
-        dkg.group,
-        bound,
-    );
-
-    if (input.tallyPublication !== undefined) {
-        const payload = input.tallyPublication.payload;
-        assertPhase(payload, TALLY_PUBLICATION_PHASE, 'Tally publication');
-        if (payload.sessionId !== input.sessionId) {
-            throw new InvalidPayloadError(
-                'Tally publication session does not match the verification input',
-            );
-        }
-        const manifestHash = await hashElectionManifest(manifest);
-        if (payload.manifestHash !== manifestHash) {
-            throw new InvalidPayloadError(
-                'Tally publication manifest hash does not match the verification input',
-            );
-        }
-        if (payload.transcriptHash !== ballots.aggregate.transcriptHash) {
-            throw new InvalidPayloadError(
-                'Tally publication transcript hash does not match the accepted ballot transcript',
-            );
-        }
-        if (payload.ballotCount !== ballots.aggregate.ballotCount) {
-            throw new InvalidPayloadError(
-                'Tally publication ballot count does not match the accepted ballot transcript',
-            );
-        }
-        if (fixedHexToBigint(payload.tally) !== tally) {
-            throw new InvalidPayloadError(
-                'Tally publication does not match the recomputed tally',
-            );
-        }
-        assertUniqueSortedIndices(
-            payload.decryptionParticipantIndices,
-            'Tally publication decryption participant',
-        );
-        const actualIndices = decryptionShares
-            .map((entry) => entry.share.index)
-            .sort((left, right) => left - right);
-        if (
-            JSON.stringify(payload.decryptionParticipantIndices) !==
-            JSON.stringify(actualIndices)
-        ) {
-            throw new InvalidPayloadError(
-                'Tally publication decryption participant set does not match the supplied decryption shares',
-            );
-        }
-    }
+    const option = results.options[0];
 
     return {
-        dkg,
-        ballots,
-        decryptionShares,
-        tally,
+        dkg: results.dkg,
+        ballots: option.ballots,
+        decryptionShares: option.decryptionShares,
+        tally: option.tally,
     };
 };

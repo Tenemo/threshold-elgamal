@@ -63,11 +63,13 @@ export type VotingFlowScenario = {
     readonly complaints?: readonly ComplaintInjection[];
     readonly decryptionParticipantIndices?: readonly number[];
     readonly group?: GroupName;
+    readonly optionList?: readonly string[];
     readonly participantCount: number;
     readonly scoreDomainMax?: number;
     readonly threshold?: number;
     readonly transportSuite?: KeyAgreementSuite;
     readonly votes: readonly bigint[];
+    readonly votesByOption?: readonly (readonly bigint[])[];
 };
 
 export type BallotArtifact = {
@@ -81,6 +83,22 @@ export type BallotArtifact = {
 export type ThresholdShareArtifact = {
     readonly proof: DLEQProof;
     readonly share: DecryptionShare;
+};
+
+export type OptionVotingArtifacts = {
+    readonly aggregate: { readonly c1: bigint; readonly c2: bigint };
+    readonly ballotLogHash: string;
+    readonly ballots: readonly BallotArtifact[];
+    readonly expectedTally: bigint;
+    readonly mismatchedAggregate: {
+        readonly c1: bigint;
+        readonly c2: bigint;
+    };
+    readonly optionIndex: number;
+    readonly recovered: bigint;
+    readonly recoveredWithAllShares: bigint;
+    readonly tallyPublication: SignedPayload<TallyPublicationPayload>;
+    readonly thresholdShareArtifacts: readonly ThresholdShareArtifact[];
 };
 
 type CommonScenarioResult = {
@@ -105,6 +123,7 @@ type CommonScenarioResult = {
         readonly c1: bigint;
         readonly c2: bigint;
     };
+    readonly optionResults?: readonly OptionVotingArtifacts[];
     readonly participantAuthKeys: readonly {
         readonly index: number;
         readonly privateKey: CryptoKey;
@@ -113,6 +132,7 @@ type CommonScenarioResult = {
     readonly sessionFingerprint: string;
     readonly sessionId: string;
     readonly tallyPublication?: SignedPayload<TallyPublicationPayload>;
+    readonly tallyPublications?: readonly SignedPayload<TallyPublicationPayload>[];
     readonly thresholdShareArtifacts?: readonly ThresholdShareArtifact[];
     readonly transcriptDerivedVerificationKeys?: readonly {
         readonly index: number;

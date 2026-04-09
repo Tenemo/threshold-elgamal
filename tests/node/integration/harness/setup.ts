@@ -47,23 +47,35 @@ export const buildManifest = (
     rosterHash: string,
     group: CryptoGroup,
     scenario: VotingFlowScenario,
-): ElectionManifest => ({
-    protocolVersion: 'v1',
-    suiteId: group.name,
-    threshold: majorityThreshold(scenario.participantCount),
-    participantCount: scenario.participantCount,
-    minimumPublicationThreshold: defaultMinimumPublicationThreshold(
-        majorityThreshold(scenario.participantCount),
-        scenario.participantCount,
-    ),
-    allowAbstention: scenario.allowAbstention ?? false,
-    scoreDomainMin: scenario.allowAbstention ? 0 : 1,
-    scoreDomainMax: scenario.scoreDomainMax ?? 10,
-    ballotFinality: 'first-valid',
-    rosterHash,
-    optionList: ['Option A'],
-    epochDeadlines: ['2026-04-08T12:00:00Z'],
-});
+): ElectionManifest => {
+    const threshold =
+        scenario.threshold ?? majorityThreshold(scenario.participantCount);
+    const optionCount = scenario.votesByOption?.length ?? 1;
+    const optionList =
+        scenario.optionList ??
+        Array.from({ length: optionCount }, (_value, index) => {
+            const suffix = String.fromCharCode('A'.charCodeAt(0) + index);
+            return `Option ${suffix}`;
+        });
+
+    return {
+        protocolVersion: 'v1',
+        suiteId: group.name,
+        threshold,
+        participantCount: scenario.participantCount,
+        minimumPublicationThreshold: defaultMinimumPublicationThreshold(
+            threshold,
+            scenario.participantCount,
+        ),
+        allowAbstention: scenario.allowAbstention ?? false,
+        scoreDomainMin: scenario.allowAbstention ? 0 : 1,
+        scoreDomainMax: scenario.scoreDomainMax ?? 10,
+        ballotFinality: 'first-valid',
+        rosterHash,
+        optionList,
+        epochDeadlines: ['2026-04-08T12:00:00Z'],
+    };
+};
 
 export const createRegistrationPayloads = async (
     participants: readonly ParticipantRuntime[],

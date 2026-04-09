@@ -25,8 +25,10 @@ This page records the stable invariants of the current 1.x surface.
 ## Threshold and protocol rules
 
 - Dealer threshold helpers operate on indexed Shamir shares with 1-based participant indices.
+- Distributed DKG manifests enforce a strict-majority threshold range `floor(n / 2) + 1 <= k <= n - 1`.
 - The public threshold surface combines only additive ElGamal ciphertexts.
 - Safe aggregate decryption helpers require a verified aggregate context with a non-empty transcript hash.
+- Published tally verification recomputes one additive aggregate and one tally per option slot.
 - DKG reducers are pure log-driven state machines with deterministic replay from signed payloads.
 - Protocol payload idempotence and equivocation checks are defined over unsigned canonical payload bytes.
 

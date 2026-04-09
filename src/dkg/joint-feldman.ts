@@ -4,11 +4,7 @@ import {
     createMajorityDkgState,
     processMajorityDkgPayload,
 } from './majority-reducer.js';
-import type {
-    DKGState,
-    DKGTransition,
-    MajorityDKGConfigInput,
-} from './types.js';
+import type { DKGConfigInput, DKGState, DKGTransition } from './types.js';
 
 /**
  * Creates an empty Joint-Feldman state.
@@ -16,9 +12,8 @@ import type {
  * @param config DKG configuration.
  * @returns Initial Joint-Feldman state.
  */
-export const createJointFeldmanState = (
-    config: MajorityDKGConfigInput,
-): DKGState => createMajorityDkgState(config, 'joint-feldman');
+export const createJointFeldmanState = (config: DKGConfigInput): DKGState =>
+    createMajorityDkgState(config, 'joint-feldman');
 
 /**
  * Processes one signed payload through the Joint-Feldman log reducer.
@@ -40,7 +35,7 @@ export const processJointFeldmanPayload = (
  * @returns Final Joint-Feldman state after replay.
  */
 export const replayJointFeldmanTranscript = (
-    config: MajorityDKGConfigInput,
+    config: DKGConfigInput,
     transcript: readonly SignedPayload[],
 ): DKGState => {
     let state = createJointFeldmanState(config);
