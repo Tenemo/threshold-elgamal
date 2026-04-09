@@ -15,6 +15,8 @@ import {
 } from '#protocol';
 import { signPayloadBytes } from '#transport';
 
+const fixtureTimeoutMs = 180_000;
+
 const expectCompleted = (
     result: VotingFlowResult,
     label: string,
@@ -94,7 +96,7 @@ describe('published voting verification', () => {
             }),
             'Expected the multi-option voting fixture to complete',
         );
-    }, 90_000);
+    }, fixtureTimeoutMs);
 
     it(
         'verifies the typed ballot, decryption-share, and tally payloads end to end',

@@ -10,11 +10,14 @@ import {
     deriveSessionId,
     formatSessionFingerprint,
     hashElectionManifest,
+    hashProtocolPhaseSnapshot,
     hashProtocolTranscript,
     payloadSlotKey,
+    protocolPhaseSnapshotPayloads,
     sortProtocolPayloads,
     type ElectionManifest,
     type ManifestAcceptancePayload,
+    type PhaseCheckpointPayload,
     type RegistrationPayload,
     type SignedPayload,
 } from '#protocol';
@@ -315,6 +318,18 @@ describe('protocol payloads and transcripts', () => {
         ).toBe(`session-1:7:1:tally-publication:2:${'bb'.repeat(32)}`);
         expect(
             payloadSlotKey({
+                sessionId: 'session-1',
+                manifestHash: 'manifest-1',
+                phase: 1,
+                participantIndex: 2,
+                messageType: 'phase-checkpoint',
+                checkpointPhase: 1,
+                checkpointTranscriptHash: 'dd'.repeat(32),
+                qualParticipantIndices: [1, 2, 3],
+            } satisfies PhaseCheckpointPayload),
+        ).toBe('session-1:1:2:phase-checkpoint:1');
+        expect(
+            payloadSlotKey({
                 sessionId: 'session-2',
                 manifestHash: 'manifest-2',
                 phase: 0,
@@ -346,6 +361,83 @@ describe('protocol payloads and transcripts', () => {
         );
         expect(classifySlotConflict(identicalUnsigned, equivocated)).toBe(
             'equivocation',
+        );
+    });
+
+    it('hashes phase snapshots without including checkpoints or restart links', async () => {
+        const setupPayloads = [
+            {
+                sessionId: 'session-1',
+                manifestHash: 'manifest-1',
+                phase: 0,
+                participantIndex: 1,
+                messageType: 'manifest-publication' as const,
+                manifest,
+            },
+            acceptance,
+            registration,
+        ];
+        const checkpointPayload: PhaseCheckpointPayload = {
+            sessionId: 'session-1',
+            manifestHash: 'manifest-1',
+            phase: 0,
+            participantIndex: 2,
+            messageType: 'phase-checkpoint',
+            checkpointPhase: 0,
+            checkpointTranscriptHash: '11'.repeat(32),
+            qualParticipantIndices: [1, 2, 3],
+        };
+        const restartPayload = {
+            sessionId: 'session-2',
+            manifestHash: 'manifest-2',
+            phase: 0,
+            participantIndex: 1,
+            messageType: 'ceremony-restart' as const,
+            previousSessionId: 'session-1',
+            previousTranscriptHash: '22'.repeat(32),
+            reason: 'timeout' as const,
+        };
+
+        const snapshotPayloads = protocolPhaseSnapshotPayloads(
+            [checkpointPayload, restartPayload, ...setupPayloads],
+            0,
+        );
+        const snapshotHash = await hashProtocolPhaseSnapshot(
+            [...setupPayloads, checkpointPayload, restartPayload],
+            0,
+        );
+        const directHash = await hashProtocolTranscript(setupPayloads);
+
+        expect(snapshotPayloads).toEqual(sortProtocolPayloads(setupPayloads));
+        expect(snapshotHash).toBe(directHash);
+    });
+
+    it('changes the phase snapshot hash when the server presents different board contents', async () => {
+        const left = {
+            sessionId: 'session-1',
+            manifestHash: 'manifest-1',
+            phase: 1,
+            participantIndex: 1,
+            messageType: 'encrypted-dual-share' as const,
+            recipientIndex: 2,
+            envelopeId: 'env-1-2',
+            suite: 'P-256' as const,
+            ephemeralPublicKey: 'epk-a',
+            iv: 'iv-a',
+            ciphertext: 'ciphertext-a',
+        };
+        const right = {
+            ...left,
+            ciphertext: 'ciphertext-b',
+        };
+
+        await expect(
+            hashProtocolPhaseSnapshot([acceptance, registration, left], 1),
+        ).resolves.not.toBe(
+            await hashProtocolPhaseSnapshot(
+                [acceptance, registration, right],
+                1,
+            ),
         );
     });
 

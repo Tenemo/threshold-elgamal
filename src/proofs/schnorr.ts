@@ -1,8 +1,8 @@
 import {
     assertInSubgroup,
     assertScalarInZq,
-    modP,
-    modPowP,
+    fixedBaseModPow,
+    multiExponentiate,
     modQ,
     type CryptoGroup,
     type RandomBytesSource,
@@ -72,7 +72,7 @@ export const createSchnorrProof = async (
         group,
         randomSource,
     );
-    const commitment = modPowP(group.g, nonce, group.p);
+    const commitment = fixedBaseModPow(group.g, nonce, group.p);
     const challenge = await hashChallenge(
         challengePayload(statement, commitment, group, context),
         group.q,
@@ -104,13 +104,14 @@ export const verifySchnorrProof = async (
     assertScalarInZq(proof.response, group.q);
     assertInSubgroup(statement, group.p, group.q);
 
-    const commitment = modP(
-        modPowP(group.g, proof.response, group.p) *
-            modPowP(
-                statement,
-                negateExponent(proof.challenge, group.q),
-                group.p,
-            ),
+    const commitment = multiExponentiate(
+        [
+            { base: group.g, exponent: proof.response },
+            {
+                base: statement,
+                exponent: negateExponent(proof.challenge, group.q),
+            },
+        ],
         group.p,
     );
     const expected = await hashChallenge(

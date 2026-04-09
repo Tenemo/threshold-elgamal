@@ -1,5 +1,6 @@
 import {
     computeRosterHash,
+    createPhaseCheckpointPayload,
     createManifestPublicationPayload,
     invariant,
     signPayload,
@@ -82,6 +83,35 @@ const normalizedVotesByOption = (
 const votesFingerprint = (
     votesByOption: readonly (readonly bigint[])[],
 ): string => votesByOption.map((votes) => votes.join('-')).join('|');
+
+const excludeParticipants = <
+    TPayload extends {
+        readonly payload: { readonly participantIndex: number };
+    },
+>(
+    payloads: readonly TPayload[],
+    excluded: ReadonlySet<number>,
+): readonly TPayload[] =>
+    payloads.filter(
+        (payload) => !excluded.has(payload.payload.participantIndex),
+    );
+
+const checkpointSigners = (
+    qual: readonly number[],
+    threshold: number,
+    excluded: ReadonlySet<number>,
+): readonly number[] => {
+    const signers = qual.filter(
+        (participantIndex) => !excluded.has(participantIndex),
+    );
+
+    invariant(
+        signers.length >= threshold,
+        `Checkpoint signer subset must contain at least ${threshold} participants`,
+    );
+
+    return signers.slice(0, threshold);
+};
 
 /**
  * Runs a parameterized end-to-end voting-flow scenario.
@@ -201,6 +231,44 @@ export const runVotingFlowScenario = async (
             ),
         ),
     );
+    const missingPedersenCommitmentIndices = new Set(
+        scenario.missingPedersenCommitmentParticipantIndices ?? [],
+    );
+    const missingEncryptedShareDealerIndices = new Set(
+        scenario.missingEncryptedShareDealerIndices ?? [],
+    );
+    const missingFeldmanCommitmentIndices = new Set(
+        scenario.missingFeldmanCommitmentParticipantIndices ?? [],
+    );
+    const missingKeyDerivationConfirmationIndices = new Set(
+        scenario.missingKeyDerivationConfirmationParticipantIndices ?? [],
+    );
+    const missingCheckpointSignerIndices =
+        scenario.missingPhaseCheckpointSignerIndices ?? {};
+
+    const phase0Qual = participants.map((participant) => participant.index);
+    const phase0CheckpointSigners = checkpointSigners(
+        phase0Qual,
+        threshold,
+        new Set(missingCheckpointSignerIndices[0] ?? []),
+    );
+    const phase0CheckpointTranscript = [
+        manifestPublication,
+        ...registrations,
+        ...acceptances,
+    ] as const;
+    const phase0Checkpoints = await Promise.all(
+        phase0CheckpointSigners.map((participantIndex) =>
+            createPhaseCheckpointPayload(
+                participants[participantIndex - 1],
+                sessionId,
+                manifestHash,
+                phase0CheckpointTranscript,
+                0,
+                phase0Qual,
+            ),
+        ),
+    );
     const {
         allEncryptedSharePayloads,
         complainedDealerIndices,
@@ -214,63 +282,180 @@ export const runVotingFlowScenario = async (
         sessionId,
         manifestHash,
     );
+    const pedersenPayloads = excludeParticipants(
+        dealerMaterials.map((dealer) => dealer.pedersenCommitmentPayload),
+        missingPedersenCommitmentIndices,
+    );
+    const encryptedSharePayloads = allEncryptedSharePayloads.filter(
+        (payload) =>
+            !missingEncryptedShareDealerIndices.has(
+                payload.payload.participantIndex,
+            ),
+    );
+    const phase1Qual = phase0Qual.filter(
+        (participantIndex) =>
+            !missingPedersenCommitmentIndices.has(participantIndex) &&
+            !missingEncryptedShareDealerIndices.has(participantIndex),
+    );
+    const phase1CheckpointTranscript = [
+        ...phase0CheckpointTranscript,
+        ...phase0Checkpoints,
+        ...pedersenPayloads,
+        ...encryptedSharePayloads,
+    ] as const;
+    const phase1Checkpoints =
+        phase1Qual.length >= threshold
+            ? await Promise.all(
+                  checkpointSigners(
+                      phase1Qual,
+                      threshold,
+                      new Set(missingCheckpointSignerIndices[1] ?? []),
+                  ).map((participantIndex) =>
+                      createPhaseCheckpointPayload(
+                          participants[participantIndex - 1],
+                          sessionId,
+                          manifestHash,
+                          phase1CheckpointTranscript,
+                          1,
+                          phase1Qual,
+                      ),
+                  ),
+              )
+            : [];
 
-    const qual = participants
-        .map((participant) => participant.index)
-        .filter((index) => !complainedDealerIndices.has(index));
+    const complaintQual = phase1Qual.filter(
+        (participantIndex) => !complainedDealerIndices.has(participantIndex),
+    );
+    const phase2Checkpoints =
+        complaintQual.length >= threshold
+            ? await Promise.all(
+                  checkpointSigners(
+                      complaintQual,
+                      threshold,
+                      new Set(missingCheckpointSignerIndices[2] ?? []),
+                  ).map((participantIndex) =>
+                      createPhaseCheckpointPayload(
+                          participants[participantIndex - 1],
+                          sessionId,
+                          manifestHash,
+                          [
+                              ...phase1CheckpointTranscript,
+                              ...phase1Checkpoints,
+                              ...complaintPayloads,
+                              ...complaintResolutionPayloads,
+                          ] as const,
+                          2,
+                          complaintQual,
+                      ),
+                  ),
+              )
+            : [];
+
+    const finalQual = complaintQual.filter(
+        (participantIndex) =>
+            !missingFeldmanCommitmentIndices.has(participantIndex),
+    );
     const qualDealerMaterials = dealerMaterials.filter((dealer) =>
-        qual.includes(dealer.participantIndex),
+        finalQual.includes(dealer.participantIndex),
     );
-    const feldmanPayloads = qualDealerMaterials.map(
-        (dealer) => dealer.feldmanCommitmentPayload,
+    const feldmanPayloads = excludeParticipants(
+        qualDealerMaterials.map((dealer) => dealer.feldmanCommitmentPayload),
+        new Set<number>(),
     );
+    const phase3Checkpoints =
+        finalQual.length >= threshold
+            ? await Promise.all(
+                  checkpointSigners(
+                      finalQual,
+                      threshold,
+                      new Set(missingCheckpointSignerIndices[3] ?? []),
+                  ).map((participantIndex) =>
+                      createPhaseCheckpointPayload(
+                          participants[participantIndex - 1],
+                          sessionId,
+                          manifestHash,
+                          [
+                              ...phase1CheckpointTranscript,
+                              ...phase1Checkpoints,
+                              ...complaintPayloads,
+                              ...complaintResolutionPayloads,
+                              ...phase2Checkpoints,
+                              ...feldmanPayloads,
+                          ] as const,
+                          3,
+                          finalQual,
+                      ),
+                  ),
+              )
+            : [];
 
     const preConfirmationTranscript = [
-        manifestPublication,
-        ...registrations,
-        ...acceptances,
-        ...dealerMaterials.map((dealer) => dealer.pedersenCommitmentPayload),
-        ...allEncryptedSharePayloads,
+        ...phase0CheckpointTranscript,
+        ...phase0Checkpoints,
+        ...pedersenPayloads,
+        ...encryptedSharePayloads,
+        ...phase1Checkpoints,
         ...complaintPayloads,
         ...complaintResolutionPayloads,
+        ...phase2Checkpoints,
         ...feldmanPayloads,
+        ...phase3Checkpoints,
     ] as const;
     const preConfirmationQualHash = await hashProtocolTranscript(
         preConfirmationTranscript.map((item) => item.payload),
     );
-    const confirmations = await Promise.all(
-        qual.map((participantIndex) =>
-            signPayload(participants[participantIndex - 1].auth.privateKey, {
-                sessionId,
-                manifestHash,
-                phase: 4,
-                participantIndex,
-                messageType: 'key-derivation-confirmation',
-                qualHash: preConfirmationQualHash,
-                publicKey: bigintToFixedHex(
-                    qualDealerMaterials.reduce(
-                        (accumulator, dealer) =>
-                            modP(
-                                accumulator * dealer.feldmanCommitments[0],
-                                group.p,
-                            ),
-                        1n,
-                    ),
-                    group.byteLength,
-                ),
-            } satisfies KeyDerivationConfirmation),
-        ),
-    );
+    const confirmations =
+        scenario.includeKeyDerivationConfirmations === true &&
+        finalQual.length >= threshold
+            ? await Promise.all(
+                  finalQual
+                      .filter(
+                          (participantIndex) =>
+                              !missingKeyDerivationConfirmationIndices.has(
+                                  participantIndex,
+                              ),
+                      )
+                      .map((participantIndex) =>
+                          signPayload(
+                              participants[participantIndex - 1].auth
+                                  .privateKey,
+                              {
+                                  sessionId,
+                                  manifestHash,
+                                  phase: 4,
+                                  participantIndex,
+                                  messageType: 'key-derivation-confirmation',
+                                  qualHash: preConfirmationQualHash,
+                                  publicKey: bigintToFixedHex(
+                                      qualDealerMaterials.reduce(
+                                          (accumulator, dealer) =>
+                                              modP(
+                                                  accumulator *
+                                                      dealer
+                                                          .feldmanCommitments[0],
+                                                  group.p,
+                                              ),
+                                          1n,
+                                      ),
+                                      group.byteLength,
+                                  ),
+                              } satisfies KeyDerivationConfirmation,
+                          ),
+                      ),
+              )
+            : [];
 
     const dkgTranscript = [
-        manifestPublication,
-        ...registrations,
-        ...acceptances,
-        ...dealerMaterials.map((dealer) => dealer.pedersenCommitmentPayload),
-        ...allEncryptedSharePayloads,
+        ...phase0CheckpointTranscript,
+        ...phase0Checkpoints,
+        ...pedersenPayloads,
+        ...encryptedSharePayloads,
+        ...phase1Checkpoints,
         ...complaintPayloads,
         ...complaintResolutionPayloads,
+        ...phase2Checkpoints,
         ...feldmanPayloads,
+        ...phase3Checkpoints,
         ...confirmations,
     ] as const;
     await verifySignedTranscript(participants, dkgTranscript);
@@ -296,6 +481,12 @@ export const runVotingFlowScenario = async (
             ballots: [],
             complaintResolutions,
             dkgTranscript,
+            dkgPhaseCheckpoints: [
+                ...phase0Checkpoints,
+                ...phase1Checkpoints,
+                ...phase2Checkpoints,
+                ...phase3Checkpoints,
+            ],
             manifest,
             finalState: abortedState,
             group,
@@ -325,15 +516,15 @@ export const runVotingFlowScenario = async (
         readonly phase: 'completed';
     };
     invariant(
-        JSON.stringify(finalState.qual) === JSON.stringify(qual),
-        'Reducer QUAL set does not match the complaint outcomes',
+        JSON.stringify(finalState.qual) === JSON.stringify(finalQual),
+        'Reducer QUAL set does not match the checkpointed DKG outcomes',
     );
     invariant(
-        JSON.stringify(verifiedTranscript.qual) === JSON.stringify(qual),
-        'Verified transcript QUAL set does not match the complaint outcomes',
+        JSON.stringify(verifiedTranscript.qual) === JSON.stringify(finalQual),
+        'Verified transcript QUAL set does not match the checkpointed DKG outcomes',
     );
 
-    const finalShares: readonly Share[] = qual.map((participantIndex) => ({
+    const finalShares: readonly Share[] = finalQual.map((participantIndex) => ({
         index: participantIndex,
         value: modQ(
             qualDealerMaterials.reduce(
@@ -439,7 +630,7 @@ export const runVotingFlowScenario = async (
     });
 
     const selectedIndices =
-        scenario.decryptionParticipantIndices ?? qual.slice(0, threshold);
+        scenario.decryptionParticipantIndices ?? finalQual.slice(0, threshold);
 
     invariant(
         selectedIndices.length >= threshold,
@@ -603,6 +794,12 @@ export const runVotingFlowScenario = async (
         complaintResolutions,
         decryptionSharePayloads,
         dkgTranscript,
+        dkgPhaseCheckpoints: [
+            ...phase0Checkpoints,
+            ...phase1Checkpoints,
+            ...phase2Checkpoints,
+            ...phase3Checkpoints,
+        ],
         directJointSecret,
         expectedTally: primaryOption.expectedTally,
         finalShares,

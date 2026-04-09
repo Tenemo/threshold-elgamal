@@ -19,6 +19,17 @@ The current surface is browser-native and depends on two JavaScript runtime feat
 - Transport key agreement prefers `X25519` when the runtime exposes it and
   falls back to `P-256` otherwise
 
+## Concurrency and acceleration
+
+- Keep Web Worker orchestration in the application. The library is designed to
+  be imported inside workers, but it does not spawn or manage them itself.
+- `threshold-elgamal/core` exposes `setBigintMathBackend()` for optional
+  backend injection. Keep the JavaScript backend as the default path and install
+  any WASM backend explicitly from the caller.
+- The current recommended default DKG regression size is `10` participants.
+  Larger symmetric ceremonies remain much more sensitive to mobile CPU limits
+  and connection dropouts.
+
 ## Randomness behavior
 
 `randomBytes()` uses Web Crypto by default and fills large buffers in chunks of at most `65,536` bytes. This avoids browser quota failures from `getRandomValues()` on large requests such as `randomBytes(200000)`.

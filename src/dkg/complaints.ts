@@ -22,21 +22,9 @@ const isParticipantIndexInRange = (
 ): boolean =>
     Number.isInteger(index) && index >= 1 && index <= participantCount;
 
-/**
- * Computes QUAL from the frozen participant roster and accepted complaint set.
- *
- * False complainants remain in QUAL. Dealers targeted by complaints are
- * removed unless a dealer-authored complaint resolution matches the same
- * complainant, dealer, and envelope slot.
- *
- * @param participantCount Total participant count `n`.
- * @param complaints Accepted complaints.
- * @param complaintResolutions Complaint resolutions already accepted into the
- * transcript.
- * @returns Sorted QUAL participant indices.
- */
-export const computeQual = (
-    participantCount: number,
+/** Removes dealers targeted by unresolved complaints from an existing QUAL set. */
+export const reduceQualByComplaints = (
+    qual: readonly number[],
     complaints: readonly ComplaintPayload[],
     complaintResolutions: readonly ComplaintResolutionPayload[] = [],
 ): readonly number[] => {
@@ -53,15 +41,9 @@ export const computeQual = (
         complaintResolutions
             .filter(
                 (resolution) =>
+                    qual.includes(resolution.dealerIndex) &&
+                    qual.includes(resolution.complainantIndex) &&
                     resolution.participantIndex === resolution.dealerIndex &&
-                    isParticipantIndexInRange(
-                        resolution.dealerIndex,
-                        participantCount,
-                    ) &&
-                    isParticipantIndexInRange(
-                        resolution.complainantIndex,
-                        participantCount,
-                    ) &&
                     complaintKeys.has(
                         complaintKey(
                             resolution.complainantIndex,
@@ -82,6 +64,8 @@ export const computeQual = (
         complaints
             .filter(
                 (complaint) =>
+                    qual.includes(complaint.participantIndex) &&
+                    qual.includes(complaint.dealerIndex) &&
                     !resolvedComplaints.has(
                         complaintKey(
                             complaint.participantIndex,
@@ -93,8 +77,33 @@ export const computeQual = (
             .map((complaint) => complaint.dealerIndex),
     );
 
-    return allParticipants(participantCount).filter(
-        (index) => !disqualifiedDealers.has(index),
+    return qual.filter((index) => !disqualifiedDealers.has(index));
+};
+
+/**
+ * Computes QUAL from the frozen participant roster and accepted complaint set.
+ *
+ * False complainants remain in QUAL. Dealers targeted by complaints are
+ * removed unless a dealer-authored complaint resolution matches the same
+ * complainant, dealer, and envelope slot.
+ *
+ * @param participantCount Total participant count `n`.
+ * @param complaints Accepted complaints.
+ * @param complaintResolutions Complaint resolutions already accepted into the
+ * transcript.
+ * @returns Sorted QUAL participant indices.
+ */
+export const computeQual = (
+    participantCount: number,
+    complaints: readonly ComplaintPayload[],
+    complaintResolutions: readonly ComplaintResolutionPayload[] = [],
+): readonly number[] => {
+    return reduceQualByComplaints(
+        allParticipants(participantCount).filter((index) =>
+            isParticipantIndexInRange(index, participantCount),
+        ),
+        complaints,
+        complaintResolutions,
     );
 };
 

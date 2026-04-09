@@ -154,6 +154,10 @@ Each participant then signs a registration payload and a manifest-acceptance
 payload. The integration test verifies every signature with
 `verifyPayloadSignature()`.
 
+In this manifest, `threshold` is the DKG reconstruction threshold. By
+contrast, `minimumPublicationThreshold` is only the minimum accepted ballot
+count required before a tally may be published.
+
 ## Build the setup transcript
 
 For a 2-of-3 example, each participant uses a degree-1 secret polynomial and a
@@ -265,7 +269,9 @@ At the end of setup, the application derives:
   commitments
 
 The integration test then feeds the signed setup payloads through the shipped
-GJKR reducer and expects a completed `QUAL = [1, 2, 3]`.
+GJKR reducer and expects a completed `QUAL = [1, 2, 3]`. In the current
+checkpointed flow, each closed setup phase is also signed against a canonical
+phase-snapshot hash so clients can detect divergent board views.
 
 ## Encrypt ballots and verify score proofs
 

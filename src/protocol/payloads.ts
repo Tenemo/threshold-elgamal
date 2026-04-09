@@ -20,6 +20,8 @@ export const payloadSlotKey = (payload: ProtocolPayload): string => {
             return `${prefix}:${payload.dealerIndex}:${payload.envelopeId}`;
         case 'complaint-resolution':
             return `${prefix}:${payload.dealerIndex}:${payload.complainantIndex}:${payload.envelopeId}`;
+        case 'phase-checkpoint':
+            return `${prefix}:${payload.checkpointPhase}`;
         case 'feldman-share-reveal':
             return `${prefix}:${payload.dealerIndex}`;
         case 'ballot-submission':

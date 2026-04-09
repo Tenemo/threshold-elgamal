@@ -26,11 +26,15 @@ This page records the stable invariants of the current 1.x surface.
 
 - Dealer threshold helpers operate on indexed Shamir shares with 1-based participant indices.
 - Distributed DKG manifests enforce a strict-majority threshold range `floor(n / 2) + 1 <= k <= n - 1`.
+- `minimumPublicationThreshold` is a ballot-publication privacy floor and is separate from the DKG reconstruction threshold.
 - The public threshold surface combines only additive ElGamal ciphertexts.
 - Safe aggregate decryption helpers require a verified aggregate context with a non-empty transcript hash.
 - Published tally verification recomputes one additive aggregate and one tally per option slot.
 - DKG reducers are pure log-driven state machines with deterministic replay from signed payloads.
+- Checkpointed DKG transcripts close phases on threshold-supported snapshot hashes rather than unanimous progress.
+- Final key-derivation confirmations are advisory in checkpointed DKG transcripts and do not redefine `QUAL`.
 - Protocol payload idempotence and equivocation checks are defined over unsigned canonical payload bytes.
+- `epochDeadlines` are manifest metadata for application coordination. They are validated for shape but are not yet cryptographically enforced by the verifier.
 
 ## Documentation scope
 
