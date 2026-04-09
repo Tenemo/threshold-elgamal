@@ -49,26 +49,36 @@ const matchesSlice = (relativePath: string, slice: SliceName): boolean => {
 };
 
 const runVitest = (files: readonly string[]): void => {
-    const result = spawnSync(
-        process.execPath,
-        [
-            packageManagerEntrypoint,
-            'exec',
-            'vitest',
-            '--project',
-            'node',
-            '--run',
-            ...files,
-        ],
-        {
-            cwd: repoRoot,
-            stdio: 'inherit',
-            env: process.env,
-        },
-    );
+    const commandArgs = [
+        packageManagerEntrypoint,
+        'exec',
+        'vitest',
+        '--project',
+        'node',
+        '--run',
+        ...files,
+    ];
+    const commandDescription = [process.execPath, ...commandArgs].join(' ');
+    const result = spawnSync(process.execPath, commandArgs, {
+        cwd: repoRoot,
+        stdio: 'inherit',
+        env: process.env,
+    });
 
+    if (result.error !== undefined) {
+        throw new Error(
+            `Failed to start Vitest for the requested node test slice: ${commandDescription}: ${result.error.message}`,
+        );
+    }
+    if (result.signal !== null) {
+        throw new Error(
+            `Vitest terminated by signal ${result.signal} for the requested node test slice: ${commandDescription}`,
+        );
+    }
     if (result.status !== 0) {
-        throw new Error('Vitest failed for the requested node test slice');
+        throw new Error(
+            `Vitest failed for the requested node test slice with status ${result.status ?? 'null'}: ${commandDescription}`,
+        );
     }
 };
 

@@ -16,18 +16,28 @@ const vectorFiles = [
 ] as const;
 
 const runPackageManager = (args: readonly string[]): void => {
-    const result = spawnSync(
-        process.execPath,
-        [packageManagerEntrypoint, ...args],
-        {
-            cwd: repoRoot,
-            stdio: 'inherit',
-            env: process.env,
-        },
-    );
+    const commandArgs = [packageManagerEntrypoint, ...args];
+    const commandDescription = [process.execPath, ...commandArgs].join(' ');
+    const result = spawnSync(process.execPath, commandArgs, {
+        cwd: repoRoot,
+        stdio: 'inherit',
+        env: process.env,
+    });
 
+    if (result.error !== undefined) {
+        throw new Error(
+            `Failed to start command: ${commandDescription}: ${result.error.message}`,
+        );
+    }
+    if (result.signal !== null) {
+        throw new Error(
+            `Command terminated by signal ${result.signal}: ${commandDescription}`,
+        );
+    }
     if (result.status !== 0) {
-        throw new Error(`Command failed: pnpm ${args.join(' ')}`);
+        throw new Error(
+            `Command exited with status ${result.status ?? 'null'}: ${commandDescription}`,
+        );
     }
 };
 

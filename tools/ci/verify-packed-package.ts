@@ -11,18 +11,28 @@ if (packageManagerEntrypoint === undefined) {
 }
 
 const runPackageManager = (args: readonly string[], cwd: string): void => {
-    const result = spawnSync(
-        process.execPath,
-        [packageManagerEntrypoint, ...args],
-        {
-            cwd,
-            stdio: 'inherit',
-            env: process.env,
-        },
-    );
+    const commandArgs = [packageManagerEntrypoint, ...args];
+    const commandDescription = [process.execPath, ...commandArgs].join(' ');
+    const result = spawnSync(process.execPath, commandArgs, {
+        cwd,
+        stdio: 'inherit',
+        env: process.env,
+    });
 
+    if (result.error !== undefined) {
+        throw new Error(
+            `Failed to start command: ${commandDescription}: ${result.error.message}`,
+        );
+    }
+    if (result.signal !== null) {
+        throw new Error(
+            `Command terminated by signal ${result.signal}: ${commandDescription}`,
+        );
+    }
     if (result.status !== 0) {
-        throw new Error(`Command failed: pnpm ${args.join(' ')}`);
+        throw new Error(
+            `Command exited with status ${result.status ?? 'null'}: ${commandDescription}`,
+        );
     }
 };
 
@@ -112,13 +122,27 @@ const main = async (): Promise<void> => {
 
         runPackageManager(['add', tarballPath], consumerDirectory);
 
-        const result = spawnSync(process.execPath, ['smoke.mjs'], {
+        const commandArgs = ['smoke.mjs'];
+        const commandDescription = [process.execPath, ...commandArgs].join(' ');
+        const result = spawnSync(process.execPath, commandArgs, {
             cwd: consumerDirectory,
             stdio: 'inherit',
             env: process.env,
         });
+        if (result.error !== undefined) {
+            throw new Error(
+                `Failed to start smoke entrypoint: ${commandDescription}: ${result.error.message}`,
+            );
+        }
+        if (result.signal !== null) {
+            throw new Error(
+                `Smoke entrypoint terminated by signal ${result.signal}: ${commandDescription}`,
+            );
+        }
         if (result.status !== 0) {
-            throw new Error('Packed package smoke entrypoint failed');
+            throw new Error(
+                `Smoke entrypoint exited with status ${result.status ?? 'null'}: ${commandDescription}`,
+            );
         }
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
