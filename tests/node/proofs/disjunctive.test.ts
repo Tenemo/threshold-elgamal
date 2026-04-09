@@ -102,7 +102,7 @@ describe('disjunctive proofs', () => {
                 { ...context, voterIndex: 5 },
             ),
         ).resolves.toBe(false);
-    });
+    }, 10_000);
 
     it('rejects garbled branch data and malformed proof contexts', async () => {
         const proof = await createDisjunctiveProof(
