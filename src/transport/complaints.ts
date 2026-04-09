@@ -1,11 +1,14 @@
-import { getWebCrypto, hkdfSha256 } from '../core/index.js';
-import { encodeForChallenge, hexToBytes } from '../serialize/index.js';
+import { toBufferSource } from '../core/bytes.js';
+import { getWebCrypto } from '../core/index.js';
+import { hexToBytes } from '../serialize/index.js';
 
+import { deriveEnvelopeKey, encodeEnvelopeContext } from './envelope-crypto.js';
 import {
+    deriveTransportPublicKey,
     deriveTransportSharedSecret,
     importTransportPrivateKey,
     importTransportPublicKey,
-    deriveTransportPublicKey,
+    verifyLocalTransportKey,
 } from './key-agreement.js';
 import type {
     ComplaintResolution,
@@ -13,67 +16,18 @@ import type {
     KeyAgreementSuite,
 } from './types.js';
 
-const toBufferSource = (bytes: Uint8Array): ArrayBuffer =>
-    Uint8Array.from(bytes).buffer;
-
-const aadBytes = (envelope: EncryptedEnvelope): Uint8Array =>
-    encodeForChallenge(
-        envelope.sessionId,
-        BigInt(envelope.phase),
-        BigInt(envelope.dealerIndex),
-        BigInt(envelope.recipientIndex),
-        envelope.envelopeId,
-        envelope.payloadType,
-        envelope.protocolVersion,
-        envelope.suite,
-    );
-
-const hkdfInfo = (envelope: EncryptedEnvelope): Uint8Array =>
-    encodeForChallenge(
-        envelope.sessionId,
-        BigInt(envelope.phase),
-        BigInt(envelope.dealerIndex),
-        BigInt(envelope.recipientIndex),
-        envelope.envelopeId,
-        envelope.payloadType,
-        envelope.protocolVersion,
-        envelope.suite,
-    );
-
-const importAesKey = async (keyBytes: Uint8Array): Promise<CryptoKey> =>
-    getWebCrypto().subtle.importKey(
-        'raw',
-        toBufferSource(keyBytes),
-        'AES-GCM',
-        false,
-        ['decrypt'],
-    );
-
-const deriveEnvelopeKey = async (
-    sharedSecret: Uint8Array,
-    envelope: EncryptedEnvelope,
-): Promise<CryptoKey> =>
-    importAesKey(
-        await hkdfSha256(
-            sharedSecret,
-            new TextEncoder().encode(envelope.rosterHash),
-            hkdfInfo(envelope),
-            32,
-        ),
-    );
-
 const decryptEnvelopeFromSharedSecret = async (
     envelope: EncryptedEnvelope,
     sharedSecret: Uint8Array,
 ): Promise<Uint8Array> => {
-    const key = await deriveEnvelopeKey(sharedSecret, envelope);
+    const key = await deriveEnvelopeKey(sharedSecret, envelope, ['decrypt']);
 
     return new Uint8Array(
         await getWebCrypto().subtle.decrypt(
             {
                 name: 'AES-GCM',
                 iv: toBufferSource(hexToBytes(envelope.iv)),
-                additionalData: toBufferSource(aadBytes(envelope)),
+                additionalData: toBufferSource(encodeEnvelopeContext(envelope)),
             },
             key,
             toBufferSource(hexToBytes(envelope.ciphertext)),
@@ -94,16 +48,8 @@ export const verifyComplaintPrecondition = async (
     privateKey: CryptoKey | string,
     expectedPublicKeyHex: string,
     suite: KeyAgreementSuite,
-): Promise<boolean> => {
-    const resolvedPrivateKey =
-        typeof privateKey === 'string'
-            ? await importTransportPrivateKey(privateKey, suite)
-            : privateKey;
-    return (
-        (await deriveTransportPublicKey(resolvedPrivateKey, suite)) ===
-        expectedPublicKeyHex
-    );
-};
+): Promise<boolean> =>
+    verifyLocalTransportKey(privateKey, expectedPublicKeyHex, suite);
 
 /**
  * Resolves a dealer challenge using only public transcript material plus the
@@ -119,16 +65,13 @@ export const resolveDealerChallengeFromPublicKey = async (
     recipientPublicKeyHex: string,
     revealedEphemeralPrivateKeyHex: string,
 ): Promise<ComplaintResolution> => {
-    const revealedPrivateKey = await importTransportPrivateKey(
+    const ephemeralKeyMatches = await verifyLocalTransportKey(
         revealedEphemeralPrivateKeyHex,
-        envelope.suite,
-    );
-    const derivedPublicKey = await deriveTransportPublicKey(
-        revealedPrivateKey,
+        envelope.ephemeralPublicKey,
         envelope.suite,
     );
 
-    if (derivedPublicKey !== envelope.ephemeralPublicKey) {
+    if (!ephemeralKeyMatches) {
         return {
             valid: false,
             fault: 'dealer',
@@ -136,6 +79,10 @@ export const resolveDealerChallengeFromPublicKey = async (
     }
 
     try {
+        const revealedPrivateKey = await importTransportPrivateKey(
+            revealedEphemeralPrivateKeyHex,
+            envelope.suite,
+        );
         const recipientPublicKey = await importTransportPublicKey(
             recipientPublicKeyHex,
             envelope.suite,
@@ -179,22 +126,19 @@ export const resolveDealerChallenge = async (
     recipientPrivateKey: CryptoKey | string,
     revealedEphemeralPrivateKeyHex: string,
 ): Promise<ComplaintResolution> => {
-    if (typeof recipientPrivateKey !== 'string') {
-        return resolveDealerChallengeFromPublicKey(
-            envelope,
-            await deriveTransportPublicKey(recipientPrivateKey, envelope.suite),
-            revealedEphemeralPrivateKeyHex,
-        );
-    }
-
-    const resolvedPrivateKey = await importTransportPrivateKey(
-        recipientPrivateKey,
+    const recipientPublicKeyHex = await deriveTransportPublicKey(
+        typeof recipientPrivateKey === 'string'
+            ? await importTransportPrivateKey(
+                  recipientPrivateKey,
+                  envelope.suite,
+              )
+            : recipientPrivateKey,
         envelope.suite,
     );
 
     return resolveDealerChallengeFromPublicKey(
         envelope,
-        await deriveTransportPublicKey(resolvedPrivateKey, envelope.suite),
+        recipientPublicKeyHex,
         revealedEphemeralPrivateKeyHex,
     );
 };

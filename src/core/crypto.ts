@@ -1,9 +1,7 @@
+import { toBufferSource } from './bytes.js';
 import { InvalidScalarError, UnsupportedSuiteError } from './errors.js';
 
 const textEncoder = new TextEncoder();
-
-const toBufferSource = (bytes: Uint8Array): ArrayBuffer =>
-    Uint8Array.from(bytes).buffer;
 
 const assertByteLength = (length: number, label: string): void => {
     if (!Number.isInteger(length) || length < 0) {

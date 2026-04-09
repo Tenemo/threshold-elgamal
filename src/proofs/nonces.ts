@@ -60,7 +60,7 @@ export const hedgedNonce = async (
     const outputBits = bitLength(group.q) + 128;
     const outputBytes = Math.ceil(outputBits / 8);
     const seed = concatBytes(
-        domainSeparator('threshold-elgamal-v2/nonce'),
+        domainSeparator('threshold-elgamal-v1/nonce'),
         secretBytes,
         randomPart,
         context,

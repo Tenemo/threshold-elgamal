@@ -78,7 +78,7 @@ const buildProofContext = (
     ballot: BallotTranscriptEntry,
     input: VerifyAndAggregateBallotsInput,
 ): ProofContext => ({
-    protocolVersion: 'v2',
+    protocolVersion: 'v1',
     suiteId: input.group.name,
     manifestHash: input.manifestHash,
     sessionId: input.sessionId,

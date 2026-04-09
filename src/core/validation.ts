@@ -1,9 +1,12 @@
+import {
+    assertAdditiveBound as assertSharedAdditiveBound,
+    assertAdditivePlaintext,
+} from './additive-validation.js';
 import { modPowP } from './bigint.js';
 import {
     IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidScalarError,
-    PlaintextDomainError,
     ThresholdViolationError,
 } from './errors.js';
 
@@ -32,6 +35,14 @@ export const assertScalarInZq = (value: bigint, q: bigint): void => {
 };
 
 /**
+ * Validates the caller-supplied additive plaintext bound.
+ *
+ * @throws {@link InvalidScalarError} When `bound` is outside `0..q-1`.
+ */
+export const assertAdditiveBound = (bound: bigint, q: bigint): void =>
+    assertSharedAdditiveBound(bound, q);
+
+/**
  * Validates the plaintext domain and caller-supplied bound for additive
  * ElGamal.
  *
@@ -42,19 +53,7 @@ export const assertPlaintextAdditive = (
     value: bigint,
     bound: bigint,
     q: bigint,
-): void => {
-    if (bound < 0n || bound >= q) {
-        throw new InvalidScalarError(
-            'Additive plaintext bound must be in the range 0..q-1',
-        );
-    }
-
-    if (value < 0n || value > bound) {
-        throw new PlaintextDomainError(
-            `Additive mode requires plaintext values in the range 0..${bound}`,
-        );
-    }
-};
+): void => assertAdditivePlaintext(value, bound, q);
 
 /**
  * Validates threshold parameters for `k`-of-`n` protocols.

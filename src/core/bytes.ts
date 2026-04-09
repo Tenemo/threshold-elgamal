@@ -15,3 +15,6 @@ export const bytesToBigInt = (bytes: Uint8Array): bigint => {
     const hex = bytesToHex(bytes);
     return BigInt(`0x${hex}`);
 };
+
+export const toBufferSource = (bytes: Uint8Array): ArrayBuffer =>
+    Uint8Array.from(bytes).buffer;

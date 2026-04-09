@@ -60,4 +60,4 @@ Do not use additive mode when:
 - Combining ciphertexts from different groups
 - Assuming the library tracks or stores the bound for you
 
-See [Groups and validation](/guides/groups-and-validation/) for the validation helpers that back these rules.
+See [Groups and validation](./groups-and-validation/) for the validation helpers that back these rules.

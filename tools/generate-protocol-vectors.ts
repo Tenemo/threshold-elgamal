@@ -17,14 +17,10 @@ import {
     type BallotTranscriptEntry,
     type ElectionManifest,
 } from '../src/protocol/index.js';
+import { createDeterministicSource } from '../tests/helpers/deterministic.js';
 
 const bigintReplacer = (_key: string, value: unknown): unknown =>
     typeof value === 'bigint' ? value.toString() : value;
-
-const createDeterministicSource =
-    (seed: number) =>
-    (length: number): Uint8Array =>
-        Uint8Array.from({ length }, (_value, index) => (seed + index) & 0xff);
 
 const buildBallot = async (
     voterIndex: number,
@@ -41,7 +37,7 @@ const buildBallot = async (
         group.name,
     );
     const context: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',
@@ -62,7 +58,9 @@ const buildBallot = async (
             [1n, 2n, 3n, 4n, 5n],
             group,
             context,
-            createDeterministicSource(90 + voterIndex),
+            createDeterministicSource(90 + voterIndex, {
+                advanceBetweenCalls: false,
+            }),
         ),
     };
 };
@@ -70,7 +68,7 @@ const buildBallot = async (
 const main = async (): Promise<void> => {
     const group = getGroup('ffdhe2048');
     const manifest: ElectionManifest = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         threshold: 3,
         participantCount: 5,
@@ -114,7 +112,7 @@ const main = async (): Promise<void> => {
     };
 
     const schnorrContext: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash,
         sessionId: sessionIds.left,
@@ -129,7 +127,9 @@ const main = async (): Promise<void> => {
         schnorrStatement,
         group,
         schnorrContext,
-        createDeterministicSource(10),
+        createDeterministicSource(10, {
+            advanceBetweenCalls: false,
+        }),
     );
 
     const publicKey = modPowP(group.g, 123n, group.p);
@@ -147,7 +147,7 @@ const main = async (): Promise<void> => {
         decryptionShare: modPowP(ciphertext.c1, dleqSecret, group.p),
     };
     const dleqContext: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash,
         sessionId: sessionIds.left,
@@ -159,11 +159,13 @@ const main = async (): Promise<void> => {
         dleqStatement,
         group,
         dleqContext,
-        createDeterministicSource(20),
+        createDeterministicSource(20, {
+            advanceBetweenCalls: false,
+        }),
     );
 
     const disjunctiveContext: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',
@@ -179,7 +181,9 @@ const main = async (): Promise<void> => {
         [1n, 2n, 3n, 4n, 5n],
         group,
         disjunctiveContext,
-        createDeterministicSource(30),
+        createDeterministicSource(30, {
+            advanceBetweenCalls: false,
+        }),
     );
 
     const ballots = await Promise.all([

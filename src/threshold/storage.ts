@@ -1,3 +1,4 @@
+import { toBufferSource } from '../core/bytes.js';
 import {
     assertPositiveParticipantIndex,
     getWebCrypto,
@@ -19,9 +20,6 @@ export type WrappedShareRecord = {
     readonly iv: string;
     readonly ciphertext: string;
 };
-
-const toBufferSource = (bytes: Uint8Array): ArrayBuffer =>
-    Uint8Array.from(bytes).buffer;
 
 const shareStorageAdditionalData = (index: number): Uint8Array =>
     encodeForChallenge('wrapped-share-index', BigInt(index));

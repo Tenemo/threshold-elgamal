@@ -21,7 +21,7 @@ import {
 
 describe('protocol payloads and transcripts', () => {
     const manifest: ElectionManifest = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: 'ffdhe3072',
         threshold: 3,
         participantCount: 5,
@@ -65,7 +65,7 @@ describe('protocol payloads and transcripts', () => {
 
     it('canonicalizes and hashes manifests deterministically', async () => {
         expect(canonicalizeElectionManifest(manifest)).toBe(
-            '{"allowAbstention":false,"ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z"],"minimumPublicationThreshold":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v2","rosterHash":"roster-hash","scoreDomainMax":10,"scoreDomainMin":1,"suiteId":"ffdhe3072","threshold":3}',
+            '{"allowAbstention":false,"ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z"],"minimumPublicationThreshold":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","rosterHash":"roster-hash","scoreDomainMax":10,"scoreDomainMin":1,"suiteId":"ffdhe3072","threshold":3}',
         );
 
         await expect(hashElectionManifest(manifest)).resolves.toHaveLength(64);

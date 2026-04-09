@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { createDeterministicSource } from '../../helpers/deterministic.js';
+
 import {
     InvalidProofError,
     InvalidScalarError,
@@ -12,25 +14,12 @@ import {
     type ProofContext,
 } from '#proofs';
 
-const createDeterministicSource = () => {
-    let counter = 0;
-
-    return (length: number): Uint8Array => {
-        const bytes = new Uint8Array(length);
-        for (let index = 0; index < length; index += 1) {
-            bytes[index] = (counter + index) & 0xff;
-        }
-        counter = (counter + length) & 0xff;
-        return bytes;
-    };
-};
-
 describe('Schnorr proofs', () => {
     const group = getGroup(2048);
     const secret = 12345n;
     const statement = modPowP(group.g, secret, group.p);
     const context: ProofContext = {
-        protocolVersion: 'v2',
+        protocolVersion: 'v1',
         suiteId: group.name,
         manifestHash: 'manifest-1',
         sessionId: 'session-1',

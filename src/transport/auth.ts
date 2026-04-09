@@ -1,8 +1,6 @@
+import { toBufferSource } from '../core/bytes.js';
 import { getWebCrypto } from '../core/index.js';
 import { bytesToHex, hexToBytes } from '../serialize/index.js';
-
-const toBufferSource = (bytes: Uint8Array): ArrayBuffer =>
-    Uint8Array.from(bytes).buffer;
 
 /** Options controlling authentication-key generation. */
 export type GenerateAuthKeyPairOptions = {

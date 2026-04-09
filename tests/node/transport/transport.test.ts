@@ -54,7 +54,7 @@ describe('transport and authentication', () => {
                 recipientIndex: 2,
                 envelopeId: 'envelope-1',
                 payloadType: 'encrypted-dual-share',
-                protocolVersion: 'v2',
+                protocolVersion: 'v1',
                 suite: recipient.suite,
             },
         );
@@ -121,7 +121,7 @@ describe('transport and authentication', () => {
                 recipientIndex: 2,
                 envelopeId: 'envelope-2',
                 payloadType: 'encrypted-dual-share',
-                protocolVersion: 'v2',
+                protocolVersion: 'v1',
                 suite: recipient.suite,
             },
         );
