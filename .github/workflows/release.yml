@@ -44,10 +44,21 @@ jobs:
             exit 1
           fi
 
+      - name: verify release deploy key secret
+        env:
+          RELEASE_DEPLOY_KEY: ${{ secrets.RELEASE_DEPLOY_KEY }}
+        run: |
+          if [[ -z "${RELEASE_DEPLOY_KEY}" ]]; then
+            echo "Missing RELEASE_DEPLOY_KEY repository secret." >&2
+            exit 1
+          fi
+
       - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
+          persist-credentials: true
           ref: ${{ github.ref_name }}
+          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
 
       - uses: pnpm/action-setup@v5.0.0
         with:
@@ -155,6 +166,11 @@ jobs:
             exit 1
           fi
 
+      - name: push release commit and tag
+        run: |
+          git remote set-url origin "git@github.com:${{ github.repository }}.git"
+          git push --atomic origin HEAD:master "refs/tags/${{ steps.metadata.outputs.tag }}"
+
       - name: publish to npm
         run: |
           if [[ "${{ steps.metadata.outputs.dist_tag }}" == "latest" ]]; then
@@ -162,10 +178,6 @@ jobs:
           else
             npm publish --provenance --tag "${{ steps.metadata.outputs.dist_tag }}"
           fi
-
-      - name: push release commit and tag
-        run: |
-          git push --atomic origin HEAD:master "refs/tags/${{ steps.metadata.outputs.tag }}"
 
       - name: create GitHub release
         env:
