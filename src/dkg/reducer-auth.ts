@@ -54,6 +54,7 @@ const verifyReducerSignature = (
     publicKey: Uint8Array,
 ): boolean => {
     try {
+        // signPayloadBytes emits raw IEEE P1363 r||s bytes, which noble verifies directly.
         return p256.verify(
             hexToBytes(signedPayload.signature),
             canonicalUnsignedPayloadBytes(signedPayload.payload),
@@ -79,6 +80,27 @@ const registrationMap = (
     }
 
     return registrations;
+};
+
+const payloadSignatureError = (signedPayload: SignedPayload): DKGError => ({
+    code: 'signature-invalid',
+    message: `Payload signature failed verification for participant ${signedPayload.payload.participantIndex} (${signedPayload.payload.messageType})`,
+});
+
+const verifyPayloadAgainstAuthKey = (
+    signedPayload: SignedPayload,
+    authPublicKey: RegistrationPayload['authPublicKey'],
+): DKGError | null => {
+    try {
+        const publicKey = parseRegisteredAuthPublicKey(authPublicKey);
+        if (!verifyReducerSignature(signedPayload, publicKey)) {
+            return payloadSignatureError(signedPayload);
+        }
+
+        return null;
+    } catch {
+        return payloadSignatureError(signedPayload);
+    }
 };
 
 export const validateAuthenticatedPayload = (
@@ -107,35 +129,8 @@ export const validateAuthenticatedPayload = (
         }
     }
 
-    if (signedPayload.payload.messageType === 'manifest-publication') {
-        const registration = registrationMap(transcript).get(
-            signedPayload.payload.participantIndex,
-        );
-        if (registration === undefined) {
-            return null;
-        }
-
-        try {
-            const publicKey = parseRegisteredAuthPublicKey(
-                registration.authPublicKey,
-            );
-            if (!verifyReducerSignature(signedPayload, publicKey)) {
-                return {
-                    code: 'signature-invalid',
-                    message: `Payload signature failed verification for participant ${signedPayload.payload.participantIndex} (${signedPayload.payload.messageType})`,
-                };
-            }
-
-            return null;
-        } catch {
-            return {
-                code: 'signature-invalid',
-                message: `Payload signature failed verification for participant ${signedPayload.payload.participantIndex} (${signedPayload.payload.messageType})`,
-            };
-        }
-    }
-
-    const registration = registrationMap(transcript).get(
+    const registrations = registrationMap(transcript);
+    const registration = registrations.get(
         signedPayload.payload.participantIndex,
     );
     if (registration === undefined) {
@@ -145,22 +140,8 @@ export const validateAuthenticatedPayload = (
         };
     }
 
-    try {
-        const publicKey = parseRegisteredAuthPublicKey(
-            registration.authPublicKey,
-        );
-        if (!verifyReducerSignature(signedPayload, publicKey)) {
-            return {
-                code: 'signature-invalid',
-                message: `Payload signature failed verification for participant ${signedPayload.payload.participantIndex} (${signedPayload.payload.messageType})`,
-            };
-        }
-
-        return null;
-    } catch {
-        return {
-            code: 'signature-invalid',
-            message: `Payload signature failed verification for participant ${signedPayload.payload.participantIndex} (${signedPayload.payload.messageType})`,
-        };
-    }
+    return verifyPayloadAgainstAuthKey(
+        signedPayload,
+        registration.authPublicKey,
+    );
 };

@@ -19,12 +19,20 @@ import {
 import {
     canonicalUnsignedPayloadBytes,
     type ComplaintResolutionPayload,
+    type ManifestPublicationPayload,
     type KeyDerivationConfirmation,
     type ProtocolPayload,
     type RegistrationPayload,
     type SignedPayload,
 } from '#protocol';
 import { bytesToHex } from '#serialize';
+import {
+    exportAuthPublicKey,
+    exportTransportPublicKey,
+    generateAuthKeyPair,
+    generateTransportKeyPair,
+    signPayloadBytes,
+} from '#transport';
 
 const AUTH_PUBLIC_KEY_SPKI_PREFIX =
     '3059301306072a8648ce3d020106082a8648ce3d030107034200';
@@ -631,6 +639,87 @@ describe('dkg state machines', () => {
         expect(unregisteredAcceptance.newState).toBe(state);
         expect(forgedAcceptance.errors[0]?.code).toBe('signature-invalid');
         expect(forgedAcceptance.newState).toBe(registeredState);
+    });
+
+    it('requires registration before manifest publication and accepts WebCrypto-signed reducer payloads once registered', async () => {
+        const dkgConfig = config('manifest-auth', 3);
+        const state = createGjkrState(dkgConfig);
+        const authKeyPair = await generateAuthKeyPair();
+        const transportKeyPair = await generateTransportKeyPair();
+        const registrationPayload: RegistrationPayload = {
+            sessionId: dkgConfig.sessionId,
+            manifestHash: dkgConfig.manifestHash,
+            phase: 0,
+            participantIndex: 1,
+            messageType: 'registration',
+            rosterHash: 'roster-manifest-auth',
+            authPublicKey: await exportAuthPublicKey(authKeyPair.publicKey),
+            transportPublicKey: await exportTransportPublicKey(
+                transportKeyPair.publicKey,
+            ),
+        };
+        const manifestPublicationPayload: ManifestPublicationPayload = {
+            sessionId: dkgConfig.sessionId,
+            manifestHash: dkgConfig.manifestHash,
+            phase: 0,
+            participantIndex: 1,
+            messageType: 'manifest-publication',
+            manifest: {
+                protocolVersion: 'v1',
+                reconstructionThreshold: 2,
+                participantCount: 3,
+                minimumPublishedVoterCount: 3,
+                ballotCompletenessPolicy: 'ALL_OPTIONS_REQUIRED',
+                ballotFinality: 'first-valid',
+                scoreDomain: '1..10',
+                rosterHash: 'roster-manifest-auth',
+                optionList: ['Option 1'],
+                epochDeadlines: ['2026-01-01T00:00:00.000Z'],
+            },
+        };
+        const signedRegistration: SignedPayload<RegistrationPayload> = {
+            payload: registrationPayload,
+            signature: await signPayloadBytes(
+                authKeyPair.privateKey,
+                canonicalUnsignedPayloadBytes(registrationPayload),
+            ),
+        };
+        const signedManifestPublication: SignedPayload<ManifestPublicationPayload> =
+            {
+                payload: manifestPublicationPayload,
+                signature: await signPayloadBytes(
+                    authKeyPair.privateKey,
+                    canonicalUnsignedPayloadBytes(manifestPublicationPayload),
+                ),
+            };
+
+        const unregisteredManifestPublication = processGjkrPayload(
+            state,
+            signedManifestPublication,
+        );
+        const registeredState = processGjkrPayload(
+            state,
+            signedRegistration,
+        ).newState;
+        const acceptedManifestPublication = processGjkrPayload(
+            registeredState,
+            signedManifestPublication,
+        );
+        const forgedManifestPublication = processGjkrPayload(registeredState, {
+            payload: manifestPublicationPayload,
+            signature: '00'.repeat(64),
+        });
+
+        expect(unregisteredManifestPublication.errors[0]?.code).toBe(
+            'registration-required',
+        );
+        expect(unregisteredManifestPublication.newState).toBe(state);
+        expect(acceptedManifestPublication.errors).toEqual([]);
+        expect(acceptedManifestPublication.newState.transcript).toHaveLength(2);
+        expect(forgedManifestPublication.errors[0]?.code).toBe(
+            'signature-invalid',
+        );
+        expect(forgedManifestPublication.newState).toBe(registeredState);
     });
 
     it('groups matching phase checkpoints across multiple signers into one variant', () => {
