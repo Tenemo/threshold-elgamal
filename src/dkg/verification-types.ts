@@ -1,4 +1,3 @@
-import type { CryptoGroup } from '../core/index.js';
 import type { EncodedPoint } from '../core/types.js';
 import type {
     ComplaintPayload,
@@ -11,7 +10,6 @@ import type {
 import type { PedersenShare } from '../vss/types.js';
 
 import type { FinalizedPhaseCheckpoint } from './checkpoints.js';
-import type { DKGProtocol } from './types.js';
 
 /** Share contribution accepted from one qualified dealer. */
 export type AcceptedShareContribution = {
@@ -21,7 +19,6 @@ export type AcceptedShareContribution = {
 
 /** Input bundle for verifying a DKG transcript. */
 export type VerifyDKGTranscriptInput = {
-    readonly protocol: DKGProtocol;
     readonly transcript: readonly SignedPayload[];
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
@@ -35,7 +32,6 @@ export type VerifiedDKGTranscript = {
         readonly dealerIndex: number;
         readonly commitments: readonly EncodedPoint[];
     }[];
-    readonly group: CryptoGroup;
     readonly manifestAccepted: readonly number[];
     readonly phaseCheckpoints: readonly FinalizedPhaseCheckpoint[];
     readonly qual: readonly number[];

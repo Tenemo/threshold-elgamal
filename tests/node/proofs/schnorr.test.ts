@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../dev-support/deterministic.js';
-import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
 
 import { InvalidProofError, InvalidScalarError, getGroup } from '#core';
 import {
@@ -9,6 +8,7 @@ import {
     verifySchnorrProof,
     type ProofContext,
 } from '#proofs';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
 
 describe('Schnorr proofs', () => {
     const group = getGroup('ristretto255');

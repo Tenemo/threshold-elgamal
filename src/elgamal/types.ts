@@ -1,11 +1,4 @@
-import type {
-    CryptoGroup,
-    EncodedPoint,
-    GroupIdentifier,
-} from '../core/types.js';
-
-/** Accepted group identifier input for public ElGamal APIs. */
-export type ElgamalGroupInput = GroupIdentifier;
+import type { CryptoGroup, EncodedPoint } from '../core/types.js';
 
 /** Public and private key pair for the shipped Ristretto255 suite. */
 export type ElgamalKeyPair = {
@@ -15,9 +8,8 @@ export type ElgamalKeyPair = {
     readonly privateKey: bigint;
 };
 
-/** Key material plus the resolved immutable group definition. */
+/** @internal Key material plus the resolved immutable group definition. */
 export type ElgamalParameters = ElgamalKeyPair & {
-    /** Resolved built-in group parameters used to create the key pair. */
     readonly group: CryptoGroup;
 };
 

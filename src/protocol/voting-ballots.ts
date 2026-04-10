@@ -77,7 +77,6 @@ export const verifyBallotSubmissionPayloadsByOption = async (
         ballots: ballotEntries,
         publicKey: input.publicKey,
         validValues: context.scoreDomainValues,
-        group: context.group,
         protocolVersion: context.manifest.protocolVersion,
         manifestHash: context.manifestHash,
         sessionId: context.sessionId,

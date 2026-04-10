@@ -1,7 +1,7 @@
 import { signPayload } from './common.js';
 import type { ParticipantRuntime, VotingFlowScenario } from './types.js';
 
-import { majorityThreshold, type CryptoGroup } from '#core';
+import { majorityThreshold } from '#core';
 import {
     defaultMinimumPublishedVoterCount,
     type ElectionManifest,
@@ -16,7 +16,6 @@ import {
     generateTransportKeyPair,
     type KeyAgreementSuite,
 } from '#transport';
-
 export const createParticipants = async (
     participantCount: number,
     transportSuite: KeyAgreementSuite,
@@ -29,7 +28,6 @@ export const createParticipants = async (
                 suite: transportSuite,
                 extractable: true,
             });
-
             return {
                 index,
                 auth,
@@ -42,10 +40,8 @@ export const createParticipants = async (
             };
         }),
     );
-
 export const buildManifest = (
     rosterHash: string,
-    group: CryptoGroup,
     scenario: VotingFlowScenario,
 ): ElectionManifest => {
     const threshold =
@@ -57,10 +53,8 @@ export const buildManifest = (
             const suffix = String.fromCharCode('A'.charCodeAt(0) + index);
             return `Option ${suffix}`;
         });
-
     return {
         protocolVersion: 'v1',
-        suiteId: group.name,
         reconstructionThreshold: threshold,
         participantCount: scenario.participantCount,
         minimumPublishedVoterCount: defaultMinimumPublishedVoterCount(
@@ -75,7 +69,6 @@ export const buildManifest = (
         epochDeadlines: ['2026-04-08T12:00:00Z'],
     };
 };
-
 export const createRegistrationPayloads = async (
     participants: readonly ParticipantRuntime[],
     sessionId: string,
@@ -96,7 +89,6 @@ export const createRegistrationPayloads = async (
             } satisfies RegistrationPayload),
         ),
     );
-
 export const createAcceptancePayloads = async (
     participants: readonly ParticipantRuntime[],
     sessionId: string,

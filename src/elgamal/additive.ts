@@ -1,8 +1,8 @@
 import {
     InvalidScalarError,
     PlaintextDomainError,
+    RISTRETTO_GROUP,
     randomScalarInRange,
-    type CryptoGroup,
 } from '../core/index.js';
 import {
     decodePoint,
@@ -14,8 +14,8 @@ import {
 } from '../core/ristretto.js';
 
 import { babyStepGiantStep } from './bsgs.js';
-import { assertEncryptionRandomness, resolveElgamalGroup } from './helpers.js';
-import type { ElgamalCiphertext, ElgamalGroupInput } from './types.js';
+import { assertEncryptionRandomness } from './helpers.js';
+import type { ElgamalCiphertext } from './types.js';
 import {
     assertValidAdditiveBound,
     assertValidAdditiveCiphertext,
@@ -26,7 +26,6 @@ import {
 
 type ResolvedAdditiveContext = {
     readonly bound: bigint;
-    readonly group: CryptoGroup;
 };
 
 const resolveAdditiveBound = (
@@ -43,18 +42,15 @@ const resolveAdditiveBound = (
 };
 
 const resolveAdditiveContext = (
-    group: ElgamalGroupInput,
     bound: bigint | undefined,
     operation: 'encryption' | 'decryption',
 ): ResolvedAdditiveContext => {
-    const resolvedGroup = resolveElgamalGroup(group);
     const resolvedBound = resolveAdditiveBound(bound, operation);
 
-    assertValidAdditiveBound(resolvedBound, resolvedGroup);
+    assertValidAdditiveBound(resolvedBound);
 
     return {
         bound: resolvedBound,
-        group: resolvedGroup,
     };
 };
 
@@ -83,13 +79,12 @@ export const encryptAdditiveWithRandomness = (
     publicKey: string,
     randomness: bigint,
     bound: bigint,
-    group: ElgamalGroupInput,
 ): ElgamalCiphertext => {
-    const context = resolveAdditiveContext(group, bound, 'encryption');
+    const context = resolveAdditiveContext(bound, 'encryption');
 
-    assertValidAdditivePlaintext(message, context.bound, context.group);
-    assertValidAdditivePublicKey(publicKey, context.group);
-    assertEncryptionRandomness(randomness, context.group.q);
+    assertValidAdditivePlaintext(message, context.bound);
+    assertValidAdditivePublicKey(publicKey);
+    assertEncryptionRandomness(randomness);
 
     return encryptAdditiveWithValidatedInputs(message, publicKey, randomness);
 };
@@ -100,18 +95,16 @@ export const encryptAdditiveWithRandomness = (
 export const encryptAdditive = (
     message: bigint,
     publicKey: string,
-    group: ElgamalGroupInput,
     bound: bigint,
 ): ElgamalCiphertext => {
-    const context = resolveAdditiveContext(group, bound, 'encryption');
-    const randomness = randomScalarInRange(1n, context.group.q);
+    const context = resolveAdditiveContext(bound, 'encryption');
+    const randomness = randomScalarInRange(1n, RISTRETTO_GROUP.q);
 
     return encryptAdditiveWithRandomness(
         message,
         publicKey,
         randomness,
         context.bound,
-        group,
     );
 };
 
@@ -122,13 +115,12 @@ export const encryptAdditive = (
 export const decryptAdditive = (
     ciphertext: ElgamalCiphertext,
     privateKey: bigint,
-    group: ElgamalGroupInput,
     bound: bigint,
 ): bigint => {
-    const context = resolveAdditiveContext(group, bound, 'decryption');
+    const context = resolveAdditiveContext(bound, 'decryption');
 
-    assertValidPrivateKey(privateKey, context.group);
-    assertValidAdditiveCiphertext(ciphertext, context.group);
+    assertValidPrivateKey(privateKey);
+    assertValidAdditiveCiphertext(ciphertext);
 
     const c1 = decodePoint(ciphertext.c1, 'Ciphertext c1');
     const c2 = decodePoint(ciphertext.c2, 'Ciphertext c2');
@@ -136,7 +128,7 @@ export const decryptAdditive = (
     const encodedMessage = pointSubtract(c2, sharedSecret);
     const message = babyStepGiantStep(
         encodePoint(encodedMessage),
-        context.group.g,
+        RISTRETTO_GROUP.g,
         context.bound,
     );
 

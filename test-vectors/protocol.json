@@ -2,7 +2,6 @@
   "group": "ristretto255",
   "manifest": {
     "protocolVersion": "v1",
-    "suiteId": "ristretto255",
     "reconstructionThreshold": 3,
     "participantCount": 5,
     "minimumPublishedVoterCount": 4,
@@ -19,25 +18,25 @@
       "2026-04-08T13:00:00Z"
     ]
   },
-  "canonicalManifest": "{\"ballotCompletenessPolicy\":\"ALL_OPTIONS_REQUIRED\",\"ballotFinality\":\"first-valid\",\"epochDeadlines\":[\"2026-04-08T12:00:00Z\",\"2026-04-08T13:00:00Z\"],\"minimumPublishedVoterCount\":4,\"optionList\":[\"Alpha\",\"Beta\"],\"participantCount\":5,\"protocolVersion\":\"v1\",\"reconstructionThreshold\":3,\"rosterHash\":\"roster-hash\",\"scoreDomain\":\"1..10\",\"suiteId\":\"ristretto255\"}",
-  "manifestHash": "45da28d5250ff76061ec559b46aaba366c8cb301e5d7130b21357d7273348a45",
+  "canonicalManifest": "{\"ballotCompletenessPolicy\":\"ALL_OPTIONS_REQUIRED\",\"ballotFinality\":\"first-valid\",\"epochDeadlines\":[\"2026-04-08T12:00:00Z\",\"2026-04-08T13:00:00Z\"],\"minimumPublishedVoterCount\":4,\"optionList\":[\"Alpha\",\"Beta\"],\"participantCount\":5,\"protocolVersion\":\"v1\",\"reconstructionThreshold\":3,\"rosterHash\":\"roster-hash\",\"scoreDomain\":\"1..10\"}",
+  "manifestHash": "d36ba22f70ee861ea0a4ce93c2d40e580b985dc60ce3e4275bde07be8a76704f",
   "sessionInputs": {
     "left": {
-      "manifestHash": "45da28d5250ff76061ec559b46aaba366c8cb301e5d7130b21357d7273348a45",
+      "manifestHash": "d36ba22f70ee861ea0a4ce93c2d40e580b985dc60ce3e4275bde07be8a76704f",
       "rosterHash": "roster-hash",
       "randomNonce": "nonce:a",
       "timestamp": "timestamp"
     },
     "right": {
-      "manifestHash": "45da28d5250ff76061ec559b46aaba366c8cb301e5d7130b21357d7273348a45",
+      "manifestHash": "d36ba22f70ee861ea0a4ce93c2d40e580b985dc60ce3e4275bde07be8a76704f",
       "rosterHash": "roster-hash",
       "randomNonce": "nonce",
       "timestamp": "a:timestamp"
     }
   },
   "sessionIds": {
-    "left": "5850bf7297ec143d2d5924e780a147374fdcca8850eaf7d9b2228f31eca0a014",
-    "right": "e6179ef8841a7c2eb27421bc5aad0f44164bd55aa5a6402c3868730550178f12"
+    "left": "e4a86af37ae80c55e37e9380a24198b3c968a17749c4e439af3db14e7001ca05",
+    "right": "77bcea4332883a676539191c2b82012a9b322dd321525ace14d6e1f593933563"
   },
   "schnorr": {
     "secret": "77",
@@ -45,15 +44,15 @@
     "context": {
       "protocolVersion": "v1",
       "suiteId": "ristretto255",
-      "manifestHash": "45da28d5250ff76061ec559b46aaba366c8cb301e5d7130b21357d7273348a45",
-      "sessionId": "5850bf7297ec143d2d5924e780a147374fdcca8850eaf7d9b2228f31eca0a014",
+      "manifestHash": "d36ba22f70ee861ea0a4ce93c2d40e580b985dc60ce3e4275bde07be8a76704f",
+      "sessionId": "e4a86af37ae80c55e37e9380a24198b3c968a17749c4e439af3db14e7001ca05",
       "label": "vector-schnorr",
       "participantIndex": 1,
       "coefficientIndex": 1
     },
     "proof": {
-      "challenge": "3167791003052725826154871316758641444127330141271801691717096270248227284903",
-      "response": "6381871193412853512042081374929507676638164009830999633126291099786674573799"
+      "challenge": "4427479227366076772217787855198013682842964173735067884188233391015423727990",
+      "response": "3101909507705056780093734233036424734853563144016951156878919791879065071318"
     }
   },
   "dleq": {
@@ -69,14 +68,14 @@
     "context": {
       "protocolVersion": "v1",
       "suiteId": "ristretto255",
-      "manifestHash": "45da28d5250ff76061ec559b46aaba366c8cb301e5d7130b21357d7273348a45",
-      "sessionId": "5850bf7297ec143d2d5924e780a147374fdcca8850eaf7d9b2228f31eca0a014",
+      "manifestHash": "d36ba22f70ee861ea0a4ce93c2d40e580b985dc60ce3e4275bde07be8a76704f",
+      "sessionId": "e4a86af37ae80c55e37e9380a24198b3c968a17749c4e439af3db14e7001ca05",
       "label": "vector-dleq",
       "participantIndex": 2
     },
     "proof": {
-      "challenge": "6570644280916674522680594565759059700773304392696645830871490983477188630797",
-      "response": "3647792359750283343062343973706734418129335979210711831521762349895960220877"
+      "challenge": "4586738299927097233247523370244188807541484145758627894398679714600567628483",
+      "response": "1024040410324178261323620612460942247543411626778375226594060114182445928205"
     }
   },
   "disjunctive": {

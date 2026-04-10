@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    auditSignedPayloads,
     canonicalUnsignedPayloadBytes,
     canonicalizeElectionManifest,
     canonicalizeJson,
@@ -23,11 +24,9 @@ import {
     type RegistrationPayload,
     type SignedPayload,
 } from '#protocol';
-
 describe('protocol payloads and transcripts', () => {
     const manifest: ElectionManifest = {
         protocolVersion: 'v1',
-        suiteId: 'ristretto255',
         reconstructionThreshold: 3,
         participantCount: 5,
         minimumPublishedVoterCount: 4,
@@ -58,7 +57,6 @@ describe('protocol payloads and transcripts', () => {
         rosterHash: 'roster-hash',
         assignedParticipantIndex: 1,
     };
-
     it('canonicalizes JSON with sorted keys and fixed-width bigint strings', () => {
         expect(
             canonicalizeJson(
@@ -67,32 +65,26 @@ describe('protocol payloads and transcripts', () => {
             ),
         ).toBe('{"a":"0001","b":"0002","nested":[{"y":"0004","z":"0003"}]}');
     });
-
     it('canonicalizes and hashes manifests deterministically', async () => {
         expect(canonicalizeElectionManifest(manifest)).toBe(
-            '{"ballotCompletenessPolicy":"ALL_OPTIONS_REQUIRED","ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z"],"minimumPublishedVoterCount":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","reconstructionThreshold":3,"rosterHash":"roster-hash","scoreDomain":"1..10","suiteId":"ristretto255"}',
+            '{"ballotCompletenessPolicy":"ALL_OPTIONS_REQUIRED","ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z"],"minimumPublishedVoterCount":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","reconstructionThreshold":3,"rosterHash":"roster-hash","scoreDomain":"1..10"}',
         );
-
         await expect(hashElectionManifest(manifest)).resolves.toHaveLength(64);
         await expect(
             deriveSessionId('manifest-1', 'roster-1', 'nonce-1', 'ts-1'),
         ).resolves.toHaveLength(64);
     });
-
     it('derives the shipped publication floor as k plus one accepted voter', () => {
         expect(defaultMinimumPublishedVoterCount(3, 5)).toBe(4);
         expect(defaultMinimumPublishedVoterCount(26, 51)).toBe(27);
     });
-
     it('orders protocol payloads deterministically', () => {
         const sorted = sortProtocolPayloads([registration, acceptance]);
-
         expect(
             compareProtocolPayloads(registration, acceptance),
         ).toBeGreaterThan(0);
         expect(sorted).toEqual([acceptance, registration]);
     });
-
     it('uses slot-specific tie-breakers and canonical bytes for a total transcript order', async () => {
         const encryptedForSecond = {
             sessionId: 'session-1',
@@ -121,7 +113,6 @@ describe('protocol payloads and transcripts', () => {
             ...encryptedForSecond,
             ciphertext: 'ciphertext-z',
         };
-
         expect(
             compareProtocolPayloads(encryptedForSecond, encryptedForThird),
         ).toBeLessThan(0);
@@ -135,7 +126,6 @@ describe('protocol payloads and transcripts', () => {
                 encryptedForSecond,
             ]),
         ).toEqual([encryptedForSecond, equivocatedSecond, encryptedForThird]);
-
         const firstHash = await hashProtocolTranscript([
             encryptedForThird,
             encryptedForSecond,
@@ -144,10 +134,8 @@ describe('protocol payloads and transcripts', () => {
             encryptedForSecond,
             encryptedForThird,
         ]);
-
         expect(firstHash).toBe(secondHash);
     });
-
     it('derives canonical unsigned payload bytes and slot keys', () => {
         expect(
             Buffer.from(canonicalUnsignedPayloadBytes(registration)).toString(
@@ -158,7 +146,6 @@ describe('protocol payloads and transcripts', () => {
         );
         expect(payloadSlotKey(registration)).toBe('session-1:0:2:registration');
     });
-
     it('uses recipient-aware slot keys for encrypted share payloads', () => {
         const left = {
             payload: {
@@ -185,7 +172,6 @@ describe('protocol payloads and transcripts', () => {
             },
             signature: 'bbbb',
         };
-
         expect(payloadSlotKey(left.payload)).toBe(
             'session-1:1:1:encrypted-dual-share:2',
         );
@@ -194,7 +180,6 @@ describe('protocol payloads and transcripts', () => {
         );
         expect(classifySlotConflict(left, right)).toBe('distinct');
     });
-
     it('distinguishes complaint envelopes and dealer-specific share reveals', () => {
         const leftComplaint = {
             payload: {
@@ -235,7 +220,6 @@ describe('protocol payloads and transcripts', () => {
             },
             signature: 'dddd',
         };
-
         expect(payloadSlotKey(leftComplaint.payload)).toBe(
             'session-1:2:2:complaint:5:env-5-2',
         );
@@ -252,7 +236,6 @@ describe('protocol payloads and transcripts', () => {
             'equivocation',
         );
     });
-
     it('derives slot keys for complaint resolutions and typed voting payloads', () => {
         expect(
             payloadSlotKey({
@@ -308,7 +291,7 @@ describe('protocol payloads and transcripts', () => {
                     response: '07',
                 },
             }),
-        ).toBe(`session-1:6:2:decryption-share:2:${'aa'.repeat(32)}`);
+        ).toBe('session-1:6:2:decryption-share:2');
         expect(
             payloadSlotKey({
                 sessionId: 'session-1',
@@ -322,7 +305,7 @@ describe('protocol payloads and transcripts', () => {
                 tally: '08',
                 decryptionParticipantIndices: [1, 3],
             }),
-        ).toBe(`session-1:7:1:tally-publication:2:${'bb'.repeat(32)}`);
+        ).toBe('session-1:7:1:tally-publication:2');
         expect(
             payloadSlotKey({
                 sessionId: 'session-1',
@@ -348,7 +331,6 @@ describe('protocol payloads and transcripts', () => {
             }),
         ).toBe('session-2:0:1:ceremony-restart:session-1');
     });
-
     it('distinguishes idempotent retransmissions from equivocation', () => {
         const identicalUnsigned: SignedPayload = {
             payload: registration,
@@ -366,7 +348,6 @@ describe('protocol payloads and transcripts', () => {
             },
             signature: 'cccc',
         };
-
         expect(classifySlotConflict(identicalUnsigned, resigned)).toBe(
             'idempotent',
         );
@@ -374,7 +355,98 @@ describe('protocol payloads and transcripts', () => {
             'equivocation',
         );
     });
-
+    it('treats conflicting decryption-share and tally-publication transcript hashes as equivocation', async () => {
+        const conflictingDecryptionShares = [
+            {
+                payload: {
+                    sessionId: 'session-1',
+                    manifestHash: 'manifest-1',
+                    phase: 6,
+                    participantIndex: 2,
+                    messageType: 'decryption-share' as const,
+                    optionIndex: 1,
+                    transcriptHash: 'aa'.repeat(32),
+                    ballotCount: 3,
+                    decryptionShare:
+                        '05' as DecryptionSharePayload['decryptionShare'],
+                    proof: {
+                        challenge: '06',
+                        response: '07',
+                    },
+                },
+                signature: 'aaaa',
+            },
+            {
+                payload: {
+                    sessionId: 'session-1',
+                    manifestHash: 'manifest-1',
+                    phase: 6,
+                    participantIndex: 2,
+                    messageType: 'decryption-share' as const,
+                    optionIndex: 1,
+                    transcriptHash: 'bb'.repeat(32),
+                    ballotCount: 3,
+                    decryptionShare:
+                        '05' as DecryptionSharePayload['decryptionShare'],
+                    proof: {
+                        challenge: '06',
+                        response: '07',
+                    },
+                },
+                signature: 'bbbb',
+            },
+        ] as const;
+        const conflictingTallyPublications = [
+            {
+                payload: {
+                    sessionId: 'session-1',
+                    manifestHash: 'manifest-1',
+                    phase: 7,
+                    participantIndex: 1,
+                    messageType: 'tally-publication' as const,
+                    optionIndex: 1,
+                    transcriptHash: 'cc'.repeat(32),
+                    ballotCount: 3,
+                    tally: '08',
+                    decryptionParticipantIndices: [1, 3],
+                },
+                signature: 'cccc',
+            },
+            {
+                payload: {
+                    sessionId: 'session-1',
+                    manifestHash: 'manifest-1',
+                    phase: 7,
+                    participantIndex: 1,
+                    messageType: 'tally-publication' as const,
+                    optionIndex: 1,
+                    transcriptHash: 'dd'.repeat(32),
+                    ballotCount: 3,
+                    tally: '08',
+                    decryptionParticipantIndices: [1, 3],
+                },
+                signature: 'dddd',
+            },
+        ] as const;
+        expect(
+            classifySlotConflict(
+                conflictingDecryptionShares[0],
+                conflictingDecryptionShares[1],
+            ),
+        ).toBe('equivocation');
+        expect(
+            classifySlotConflict(
+                conflictingTallyPublications[0],
+                conflictingTallyPublications[1],
+            ),
+        ).toBe('equivocation');
+        await expect(
+            auditSignedPayloads(conflictingDecryptionShares),
+        ).rejects.toThrow('Detected equivocation for canonical slot');
+        await expect(
+            auditSignedPayloads(conflictingTallyPublications),
+        ).rejects.toThrow('Detected equivocation for canonical slot');
+    });
     it('hashes phase snapshots without including checkpoints or restart links', async () => {
         const setupPayloads = [
             {
@@ -408,7 +480,6 @@ describe('protocol payloads and transcripts', () => {
             previousTranscriptHash: '22'.repeat(32),
             reason: 'timeout' as const,
         };
-
         const snapshotPayloads = protocolPhaseSnapshotPayloads(
             [checkpointPayload, restartPayload, ...setupPayloads],
             0,
@@ -418,11 +489,9 @@ describe('protocol payloads and transcripts', () => {
             0,
         );
         const directHash = await hashProtocolTranscript(setupPayloads);
-
         expect(snapshotPayloads).toEqual(sortProtocolPayloads(setupPayloads));
         expect(snapshotHash).toBe(directHash);
     });
-
     it('changes the phase snapshot hash when the server presents different board contents', async () => {
         const left = {
             sessionId: 'session-1',
@@ -442,7 +511,6 @@ describe('protocol payloads and transcripts', () => {
             ...left,
             ciphertext: 'ciphertext-b',
         };
-
         await expect(
             hashProtocolPhaseSnapshot([acceptance, registration, left], 1),
         ).resolves.not.toBe(
@@ -452,13 +520,11 @@ describe('protocol payloads and transcripts', () => {
             ),
         );
     });
-
     it('hashes transcripts and formats session fingerprints', async () => {
         const transcriptHash = await hashProtocolTranscript([
             registration,
             acceptance,
         ]);
-
         expect(transcriptHash).toHaveLength(64);
         expect(formatSessionFingerprint(transcriptHash)).toMatch(
             /^[0-9A-F]{4}(?:-[0-9A-F]{4}){7}$/,

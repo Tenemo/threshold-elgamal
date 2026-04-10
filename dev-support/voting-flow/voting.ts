@@ -1,4 +1,3 @@
-import { encodeScalar } from '../../src/core/ristretto.js';
 import { createDeterministicSource } from '../deterministic.js';
 
 import { invariant, signPayload } from './common.js';
@@ -28,8 +27,8 @@ import {
     type TallyPublicationPayload,
     type VerifiedBallotAggregation,
 } from '#protocol';
+import { encodeScalar } from '#src/core/ristretto';
 import { createVerifiedDecryptionShare, type Share } from '#threshold';
-
 export const createBallotArtifacts = async (
     votes: readonly bigint[],
     jointPublicKey: EncodedPoint,
@@ -50,7 +49,6 @@ export const createBallotArtifacts = async (
                 jointPublicKey,
                 randomness,
                 bound,
-                group.name,
             );
             const proofContext: ProofContext = {
                 protocolVersion,
@@ -73,7 +71,6 @@ export const createBallotArtifacts = async (
                     postCallOffset: 17,
                 }),
             );
-
             invariant(
                 await verifyDisjunctiveProof(
                     proof,
@@ -85,7 +82,6 @@ export const createBallotArtifacts = async (
                 ),
                 `Ballot proof verification failed for voter ${voterIndex}`,
             );
-
             return {
                 voterIndex,
                 vote,
@@ -95,7 +91,6 @@ export const createBallotArtifacts = async (
             };
         }),
     );
-
 export const createBallotSubmissionPayloads = async (
     participants: readonly ParticipantRuntime[],
     ballots: readonly BallotArtifact[],
@@ -120,7 +115,6 @@ export const createBallotSubmissionPayloads = async (
             }),
         ),
     );
-
 export const createThresholdShareArtifacts = async (
     selectedShares: readonly Share[],
     aggregate: VerifiedBallotAggregation['aggregate'],
@@ -139,17 +133,14 @@ export const createThresholdShareArtifacts = async (
             const decryptionShare = createVerifiedDecryptionShare(
                 aggregate,
                 share,
-                group,
             );
             const transcriptKey = transcriptDerivedVerificationKeys.find(
                 (item) => item.index === share.index,
             );
-
             invariant(
                 transcriptKey !== undefined,
                 `Missing transcript-derived key for participant ${share.index}`,
             );
-
             const statement: DLEQStatement = {
                 publicKey: transcriptKey.value,
                 ciphertext: aggregate.ciphertext,
@@ -173,19 +164,16 @@ export const createThresholdShareArtifacts = async (
                     postCallOffset: 17,
                 }),
             );
-
             invariant(
                 await verifyDLEQProof(proof, statement, group, proofContext),
                 `DLEQ proof verification failed for participant ${share.index}`,
             );
-
             return {
                 proof,
                 share: decryptionShare,
             };
         }),
     );
-
 export const createDecryptionSharePayloads = async (
     participants: readonly ParticipantRuntime[],
     shares: readonly ThresholdShareArtifact[],
@@ -215,7 +203,6 @@ export const createDecryptionSharePayloads = async (
             ),
         ),
     );
-
 export const createTallyPublicationPayload = async (
     publisher: ParticipantRuntime,
     sessionId: string,

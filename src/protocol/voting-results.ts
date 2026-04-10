@@ -1,9 +1,6 @@
 import { InvalidPayloadError } from '../core/index.js';
 import { decodeScalar } from '../core/ristretto.js';
-import {
-    verifyDKGTranscript,
-    type VerifiedDKGTranscript,
-} from '../dkg/verification.js';
+import { verifyDKGTranscript } from '../dkg/verification.js';
 import { combineDecryptionShares } from '../threshold/index.js';
 
 import type { VerifiedOptionBallotAggregation } from './ballots.js';
@@ -33,14 +30,12 @@ import type {
 function recomputePublishedTally(
     ballots: VerifiedOptionBallotAggregation,
     decryptionShares: readonly VerifiedDecryptionSharePayload[],
-    dkg: VerifiedDKGTranscript,
 ): bigint {
     const bound = BigInt(ballots.aggregate.ballotCount) * 10n;
 
     return combineDecryptionShares(
         ballots.aggregate.ciphertext,
         decryptionShares.map((entry) => entry.share),
-        dkg.group,
         bound,
     );
 }
@@ -102,7 +97,6 @@ export const verifyPublishedVotingResults = async (
         input.sessionId,
     );
     const dkg = await verifyDKGTranscript({
-        protocol: input.protocol,
         transcript: input.dkgTranscript,
         manifest: context.manifest,
         sessionId: context.sessionId,
@@ -215,7 +209,6 @@ export const verifyPublishedVotingResults = async (
         const tally = recomputePublishedTally(
             optionBallots,
             optionDecryptionShares.decryptionShares,
-            dkg,
         );
         const publication = tallyPublicationMap.get(optionIndex);
 
@@ -266,7 +259,6 @@ export const verifyPublishedVotingResult = async (
     assertSingleOptionManifest(context.manifest, 'verifyPublishedVotingResult');
 
     const results = await verifyPublishedVotingResults({
-        protocol: input.protocol,
         manifest: context.manifest,
         sessionId: context.sessionId,
         dkgTranscript: input.dkgTranscript,

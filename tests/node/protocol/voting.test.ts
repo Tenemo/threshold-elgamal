@@ -14,11 +14,9 @@ import {
     type SignedPayload,
 } from '#protocol';
 import { signPayloadBytes } from '#transport';
-
-const fixtureTimeoutMs = 240_000;
-const publishedVotingTestTimeoutMs = 60_000;
-const longPublishedVotingTestTimeoutMs = 90_000;
-
+const fixtureTimeoutMs = 240000;
+const publishedVotingTestTimeoutMs = 60000;
+const longPublishedVotingTestTimeoutMs = 90000;
 const expectCompleted = (
     result: VotingFlowResult,
     label: string,
@@ -26,10 +24,8 @@ const expectCompleted = (
     if (result.finalState.phase !== 'completed') {
         throw new Error(label);
     }
-
     return result as CompletedVotingFlowResult;
 };
-
 const resignPayload = async <TPayload extends ProtocolPayload>(
     result: CompletedVotingFlowResult,
     payload: TPayload,
@@ -42,7 +38,6 @@ const resignPayload = async <TPayload extends ProtocolPayload>(
             `Missing auth key for participant ${payload.participantIndex}`,
         );
     }
-
     return {
         payload,
         signature: await signPayloadBytes(
@@ -51,12 +46,10 @@ const resignPayload = async <TPayload extends ProtocolPayload>(
         ),
     };
 };
-
 describe('published voting verification', () => {
     let completed: CompletedVotingFlowResult;
     let multiOption: CompletedVotingFlowResult;
     let withDealerFaultComplaint: CompletedVotingFlowResult;
-
     beforeAll(async () => {
         completed = expectCompleted(
             await runVotingFlowScenario({
@@ -96,7 +89,6 @@ describe('published voting verification', () => {
             'Expected the multi-option voting fixture to complete',
         );
     }, fixtureTimeoutMs);
-
     it(
         'verifies the typed ballot, decryption-share, and tally payloads end to end',
         {
@@ -105,7 +97,6 @@ describe('published voting verification', () => {
         async () => {
             await expect(
                 verifyPublishedVotingResult({
-                    protocol: 'gjkr',
                     manifest: completed.manifest,
                     sessionId: completed.sessionId,
                     dkgTranscript: completed.dkgTranscript,
@@ -118,7 +109,6 @@ describe('published voting verification', () => {
             });
         },
     );
-
     it(
         'verifies the same safe surface after a dealer-fault complaint reduces QUAL',
         {
@@ -127,7 +117,6 @@ describe('published voting verification', () => {
         async () => {
             await expect(
                 verifyPublishedVotingResult({
-                    protocol: 'gjkr',
                     manifest: withDealerFaultComplaint.manifest,
                     sessionId: withDealerFaultComplaint.sessionId,
                     dkgTranscript: withDealerFaultComplaint.dkgTranscript,
@@ -141,7 +130,6 @@ describe('published voting verification', () => {
             });
         },
     );
-
     it(
         'accepts idempotent retransmissions of ballot payloads',
         {
@@ -150,7 +138,6 @@ describe('published voting verification', () => {
         async () => {
             await expect(
                 verifyPublishedVotingResult({
-                    protocol: 'gjkr',
                     manifest: completed.manifest,
                     sessionId: completed.sessionId,
                     dkgTranscript: completed.dkgTranscript,
@@ -166,7 +153,6 @@ describe('published voting verification', () => {
             });
         },
     );
-
     it(
         'rejects decryption shares tied to a different local aggregate transcript',
         {
@@ -177,10 +163,8 @@ describe('published voting verification', () => {
                 ...completed.decryptionSharePayloads![0].payload,
                 transcriptHash: '00'.repeat(32),
             });
-
             await expect(
                 verifyPublishedVotingResult({
-                    protocol: 'gjkr',
                     manifest: completed.manifest,
                     sessionId: completed.sessionId,
                     dkgTranscript: completed.dkgTranscript,
@@ -196,7 +180,6 @@ describe('published voting verification', () => {
             );
         },
     );
-
     it(
         'rejects tally publications that do not match the recomputed tally',
         {
@@ -209,10 +192,8 @@ describe('published voting verification', () => {
                     completed.tallyPublication!.payload.tally.length / 2,
                 ),
             });
-
             await expect(
                 verifyPublishedVotingResult({
-                    protocol: 'gjkr',
                     manifest: completed.manifest,
                     sessionId: completed.sessionId,
                     dkgTranscript: completed.dkgTranscript,
@@ -225,7 +206,6 @@ describe('published voting verification', () => {
             );
         },
     );
-
     it(
         'verifies multi-option published tallies and supports arithmetic-mean derivation in the caller',
         {
@@ -233,7 +213,6 @@ describe('published voting verification', () => {
         },
         async () => {
             const verified = await verifyPublishedVotingResults({
-                protocol: 'gjkr',
                 manifest: multiOption.manifest,
                 sessionId: multiOption.sessionId,
                 dkgTranscript: multiOption.dkgTranscript,
@@ -241,7 +220,6 @@ describe('published voting verification', () => {
                 decryptionSharePayloads: multiOption.decryptionSharePayloads!,
                 tallyPublications: multiOption.tallyPublications,
             });
-
             expect(verified.options.map((entry) => entry.optionIndex)).toEqual([
                 1, 2, 3,
             ]);
@@ -259,7 +237,6 @@ describe('published voting verification', () => {
             ).toEqual([2.2, 1.8, 1.8]);
         },
     );
-
     it(
         'rejects the single-option wrapper when the manifest carries multiple options',
         {
@@ -268,7 +245,6 @@ describe('published voting verification', () => {
         async () => {
             await expect(
                 verifyPublishedVotingResult({
-                    protocol: 'gjkr',
                     manifest: multiOption.manifest,
                     sessionId: multiOption.sessionId,
                     dkgTranscript: multiOption.dkgTranscript,
@@ -282,7 +258,6 @@ describe('published voting verification', () => {
             );
         },
     );
-
     it(
         'rejects wrong ballot option bindings and duplicate per-option ballot slots',
         {
@@ -299,19 +274,15 @@ describe('published voting verification', () => {
                     entry.payload.participantIndex === 1 &&
                     entry.payload.optionIndex === 2,
             );
-
             expect(optionOnePayload).toBeDefined();
             expect(optionTwoPayload).toBeDefined();
-
             const wrongBinding = await resignPayload(multiOption, {
                 ...optionTwoPayload!.payload,
                 ciphertext: optionOnePayload!.payload.ciphertext,
                 proof: optionOnePayload!.payload.proof,
             });
-
             await expect(
                 verifyPublishedVotingResults({
-                    protocol: 'gjkr',
                     manifest: multiOption.manifest,
                     sessionId: multiOption.sessionId,
                     dkgTranscript: multiOption.dkgTranscript,
@@ -325,10 +296,8 @@ describe('published voting verification', () => {
             ).rejects.toThrow(
                 'Option 2 ballot verification failed: Ballot proof failed verification for voter 1 option 2',
             );
-
             await expect(
                 verifyPublishedVotingResults({
-                    protocol: 'gjkr',
                     manifest: multiOption.manifest,
                     sessionId: multiOption.sessionId,
                     dkgTranscript: multiOption.dkgTranscript,
@@ -348,7 +317,6 @@ describe('published voting verification', () => {
             ).rejects.toThrow('Detected equivocation for canonical slot');
         },
     );
-
     it(
         'rejects invalid option indices with protocol payload errors',
         {
@@ -359,10 +327,8 @@ describe('published voting verification', () => {
                 ...multiOption.ballotPayloads![0].payload,
                 optionIndex: 0,
             });
-
             await expect(
                 verifyPublishedVotingResults({
-                    protocol: 'gjkr',
                     manifest: multiOption.manifest,
                     sessionId: multiOption.sessionId,
                     dkgTranscript: multiOption.dkgTranscript,
@@ -379,7 +345,6 @@ describe('published voting verification', () => {
             );
         },
     );
-
     it(
         'adds option context when a multi-option ballot set falls below the publication floor',
         {
@@ -388,7 +353,6 @@ describe('published voting verification', () => {
         async () => {
             await expect(
                 verifyPublishedVotingResults({
-                    protocol: 'gjkr',
                     manifest: multiOption.manifest,
                     sessionId: multiOption.sessionId,
                     dkgTranscript: multiOption.dkgTranscript,
@@ -404,7 +368,6 @@ describe('published voting verification', () => {
             );
         },
     );
-
     it(
         'rejects per-option transcript mismatches and insufficient per-option decryption subsets',
         {
@@ -421,19 +384,15 @@ describe('published voting verification', () => {
                 multiOption.decryptionSharePayloads?.filter(
                     (entry) => entry.payload.optionIndex === 3,
                 ) ?? [];
-
             expect(optionOne).toBeDefined();
             expect(optionTwoShare).toBeDefined();
             expect(optionThreeShares).toHaveLength(3);
-
             const wrongShare = await resignPayload(multiOption, {
                 ...optionTwoShare!.payload,
                 transcriptHash: optionOne!.ballotLogHash,
             });
-
             await expect(
                 verifyPublishedVotingResults({
-                    protocol: 'gjkr',
                     manifest: multiOption.manifest,
                     sessionId: multiOption.sessionId,
                     dkgTranscript: multiOption.dkgTranscript,
@@ -449,10 +408,8 @@ describe('published voting verification', () => {
             ).rejects.toThrow(
                 'Decryption share transcript hash mismatch for participant 1 and option 2',
             );
-
             await expect(
                 verifyPublishedVotingResults({
-                    protocol: 'gjkr',
                     manifest: multiOption.manifest,
                     sessionId: multiOption.sessionId,
                     dkgTranscript: multiOption.dkgTranscript,

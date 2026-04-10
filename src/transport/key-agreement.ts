@@ -326,25 +326,25 @@ export const verifyLocalTransportKey = async (
     expectedPublicKeyHex: EncodedTransportPublicKey,
     suite: KeyAgreementSuite,
 ): Promise<boolean> => {
-    const resolvedPrivateKey =
-        typeof privateKey === 'string'
-            ? await importTransportPrivateKey(privateKey, suite)
-            : privateKey;
+    try {
+        const resolvedPrivateKey =
+            typeof privateKey === 'string'
+                ? await importTransportPrivateKey(privateKey, suite)
+                : privateKey;
 
-    if (suite === 'X25519' || resolvedPrivateKey.extractable) {
-        try {
+        if (suite === 'X25519' || resolvedPrivateKey.extractable) {
             return (
                 (await deriveTransportPublicKey(resolvedPrivateKey, suite)) ===
                 expectedPublicKeyHex
             );
-        } catch {
-            return false;
         }
-    }
 
-    return privateKeyMatchesPublicKey(
-        resolvedPrivateKey,
-        expectedPublicKeyHex,
-        suite,
-    );
+        return privateKeyMatchesPublicKey(
+            resolvedPrivateKey,
+            expectedPublicKeyHex,
+            suite,
+        );
+    } catch {
+        return false;
+    }
 };

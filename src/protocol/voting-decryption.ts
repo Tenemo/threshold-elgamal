@@ -1,5 +1,6 @@
 import {
     InvalidPayloadError,
+    RISTRETTO_GROUP,
     assertInSubgroupOrIdentity,
 } from '../core/index.js';
 import { deriveTranscriptVerificationKey } from '../dkg/verification.js';
@@ -149,7 +150,7 @@ export const verifyDecryptionSharePayloadsByOption = async (
                 publicKey: deriveTranscriptVerificationKey(
                     input.dkg.feldmanCommitments,
                     payload.participantIndex,
-                    input.dkg.group,
+                    RISTRETTO_GROUP,
                 ),
                 ciphertext: optionAggregate.aggregate.ciphertext,
                 decryptionShare: decryptionShare.value,
@@ -158,11 +159,11 @@ export const verifyDecryptionSharePayloadsByOption = async (
             const valid = await verifyDLEQProof(
                 proof,
                 statement,
-                input.dkg.group,
+                RISTRETTO_GROUP,
                 decryptionProofContext(
                     payload,
                     context.manifest.protocolVersion,
-                    input.dkg.group,
+                    RISTRETTO_GROUP,
                 ),
             );
 

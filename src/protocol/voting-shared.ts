@@ -113,7 +113,7 @@ export const buildVotingManifestContext = async (
     return {
         manifest: validatedManifest,
         manifestHash: await hashElectionManifest(validatedManifest),
-        group: getGroup(validatedManifest.suiteId),
+        group: getGroup('ristretto255'),
         optionCount: validatedManifest.optionList.length,
         scoreDomainValues: scoreVotingDomain(),
         sessionId,

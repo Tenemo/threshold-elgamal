@@ -4,8 +4,8 @@ import {
     IndexOutOfRangeError,
     InvalidShareError,
     PlaintextDomainError,
+    RISTRETTO_GROUP,
     modQ,
-    type CryptoGroup,
 } from '../core/index.js';
 import {
     decodePoint,
@@ -53,10 +53,9 @@ const assertUniqueIndices = (
 export const createDecryptionShare = (
     ciphertext: ElgamalCiphertext,
     share: Share,
-    group: CryptoGroup,
 ): DecryptionShare => {
     assertPositiveIndex(share.index, 'Share');
-    assertScalarInZq(share.value, group.q);
+    assertScalarInZq(share.value, RISTRETTO_GROUP.q);
     assertInSubgroupOrIdentity(ciphertext.c1);
 
     return {
@@ -73,7 +72,6 @@ export const createDecryptionShare = (
 export const combineDecryptionShares = (
     ciphertext: ElgamalCiphertext,
     decryptionShares: readonly DecryptionShare[],
-    group: CryptoGroup,
     bound: bigint,
 ): bigint => {
     if (decryptionShares.length === 0) {
@@ -100,11 +98,14 @@ export const combineDecryptionShares = (
         const lambda = lagrangeCoefficient(
             BigInt(share.index),
             bigintIndices,
-            group.q,
+            RISTRETTO_GROUP.q,
         );
         combinedFactor = pointAdd(
             combinedFactor,
-            pointMultiply(decodePoint(share.value), modQ(lambda, group.q)),
+            pointMultiply(
+                decodePoint(share.value),
+                modQ(lambda, RISTRETTO_GROUP.q),
+            ),
         );
     }
 
@@ -114,7 +115,7 @@ export const combineDecryptionShares = (
     );
     const message = babyStepGiantStep(
         encodePoint(encodedMessage),
-        group.g,
+        RISTRETTO_GROUP.g,
         bound,
     );
 
@@ -134,7 +135,6 @@ export const combineDecryptionShares = (
 export const createVerifiedDecryptionShare = (
     aggregate: VerifiedAggregateCiphertext,
     share: Share,
-    group: CryptoGroup,
 ): DecryptionShare => {
     if (aggregate.transcriptHash.trim() === '') {
         throw new InvalidShareError(
@@ -147,5 +147,5 @@ export const createVerifiedDecryptionShare = (
         );
     }
 
-    return createDecryptionShare(aggregate.ciphertext, share, group);
+    return createDecryptionShare(aggregate.ciphertext, share);
 };

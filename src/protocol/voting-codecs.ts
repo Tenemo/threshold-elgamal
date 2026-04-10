@@ -18,11 +18,14 @@ import type {
 export const encodeCiphertext = (
     ciphertext: ElgamalCiphertext,
     byteLength: number,
-): EncodedCiphertext => ({
-    ...(void byteLength, {}),
-    c1: ciphertext.c1,
-    c2: ciphertext.c2,
-});
+): EncodedCiphertext => {
+    void byteLength;
+
+    return {
+        c1: ciphertext.c1,
+        c2: ciphertext.c2,
+    };
+};
 
 /**
  * Decodes a protocol ciphertext into bigint components.
@@ -52,11 +55,14 @@ export const decodeCiphertext = (
 export const encodeCompactProof = (
     proof: { readonly challenge: bigint; readonly response: bigint },
     byteLength: number,
-): EncodedCompactProof => ({
-    ...(void byteLength, {}),
-    challenge: encodeScalar(proof.challenge),
-    response: encodeScalar(proof.response),
-});
+): EncodedCompactProof => {
+    void byteLength;
+
+    return {
+        challenge: encodeScalar(proof.challenge),
+        response: encodeScalar(proof.response),
+    };
+};
 
 /**
  * Decodes a protocol compact proof into bigint fields.

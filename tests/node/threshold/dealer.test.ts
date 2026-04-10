@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
-import { createDecryptionShare } from '../../../src/threshold/decrypt.js';
 import thresholdVector from '../../../test-vectors/threshold.json';
 
 import {
@@ -19,6 +17,8 @@ import {
     encryptAdditiveWithRandomness,
 } from '#elgamal';
 import type { ElgamalCiphertext } from '#elgamal';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
+import { createDecryptionShare } from '#src/threshold/decrypt';
 import {
     combineDecryptionShares,
     createVerifiedDecryptionShare,
@@ -26,37 +26,29 @@ import {
     deriveSharesFromPolynomial,
     lagrangeCoefficient,
 } from '#threshold';
-
-const thresholdTestTimeoutMs = 60_000;
+const thresholdTestTimeoutMs = 60000;
 const thresholdVectorGroup = thresholdVector.group as 'ristretto255';
-
 const choose = <T>(items: readonly T[], size: number): T[][] => {
     if (size === 0) {
         return [[]];
     }
-
     if (size > items.length) {
         return [];
     }
-
     if (size === items.length) {
         return [items.slice()];
     }
-
     const [first, ...rest] = items;
-
     return [
         ...choose(rest, size - 1).map((tail) => [first, ...tail]),
         ...choose(rest, size),
     ];
 };
-
 describe('dealer-based threshold decryption', () => {
     const vectorCiphertext = (): ElgamalCiphertext => ({
         c1: thresholdVector.ciphertext.c1 as EncodedPoint,
         c2: thresholdVector.ciphertext.c2 as EncodedPoint,
     });
-
     const roundTripScenarios = [
         {
             label: '2-of-3 on ristretto255',
@@ -87,7 +79,6 @@ describe('dealer-based threshold decryption', () => {
             message: 10n,
         },
     ] as const;
-
     for (const scenario of roundTripScenarios) {
         it(
             `round-trips representative threshold settings for ${scenario.label}`,
@@ -95,25 +86,19 @@ describe('dealer-based threshold decryption', () => {
                 const keySet = dealerKeyGen(
                     scenario.threshold,
                     scenario.participantCount,
-                    scenario.group,
                 );
                 const ciphertext = encryptAdditive(
                     scenario.message,
                     keySet.publicKey,
-                    scenario.group,
                     scenario.message,
                 );
                 const decryptionShares = keySet.shares
                     .slice(0, scenario.threshold)
-                    .map((share) =>
-                        createDecryptionShare(ciphertext, share, keySet.group),
-                    );
-
+                    .map((share) => createDecryptionShare(ciphertext, share));
                 expect(
                     combineDecryptionShares(
                         ciphertext,
                         decryptionShares,
-                        keySet.group,
                         scenario.message,
                     ),
                 ).toBe(scenario.message);
@@ -121,41 +106,26 @@ describe('dealer-based threshold decryption', () => {
             thresholdTestTimeoutMs,
         );
     }
-
     it(
         'recovers the same plaintext for every 3-of-5 subset',
         {
             timeout: thresholdTestTimeoutMs,
         },
         () => {
-            const keySet = dealerKeyGen(3, 5, 'ristretto255');
-            const ciphertext = encryptAdditive(
-                8n,
-                keySet.publicKey,
-                'ristretto255',
-                8n,
-            );
+            const keySet = dealerKeyGen(3, 5);
+            const ciphertext = encryptAdditive(8n, keySet.publicKey, 8n);
             const subsets = choose(keySet.shares, 3);
-
             expect(subsets).toHaveLength(10);
-
             for (const subset of subsets) {
                 const decryptionShares = subset.map((share) =>
-                    createDecryptionShare(ciphertext, share, keySet.group),
+                    createDecryptionShare(ciphertext, share),
                 );
-
                 expect(
-                    combineDecryptionShares(
-                        ciphertext,
-                        decryptionShares,
-                        keySet.group,
-                        8n,
-                    ),
+                    combineDecryptionShares(ciphertext, decryptionShares, 8n),
                 ).toBe(8n);
             }
         },
     );
-
     it(
         'does not recover the correct plaintext with insufficient shares',
         {
@@ -172,18 +142,15 @@ describe('dealer-based threshold decryption', () => {
                 group.q,
             );
             const ciphertext = vectorCiphertext();
-
             for (const subset of choose(shares, 2)) {
                 const decryptionShares = subset.map((share) =>
-                    createDecryptionShare(ciphertext, share, group),
+                    createDecryptionShare(ciphertext, share),
                 );
-
                 try {
                     expect(
                         combineDecryptionShares(
                             ciphertext,
                             decryptionShares,
-                            group,
                             BigInt(thresholdVector.ciphertext.bound),
                         ),
                     ).not.toBe(BigInt(thresholdVector.ciphertext.message));
@@ -193,92 +160,49 @@ describe('dealer-based threshold decryption', () => {
             }
         },
     );
-
     it('preserves additive homomorphism under threshold decryption', () => {
-        const keySet = dealerKeyGen(3, 5, 'ristretto255');
-        const left = encryptAdditive(6n, keySet.publicKey, 'ristretto255', 20n);
-        const right = encryptAdditive(
-            7n,
-            keySet.publicKey,
-            'ristretto255',
-            20n,
-        );
-        const sum = addEncryptedValues(left, right, 'ristretto255');
+        const keySet = dealerKeyGen(3, 5);
+        const left = encryptAdditive(6n, keySet.publicKey, 20n);
+        const right = encryptAdditive(7n, keySet.publicKey, 20n);
+        const sum = addEncryptedValues(left, right);
         const decryptionShares = keySet.shares
             .slice(0, 3)
-            .map((share) => createDecryptionShare(sum, share, keySet.group));
-
-        expect(
-            combineDecryptionShares(sum, decryptionShares, keySet.group, 20n),
-        ).toBe(13n);
+            .map((share) => createDecryptionShare(sum, share));
+        expect(combineDecryptionShares(sum, decryptionShares, 20n)).toBe(13n);
     });
-
     it('handles k=n, k=1, plaintext zero, and maximum-score bounds', () => {
-        const allRequired = dealerKeyGen(4, 4, 'ristretto255');
-        const anySingle = dealerKeyGen(1, 4, 'ristretto255');
-
-        const maxCiphertext = encryptAdditive(
-            10n,
-            allRequired.publicKey,
-            'ristretto255',
-            10n,
-        );
+        const allRequired = dealerKeyGen(4, 4);
+        const anySingle = dealerKeyGen(1, 4);
+        const maxCiphertext = encryptAdditive(10n, allRequired.publicKey, 10n);
         const maxShares = allRequired.shares.map((share) =>
-            createDecryptionShare(maxCiphertext, share, allRequired.group),
+            createDecryptionShare(maxCiphertext, share),
         );
-        expect(
-            combineDecryptionShares(
-                maxCiphertext,
-                maxShares,
-                allRequired.group,
-                10n,
-            ),
-        ).toBe(10n);
-
-        const zeroCiphertext = encryptAdditive(
-            0n,
-            anySingle.publicKey,
-            'ristretto255',
+        expect(combineDecryptionShares(maxCiphertext, maxShares, 10n)).toBe(
             10n,
         );
+        const zeroCiphertext = encryptAdditive(0n, anySingle.publicKey, 10n);
         const singleShare = createDecryptionShare(
             zeroCiphertext,
             anySingle.shares[0],
-            anySingle.group,
         );
         expect(
-            combineDecryptionShares(
-                zeroCiphertext,
-                [singleShare],
-                anySingle.group,
-                10n,
-            ),
+            combineDecryptionShares(zeroCiphertext, [singleShare], 10n),
         ).toBe(0n);
     });
-
     it('rejects duplicate decryption-share indices and blank verified aggregates', () => {
-        const keySet = dealerKeyGen(2, 3, 'ristretto255');
-        const ciphertext = encryptAdditive(
-            5n,
-            keySet.publicKey,
-            'ristretto255',
-            10n,
-        );
+        const keySet = dealerKeyGen(2, 3);
+        const ciphertext = encryptAdditive(5n, keySet.publicKey, 10n);
         const decryptionShare = createDecryptionShare(
             ciphertext,
             keySet.shares[0],
-            keySet.group,
         );
-
         expect(() =>
             combineDecryptionShares(
                 ciphertext,
                 [decryptionShare, decryptionShare],
-                keySet.group,
                 10n,
             ),
         ).toThrow(InvalidShareError);
-
         expect(() =>
             createVerifiedDecryptionShare(
                 {
@@ -289,20 +213,12 @@ describe('dealer-based threshold decryption', () => {
                     typeof createVerifiedDecryptionShare
                 >[0],
                 keySet.shares[0],
-                keySet.group,
             ),
         ).toThrow(InvalidShareError);
     });
-
     it('rejects malformed ciphertext and share inputs during threshold decryption', () => {
-        const keySet = dealerKeyGen(2, 3, 'ristretto255');
-        const ciphertext = encryptAdditive(
-            5n,
-            keySet.publicKey,
-            'ristretto255',
-            10n,
-        );
-
+        const keySet = dealerKeyGen(2, 3);
+        const ciphertext = encryptAdditive(5n, keySet.publicKey, 10n);
         expect(() =>
             createDecryptionShare(
                 {
@@ -310,23 +226,15 @@ describe('dealer-based threshold decryption', () => {
                     c1: 'ff'.repeat(32) as EncodedPoint,
                 },
                 keySet.shares[0],
-                keySet.group,
             ),
         ).toThrow(InvalidGroupElementError);
         expect(() =>
-            createDecryptionShare(
-                ciphertext,
-                { ...keySet.shares[0], index: 0 },
-                keySet.group,
-            ),
+            createDecryptionShare(ciphertext, {
+                ...keySet.shares[0],
+                index: 0,
+            }),
         ).toThrow(IndexOutOfRangeError);
-
-        const validShare = createDecryptionShare(
-            ciphertext,
-            keySet.shares[0],
-            keySet.group,
-        );
-
+        const validShare = createDecryptionShare(ciphertext, keySet.shares[0]);
         expect(() =>
             combineDecryptionShares(
                 {
@@ -334,7 +242,6 @@ describe('dealer-based threshold decryption', () => {
                     c2: 'ff'.repeat(32) as EncodedPoint,
                 },
                 [validShare],
-                keySet.group,
                 10n,
             ),
         ).toThrow(InvalidGroupElementError);
@@ -342,7 +249,6 @@ describe('dealer-based threshold decryption', () => {
             combineDecryptionShares(
                 ciphertext,
                 [{ ...validShare, index: 0 }],
-                keySet.group,
                 10n,
             ),
         ).toThrow(IndexOutOfRangeError);
@@ -355,12 +261,10 @@ describe('dealer-based threshold decryption', () => {
                         value: 'ff'.repeat(32) as EncodedPoint,
                     },
                 ],
-                keySet.group,
                 10n,
             ),
         ).toThrow(InvalidGroupElementError);
     });
-
     it('matches the frozen threshold vector', () => {
         const group = getGroup(thresholdVectorGroup);
         const polynomial = thresholdVector.polynomial.map((value) =>
@@ -378,15 +282,13 @@ describe('dealer-based threshold decryption', () => {
             thresholdVector.publicKey as EncodedPoint,
             BigInt(thresholdVector.ciphertext.randomness),
             BigInt(thresholdVector.ciphertext.bound),
-            group.name,
         );
         const subsetShares = shares.filter((share) =>
             subsetIndices.includes(share.index),
         );
         const decryptionShares = subsetShares.map((share) =>
-            createDecryptionShare(ciphertext, share, group),
+            createDecryptionShare(ciphertext, share),
         );
-
         expect(thresholdVector.publicKey).toBe(
             encodePoint(multiplyBase(polynomial[0])),
         );
@@ -423,18 +325,12 @@ describe('dealer-based threshold decryption', () => {
             combineDecryptionShares(
                 ciphertext,
                 decryptionShares,
-                group,
                 BigInt(thresholdVector.ciphertext.bound),
             ),
         ).toBe(BigInt(thresholdVector.recovered));
     });
-
     it('rejects invalid dealer-threshold parameters', () => {
-        expect(() => dealerKeyGen(0, 3, 'ristretto255')).toThrow(
-            ThresholdViolationError,
-        );
-        expect(() => dealerKeyGen(4, 3, 'ristretto255')).toThrow(
-            ThresholdViolationError,
-        );
+        expect(() => dealerKeyGen(0, 3)).toThrow(ThresholdViolationError);
+        expect(() => dealerKeyGen(4, 3)).toThrow(ThresholdViolationError);
     });
 });

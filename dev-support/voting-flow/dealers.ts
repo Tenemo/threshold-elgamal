@@ -1,5 +1,3 @@
-import { encodeScalar } from '../../src/core/ristretto.js';
-import { encodePedersenShareEnvelope } from '../../src/dkg/pedersen-share-codec.js';
 import { createDeterministicSource } from '../deterministic.js';
 
 import {
@@ -26,6 +24,8 @@ import type {
     EncryptedDualSharePayload,
     SignedPayload,
 } from '#protocol';
+import { encodeScalar } from '#src/core/ristretto';
+import { encodePedersenShareEnvelope } from '#src/dkg/pedersen-share-codec';
 import {
     decryptEnvelope,
     encryptEnvelope,

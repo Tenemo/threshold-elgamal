@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../dev-support/deterministic.js';
-import {
-    decodePoint,
-    encodePoint,
-    multiplyBase,
-    pointMultiply,
-} from '../../../src/core/ristretto.js';
 
 import { InvalidProofError, InvalidScalarError, getGroup } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
@@ -16,18 +10,17 @@ import {
     type DLEQStatement,
     type ProofContext,
 } from '#proofs';
-
+import {
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointMultiply,
+} from '#src/core/ristretto';
 describe('DLEQ proofs', () => {
     const group = getGroup('ristretto255');
     const secret = 12345n;
     const publicKey = encodePoint(multiplyBase(secret));
-    const ciphertext = encryptAdditiveWithRandomness(
-        7n,
-        publicKey,
-        42n,
-        20n,
-        group.name,
-    );
+    const ciphertext = encryptAdditiveWithRandomness(7n, publicKey, 42n, 20n);
     const statement: DLEQStatement = {
         publicKey,
         ciphertext,
@@ -43,7 +36,6 @@ describe('DLEQ proofs', () => {
         label: 'decryption-dleq',
         participantIndex: 2,
     };
-
     it('verifies honest DLEQ proofs', async () => {
         const proof = await createDLEQProof(
             secret,
@@ -52,12 +44,10 @@ describe('DLEQ proofs', () => {
             context,
             createDeterministicSource(),
         );
-
         await expect(
             verifyDLEQProof(proof, statement, group, context),
         ).resolves.toBe(true);
     });
-
     it('rejects wrong secrets, forged verification keys, and cross-ciphertext replay', async () => {
         const proof = await createDLEQProof(
             secret,
@@ -82,9 +72,7 @@ describe('DLEQ proofs', () => {
             publicKey,
             99n,
             20n,
-            group.name,
         );
-
         await expect(
             verifyDLEQProof(wrongProof, statement, group, context),
         ).resolves.toBe(false);
@@ -100,7 +88,6 @@ describe('DLEQ proofs', () => {
             ),
         ).resolves.toBe(false);
     });
-
     it('rejects malformed proof scalars and invalid contexts', async () => {
         const proof = await createDLEQProof(
             secret,
@@ -109,7 +96,6 @@ describe('DLEQ proofs', () => {
             context,
             createDeterministicSource(),
         );
-
         await expect(
             verifyDLEQProof(
                 { ...proof, challenge: group.q },

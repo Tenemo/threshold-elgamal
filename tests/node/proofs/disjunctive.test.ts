@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../dev-support/deterministic.js';
-import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
 
 import { InvalidProofError, getGroup } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
@@ -10,7 +9,7 @@ import {
     verifyDisjunctiveProof,
     type ProofContext,
 } from '#proofs';
-
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
 describe('disjunctive proofs', () => {
     const group = getGroup('ristretto255');
     const secret = 12345n;
@@ -23,7 +22,6 @@ describe('disjunctive proofs', () => {
         publicKey,
         randomness,
         10n,
-        group.name,
     );
     const context: ProofContext = {
         protocolVersion: 'v1',
@@ -34,7 +32,6 @@ describe('disjunctive proofs', () => {
         voterIndex: 3,
         optionIndex: 2,
     };
-
     it('verifies honest proofs over the score-voting domain', async () => {
         const proof = await createDisjunctiveProof(
             plaintext,
@@ -46,7 +43,6 @@ describe('disjunctive proofs', () => {
             context,
             createDeterministicSource(),
         );
-
         await expect(
             verifyDisjunctiveProof(
                 proof,
@@ -58,7 +54,6 @@ describe('disjunctive proofs', () => {
             ),
         ).resolves.toBe(true);
     });
-
     it('rejects out-of-range plaintexts and cross-option or cross-voter replay', async () => {
         const proof = await createDisjunctiveProof(
             plaintext,
@@ -70,7 +65,6 @@ describe('disjunctive proofs', () => {
             context,
             createDeterministicSource(),
         );
-
         await expect(
             createDisjunctiveProof(
                 11n,
@@ -104,7 +98,6 @@ describe('disjunctive proofs', () => {
             ),
         ).resolves.toBe(false);
     });
-
     it('rejects garbled branch data and malformed proof contexts', async () => {
         const proof = await createDisjunctiveProof(
             plaintext,
@@ -116,7 +109,6 @@ describe('disjunctive proofs', () => {
             context,
             createDeterministicSource(),
         );
-
         await expect(
             verifyDisjunctiveProof(
                 {
@@ -158,7 +150,6 @@ describe('disjunctive proofs', () => {
             ),
         ).rejects.toBeInstanceOf(InvalidProofError);
     });
-
     it('rejects branch scalars outside Z_q without throwing', async () => {
         const proof = await createDisjunctiveProof(
             plaintext,
@@ -170,7 +161,6 @@ describe('disjunctive proofs', () => {
             context,
             createDeterministicSource(),
         );
-
         await expect(
             verifyDisjunctiveProof(
                 {

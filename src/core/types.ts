@@ -6,9 +6,9 @@ export type Brand<T, TBrand extends string> = T & {
     readonly __brand: TBrand;
 };
 
-/** Canonical name for the shipped Ristretto255 suite. */
+/** @internal Canonical name for the shipped Ristretto255 suite. */
 export type GroupName = 'ristretto255';
-/** Accepted helper input identifiers for the shipped Ristretto suite. */
+/** @internal Accepted helper input identifiers for the shipped Ristretto suite. */
 export type GroupIdentifier = GroupName;
 
 /** Canonical 32-byte Ristretto point encoding exposed at the public boundary. */
@@ -17,7 +17,7 @@ export type EncodedPoint = Brand<string, 'EncodedPoint'>;
 /** Scalar value intended to live in the prime-order field `Z_q`. */
 export type ScalarQ = Brand<bigint, 'ScalarQ'>;
 
-/** Immutable built-in group definition exposed by `getGroup()` and keygen APIs. */
+/** @internal Immutable built-in group definition for the shipped suite. */
 export type CryptoGroup = {
     /** Canonical suite name. */
     readonly name: GroupName;

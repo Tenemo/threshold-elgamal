@@ -50,7 +50,7 @@ const assertHexLength = (
     length: number,
     label: string,
 ): void => {
-    if (value.length !== length || !/^[0-9a-f]+$/i.test(value)) {
+    if (value.length !== length || !/^[0-9a-f]+$/.test(value)) {
         throw new InvalidPayloadError(
             `${label} must be a lowercase fixed-width hexadecimal string`,
         );
