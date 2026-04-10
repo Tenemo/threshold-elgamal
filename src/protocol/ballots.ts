@@ -64,6 +64,7 @@ export type VerifyAndAggregateBallotsInput = {
     readonly publicKey: string;
     readonly validValues: readonly bigint[];
     readonly group: CryptoGroup;
+    readonly protocolVersion: string;
     readonly manifestHash: string;
     readonly sessionId: string;
     readonly minimumBallotCount: number;
@@ -96,7 +97,7 @@ const buildProofContext = (
     ballot: BallotTranscriptEntry,
     input: VerifyAndAggregateBallotsInput,
 ): ProofContext => ({
-    protocolVersion: 'v1',
+    protocolVersion: input.protocolVersion,
     suiteId: input.group.name,
     manifestHash: input.manifestHash,
     sessionId: input.sessionId,

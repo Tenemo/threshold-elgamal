@@ -92,10 +92,11 @@ export const parseCommitmentVector = (
 
 export const buildSchnorrContext = (
     payload: FeldmanCommitmentPayload,
+    protocolVersion: string,
     coefficientIndex: number,
     group: CryptoGroup,
 ): ProofContext => ({
-    protocolVersion: 'v1',
+    protocolVersion,
     suiteId: group.name,
     manifestHash: payload.manifestHash,
     sessionId: payload.sessionId,

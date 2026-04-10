@@ -211,7 +211,7 @@ describe('transport and authentication', () => {
                     ...envelope,
                     ephemeralPublicKey: corruptHexTailByte(
                         envelope.ephemeralPublicKey,
-                    ),
+                    ) as typeof envelope.ephemeralPublicKey,
                 },
                 recipient.privateKey,
                 ephemeralPrivateKey,
@@ -267,7 +267,7 @@ describe('transport and authentication', () => {
                     ...envelope,
                     ephemeralPublicKey: corruptHexTailByte(
                         envelope.ephemeralPublicKey,
-                    ),
+                    ) as typeof envelope.ephemeralPublicKey,
                 },
                 recipient.privateKey,
                 ephemeralPrivateKey,

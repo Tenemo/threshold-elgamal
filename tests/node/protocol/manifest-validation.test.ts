@@ -14,7 +14,9 @@ const baseManifest = (): ElectionManifest => ({
     reconstructionThreshold: 3,
     participantCount: 5,
     minimumPublishedVoterCount: 4,
+    ballotCompletenessPolicy: 'ALL_OPTIONS_REQUIRED',
     ballotFinality: 'first-valid',
+    scoreDomain: '1..10',
     rosterHash: 'roster-hash',
     optionList: ['Alpha', 'Beta'],
     epochDeadlines: ['2026-04-08T12:00:00Z', '2026-04-08T13:00:00Z'],
@@ -26,7 +28,7 @@ describe('manifest validation', () => {
 
         expect(validateElectionManifest(manifest)).toBe(manifest);
         expect(canonicalizeElectionManifest(manifest)).toBe(
-            '{"ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z","2026-04-08T13:00:00Z"],"minimumPublishedVoterCount":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","reconstructionThreshold":3,"rosterHash":"roster-hash","suiteId":"ristretto255"}',
+            '{"ballotCompletenessPolicy":"ALL_OPTIONS_REQUIRED","ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z","2026-04-08T13:00:00Z"],"minimumPublishedVoterCount":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","reconstructionThreshold":3,"rosterHash":"roster-hash","scoreDomain":"1..10","suiteId":"ristretto255"}',
         );
     });
 
@@ -78,7 +80,7 @@ describe('manifest validation', () => {
         expect(validateElectionManifest(manifest)).toBe(manifest);
     });
 
-    it('rejects invalid finality, option, and deadline invariants', () => {
+    it('rejects invalid manifest policy, option, and deadline invariants', () => {
         expect(() =>
             validateElectionManifest({
                 ...baseManifest(),
@@ -86,6 +88,21 @@ describe('manifest validation', () => {
                     'last-valid' as ElectionManifest['ballotFinality'],
             }),
         ).toThrow('Only "first-valid" ballot finality is supported');
+        expect(() =>
+            validateElectionManifest({
+                ...baseManifest(),
+                ballotCompletenessPolicy:
+                    'OPTIONAL' as ElectionManifest['ballotCompletenessPolicy'],
+            }),
+        ).toThrow(
+            'Only "ALL_OPTIONS_REQUIRED" ballot completeness is supported',
+        );
+        expect(() =>
+            validateElectionManifest({
+                ...baseManifest(),
+                scoreDomain: '0..10' as ElectionManifest['scoreDomain'],
+            }),
+        ).toThrow('Only the fixed "1..10" score domain is supported');
 
         expect(() =>
             validateElectionManifest({

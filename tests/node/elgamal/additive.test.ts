@@ -142,7 +142,7 @@ describe('additive ElGamal', () => {
         ).toThrow(InvalidScalarError);
     });
 
-    it('uses canonical ciphertext encodings across legacy beta aliases', () => {
+    it('uses canonical ciphertext encodings for the shipped group id', () => {
         const { publicKey, privateKey } = generateParametersWithPrivateKey(
             12345n,
             'ristretto255',
@@ -155,15 +155,7 @@ describe('additive ElGamal', () => {
             'ristretto255',
         );
 
-        for (const groupName of [
-            'ristretto255',
-            'ffdhe2048',
-            'ffdhe3072',
-            'ffdhe4096',
-            2048,
-            3072,
-            4096,
-        ] as const) {
+        for (const groupName of ['ristretto255'] as const) {
             const ciphertext = encryptAdditiveWithRandomness(
                 7n,
                 publicKey,
@@ -180,27 +172,30 @@ describe('additive ElGamal', () => {
     });
 
     it('is deterministic for fixed randomness and changes when randomness changes', () => {
-        const { publicKey } = generateParametersWithPrivateKey(12345n, 2048);
+        const { publicKey } = generateParametersWithPrivateKey(
+            12345n,
+            'ristretto255',
+        );
         const first = encryptAdditiveWithRandomness(
             7n,
             publicKey,
             4100n,
             20n,
-            2048,
+            'ristretto255',
         );
         const same = encryptAdditiveWithRandomness(
             7n,
             publicKey,
             4100n,
             20n,
-            2048,
+            'ristretto255',
         );
         const different = encryptAdditiveWithRandomness(
             7n,
             publicKey,
             4101n,
             20n,
-            2048,
+            'ristretto255',
         );
 
         expect(first).toEqual(same);

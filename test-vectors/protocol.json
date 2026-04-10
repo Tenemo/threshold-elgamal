@@ -6,7 +6,9 @@
     "reconstructionThreshold": 3,
     "participantCount": 5,
     "minimumPublishedVoterCount": 4,
+    "ballotCompletenessPolicy": "ALL_OPTIONS_REQUIRED",
     "ballotFinality": "first-valid",
+    "scoreDomain": "1..10",
     "rosterHash": "roster-hash",
     "optionList": [
       "Alpha",
@@ -17,25 +19,25 @@
       "2026-04-08T13:00:00Z"
     ]
   },
-  "canonicalManifest": "{\"ballotFinality\":\"first-valid\",\"epochDeadlines\":[\"2026-04-08T12:00:00Z\",\"2026-04-08T13:00:00Z\"],\"minimumPublishedVoterCount\":4,\"optionList\":[\"Alpha\",\"Beta\"],\"participantCount\":5,\"protocolVersion\":\"v1\",\"reconstructionThreshold\":3,\"rosterHash\":\"roster-hash\",\"suiteId\":\"ristretto255\"}",
-  "manifestHash": "9e55b7f4f24de2e01f2a3f557ed871a4f68c98cb726634f922ee5136a804084a",
+  "canonicalManifest": "{\"ballotCompletenessPolicy\":\"ALL_OPTIONS_REQUIRED\",\"ballotFinality\":\"first-valid\",\"epochDeadlines\":[\"2026-04-08T12:00:00Z\",\"2026-04-08T13:00:00Z\"],\"minimumPublishedVoterCount\":4,\"optionList\":[\"Alpha\",\"Beta\"],\"participantCount\":5,\"protocolVersion\":\"v1\",\"reconstructionThreshold\":3,\"rosterHash\":\"roster-hash\",\"scoreDomain\":\"1..10\",\"suiteId\":\"ristretto255\"}",
+  "manifestHash": "45da28d5250ff76061ec559b46aaba366c8cb301e5d7130b21357d7273348a45",
   "sessionInputs": {
     "left": {
-      "manifestHash": "9e55b7f4f24de2e01f2a3f557ed871a4f68c98cb726634f922ee5136a804084a",
+      "manifestHash": "45da28d5250ff76061ec559b46aaba366c8cb301e5d7130b21357d7273348a45",
       "rosterHash": "roster-hash",
       "randomNonce": "nonce:a",
       "timestamp": "timestamp"
     },
     "right": {
-      "manifestHash": "9e55b7f4f24de2e01f2a3f557ed871a4f68c98cb726634f922ee5136a804084a",
+      "manifestHash": "45da28d5250ff76061ec559b46aaba366c8cb301e5d7130b21357d7273348a45",
       "rosterHash": "roster-hash",
       "randomNonce": "nonce",
       "timestamp": "a:timestamp"
     }
   },
   "sessionIds": {
-    "left": "8be053c7d195a8579235e15b62378823310a6ba243e819aad148b608ccfea896",
-    "right": "cbec200879b844277c942112a91bb3b24c0a89f847ccc6037eab652ee30435e0"
+    "left": "5850bf7297ec143d2d5924e780a147374fdcca8850eaf7d9b2228f31eca0a014",
+    "right": "e6179ef8841a7c2eb27421bc5aad0f44164bd55aa5a6402c3868730550178f12"
   },
   "schnorr": {
     "secret": "77",
@@ -43,15 +45,15 @@
     "context": {
       "protocolVersion": "v1",
       "suiteId": "ristretto255",
-      "manifestHash": "9e55b7f4f24de2e01f2a3f557ed871a4f68c98cb726634f922ee5136a804084a",
-      "sessionId": "8be053c7d195a8579235e15b62378823310a6ba243e819aad148b608ccfea896",
+      "manifestHash": "45da28d5250ff76061ec559b46aaba366c8cb301e5d7130b21357d7273348a45",
+      "sessionId": "5850bf7297ec143d2d5924e780a147374fdcca8850eaf7d9b2228f31eca0a014",
       "label": "vector-schnorr",
       "participantIndex": 1,
       "coefficientIndex": 1
     },
     "proof": {
-      "challenge": "4628517780692187180712553319350385914497651857858274667098756367578207706946",
-      "response": "1697971672560880760572261942220857020550307970405210259469143263109625753694"
+      "challenge": "3167791003052725826154871316758641444127330141271801691717096270248227284903",
+      "response": "6381871193412853512042081374929507676638164009830999633126291099786674573799"
     }
   },
   "dleq": {
@@ -67,14 +69,14 @@
     "context": {
       "protocolVersion": "v1",
       "suiteId": "ristretto255",
-      "manifestHash": "9e55b7f4f24de2e01f2a3f557ed871a4f68c98cb726634f922ee5136a804084a",
-      "sessionId": "8be053c7d195a8579235e15b62378823310a6ba243e819aad148b608ccfea896",
+      "manifestHash": "45da28d5250ff76061ec559b46aaba366c8cb301e5d7130b21357d7273348a45",
+      "sessionId": "5850bf7297ec143d2d5924e780a147374fdcca8850eaf7d9b2228f31eca0a014",
       "label": "vector-dleq",
       "participantIndex": 2
     },
     "proof": {
-      "challenge": "5551054066961673695926802722494434047690123082768625352094855948693801552403",
-      "response": "6213872426123314610589022468547062398289482556314580149906127128725355253088"
+      "challenge": "6570644280916674522680594565759059700773304392696645830871490983477188630797",
+      "response": "3647792359750283343062343973706734418129335979210711831521762349895960220877"
     }
   },
   "disjunctive": {

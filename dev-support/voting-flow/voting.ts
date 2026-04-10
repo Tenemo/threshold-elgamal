@@ -34,6 +34,7 @@ export const createBallotArtifacts = async (
     votes: readonly bigint[],
     jointPublicKey: EncodedPoint,
     group: CryptoGroup,
+    protocolVersion: string,
     manifestHash: string,
     sessionId: string,
     validValues: readonly bigint[],
@@ -52,7 +53,7 @@ export const createBallotArtifacts = async (
                 group.name,
             );
             const proofContext: ProofContext = {
-                protocolVersion: 'v1',
+                protocolVersion,
                 suiteId: group.name,
                 manifestHash,
                 sessionId,
@@ -128,6 +129,7 @@ export const createThresholdShareArtifacts = async (
         readonly value: EncodedPoint;
     }[],
     group: CryptoGroup,
+    protocolVersion: string,
     manifestHash: string,
     sessionId: string,
     optionIndex = 1,
@@ -154,7 +156,7 @@ export const createThresholdShareArtifacts = async (
                 decryptionShare: decryptionShare.value,
             };
             const proofContext: ProofContext = {
-                protocolVersion: 'v1',
+                protocolVersion,
                 suiteId: group.name,
                 manifestHash,
                 sessionId,

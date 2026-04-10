@@ -6,7 +6,7 @@ import { IndexOutOfRangeError } from '../../../src/core/index.js';
 describe('threshold vector reproducibility', () => {
     const baseConfig = {
         bound: 10n,
-        groupName: 'ffdhe2048',
+        groupName: 'ristretto255',
         message: 3n,
         participantCount: 3,
         polynomial: [5n, 1n],

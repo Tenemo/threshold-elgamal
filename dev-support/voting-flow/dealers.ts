@@ -32,6 +32,7 @@ import {
     resolveDealerChallenge,
     verifyComplaintPrecondition,
     type ComplaintResolution,
+    type EncodedTransportPublicKey,
     type EncryptedEnvelope,
 } from '#transport';
 import {
@@ -66,6 +67,7 @@ export const buildDealerMaterial = async (
     participants: readonly ParticipantRuntime[],
     sessionId: string,
     manifestHash: string,
+    protocolVersion: string,
     rosterHash: string,
     group: CryptoGroup,
     threshold: number,
@@ -102,7 +104,7 @@ export const buildDealerMaterial = async (
         secretPolynomial.map(async (coefficient, coefficientIndex) => {
             const proofCoefficientIndex = coefficientIndex + 1;
             const context: ProofContext = {
-                protocolVersion: 'v1',
+                protocolVersion,
                 suiteId: group.name,
                 manifestHash,
                 sessionId,
@@ -175,7 +177,7 @@ export const buildDealerMaterial = async (
                         recipientIndex: recipient.index,
                         envelopeId: `env-${participant.index}-${recipient.index}`,
                         payloadType: 'encrypted-dual-share',
-                        protocolVersion: 'v1',
+                        protocolVersion,
                         suite: recipient.transportSuite,
                     },
                 );
@@ -291,7 +293,9 @@ const tamperEnvelope = (
         case 'ephemeralPublicKey':
             return {
                 ...envelope,
-                ephemeralPublicKey: mutateHexTail(envelope.ephemeralPublicKey),
+                ephemeralPublicKey: mutateHexTail(
+                    envelope.ephemeralPublicKey,
+                ) as EncodedTransportPublicKey,
             };
         default:
             throw new Error('Unsupported envelope tamper mode');

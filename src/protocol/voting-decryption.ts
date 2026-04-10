@@ -143,7 +143,7 @@ export const verifyDecryptionSharePayloadsByOption = async (
             assertInSubgroupOrIdentity(payload.decryptionShare);
             const decryptionShare = {
                 index: payload.participantIndex,
-                value: payload.decryptionShare as DecryptionShare['value'],
+                value: payload.decryptionShare,
             } satisfies DecryptionShare;
             const statement: DLEQStatement = {
                 publicKey: deriveTranscriptVerificationKey(
@@ -159,7 +159,11 @@ export const verifyDecryptionSharePayloadsByOption = async (
                 proof,
                 statement,
                 input.dkg.group,
-                decryptionProofContext(payload, input.dkg.group),
+                decryptionProofContext(
+                    payload,
+                    context.manifest.protocolVersion,
+                    input.dkg.group,
+                ),
             );
 
             if (!valid) {

@@ -67,7 +67,9 @@ export const buildManifest = (
             threshold,
             scenario.participantCount,
         ),
+        ballotCompletenessPolicy: 'ALL_OPTIONS_REQUIRED',
         ballotFinality: 'first-valid',
+        scoreDomain: '1..10',
         rosterHash,
         optionList,
         epochDeadlines: ['2026-04-08T12:00:00Z'],
@@ -91,7 +93,7 @@ export const createRegistrationPayloads = async (
                 rosterHash,
                 authPublicKey: participant.authPublicKeyHex,
                 transportPublicKey: participant.transportPublicKeyHex,
-            }),
+            } satisfies RegistrationPayload),
         ),
     );
 

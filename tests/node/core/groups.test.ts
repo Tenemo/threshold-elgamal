@@ -31,17 +31,11 @@ describe('core groups', () => {
         }
     });
 
-    it('accepts beta helper aliases for legacy finite-field identifiers', () => {
-        expect(getGroup(2048)).toEqual(getGroup('ristretto255'));
-        expect(getGroup('ffdhe2048')).toEqual(getGroup('ristretto255'));
-        expect(getGroup(3072)).toEqual(getGroup('ristretto255'));
-        expect(getGroup('ffdhe3072')).toEqual(getGroup('ristretto255'));
-        expect(getGroup(4096)).toEqual(getGroup('ristretto255'));
-        expect(getGroup('ffdhe4096')).toEqual(getGroup('ristretto255'));
-    });
-
     it('rejects unsupported groups', () => {
-        expect(() => getGroup(1024 as never)).toThrow(UnsupportedSuiteError);
+        expect(() => getGroup('ffdhe2048' as never)).toThrow(
+            UnsupportedSuiteError,
+        );
+        expect(() => getGroup(2048 as never)).toThrow(UnsupportedSuiteError);
         expect(() => getGroup('unknown-suite' as never)).toThrow(
             UnsupportedSuiteError,
         );

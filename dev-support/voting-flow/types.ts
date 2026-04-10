@@ -16,6 +16,9 @@ import type {
 } from '#protocol';
 import type { DecryptionShare, Share } from '#threshold';
 import type {
+    EncodedAuthPublicKey,
+    EncodedTransportPrivateKey,
+    EncodedTransportPublicKey,
     ComplaintResolution,
     EncryptedEnvelope,
     KeyAgreementSuite,
@@ -24,16 +27,16 @@ import type { PedersenShare } from '#vss';
 
 export type ParticipantRuntime = {
     readonly auth: CryptoKeyPair;
-    readonly authPublicKeyHex: string;
+    readonly authPublicKeyHex: EncodedAuthPublicKey;
     readonly index: number;
     readonly transportPrivateKey: CryptoKey;
-    readonly transportPublicKeyHex: string;
+    readonly transportPublicKeyHex: EncodedTransportPublicKey;
     readonly transportSuite: KeyAgreementSuite;
 };
 
 export type EnvelopeArtifact = {
     readonly envelope: EncryptedEnvelope;
-    readonly ephemeralPrivateKey: string;
+    readonly ephemeralPrivateKey: EncodedTransportPrivateKey;
     readonly recipientIndex: number;
     readonly share: PedersenShare;
     readonly signedPayload: SignedPayload<EncryptedDualSharePayload>;

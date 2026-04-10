@@ -108,8 +108,6 @@ console.log(suite.byteLength); // 32
 
 All public APIs require explicit group selection. The shipped canonical suite is `ristretto255`.
 
-During the beta transition, legacy identifiers such as `ffdhe2048`, `ffdhe3072`, `ffdhe4096`, `2048`, `3072`, and `4096` are accepted as input aliases only. They all resolve to the same shipped `ristretto255` suite and should not be used in new code.
-
 ## Choosing additive bounds
 
 - The encryption-time `bound` validates the plaintext for that one ciphertext. Use the maximum single message you allow.
@@ -123,9 +121,11 @@ For the shipped voting path, each score is in `1..10`. If you tally `50` ballots
 
 - `reconstructionThreshold` is the real cryptographic threshold `k`.
 - `minimumPublishedVoterCount` is the publication floor counted over distinct accepted voters.
+- `ballotCompletenessPolicy` is fixed to `ALL_OPTIONS_REQUIRED`.
 - `ballotFinality` is fixed to `first-valid`.
+- `scoreDomain` is fixed to `1..10`.
 - Accepted voters must submit exactly one ballot per option slot.
-- The shipped score domain is fixed to `1..10`.
+- `protocolVersion` is application-supplied manifest data and is transcript-bound by the verifier and proof contexts.
 
 For end-to-end verification, the protocol subpath exposes `verifyElectionCeremonyDetailed(...)`. It verifies the manifest, registrations, acceptances, DKG transcript, local joint-key derivation, ballot proofs, locally recomputed per-option aggregates, decryption shares, tally publications, and board-consistency digests in one pass.
 

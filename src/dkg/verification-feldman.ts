@@ -76,6 +76,7 @@ export const parseQualifiedFeldmanCommitments = (
 
 export const verifyFeldmanProofs = async (
     feldmanCommitments: readonly ParsedFeldmanCommitment[],
+    protocolVersion: string,
     group: CryptoGroup,
 ): Promise<void> => {
     for (const entry of feldmanCommitments) {
@@ -91,7 +92,12 @@ export const verifyFeldmanProofs = async (
                 },
                 commitment,
                 group,
-                buildSchnorrContext(entry.payload, offset + 1, group),
+                buildSchnorrContext(
+                    entry.payload,
+                    protocolVersion,
+                    offset + 1,
+                    group,
+                ),
             );
             if (!valid) {
                 throw new InvalidPayloadError(

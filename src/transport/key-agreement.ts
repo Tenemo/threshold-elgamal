@@ -2,7 +2,12 @@ import { toBufferSource } from '../core/bytes.js';
 import { InvalidPayloadError, getWebCrypto } from '../core/index.js';
 import { bytesToHex, hexToBytes } from '../serialize/index.js';
 
-import type { KeyAgreementSuite, TransportKeyPair } from './types.js';
+import type {
+    EncodedTransportPrivateKey,
+    EncodedTransportPublicKey,
+    KeyAgreementSuite,
+    TransportKeyPair,
+} from './types.js';
 
 const X25519_BASE_POINT = (() => {
     const bytes = new Uint8Array(32);
@@ -148,10 +153,10 @@ export const generateTransportKeyPair = async (
  */
 export const exportTransportPublicKey = async (
     publicKey: CryptoKey,
-): Promise<string> =>
+): Promise<EncodedTransportPublicKey> =>
     bytesToHex(
         new Uint8Array(await getWebCrypto().subtle.exportKey('raw', publicKey)),
-    );
+    ) as EncodedTransportPublicKey;
 
 /**
  * Exports a transport private key as PKCS#8 lowercase hexadecimal bytes.
@@ -161,12 +166,12 @@ export const exportTransportPublicKey = async (
  */
 export const exportTransportPrivateKey = async (
     privateKey: CryptoKey,
-): Promise<string> =>
+): Promise<EncodedTransportPrivateKey> =>
     bytesToHex(
         new Uint8Array(
             await getWebCrypto().subtle.exportKey('pkcs8', privateKey),
         ),
-    );
+    ) as EncodedTransportPrivateKey;
 
 /**
  * Imports a transport public key from raw hexadecimal bytes.
@@ -176,7 +181,7 @@ export const exportTransportPrivateKey = async (
  * @returns Imported transport public key.
  */
 export const importTransportPublicKey = async (
-    publicKeyHex: string,
+    publicKeyHex: EncodedTransportPublicKey,
     suite: KeyAgreementSuite,
 ): Promise<CryptoKey> =>
     getWebCrypto().subtle.importKey(
@@ -195,7 +200,7 @@ export const importTransportPublicKey = async (
  * @returns Imported transport private key.
  */
 export const importTransportPrivateKey = async (
-    privateKeyHex: string,
+    privateKeyHex: EncodedTransportPrivateKey,
     suite: KeyAgreementSuite,
 ): Promise<CryptoKey> =>
     getWebCrypto().subtle.importKey(
@@ -247,7 +252,7 @@ const sameBytes = (left: Uint8Array, right: Uint8Array): boolean => {
 
 const privateKeyMatchesPublicKey = async (
     privateKey: CryptoKey,
-    expectedPublicKeyHex: string,
+    expectedPublicKeyHex: EncodedTransportPublicKey,
     suite: KeyAgreementSuite,
 ): Promise<boolean> => {
     try {
@@ -286,16 +291,16 @@ const privateKeyMatchesPublicKey = async (
 export const deriveTransportPublicKey = async (
     privateKey: CryptoKey,
     suite: KeyAgreementSuite,
-): Promise<string> => {
+): Promise<EncodedTransportPublicKey> => {
     if (suite === 'X25519') {
         const basePoint = await importTransportPublicKey(
-            bytesToHex(X25519_BASE_POINT),
+            bytesToHex(X25519_BASE_POINT) as EncodedTransportPublicKey,
             suite,
         );
 
         return bytesToHex(
             await deriveTransportSharedSecret(privateKey, basePoint, suite),
-        );
+        ) as EncodedTransportPublicKey;
     }
 
     if (!privateKey.extractable) {
@@ -305,7 +310,7 @@ export const deriveTransportPublicKey = async (
     }
 
     const jwk = await getWebCrypto().subtle.exportKey('jwk', privateKey);
-    return bytesToHex(buildP256RawPublicKey(jwk));
+    return bytesToHex(buildP256RawPublicKey(jwk)) as EncodedTransportPublicKey;
 };
 
 /**
@@ -317,8 +322,8 @@ export const deriveTransportPublicKey = async (
  * @returns `true` when the private key expands to `expectedPublicKeyHex`.
  */
 export const verifyLocalTransportKey = async (
-    privateKey: CryptoKey | string,
-    expectedPublicKeyHex: string,
+    privateKey: CryptoKey | EncodedTransportPrivateKey,
+    expectedPublicKeyHex: EncodedTransportPublicKey,
     suite: KeyAgreementSuite,
 ): Promise<boolean> => {
     const resolvedPrivateKey =

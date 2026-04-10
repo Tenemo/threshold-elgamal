@@ -58,6 +58,16 @@ export const validateElectionManifest = (
             'Only "first-valid" ballot finality is supported',
         );
     }
+    if (manifest.ballotCompletenessPolicy !== 'ALL_OPTIONS_REQUIRED') {
+        throw new InvalidPayloadError(
+            'Only "ALL_OPTIONS_REQUIRED" ballot completeness is supported',
+        );
+    }
+    if (manifest.scoreDomain !== '1..10') {
+        throw new InvalidPayloadError(
+            'Only the fixed "1..10" score domain is supported',
+        );
+    }
 
     if (
         !Number.isInteger(manifest.minimumPublishedVoterCount) ||
@@ -82,6 +92,7 @@ export const validateElectionManifest = (
         'allowAbstention',
         'scoreDomainMin',
         'scoreDomainMax',
+        'requiresAllOptions',
     ]) {
         if (legacyField in manifestRecord) {
             throw new InvalidPayloadError(

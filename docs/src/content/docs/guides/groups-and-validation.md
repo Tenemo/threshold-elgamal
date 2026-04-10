@@ -11,8 +11,6 @@ The current package ships one built-in tally suite:
 
 All public APIs require an explicit group identifier. There is no implicit default suite.
 
-During the beta transition, `getGroup()` also accepts the legacy aliases `ffdhe2048`, `ffdhe3072`, `ffdhe4096`, `2048`, `3072`, and `4096`. These are input aliases only. They all resolve to the same shipped `ristretto255` suite and should not be used in new code.
-
 ## Group objects
 
 `getGroup()` returns a frozen object with:

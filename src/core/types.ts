@@ -8,12 +8,8 @@ export type Brand<T, TBrand extends string> = T & {
 
 /** Canonical name for the shipped Ristretto255 suite. */
 export type GroupName = 'ristretto255';
-/** Legacy finite-field suite labels accepted as beta input aliases only. */
-export type LegacyGroupName = 'ffdhe2048' | 'ffdhe3072' | 'ffdhe4096';
-/** Legacy finite-field bit-size labels accepted as beta input aliases only. */
-export type PrimeBits = 2048 | 3072 | 4096;
 /** Accepted helper input identifiers for the shipped Ristretto suite. */
-export type GroupIdentifier = GroupName | LegacyGroupName | PrimeBits;
+export type GroupIdentifier = GroupName;
 
 /** Canonical 32-byte Ristretto point encoding exposed at the public boundary. */
 export type EncodedPoint = Brand<string, 'EncodedPoint'>;

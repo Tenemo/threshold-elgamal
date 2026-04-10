@@ -61,7 +61,7 @@ export type {
     VotingFlowResult,
 } from './voting-flow/types.js';
 
-const DEFAULT_GROUP = 'ffdhe2048';
+const DEFAULT_GROUP = 'ristretto255';
 const RISTRETTO_IDENTITY = encodePoint(multiplyBase(0n));
 
 const singleBallotBound = (): bigint => 10n;
@@ -218,6 +218,7 @@ export const runVotingFlowScenario = async (
                 participants,
                 sessionId,
                 manifestHash,
+                manifest.protocolVersion,
                 rosterHash,
                 group,
                 threshold,
@@ -564,6 +565,7 @@ export const runVotingFlowScenario = async (
                 votes,
                 jointPublicKey,
                 group,
+                manifest.protocolVersion,
                 manifestHash,
                 sessionId,
                 validValues,
@@ -659,6 +661,7 @@ export const runVotingFlowScenario = async (
                 verifiedBallots.aggregate,
                 transcriptDerivedVerificationKeys,
                 group,
+                manifest.protocolVersion,
                 manifestHash,
                 sessionId,
                 optionIndex,

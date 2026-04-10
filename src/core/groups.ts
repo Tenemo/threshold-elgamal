@@ -23,15 +23,7 @@ const GROUPS = Object.freeze([GROUP]);
  * @returns The immutable built-in group definition.
  */
 export const getGroup = (identifier: GroupIdentifier): CryptoGroup => {
-    if (
-        identifier !== GROUP.name &&
-        identifier !== 'ffdhe2048' &&
-        identifier !== 'ffdhe3072' &&
-        identifier !== 'ffdhe4096' &&
-        identifier !== 2048 &&
-        identifier !== 3072 &&
-        identifier !== 4096
-    ) {
+    if (identifier !== GROUP.name) {
         throw new UnsupportedSuiteError(
             `Unsupported group: ${String(identifier)}`,
         );

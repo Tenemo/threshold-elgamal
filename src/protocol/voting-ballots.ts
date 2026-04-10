@@ -76,8 +76,9 @@ export const verifyBallotSubmissionPayloadsByOption = async (
     return verifyAndAggregateBallotsByOption({
         ballots: ballotEntries,
         publicKey: input.publicKey,
-        validValues: context.scoreDomain,
+        validValues: context.scoreDomainValues,
         group: context.group,
+        protocolVersion: context.manifest.protocolVersion,
         manifestHash: context.manifestHash,
         sessionId: context.sessionId,
         minimumBallotCount: context.manifest.minimumPublishedVoterCount,

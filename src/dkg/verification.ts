@@ -116,7 +116,11 @@ const finalizeVerifiedTranscript = async (
         threshold,
         group,
     );
-    await verifyFeldmanProofs(feldmanCommitments, group);
+    await verifyFeldmanProofs(
+        feldmanCommitments,
+        input.manifest.protocolVersion,
+        group,
+    );
 
     const normalizedFeldmanCommitments =
         normalizeFeldmanCommitments(feldmanCommitments);

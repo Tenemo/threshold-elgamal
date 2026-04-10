@@ -7,7 +7,9 @@ import {
     classifySlotConflict,
     compareProtocolPayloads,
     defaultMinimumPublishedVoterCount,
+    type DecryptionSharePayload,
     deriveSessionId,
+    type EncryptedDualSharePayload,
     formatSessionFingerprint,
     hashElectionManifest,
     hashProtocolPhaseSnapshot,
@@ -29,7 +31,9 @@ describe('protocol payloads and transcripts', () => {
         reconstructionThreshold: 3,
         participantCount: 5,
         minimumPublishedVoterCount: 4,
+        ballotCompletenessPolicy: 'ALL_OPTIONS_REQUIRED',
         ballotFinality: 'first-valid',
+        scoreDomain: '1..10',
         rosterHash: 'roster-hash',
         optionList: ['Alpha', 'Beta'],
         epochDeadlines: ['2026-04-08T12:00:00Z'],
@@ -41,8 +45,9 @@ describe('protocol payloads and transcripts', () => {
         participantIndex: 2,
         messageType: 'registration',
         rosterHash: 'roster-hash',
-        authPublicKey: 'auth-key',
-        transportPublicKey: 'transport-key',
+        authPublicKey: 'auth-key' as RegistrationPayload['authPublicKey'],
+        transportPublicKey:
+            'transport-key' as RegistrationPayload['transportPublicKey'],
     };
     const acceptance: ManifestAcceptancePayload = {
         sessionId: 'session-1',
@@ -65,7 +70,7 @@ describe('protocol payloads and transcripts', () => {
 
     it('canonicalizes and hashes manifests deterministically', async () => {
         expect(canonicalizeElectionManifest(manifest)).toBe(
-            '{"ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z"],"minimumPublishedVoterCount":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","reconstructionThreshold":3,"rosterHash":"roster-hash","suiteId":"ristretto255"}',
+            '{"ballotCompletenessPolicy":"ALL_OPTIONS_REQUIRED","ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z"],"minimumPublishedVoterCount":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","reconstructionThreshold":3,"rosterHash":"roster-hash","scoreDomain":"1..10","suiteId":"ristretto255"}',
         );
 
         await expect(hashElectionManifest(manifest)).resolves.toHaveLength(64);
@@ -98,15 +103,17 @@ describe('protocol payloads and transcripts', () => {
             recipientIndex: 2,
             envelopeId: 'env-1-2',
             suite: 'P-256' as const,
-            ephemeralPublicKey: 'epk-a',
+            ephemeralPublicKey:
+                'epk-a' as EncryptedDualSharePayload['ephemeralPublicKey'],
             iv: 'iv-a',
             ciphertext: 'ciphertext-a',
-        };
+        } satisfies EncryptedDualSharePayload;
         const encryptedForThird = {
             ...encryptedForSecond,
             recipientIndex: 3,
             envelopeId: 'env-1-3',
-            ephemeralPublicKey: 'epk-b',
+            ephemeralPublicKey:
+                'epk-b' as EncryptedDualSharePayload['ephemeralPublicKey'],
             iv: 'iv-b',
             ciphertext: 'ciphertext-b',
         };
@@ -163,7 +170,8 @@ describe('protocol payloads and transcripts', () => {
                 recipientIndex: 2,
                 envelopeId: 'env-1-2',
                 suite: 'P-256' as const,
-                ephemeralPublicKey: 'epk',
+                ephemeralPublicKey:
+                    'epk' as EncryptedDualSharePayload['ephemeralPublicKey'],
                 iv: 'iv',
                 ciphertext: 'ciphertext',
             },
@@ -257,7 +265,8 @@ describe('protocol payloads and transcripts', () => {
                 complainantIndex: 2,
                 envelopeId: 'env-5-2',
                 suite: 'P-256',
-                revealedEphemeralPrivateKey: 'ephemeral-private-key',
+                revealedEphemeralPrivateKey:
+                    'ephemeral-private-key' as const as import('#transport').EncodedTransportPrivateKey,
             }),
         ).toBe('session-1:2:5:complaint-resolution:5:2:env-5-2');
         expect(
@@ -292,7 +301,8 @@ describe('protocol payloads and transcripts', () => {
                 optionIndex: 2,
                 transcriptHash: 'aa'.repeat(32),
                 ballotCount: 3,
-                decryptionShare: '05',
+                decryptionShare:
+                    '05' as DecryptionSharePayload['decryptionShare'],
                 proof: {
                     challenge: '06',
                     response: '07',
@@ -349,7 +359,11 @@ describe('protocol payloads and transcripts', () => {
             signature: 'bbbb',
         };
         const equivocated: SignedPayload = {
-            payload: { ...registration, transportPublicKey: 'other-key' },
+            payload: {
+                ...registration,
+                transportPublicKey:
+                    'other-key' as RegistrationPayload['transportPublicKey'],
+            },
             signature: 'cccc',
         };
 
@@ -419,10 +433,11 @@ describe('protocol payloads and transcripts', () => {
             recipientIndex: 2,
             envelopeId: 'env-1-2',
             suite: 'P-256' as const,
-            ephemeralPublicKey: 'epk-a',
+            ephemeralPublicKey:
+                'epk-a' as EncryptedDualSharePayload['ephemeralPublicKey'],
             iv: 'iv-a',
             ciphertext: 'ciphertext-a',
-        };
+        } satisfies EncryptedDualSharePayload;
         const right = {
             ...left,
             ciphertext: 'ciphertext-b',

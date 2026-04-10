@@ -6,7 +6,6 @@ import thresholdVector from '../../../test-vectors/threshold.json';
 
 import {
     type EncodedPoint,
-    type GroupIdentifier,
     InvalidGroupElementError,
     InvalidShareError,
     IndexOutOfRangeError,
@@ -29,6 +28,7 @@ import {
 } from '#threshold';
 
 const thresholdTestTimeoutMs = 60_000;
+const thresholdVectorGroup = thresholdVector.group as 'ristretto255';
 
 const choose = <T>(items: readonly T[], size: number): T[][] => {
     if (size === 0) {
@@ -59,29 +59,29 @@ describe('dealer-based threshold decryption', () => {
 
     const roundTripScenarios = [
         {
-            label: '2-of-3 with the beta alias 2048',
-            group: 2048 as const,
+            label: '2-of-3 on ristretto255',
+            group: 'ristretto255' as const,
             threshold: 2,
             participantCount: 3,
             message: 9n,
         },
         {
-            label: '3-of-5 with the beta alias 3072',
-            group: 3072 as const,
+            label: '3-of-5 on ristretto255',
+            group: 'ristretto255' as const,
             threshold: 3,
             participantCount: 5,
             message: 11n,
         },
         {
-            label: '5-of-10 with the beta alias 4096',
-            group: 4096 as const,
+            label: '5-of-10 on ristretto255',
+            group: 'ristretto255' as const,
             threshold: 5,
             participantCount: 10,
             message: 13n,
         },
         {
-            label: '26-of-51 with the beta alias 2048',
-            group: 2048 as const,
+            label: '26-of-51 on ristretto255',
+            group: 'ristretto255' as const,
             threshold: 26,
             participantCount: 51,
             message: 10n,
@@ -128,8 +128,13 @@ describe('dealer-based threshold decryption', () => {
             timeout: thresholdTestTimeoutMs,
         },
         () => {
-            const keySet = dealerKeyGen(3, 5, 2048);
-            const ciphertext = encryptAdditive(8n, keySet.publicKey, 2048, 8n);
+            const keySet = dealerKeyGen(3, 5, 'ristretto255');
+            const ciphertext = encryptAdditive(
+                8n,
+                keySet.publicKey,
+                'ristretto255',
+                8n,
+            );
             const subsets = choose(keySet.shares, 3);
 
             expect(subsets).toHaveLength(10);
@@ -157,7 +162,7 @@ describe('dealer-based threshold decryption', () => {
             timeout: thresholdTestTimeoutMs,
         },
         () => {
-            const group = getGroup(thresholdVector.group as GroupIdentifier);
+            const group = getGroup(thresholdVectorGroup);
             const polynomial = thresholdVector.polynomial.map((value) =>
                 BigInt(value),
             );
@@ -190,10 +195,15 @@ describe('dealer-based threshold decryption', () => {
     );
 
     it('preserves additive homomorphism under threshold decryption', () => {
-        const keySet = dealerKeyGen(3, 5, 3072);
-        const left = encryptAdditive(6n, keySet.publicKey, 3072, 20n);
-        const right = encryptAdditive(7n, keySet.publicKey, 3072, 20n);
-        const sum = addEncryptedValues(left, right, 3072);
+        const keySet = dealerKeyGen(3, 5, 'ristretto255');
+        const left = encryptAdditive(6n, keySet.publicKey, 'ristretto255', 20n);
+        const right = encryptAdditive(
+            7n,
+            keySet.publicKey,
+            'ristretto255',
+            20n,
+        );
+        const sum = addEncryptedValues(left, right, 'ristretto255');
         const decryptionShares = keySet.shares
             .slice(0, 3)
             .map((share) => createDecryptionShare(sum, share, keySet.group));
@@ -204,13 +214,13 @@ describe('dealer-based threshold decryption', () => {
     });
 
     it('handles k=n, k=1, plaintext zero, and maximum-score bounds', () => {
-        const allRequired = dealerKeyGen(4, 4, 2048);
-        const anySingle = dealerKeyGen(1, 4, 2048);
+        const allRequired = dealerKeyGen(4, 4, 'ristretto255');
+        const anySingle = dealerKeyGen(1, 4, 'ristretto255');
 
         const maxCiphertext = encryptAdditive(
             10n,
             allRequired.publicKey,
-            2048,
+            'ristretto255',
             10n,
         );
         const maxShares = allRequired.shares.map((share) =>
@@ -228,7 +238,7 @@ describe('dealer-based threshold decryption', () => {
         const zeroCiphertext = encryptAdditive(
             0n,
             anySingle.publicKey,
-            2048,
+            'ristretto255',
             10n,
         );
         const singleShare = createDecryptionShare(
@@ -247,8 +257,13 @@ describe('dealer-based threshold decryption', () => {
     });
 
     it('rejects duplicate decryption-share indices and blank verified aggregates', () => {
-        const keySet = dealerKeyGen(2, 3, 2048);
-        const ciphertext = encryptAdditive(5n, keySet.publicKey, 2048, 10n);
+        const keySet = dealerKeyGen(2, 3, 'ristretto255');
+        const ciphertext = encryptAdditive(
+            5n,
+            keySet.publicKey,
+            'ristretto255',
+            10n,
+        );
         const decryptionShare = createDecryptionShare(
             ciphertext,
             keySet.shares[0],
@@ -280,8 +295,13 @@ describe('dealer-based threshold decryption', () => {
     });
 
     it('rejects malformed ciphertext and share inputs during threshold decryption', () => {
-        const keySet = dealerKeyGen(2, 3, 2048);
-        const ciphertext = encryptAdditive(5n, keySet.publicKey, 2048, 10n);
+        const keySet = dealerKeyGen(2, 3, 'ristretto255');
+        const ciphertext = encryptAdditive(
+            5n,
+            keySet.publicKey,
+            'ristretto255',
+            10n,
+        );
 
         expect(() =>
             createDecryptionShare(
@@ -342,7 +362,7 @@ describe('dealer-based threshold decryption', () => {
     });
 
     it('matches the frozen threshold vector', () => {
-        const group = getGroup(thresholdVector.group as GroupIdentifier);
+        const group = getGroup(thresholdVectorGroup);
         const polynomial = thresholdVector.polynomial.map((value) =>
             BigInt(value),
         );
@@ -410,7 +430,11 @@ describe('dealer-based threshold decryption', () => {
     });
 
     it('rejects invalid dealer-threshold parameters', () => {
-        expect(() => dealerKeyGen(0, 3, 2048)).toThrow(ThresholdViolationError);
-        expect(() => dealerKeyGen(4, 3, 2048)).toThrow(ThresholdViolationError);
+        expect(() => dealerKeyGen(0, 3, 'ristretto255')).toThrow(
+            ThresholdViolationError,
+        );
+        expect(() => dealerKeyGen(4, 3, 'ristretto255')).toThrow(
+            ThresholdViolationError,
+        );
     });
 });

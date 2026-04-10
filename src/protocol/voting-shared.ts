@@ -31,7 +31,7 @@ export type VotingManifestContext = {
     readonly manifestHash: string;
     readonly group: CryptoGroup;
     readonly optionCount: number;
-    readonly scoreDomain: readonly bigint[];
+    readonly scoreDomainValues: readonly bigint[];
     readonly sessionId: string;
 };
 
@@ -115,7 +115,7 @@ export const buildVotingManifestContext = async (
         manifestHash: await hashElectionManifest(validatedManifest),
         group: getGroup(validatedManifest.suiteId),
         optionCount: validatedManifest.optionList.length,
-        scoreDomain: scoreVotingDomain(),
+        scoreDomainValues: scoreVotingDomain(),
         sessionId,
     };
 };
@@ -183,9 +183,10 @@ export const buildOptionAggregateMap = (
 
 export const decryptionProofContext = (
     payload: DecryptionSharePayload,
+    protocolVersion: string,
     group: CryptoGroup,
 ): ProofContext => ({
-    protocolVersion: 'v1',
+    protocolVersion,
     suiteId: group.name,
     manifestHash: payload.manifestHash,
     sessionId: payload.sessionId,

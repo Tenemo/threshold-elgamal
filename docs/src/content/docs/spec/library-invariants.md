@@ -12,7 +12,6 @@ This page records the stable invariants of the current `1.0.0-beta` surface.
 - The safe root package remains additive-only.
 - Raw multiplicative mode is not part of the shipped public API.
 - The shipped built-in tally suite is `ristretto255`.
-- Legacy identifiers `ffdhe2048`, `ffdhe3072`, `ffdhe4096`, `2048`, `3072`, and `4096` are accepted as beta input aliases only and resolve to `ristretto255`.
 - The built-in group includes `q`, `g`, a deterministic secondary generator `h`, `byteLength`, and `scalarByteLength`.
 
 ## Validation and encoding

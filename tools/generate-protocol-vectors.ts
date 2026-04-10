@@ -36,6 +36,7 @@ const buildBallot = async (
     vote: bigint,
     randomness: bigint,
     publicKey: string,
+    protocolVersion: string,
     group = getGroup('ristretto255'),
 ): Promise<BallotTranscriptEntry> => {
     const ciphertext = encryptAdditiveWithRandomness(
@@ -46,7 +47,7 @@ const buildBallot = async (
         group.name,
     );
     const context: ProofContext = {
-        protocolVersion: 'v1',
+        protocolVersion,
         suiteId: group.name,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',
@@ -82,7 +83,9 @@ const main = async (): Promise<void> => {
         reconstructionThreshold: 3,
         participantCount: 5,
         minimumPublishedVoterCount: 4,
+        ballotCompletenessPolicy: 'ALL_OPTIONS_REQUIRED',
         ballotFinality: 'first-valid',
+        scoreDomain: '1..10',
         rosterHash: 'roster-hash',
         optionList: ['Alpha', 'Beta'],
         epochDeadlines: ['2026-04-08T12:00:00Z', '2026-04-08T13:00:00Z'],
@@ -195,15 +198,16 @@ const main = async (): Promise<void> => {
     );
 
     const ballots = await Promise.all([
-        buildBallot(3, 3n, 11n, publicKey, group),
-        buildBallot(1, 1n, 7n, publicKey, group),
-        buildBallot(2, 2n, 9n, publicKey, group),
+        buildBallot(3, 3n, 11n, publicKey, manifest.protocolVersion, group),
+        buildBallot(1, 1n, 7n, publicKey, manifest.protocolVersion, group),
+        buildBallot(2, 2n, 9n, publicKey, manifest.protocolVersion, group),
     ]);
     const ballotAggregation = await verifyAndAggregateBallots({
         ballots,
         publicKey,
         validValues: validScores,
         group,
+        protocolVersion: manifest.protocolVersion,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',
         minimumBallotCount: 2,

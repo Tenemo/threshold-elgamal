@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import protocolVectors from '../../../test-vectors/protocol.json';
 
-import { getGroup, type EncodedPoint, type GroupIdentifier } from '#core';
+import { getGroup, type EncodedPoint } from '#core';
 import type { ElgamalCiphertext } from '#elgamal';
 import {
     verifyDLEQProof,
@@ -20,6 +20,8 @@ import {
 } from '#protocol';
 
 const toBigInt = (value: string): bigint => BigInt(value);
+
+const protocolVectorGroup = protocolVectors.group as 'ristretto255';
 
 describe('protocol reproducibility vectors', () => {
     it('round-trips the frozen manifest and injective session derivation vectors', async () => {
@@ -53,7 +55,7 @@ describe('protocol reproducibility vectors', () => {
     });
 
     it('verifies the frozen Schnorr, DLEQ, and disjunctive proof vectors', async () => {
-        const group = getGroup(protocolVectors.group as GroupIdentifier);
+        const group = getGroup(protocolVectorGroup);
 
         await expect(
             verifySchnorrProof(
@@ -117,7 +119,7 @@ describe('protocol reproducibility vectors', () => {
     });
 
     it('recomputes the frozen ballot aggregation vector', async () => {
-        const group = getGroup(protocolVectors.group as GroupIdentifier);
+        const group = getGroup(protocolVectorGroup);
         const ballots = protocolVectors.ballotAggregation.ballots.map(
             (ballot): BallotTranscriptEntry => ({
                 voterIndex: ballot.voterIndex,
@@ -140,6 +142,7 @@ describe('protocol reproducibility vectors', () => {
             publicKey: protocolVectors.disjunctive.publicKey as EncodedPoint,
             validValues: protocolVectors.disjunctive.validValues.map(toBigInt),
             group,
+            protocolVersion: protocolVectors.manifest.protocolVersion,
             manifestHash: 'manifest-hash',
             sessionId: 'session-1',
             minimumBallotCount:

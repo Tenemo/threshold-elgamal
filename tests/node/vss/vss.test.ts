@@ -19,7 +19,7 @@ import {
 
 describe('verifiable secret sharing', () => {
     it('verifies Feldman shares against coefficient commitments', () => {
-        const group = getGroup(2048);
+        const group = getGroup('ristretto255');
         const polynomial = [12345n, 67890n, 13579n] as const;
         const shares = deriveSharesFromPolynomial(polynomial, 5, group.q);
         const commitments = generateFeldmanCommitments(polynomial, group);
@@ -40,7 +40,7 @@ describe('verifiable secret sharing', () => {
     });
 
     it('verifies Pedersen share pairs against coefficient commitments', () => {
-        const group = getGroup(2048);
+        const group = getGroup('ristretto255');
         const secretPolynomial = [12345n, 67890n, 13579n] as const;
         const blindingPolynomial = [22222n, 33333n, 44444n] as const;
         const commitments = generatePedersenCommitments(
@@ -86,7 +86,7 @@ describe('verifiable secret sharing', () => {
     });
 
     it('rejects malformed VSS inputs and garbled commitments', () => {
-        const group = getGroup(2048);
+        const group = getGroup('ristretto255');
         const secretPolynomial = [12345n, 67890n, 13579n] as const;
         const blindingPolynomial = [22222n, 33333n, 44444n] as const;
         const feldmanCommitments = generateFeldmanCommitments(

@@ -18,7 +18,12 @@ import {
     replayGjkrTranscript,
     replayJointFeldmanTranscript,
 } from '#dkg';
-import type { ProtocolPayload, SignedPayload } from '#protocol';
+import type {
+    ComplaintResolutionPayload,
+    KeyDerivationConfirmation,
+    ProtocolPayload,
+    SignedPayload,
+} from '#protocol';
 
 const signed = <TPayload extends ProtocolPayload>(
     payload: TPayload,
@@ -27,9 +32,11 @@ const signed = <TPayload extends ProtocolPayload>(
     signature: `${payload.messageType}-${payload.participantIndex}`,
 });
 
+const thresholdVectorGroup = thresholdVector.group as 'ristretto255';
+
 describe('DKG state machines', () => {
     it('reconstructs the secret term from revealed shares', () => {
-        const group = getGroup(thresholdVector.group as 'ffdhe3072');
+        const group = getGroup(thresholdVectorGroup);
         const subsetShares = thresholdVector.shares
             .filter((share) =>
                 thresholdVector.subsetIndices.includes(share.index),
@@ -45,7 +52,7 @@ describe('DKG state machines', () => {
     });
 
     it('rejects malformed share indices during reconstruction', () => {
-        const group = getGroup(thresholdVector.group as 'ffdhe3072');
+        const group = getGroup(thresholdVectorGroup);
 
         expect(() =>
             reconstructSecretFromShares(
@@ -72,7 +79,7 @@ describe('DKG state machines', () => {
             protocol: 'gjkr',
             sessionId: 'session-1',
             manifestHash: 'manifest-1',
-            group: 'ffdhe2048',
+            group: 'ristretto255',
             participantCount: 3,
             threshold: majorityThreshold(3),
         });
@@ -97,7 +104,7 @@ describe('DKG state machines', () => {
             protocol: 'joint-feldman',
             sessionId: 'session-1',
             manifestHash: 'manifest-1',
-            group: 'ffdhe2048',
+            group: 'ristretto255',
             participantCount: 3,
             threshold: majorityThreshold(3),
         } as const;
@@ -163,7 +170,7 @@ describe('DKG state machines', () => {
                 participantIndex: 1,
                 messageType: 'key-derivation-confirmation',
                 qualHash: 'qual',
-                publicKey: 'pk',
+                publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
             }),
             signed({
                 sessionId: 'session-1',
@@ -172,7 +179,7 @@ describe('DKG state machines', () => {
                 participantIndex: 2,
                 messageType: 'key-derivation-confirmation',
                 qualHash: 'qual',
-                publicKey: 'pk',
+                publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
             }),
             signed({
                 sessionId: 'session-1',
@@ -181,7 +188,7 @@ describe('DKG state machines', () => {
                 participantIndex: 3,
                 messageType: 'key-derivation-confirmation',
                 qualHash: 'qual',
-                publicKey: 'pk',
+                publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
             }),
         ] as const;
 
@@ -197,7 +204,7 @@ describe('DKG state machines', () => {
         const baseConfig = {
             sessionId: 'session-shared',
             manifestHash: 'manifest-shared',
-            group: 'ffdhe2048',
+            group: 'ristretto255',
             participantCount: 3,
             threshold: majorityThreshold(3),
         } as const;
@@ -244,7 +251,8 @@ describe('DKG state machines', () => {
                 complainantIndex: 2,
                 envelopeId: 'env-1-2',
                 suite: 'P-256',
-                revealedEphemeralPrivateKey: 'ephemeral-private-key',
+                revealedEphemeralPrivateKey:
+                    'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
             }),
             ...[1, 2, 3].map((participantIndex) =>
                 signed({
@@ -254,7 +262,7 @@ describe('DKG state machines', () => {
                     participantIndex,
                     messageType: 'key-derivation-confirmation',
                     qualHash: 'qual',
-                    publicKey: 'pk',
+                    publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
                 }),
             ),
         ] as const;
@@ -308,7 +316,7 @@ describe('DKG state machines', () => {
             protocol: 'gjkr',
             sessionId: 'session-2',
             manifestHash: 'manifest-2',
-            group: 'ffdhe2048',
+            group: 'ristretto255',
             participantCount: 5,
             threshold: majorityThreshold(5),
         } as const;
@@ -352,7 +360,7 @@ describe('DKG state machines', () => {
                     participantIndex,
                     messageType: 'key-derivation-confirmation',
                     qualHash: 'qual',
-                    publicKey: 'pk',
+                    publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
                 }),
             ),
         ];
@@ -398,7 +406,7 @@ describe('DKG state machines', () => {
             protocol: 'gjkr',
             sessionId: 'session-4',
             manifestHash: 'manifest-4',
-            group: 'ffdhe2048',
+            group: 'ristretto255',
             participantCount: 3,
             threshold: majorityThreshold(3),
         } as const;
@@ -444,7 +452,8 @@ describe('DKG state machines', () => {
                 complainantIndex: 2,
                 envelopeId: 'env-1-2',
                 suite: 'P-256',
-                revealedEphemeralPrivateKey: 'ephemeral-private-key',
+                revealedEphemeralPrivateKey:
+                    'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
             }),
             ...[1, 2, 3].map((participantIndex) =>
                 signed({
@@ -454,7 +463,7 @@ describe('DKG state machines', () => {
                     participantIndex,
                     messageType: 'key-derivation-confirmation',
                     qualHash: 'qual',
-                    publicKey: 'pk',
+                    publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
                 }),
             ),
         ] as const;
@@ -481,7 +490,7 @@ describe('DKG state machines', () => {
             protocol: 'gjkr',
             sessionId: 'session-4b',
             manifestHash: 'manifest-4b',
-            group: 'ffdhe2048',
+            group: 'ristretto255',
             participantCount: 3,
             threshold: majorityThreshold(3),
         } as const;
@@ -524,7 +533,7 @@ describe('DKG state machines', () => {
                 participantIndex,
                 messageType: 'key-derivation-confirmation',
                 qualHash: 'qual',
-                publicKey: 'pk',
+                publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
             }),
         );
 
@@ -542,7 +551,8 @@ describe('DKG state machines', () => {
                 complainantIndex: 2,
                 envelopeId: 'env-1-2',
                 suite: 'P-256',
-                revealedEphemeralPrivateKey: 'ephemeral-private-key',
+                revealedEphemeralPrivateKey:
+                    'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
             }),
             ...confirmationPayloads,
         ]);
@@ -560,7 +570,8 @@ describe('DKG state machines', () => {
                 complainantIndex: 3,
                 envelopeId: 'env-1-2',
                 suite: 'P-256',
-                revealedEphemeralPrivateKey: 'ephemeral-private-key',
+                revealedEphemeralPrivateKey:
+                    'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
             }),
             ...confirmationPayloads,
         ]);
@@ -576,7 +587,7 @@ describe('DKG state machines', () => {
             protocol: 'gjkr',
             sessionId: 'session-5',
             manifestHash: 'manifest-5',
-            group: 'ffdhe2048',
+            group: 'ristretto255',
             participantCount: 3,
             threshold: majorityThreshold(3),
         });
@@ -629,7 +640,7 @@ describe('DKG state machines', () => {
             protocol: 'joint-feldman',
             sessionId: 'session-6',
             manifestHash: 'manifest-6',
-            group: 'ffdhe2048',
+            group: 'ristretto255',
             participantCount: 3,
             threshold: majorityThreshold(3),
         });
@@ -729,7 +740,7 @@ describe('DKG state machines', () => {
             protocol: 'joint-feldman',
             sessionId: 'session-3',
             manifestHash: 'manifest-3',
-            group: 'ffdhe2048',
+            group: 'ristretto255',
             participantCount: 3,
             threshold: majorityThreshold(3),
         });

@@ -43,26 +43,38 @@ export type ElectionVerificationErrorCode =
     | 'DECRYPTION_INVALID'
     | 'TALLY_INVALID';
 
+/** Named verification stage used by the high-level ceremony verifier. */
+export type ElectionVerificationStage =
+    | 'manifest'
+    | 'board'
+    | 'dkg'
+    | 'signatures'
+    | 'ballots'
+    | 'decryption'
+    | 'tally';
+
+/** Stable structured failure result returned by the non-throwing verifier. */
+export type ElectionVerificationFailure = {
+    readonly code: ElectionVerificationErrorCode;
+    readonly stage: ElectionVerificationStage;
+    readonly reason: string;
+};
+
 /** Error raised when full ceremony verification fails at a named stage. */
 export class ElectionVerificationError extends InvalidPayloadError {
     public readonly code: ElectionVerificationErrorCode;
-    public readonly stage:
-        | 'manifest'
-        | 'board'
-        | 'dkg'
-        | 'signatures'
-        | 'ballots'
-        | 'decryption'
-        | 'tally';
+    public readonly stage: ElectionVerificationStage;
+    public readonly reason: string;
 
     public constructor(
         code: ElectionVerificationErrorCode,
-        stage: ElectionVerificationError['stage'],
+        stage: ElectionVerificationStage,
         message: string,
     ) {
         super(message);
         this.code = code;
         this.stage = stage;
+        this.reason = message;
     }
 }
 
@@ -97,9 +109,20 @@ export type VerifiedElectionCeremonyDetailed = {
 export type VerifyElectionCeremonyDetailedInput =
     VerifyPublishedVotingResultsInput;
 
+/** Non-throwing result shape for full ceremony verification. */
+export type ElectionVerificationResult =
+    | {
+          readonly ok: true;
+          readonly verified: VerifiedElectionCeremonyDetailed;
+      }
+    | {
+          readonly ok: false;
+          readonly error: ElectionVerificationFailure;
+      };
+
 const wrapStageError = (
     code: ElectionVerificationErrorCode,
-    stage: ElectionVerificationError['stage'],
+    stage: ElectionVerificationStage,
     error: unknown,
 ): never => {
     if (error instanceof ElectionVerificationError) {
@@ -411,4 +434,42 @@ export const verifyElectionCeremonyDetailed = async (
         dkg,
         options,
     };
+};
+
+/**
+ * Runs the full ceremony verifier and returns a structured success-or-failure
+ * result without throwing.
+ *
+ * @param input Full public ceremony input bundle.
+ * @returns Verified ceremony output or a stable structured failure.
+ */
+export const verifyElectionCeremonyDetailedResult = async (
+    input: VerifyElectionCeremonyDetailedInput,
+): Promise<ElectionVerificationResult> => {
+    try {
+        return {
+            ok: true,
+            verified: await verifyElectionCeremonyDetailed(input),
+        };
+    } catch (error) {
+        if (error instanceof ElectionVerificationError) {
+            return {
+                ok: false,
+                error: {
+                    code: error.code,
+                    stage: error.stage,
+                    reason: error.reason,
+                },
+            };
+        }
+
+        return {
+            ok: false,
+            error: {
+                code: 'MANIFEST_INVALID',
+                stage: 'manifest',
+                reason: error instanceof Error ? error.message : String(error),
+            },
+        };
+    }
 };
