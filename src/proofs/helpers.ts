@@ -1,4 +1,5 @@
 import { hexToBytes } from '../core/bytes.js';
+import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
 import { InvalidProofError, modQ, type CryptoGroup } from '../core/index.js';
 import { encodeScalar, hashChallengeToScalar } from '../core/ristretto.js';
 
@@ -22,6 +23,14 @@ export const assertProofContext = (
     context: ProofContext,
     group: CryptoGroup,
 ): void => {
+    try {
+        assertCanonicalRistrettoGroup(group, 'Proof group');
+    } catch (error) {
+        throw new InvalidProofError(
+            error instanceof Error ? error.message : String(error),
+        );
+    }
+
     if (context.suiteId !== group.name) {
         throw new InvalidProofError(
             'Proof context suite does not match the selected group',
@@ -57,13 +66,15 @@ export const contextElements = (
     ];
 
     const optionalFields = [
-        encodeOptionalIndex(context.participantIndex),
-        encodeOptionalIndex(context.coefficientIndex),
-        encodeOptionalIndex(context.voterIndex),
-        encodeOptionalIndex(context.optionIndex),
-    ];
+        ['participant-index', encodeOptionalIndex(context.participantIndex)],
+        ['coefficient-index', encodeOptionalIndex(context.coefficientIndex)],
+        ['voter-index', encodeOptionalIndex(context.voterIndex)],
+        ['option-index', encodeOptionalIndex(context.optionIndex)],
+    ] as const;
 
-    for (const field of optionalFields) {
+    for (const [label, field] of optionalFields) {
+        fields.push(`proof-context/${label}`);
+        fields.push(field === undefined ? 0n : 1n);
         if (field !== undefined) {
             fields.push(field);
         }

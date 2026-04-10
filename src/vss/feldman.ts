@@ -1,3 +1,4 @@
+import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
 import {
     assertInSubgroup,
     assertPositiveParticipantIndex,
@@ -17,11 +18,11 @@ export const generateFeldmanCommitments = (
     polynomial: readonly bigint[],
     group: CryptoGroup,
 ): FeldmanCommitments => {
-    void group;
+    assertCanonicalRistrettoGroup(group, 'Feldman commitment group');
 
     return {
         commitments: polynomial.map((coefficient) => {
-            assertScalarInZq(coefficient);
+            assertScalarInZq(coefficient, group.q);
             return encodePoint(multiplyBase(coefficient));
         }),
     };
@@ -35,6 +36,7 @@ export const verifyFeldmanShare = (
     commitments: FeldmanCommitments,
     group: CryptoGroup,
 ): boolean => {
+    assertCanonicalRistrettoGroup(group, 'Feldman verification group');
     assertPositiveParticipantIndex(share.index);
     assertScalarInZq(share.value, group.q);
     commitments.commitments.forEach((commitment) =>

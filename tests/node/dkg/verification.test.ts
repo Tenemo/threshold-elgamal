@@ -17,6 +17,7 @@ import {
     hashProtocolTranscript,
     type KeyDerivationConfirmation,
     type ProtocolPayload,
+    type RegistrationPayload,
     type SignedPayload,
 } from '#protocol';
 import { generateTransportKeyPair, signPayloadBytes } from '#transport';
@@ -379,6 +380,35 @@ describe('DKG transcript verification', () => {
             }),
         ).rejects.toThrow(
             'Payload session does not match the verification input',
+        );
+    });
+    it('rejects malformed registered transport keys at the roster boundary', async () => {
+        const registrationIndex = completed.dkgTranscript.findIndex(
+            (entry) => entry.payload.messageType === 'registration',
+        );
+        if (registrationIndex < 0) {
+            throw new Error(
+                'Expected a registration payload in the transcript',
+            );
+        }
+
+        const malformedRegistration = await resignPayload(completed, {
+            ...completed.dkgTranscript[registrationIndex].payload,
+            transportPublicKey: '00'.repeat(
+                31,
+            ) as RegistrationPayload['transportPublicKey'],
+        } as ProtocolPayload);
+
+        await expect(
+            verifyDKGTranscript({
+                transcript: completed.dkgTranscript.map((entry, index) =>
+                    index === registrationIndex ? malformedRegistration : entry,
+                ),
+                manifest: completed.manifest,
+                sessionId: completed.sessionId,
+            }),
+        ).rejects.toThrow(
+            'Registration transport public key must be a supported raw X25519 or uncompressed P-256 public key',
         );
     });
     it('rejects forged complaint evidence and unmatched complaint resolutions', async () => {

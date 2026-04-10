@@ -215,6 +215,42 @@ describe('protocol verification helpers', () => {
             'Registration signature failed verification for participant 1',
         );
     });
+
+    it('rejects malformed transport public keys before accepting the roster', async () => {
+        const auth = await generateAuthKeyPair();
+        const authPublicKey = await exportAuthPublicKey(auth.publicKey);
+        const registration = await signProtocolPayload(auth.privateKey, {
+            sessionId: 'session-1',
+            manifestHash: 'manifest-1',
+            phase: 0,
+            participantIndex: 1,
+            messageType: 'registration',
+            rosterHash: 'roster-hash',
+            authPublicKey,
+            transportPublicKey: '00'.repeat(
+                31,
+            ) as RegistrationPayload['transportPublicKey'],
+        });
+
+        await expect(
+            verifySignedProtocolPayloads([registration], 1),
+        ).rejects.toThrow(
+            'Registration transport public key must be a supported raw X25519 or uncompressed P-256 public key',
+        );
+        await expect(
+            hashRosterEntries([
+                {
+                    participantIndex: 1,
+                    authPublicKey,
+                    transportPublicKey: '00'.repeat(
+                        31,
+                    ) as RegistrationPayload['transportPublicKey'],
+                },
+            ]),
+        ).rejects.toThrow(
+            'Roster transport public key must be a supported raw X25519 or uncompressed P-256 public key',
+        );
+    });
     it(
         'recomputes ballot aggregates deterministically and exposes dropped ballots',
         {

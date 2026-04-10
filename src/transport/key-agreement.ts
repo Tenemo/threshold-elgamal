@@ -1,3 +1,5 @@
+import { p256 } from '@noble/curves/nist.js';
+
 import { toBufferSource } from '../core/bytes.js';
 import { InvalidPayloadError, getWebCrypto } from '../core/index.js';
 import { bytesToHex, hexToBytes } from '../serialize/index.js';
@@ -14,6 +16,8 @@ const X25519_BASE_POINT = (() => {
     bytes[0] = 9;
     return bytes;
 })();
+const X25519_PUBLIC_KEY_LENGTH = 32;
+const P256_PUBLIC_KEY_LENGTH = 65;
 
 const base64UrlToBytes = (value: string): Uint8Array => {
     const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
@@ -44,6 +48,31 @@ const buildP256RawPublicKey = (jwk: JsonWebKey): Uint8Array => {
         ...base64UrlToBytes(jwk.x),
         ...base64UrlToBytes(jwk.y),
     ]);
+};
+
+const assertSupportedRawTransportPublicKeyBytes = (
+    publicKeyBytes: Uint8Array,
+    label: string,
+): void => {
+    if (publicKeyBytes.length === X25519_PUBLIC_KEY_LENGTH) {
+        return;
+    }
+
+    if (publicKeyBytes.length !== P256_PUBLIC_KEY_LENGTH) {
+        throw new InvalidPayloadError(
+            `${label} must be a supported raw X25519 or uncompressed P-256 public key`,
+        );
+    }
+
+    if (publicKeyBytes[0] !== 0x04) {
+        throw new InvalidPayloadError(
+            `${label} must use the uncompressed P-256 point format`,
+        );
+    }
+
+    if (!p256.utils.isValidPublicKey(publicKeyBytes, false)) {
+        throw new InvalidPayloadError(`${label} is not a valid P-256 point`);
+    }
 };
 
 const algorithmForSuite = (
@@ -191,6 +220,23 @@ export const importTransportPublicKey = async (
         true,
         [],
     );
+
+export const assertSupportedTransportPublicKeyEncoding = (
+    publicKeyHex: EncodedTransportPublicKey,
+    label = 'Transport public key',
+): void => {
+    let publicKeyBytes: Uint8Array;
+
+    try {
+        publicKeyBytes = hexToBytes(publicKeyHex);
+    } catch {
+        throw new InvalidPayloadError(
+            `${label} must be a non-empty even-length hexadecimal string`,
+        );
+    }
+
+    assertSupportedRawTransportPublicKeyBytes(publicKeyBytes, label);
+};
 
 /**
  * Imports a transport private key from PKCS#8 hexadecimal bytes.

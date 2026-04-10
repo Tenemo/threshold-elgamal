@@ -1,3 +1,4 @@
+import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
 import { modQ, type CryptoGroup, type EncodedPoint } from '../core/index.js';
 import {
     decodePoint,
@@ -12,6 +13,8 @@ export const evaluateCommitmentProduct = (
     index: number,
     group: CryptoGroup,
 ): EncodedPoint => {
+    assertCanonicalRistrettoGroup(group, 'Commitment product group');
+
     let result = RISTRETTO_ZERO;
     let exponent = 1n;
     const point = BigInt(index);
