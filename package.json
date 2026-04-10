@@ -45,7 +45,7 @@
         "docs:api": "pnpm exec del-cli docs/src/content/docs/api/reference && tsx ./node_modules/typedoc/bin/typedoc --options typedoc.config.mjs && tsx ./typedoc/postprocess-site-docs.ts",
         "docs:dev": "pnpm run docs:api && astro dev --root docs",
         "docs:build": "pnpm run docs:api && pnpm run docs:build:site",
-        "docs:build:site": "astro build --root docs",
+        "docs:build:site": "pnpm exec del-cli docs/dist && astro build --root docs",
         "docs:preview": "astro preview --root docs",
         "verify:docs": "pnpm run docs:api && pnpm run verify:docs:generated",
         "verify:docs:generated": "tsx ./typedoc/verify-docs.ts",
@@ -109,50 +109,6 @@
         ".": {
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js"
-        },
-        "./core": {
-            "types": "./dist/core/index.d.ts",
-            "import": "./dist/core/index.js"
-        },
-        "./elgamal": {
-            "types": "./dist/elgamal/index.d.ts",
-            "import": "./dist/elgamal/index.js"
-        },
-        "./dkg": {
-            "types": "./dist/dkg/index.d.ts",
-            "import": "./dist/dkg/index.js"
-        },
-        "./proofs": {
-            "types": "./dist/proofs/index.d.ts",
-            "import": "./dist/proofs/index.js"
-        },
-        "./protocol": {
-            "types": "./dist/protocol/index.d.ts",
-            "import": "./dist/protocol/index.js"
-        },
-        "./runtime": {
-            "types": "./dist/runtime/index.d.ts",
-            "import": "./dist/runtime/index.js"
-        },
-        "./threshold": {
-            "types": "./dist/threshold/index.d.ts",
-            "import": "./dist/threshold/index.js"
-        },
-        "./transport": {
-            "types": "./dist/transport/index.d.ts",
-            "import": "./dist/transport/index.js"
-        },
-        "./transport/advanced": {
-            "types": "./dist/transport/advanced.d.ts",
-            "import": "./dist/transport/advanced.js"
-        },
-        "./vss": {
-            "types": "./dist/vss/index.d.ts",
-            "import": "./dist/vss/index.js"
-        },
-        "./serialize": {
-            "types": "./dist/serialize/index.d.ts",
-            "import": "./dist/serialize/index.js"
         }
     },
     "engines": {

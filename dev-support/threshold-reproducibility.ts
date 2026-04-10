@@ -17,7 +17,6 @@ import {
 } from '#src/threshold/decrypt';
 import { lagrangeCoefficient } from '#src/threshold/lagrange';
 import { deriveSharesFromPolynomial } from '#src/threshold/shares';
-
 type ThresholdVectorConfig = {
     readonly bound: bigint;
     readonly groupName: GroupIdentifier;
@@ -27,7 +26,6 @@ type ThresholdVectorConfig = {
     readonly randomness: bigint;
     readonly subsetIndices: readonly number[];
 };
-
 type ThresholdVectorRecord = {
     readonly ciphertext: {
         readonly bound: bigint;
@@ -62,28 +60,23 @@ type ThresholdVectorRecord = {
     readonly subsetIndices: readonly number[];
     readonly threshold: number;
 };
-
 const assertVectorConfig = (config: ThresholdVectorConfig): void => {
     const threshold = config.polynomial.length;
-
     if (config.polynomial.length === 0) {
         throw new Error(
             'Threshold vector generation requires a non-empty polynomial',
         );
     }
-
     if (config.participantCount < threshold) {
         throw new Error(
             'Threshold vector participant count must be at least the threshold',
         );
     }
-
     if (config.subsetIndices.length < threshold) {
         throw new Error(
             'Threshold vector subset must contain at least threshold many shares',
         );
     }
-
     const seenSubsetIndices = new Set<number>();
     for (const subsetIndex of config.subsetIndices) {
         assertValidParticipantIndex(subsetIndex, config.participantCount);
@@ -95,12 +88,10 @@ const assertVectorConfig = (config: ThresholdVectorConfig): void => {
         seenSubsetIndices.add(subsetIndex);
     }
 };
-
 export const generateThresholdVectorRecord = (
     config: ThresholdVectorConfig,
 ): ThresholdVectorRecord => {
     assertVectorConfig(config);
-
     const group = getGroup(config.groupName);
     const threshold = config.polynomial.length;
     const shares = deriveSharesFromPolynomial(
@@ -118,13 +109,12 @@ export const generateThresholdVectorRecord = (
         publicKey,
         config.randomness,
         config.bound,
-        group.name,
     );
     const subsetShares = shares.filter((share) =>
         config.subsetIndices.includes(share.index),
     );
     const decryptionShares = subsetShares.map((share) =>
-        createDecryptionShare(ciphertext, share, group),
+        createDecryptionShare(ciphertext, share),
     );
     const lagrangeCoefficients = config.subsetIndices.map((index) => ({
         index,
@@ -134,40 +124,32 @@ export const generateThresholdVectorRecord = (
             group.q,
         ),
     }));
-
     let combinedFactor = RISTRETTO_ZERO;
-
     for (const decryptionShare of decryptionShares) {
         const lambda = lagrangeCoefficients.find(
             (item) => item.index === decryptionShare.index,
         );
-
         if (lambda === undefined) {
             throw new Error(
                 `Missing Lagrange coefficient for share ${decryptionShare.index}`,
             );
         }
-
         combinedFactor = pointAdd(
             combinedFactor,
             pointMultiply(decodePoint(decryptionShare.value), lambda.value),
         );
     }
-
     const encodedMessage = encodePoint(
         pointSubtract(decodePoint(ciphertext.c2), combinedFactor),
     );
     const recovered = combineDecryptionShares(
         ciphertext,
         decryptionShares,
-        group,
         config.bound,
     );
-
     if (recovered !== config.message) {
         throw new Error('Generated threshold vector does not round-trip');
     }
-
     const discreteLog = babyStepGiantStep(
         encodedMessage,
         group.g,
@@ -176,7 +158,6 @@ export const generateThresholdVectorRecord = (
     if (discreteLog !== config.message) {
         throw new Error('Generated threshold vector encoded message mismatch');
     }
-
     return {
         group: group.name,
         threshold,

@@ -140,7 +140,6 @@ const finalizeVerifiedTranscript = async (
         acceptedComplaints,
         derivedPublicKey,
         feldmanCommitments: normalizedFeldmanCommitments,
-        group,
         manifestAccepted,
         phaseCheckpoints,
         qual,
@@ -180,16 +179,10 @@ const verifyLegacyDKGTranscript = async (
 
     const pedersenCommitmentMap = parsePedersenCommitmentMap(
         input.transcript,
-        input.protocol,
         threshold,
         group,
     );
-    if (input.protocol === 'gjkr') {
-        assertPedersenCommitmentCoverage(
-            pedersenCommitmentMap,
-            participantIndices,
-        );
-    }
+    assertPedersenCommitmentCoverage(pedersenCommitmentMap, participantIndices);
 
     const acceptedComplaints = await verifyComplaintOutcomes(
         input,
@@ -222,7 +215,7 @@ const verifyCheckpointedDKGTranscript = async (
     group: CryptoGroup,
     threshold: number,
 ): Promise<VerifiedDKGTranscript> => {
-    assertSupportedCheckpointPayloads(input.transcript, input.protocol);
+    assertSupportedCheckpointPayloads(input.transcript);
 
     const verifiedSignatures = await verifySignedRoster(
         input.transcript,
@@ -253,7 +246,6 @@ const verifyCheckpointedDKGTranscript = async (
     );
     const pedersenCommitmentMap = parsePedersenCommitmentMap(
         input.transcript,
-        input.protocol,
         threshold,
         group,
     );
@@ -271,9 +263,7 @@ const verifyCheckpointedDKGTranscript = async (
     });
     const phase1Qual = phase1Checkpoint.payload.qualParticipantIndices;
     assertEncryptedShareCoverage(encryptedShareMatrix, phase1Qual);
-    if (input.protocol === 'gjkr') {
-        assertPedersenCommitmentCoverage(pedersenCommitmentMap, phase1Qual);
-    }
+    assertPedersenCommitmentCoverage(pedersenCommitmentMap, phase1Qual);
 
     const activeComplaintParticipants = new Set(phase1Qual);
     const acceptedComplaints = await verifyComplaintOutcomes(
@@ -303,20 +293,19 @@ const verifyCheckpointedDKGTranscript = async (
         phase2Checkpoint,
     ];
 
-    let finalQual = phase2Checkpoint.payload.qualParticipantIndices;
-    if (input.protocol === 'gjkr') {
-        const phase2QualSet = new Set(finalQual);
-        const phase3Checkpoint = await resolveVerifiedPhaseCheckpoint({
-            transcript: input.transcript,
-            checkpointPhase: 3,
-            threshold,
-            participantCount: input.manifest.participantCount,
-            signerUniverse: phase2QualSet,
-            qualUniverse: phase2QualSet,
-        });
-        phaseCheckpoints.push(phase3Checkpoint);
-        finalQual = phase3Checkpoint.payload.qualParticipantIndices;
-    }
+    const phase2QualSet = new Set(
+        phase2Checkpoint.payload.qualParticipantIndices,
+    );
+    const phase3Checkpoint = await resolveVerifiedPhaseCheckpoint({
+        transcript: input.transcript,
+        checkpointPhase: 3,
+        threshold,
+        participantCount: input.manifest.participantCount,
+        signerUniverse: phase2QualSet,
+        qualUniverse: phase2QualSet,
+    });
+    phaseCheckpoints.push(phase3Checkpoint);
+    const finalQual = phase3Checkpoint.payload.qualParticipantIndices;
 
     return finalizeVerifiedTranscript(
         input,
@@ -347,7 +336,7 @@ export const verifyDKGTranscript = async (
         ...input,
         transcript: auditedTranscript.acceptedPayloads,
     };
-    const group = getGroup(normalizedInput.manifest.suiteId);
+    const group = getGroup('ristretto255');
     const threshold = assertMajorityThreshold(
         normalizedInput.manifest.reconstructionThreshold,
         normalizedInput.manifest.participantCount,

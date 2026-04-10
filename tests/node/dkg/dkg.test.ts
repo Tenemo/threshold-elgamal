@@ -12,21 +12,18 @@ import {
 import {
     collectCheckpointVariants,
     createGjkrState,
-    createJointFeldmanState,
     processGjkrPayload,
-    processJointFeldmanPayload,
     reconstructSecretFromShares,
     replayGjkrTranscript,
-    replayJointFeldmanTranscript,
 } from '#dkg';
-import type {
-    ComplaintResolutionPayload,
-    KeyDerivationConfirmation,
-    ProtocolPayload,
-    RegistrationPayload,
-    SignedPayload,
+import {
+    canonicalUnsignedPayloadBytes,
+    type ComplaintResolutionPayload,
+    type KeyDerivationConfirmation,
+    type ProtocolPayload,
+    type RegistrationPayload,
+    type SignedPayload,
 } from '#protocol';
-import { canonicalUnsignedPayloadBytes } from '#protocol';
 import { bytesToHex } from '#serialize';
 
 const AUTH_PUBLIC_KEY_SPKI_PREFIX =
@@ -62,6 +59,7 @@ const reducerSigner = (participantIndex: number): ReducerSigner => {
     };
 
     reducerSignerCache.set(participantIndex, signer);
+
     return signer;
 };
 
@@ -99,9 +97,122 @@ const registrationPayloads = (
         });
     });
 
+const manifestAcceptancePayloads = (
+    participantCount: number,
+    sessionId: string,
+    manifestHash: string,
+    rosterHash: string,
+): readonly SignedPayload[] =>
+    Array.from({ length: participantCount }, (_value, index) => {
+        const participantIndex = index + 1;
+
+        return signed({
+            sessionId,
+            manifestHash,
+            phase: 0,
+            participantIndex,
+            messageType: 'manifest-acceptance',
+            rosterHash,
+            assignedParticipantIndex: participantIndex,
+        });
+    });
+
+const pedersenCommitmentPayloads = (
+    participantCount: number,
+    sessionId: string,
+    manifestHash: string,
+): readonly SignedPayload[] =>
+    Array.from({ length: participantCount }, (_value, index) => {
+        const participantIndex = index + 1;
+
+        return signed({
+            sessionId,
+            manifestHash,
+            phase: 1,
+            participantIndex,
+            messageType: 'pedersen-commitment',
+            commitments: [`pc-${participantIndex}`],
+        });
+    });
+
+const feldmanCommitmentPayloads = (
+    participantCount: number,
+    sessionId: string,
+    manifestHash: string,
+): readonly SignedPayload[] =>
+    Array.from({ length: participantCount }, (_value, index) => {
+        const participantIndex = index + 1;
+
+        return signed({
+            sessionId,
+            manifestHash,
+            phase: 3,
+            participantIndex,
+            messageType: 'feldman-commitment',
+            commitments: [`fc-${participantIndex}`],
+            proofs: [],
+        });
+    });
+
+const keyDerivationPayloads = (
+    participantIndices: readonly number[],
+    sessionId: string,
+    manifestHash: string,
+): readonly SignedPayload[] =>
+    participantIndices.map((participantIndex) =>
+        signed({
+            sessionId,
+            manifestHash,
+            phase: 4,
+            participantIndex,
+            messageType: 'key-derivation-confirmation',
+            qualHash: 'qual',
+            publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
+        }),
+    );
+
+const complaintResolutionPayload = (
+    sessionId: string,
+    manifestHash: string,
+    participantIndex: number,
+    dealerIndex: number,
+    complainantIndex: number,
+    envelopeId: string,
+): SignedPayload =>
+    signed({
+        sessionId,
+        manifestHash,
+        phase: 2,
+        participantIndex,
+        messageType: 'complaint-resolution',
+        dealerIndex,
+        complainantIndex,
+        envelopeId,
+        suite: 'P-256',
+        revealedEphemeralPrivateKey:
+            'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
+    });
+
+const config = (
+    suffix: string,
+    participantCount: number,
+    threshold = majorityThreshold(participantCount),
+): Readonly<{
+    readonly sessionId: string;
+    readonly manifestHash: string;
+    readonly participantCount: number;
+    readonly threshold: number;
+}> =>
+    ({
+        sessionId: `session-${suffix}`,
+        manifestHash: `manifest-${suffix}`,
+        participantCount,
+        threshold,
+    }) as const;
+
 const thresholdVectorGroup = thresholdVector.group as 'ristretto255';
 
-describe('DKG state machines', () => {
+describe('dkg state machines', () => {
     it('reconstructs the secret term from revealed shares', () => {
         const group = getGroup(thresholdVectorGroup);
         const subsetShares = thresholdVector.shares
@@ -130,6 +241,7 @@ describe('DKG state machines', () => {
                 group.q,
             ),
         ).toThrow(InvalidShareError);
+
         expect(() =>
             reconstructSecretFromShares(
                 [
@@ -142,27 +254,26 @@ describe('DKG state machines', () => {
     });
 
     it('gates phase 1 on manifest acceptance', () => {
-        const state = createGjkrState({
-            protocol: 'gjkr',
-            sessionId: 'session-1',
-            manifestHash: 'manifest-1',
-            group: 'ristretto255',
-            participantCount: 3,
-            threshold: majorityThreshold(3),
-        });
+        const state = createGjkrState(config('gate', 3));
         const registeredState = processGjkrPayload(
             state,
-            registrationPayloads(3, 'session-1', 'manifest-1', 'roster-1')[0],
+            registrationPayloads(
+                3,
+                'session-gate',
+                'manifest-gate',
+                'roster-gate',
+            )[0],
         ).newState;
+
         const transition = processGjkrPayload(
             registeredState,
             signed({
-                sessionId: 'session-1',
-                manifestHash: 'manifest-1',
+                sessionId: 'session-gate',
+                manifestHash: 'manifest-gate',
                 phase: 1,
                 participantIndex: 1,
                 messageType: 'pedersen-commitment',
-                commitments: ['a'],
+                commitments: ['pc-1'],
             }),
         );
 
@@ -170,267 +281,69 @@ describe('DKG state machines', () => {
         expect(transition.newState).toBe(registeredState);
     });
 
-    it('replays Joint-Feldman transcripts deterministically', () => {
-        const config = {
-            protocol: 'joint-feldman',
-            sessionId: 'session-1',
-            manifestHash: 'manifest-1',
-            group: 'ristretto255',
-            participantCount: 3,
-            threshold: majorityThreshold(3),
-        } as const;
+    it('replays GJKR transcripts deterministically', () => {
+        const gjkrConfig = config('deterministic', 3);
         const transcript = [
-            ...registrationPayloads(3, 'session-1', 'manifest-1', 'roster-1'),
-            signed({
-                sessionId: 'session-1',
-                manifestHash: 'manifest-1',
-                phase: 0,
-                participantIndex: 1,
-                messageType: 'manifest-acceptance',
-                rosterHash: 'roster-1',
-                assignedParticipantIndex: 1,
-            }),
-            signed({
-                sessionId: 'session-1',
-                manifestHash: 'manifest-1',
-                phase: 0,
-                participantIndex: 2,
-                messageType: 'manifest-acceptance',
-                rosterHash: 'roster-1',
-                assignedParticipantIndex: 2,
-            }),
-            signed({
-                sessionId: 'session-1',
-                manifestHash: 'manifest-1',
-                phase: 0,
-                participantIndex: 3,
-                messageType: 'manifest-acceptance',
-                rosterHash: 'roster-1',
-                assignedParticipantIndex: 3,
-            }),
-            signed({
-                sessionId: 'session-1',
-                manifestHash: 'manifest-1',
-                phase: 1,
-                participantIndex: 1,
-                messageType: 'feldman-commitment',
-                commitments: ['a'],
-                proofs: [],
-            }),
-            signed({
-                sessionId: 'session-1',
-                manifestHash: 'manifest-1',
-                phase: 1,
-                participantIndex: 2,
-                messageType: 'feldman-commitment',
-                commitments: ['b'],
-                proofs: [],
-            }),
-            signed({
-                sessionId: 'session-1',
-                manifestHash: 'manifest-1',
-                phase: 1,
-                participantIndex: 3,
-                messageType: 'feldman-commitment',
-                commitments: ['c'],
-                proofs: [],
-            }),
-            signed({
-                sessionId: 'session-1',
-                manifestHash: 'manifest-1',
-                phase: 3,
-                participantIndex: 1,
-                messageType: 'key-derivation-confirmation',
-                qualHash: 'qual',
-                publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
-            }),
-            signed({
-                sessionId: 'session-1',
-                manifestHash: 'manifest-1',
-                phase: 3,
-                participantIndex: 2,
-                messageType: 'key-derivation-confirmation',
-                qualHash: 'qual',
-                publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
-            }),
-            signed({
-                sessionId: 'session-1',
-                manifestHash: 'manifest-1',
-                phase: 3,
-                participantIndex: 3,
-                messageType: 'key-derivation-confirmation',
-                qualHash: 'qual',
-                publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
-            }),
+            ...registrationPayloads(
+                gjkrConfig.participantCount,
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+                'roster-deterministic',
+            ),
+            ...manifestAcceptancePayloads(
+                gjkrConfig.participantCount,
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+                'roster-deterministic',
+            ),
+            ...pedersenCommitmentPayloads(
+                gjkrConfig.participantCount,
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+            ),
+            ...feldmanCommitmentPayloads(
+                gjkrConfig.participantCount,
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+            ),
+            ...keyDerivationPayloads(
+                [1, 2, 3],
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+            ),
         ] as const;
 
-        const finalState = replayJointFeldmanTranscript(config, transcript);
-        const secondReplay = replayJointFeldmanTranscript(config, transcript);
+        const finalState = replayGjkrTranscript(gjkrConfig, transcript);
+        const secondReplay = replayGjkrTranscript(gjkrConfig, transcript);
 
         expect(finalState.phase).toBe('completed');
         expect(finalState.qual).toEqual([1, 2, 3]);
         expect(secondReplay).toEqual(finalState);
     });
 
-    it('keeps shared QUAL and terminal-state behavior aligned across both majority reducers', () => {
-        const baseConfig = {
-            sessionId: 'session-shared',
-            manifestHash: 'manifest-shared',
-            group: 'ristretto255',
-            participantCount: 3,
-            threshold: majorityThreshold(3),
-        } as const;
-        const sharedRegistrations = registrationPayloads(
-            3,
-            baseConfig.sessionId,
-            baseConfig.manifestHash,
-            'roster-shared',
-        );
-        const sharedAcceptances = [1, 2, 3].map((participantIndex) =>
-            signed({
-                sessionId: baseConfig.sessionId,
-                manifestHash: baseConfig.manifestHash,
-                phase: 0,
-                participantIndex,
-                messageType: 'manifest-acceptance',
-                rosterHash: 'roster-shared',
-                assignedParticipantIndex: participantIndex,
-            }),
-        );
-        const complaintPayload = signed({
-            sessionId: baseConfig.sessionId,
-            manifestHash: baseConfig.manifestHash,
-            phase: 2,
-            participantIndex: 2,
-            messageType: 'complaint',
-            dealerIndex: 1,
-            envelopeId: 'env-1-2',
-            reason: 'aes-gcm-failure',
-        });
-        const resolutionPayload = signed({
-            sessionId: baseConfig.sessionId,
-            manifestHash: baseConfig.manifestHash,
-            phase: 2,
-            participantIndex: 1,
-            messageType: 'complaint-resolution',
-            dealerIndex: 1,
-            complainantIndex: 2,
-            envelopeId: 'env-1-2',
-            suite: 'P-256',
-            revealedEphemeralPrivateKey:
-                'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
-        });
-        const jointConfirmations = [1, 2, 3].map((participantIndex) =>
-            signed({
-                sessionId: baseConfig.sessionId,
-                manifestHash: baseConfig.manifestHash,
-                phase: 3,
-                participantIndex,
-                messageType: 'key-derivation-confirmation',
-                qualHash: 'qual',
-                publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
-            }),
-        );
-        const jointTranscript = [
-            ...sharedRegistrations,
-            ...sharedAcceptances,
-            ...[1, 2, 3].map((participantIndex) =>
-                signed({
-                    sessionId: baseConfig.sessionId,
-                    manifestHash: baseConfig.manifestHash,
-                    phase: 1,
-                    participantIndex,
-                    messageType: 'feldman-commitment',
-                    commitments: [`c-${participantIndex}`],
-                    proofs: [],
-                }),
-            ),
-            complaintPayload,
-            resolutionPayload,
-            ...jointConfirmations,
-        ] as const;
-        const gjkrTranscript = [
-            ...sharedRegistrations,
-            ...sharedAcceptances,
-            ...[1, 2, 3].map((participantIndex) =>
-                signed({
-                    sessionId: baseConfig.sessionId,
-                    manifestHash: baseConfig.manifestHash,
-                    phase: 1,
-                    participantIndex,
-                    messageType: 'pedersen-commitment',
-                    commitments: [`pc-${participantIndex}`],
-                }),
-            ),
-            complaintPayload,
-            resolutionPayload,
-            ...jointConfirmations.map((entry) =>
-                entry.payload.messageType === 'key-derivation-confirmation'
-                    ? signed({
-                          ...entry.payload,
-                          phase: 4,
-                      })
-                    : entry,
-            ),
-        ] as const;
-
-        const gjkrState = replayGjkrTranscript(
-            {
-                ...baseConfig,
-                protocol: 'gjkr',
-            },
-            gjkrTranscript,
-        );
-        const jointState = replayJointFeldmanTranscript(
-            {
-                ...baseConfig,
-                protocol: 'joint-feldman',
-            },
-            jointTranscript,
-        );
-
-        expect(gjkrState.phase).toBe('completed');
-        expect(jointState.phase).toBe('completed');
-        expect(gjkrState.qual).toEqual([1, 2, 3]);
-        expect(jointState.qual).toEqual(gjkrState.qual);
-        expect(jointState.manifestAccepted).toEqual(gjkrState.manifestAccepted);
-    });
-
     it('replays GJKR transcripts, keeps false complainants in QUAL, and aborts when QUAL drops below k', () => {
-        const config = {
-            protocol: 'gjkr',
-            sessionId: 'session-2',
-            manifestHash: 'manifest-2',
-            group: 'ristretto255',
-            participantCount: 5,
-            threshold: majorityThreshold(5),
-        } as const;
+        const gjkrConfig = config('qual', 5);
         const transcript = [
-            ...registrationPayloads(5, 'session-2', 'manifest-2', 'roster-2'),
-            ...[1, 2, 3, 4, 5].map((participantIndex) =>
-                signed({
-                    sessionId: 'session-2',
-                    manifestHash: 'manifest-2',
-                    phase: 0,
-                    participantIndex,
-                    messageType: 'manifest-acceptance',
-                    rosterHash: 'roster-2',
-                    assignedParticipantIndex: participantIndex,
-                }),
+            ...registrationPayloads(
+                gjkrConfig.participantCount,
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+                'roster-qual',
             ),
-            ...[1, 2, 3, 4, 5].map((participantIndex) =>
-                signed({
-                    sessionId: 'session-2',
-                    manifestHash: 'manifest-2',
-                    phase: 1,
-                    participantIndex,
-                    messageType: 'pedersen-commitment',
-                    commitments: [`c-${participantIndex}`],
-                }),
+            ...manifestAcceptancePayloads(
+                gjkrConfig.participantCount,
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+                'roster-qual',
+            ),
+            ...pedersenCommitmentPayloads(
+                gjkrConfig.participantCount,
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
             ),
             signed({
-                sessionId: 'session-2',
-                manifestHash: 'manifest-2',
+                sessionId: gjkrConfig.sessionId,
+                manifestHash: gjkrConfig.manifestHash,
                 phase: 2,
                 participantIndex: 2,
                 messageType: 'complaint',
@@ -438,31 +351,25 @@ describe('DKG state machines', () => {
                 envelopeId: 'env-5',
                 reason: 'pedersen-failure',
             }),
-            ...[1, 2, 3, 4].map((participantIndex) =>
-                signed({
-                    sessionId: 'session-2',
-                    manifestHash: 'manifest-2',
-                    phase: 4,
-                    participantIndex,
-                    messageType: 'key-derivation-confirmation',
-                    qualHash: 'qual',
-                    publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
-                }),
+            ...keyDerivationPayloads(
+                [1, 2, 3, 4],
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
             ),
-        ];
+        ] as const;
 
-        const finalState = replayGjkrTranscript(config, transcript);
+        const finalState = replayGjkrTranscript(gjkrConfig, transcript);
 
         expect(finalState.phase).toBe('completed');
         expect(finalState.qual).toEqual([1, 2, 3, 4]);
         expect(finalState.qual).toContain(2);
         expect(finalState.qual).not.toContain(5);
 
-        const abortedState = replayGjkrTranscript(config, [
+        const abortedState = replayGjkrTranscript(gjkrConfig, [
             ...transcript.slice(0, -4),
             signed({
-                sessionId: 'session-2',
-                manifestHash: 'manifest-2',
+                sessionId: gjkrConfig.sessionId,
+                manifestHash: gjkrConfig.manifestHash,
                 phase: 2,
                 participantIndex: 3,
                 messageType: 'complaint',
@@ -471,8 +378,8 @@ describe('DKG state machines', () => {
                 reason: 'pedersen-failure',
             }),
             signed({
-                sessionId: 'session-2',
-                manifestHash: 'manifest-2',
+                sessionId: gjkrConfig.sessionId,
+                manifestHash: gjkrConfig.manifestHash,
                 phase: 2,
                 participantIndex: 4,
                 messageType: 'complaint',
@@ -488,40 +395,28 @@ describe('DKG state machines', () => {
     });
 
     it('resumes GJKR processing from a transcript prefix without changing the final state', () => {
-        const config = {
-            protocol: 'gjkr',
-            sessionId: 'session-4',
-            manifestHash: 'manifest-4',
-            group: 'ristretto255',
-            participantCount: 3,
-            threshold: majorityThreshold(3),
-        } as const;
+        const gjkrConfig = config('resume', 3);
         const transcript = [
-            ...registrationPayloads(3, 'session-4', 'manifest-4', 'roster-4'),
-            ...[1, 2, 3].map((participantIndex) =>
-                signed({
-                    sessionId: 'session-4',
-                    manifestHash: 'manifest-4',
-                    phase: 0,
-                    participantIndex,
-                    messageType: 'manifest-acceptance',
-                    rosterHash: 'roster-4',
-                    assignedParticipantIndex: participantIndex,
-                }),
+            ...registrationPayloads(
+                gjkrConfig.participantCount,
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+                'roster-resume',
             ),
-            ...[1, 2, 3].map((participantIndex) =>
-                signed({
-                    sessionId: 'session-4',
-                    manifestHash: 'manifest-4',
-                    phase: 1,
-                    participantIndex,
-                    messageType: 'pedersen-commitment',
-                    commitments: [`c-${participantIndex}`],
-                }),
+            ...manifestAcceptancePayloads(
+                gjkrConfig.participantCount,
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+                'roster-resume',
+            ),
+            ...pedersenCommitmentPayloads(
+                gjkrConfig.participantCount,
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
             ),
             signed({
-                sessionId: 'session-4',
-                manifestHash: 'manifest-4',
+                sessionId: gjkrConfig.sessionId,
+                manifestHash: gjkrConfig.manifestHash,
                 phase: 2,
                 participantIndex: 2,
                 messageType: 'complaint',
@@ -529,42 +424,32 @@ describe('DKG state machines', () => {
                 envelopeId: 'env-1-2',
                 reason: 'aes-gcm-failure',
             }),
-            signed({
-                sessionId: 'session-4',
-                manifestHash: 'manifest-4',
-                phase: 2,
-                participantIndex: 1,
-                messageType: 'complaint-resolution',
-                dealerIndex: 1,
-                complainantIndex: 2,
-                envelopeId: 'env-1-2',
-                suite: 'P-256',
-                revealedEphemeralPrivateKey:
-                    'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
-            }),
-            ...[1, 2, 3].map((participantIndex) =>
-                signed({
-                    sessionId: 'session-4',
-                    manifestHash: 'manifest-4',
-                    phase: 4,
-                    participantIndex,
-                    messageType: 'key-derivation-confirmation',
-                    qualHash: 'qual',
-                    publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
-                }),
+            complaintResolutionPayload(
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+                1,
+                1,
+                2,
+                'env-1-2',
+            ),
+            ...keyDerivationPayloads(
+                [1, 2, 3],
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
             ),
         ] as const;
 
         const prefixState = replayGjkrTranscript(
-            config,
+            gjkrConfig,
             transcript.slice(0, 8),
         );
         let resumedState = prefixState;
+
         for (const payload of transcript.slice(8)) {
             resumedState = processGjkrPayload(resumedState, payload).newState;
         }
 
-        const directReplay = replayGjkrTranscript(config, transcript);
+        const directReplay = replayGjkrTranscript(gjkrConfig, transcript);
 
         expect(prefixState.phase).toBe(1);
         expect(resumedState).toEqual(directReplay);
@@ -573,44 +458,27 @@ describe('DKG state machines', () => {
     });
 
     it('ignores malformed complaint resolutions when deriving QUAL in reducers', () => {
-        const config = {
-            protocol: 'gjkr',
-            sessionId: 'session-4b',
-            manifestHash: 'manifest-4b',
-            group: 'ristretto255',
-            participantCount: 3,
-            threshold: majorityThreshold(3),
-        } as const;
+        const gjkrConfig = config('complaints', 3);
         const registrations = registrationPayloads(
-            3,
-            'session-4b',
-            'manifest-4b',
-            'roster-4b',
+            gjkrConfig.participantCount,
+            gjkrConfig.sessionId,
+            gjkrConfig.manifestHash,
+            'roster-complaints',
         );
-        const acceptancePayloads = [1, 2, 3].map((participantIndex) =>
-            signed({
-                sessionId: 'session-4b',
-                manifestHash: 'manifest-4b',
-                phase: 0,
-                participantIndex,
-                messageType: 'manifest-acceptance',
-                rosterHash: 'roster-4b',
-                assignedParticipantIndex: participantIndex,
-            }),
+        const acceptances = manifestAcceptancePayloads(
+            gjkrConfig.participantCount,
+            gjkrConfig.sessionId,
+            gjkrConfig.manifestHash,
+            'roster-complaints',
         );
-        const pedersenPayloads = [1, 2, 3].map((participantIndex) =>
-            signed({
-                sessionId: 'session-4b',
-                manifestHash: 'manifest-4b',
-                phase: 1,
-                participantIndex,
-                messageType: 'pedersen-commitment',
-                commitments: [`c-${participantIndex}`],
-            }),
+        const pedersenCommitments = pedersenCommitmentPayloads(
+            gjkrConfig.participantCount,
+            gjkrConfig.sessionId,
+            gjkrConfig.manifestHash,
         );
-        const complaintPayload = signed({
-            sessionId: 'session-4b',
-            manifestHash: 'manifest-4b',
+        const complaint = signed({
+            sessionId: gjkrConfig.sessionId,
+            manifestHash: gjkrConfig.manifestHash,
             phase: 2,
             participantIndex: 2,
             messageType: 'complaint',
@@ -618,57 +486,42 @@ describe('DKG state machines', () => {
             envelopeId: 'env-1-2',
             reason: 'aes-gcm-failure',
         });
-        const confirmationPayloads = [2, 3].map((participantIndex) =>
-            signed({
-                sessionId: 'session-4b',
-                manifestHash: 'manifest-4b',
-                phase: 4,
-                participantIndex,
-                messageType: 'key-derivation-confirmation',
-                qualHash: 'qual',
-                publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
-            }),
+        const confirmations = keyDerivationPayloads(
+            [2, 3],
+            gjkrConfig.sessionId,
+            gjkrConfig.manifestHash,
         );
 
-        const foreignResolutionState = replayGjkrTranscript(config, [
+        const foreignResolutionState = replayGjkrTranscript(gjkrConfig, [
             ...registrations,
-            ...acceptancePayloads,
-            ...pedersenPayloads,
-            complaintPayload,
-            signed({
-                sessionId: 'session-4b',
-                manifestHash: 'manifest-4b',
-                phase: 2,
-                participantIndex: 3,
-                messageType: 'complaint-resolution',
-                dealerIndex: 1,
-                complainantIndex: 2,
-                envelopeId: 'env-1-2',
-                suite: 'P-256',
-                revealedEphemeralPrivateKey:
-                    'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
-            }),
-            ...confirmationPayloads,
+            ...acceptances,
+            ...pedersenCommitments,
+            complaint,
+            complaintResolutionPayload(
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+                3,
+                1,
+                2,
+                'env-1-2',
+            ),
+            ...confirmations,
         ]);
-        const mismatchedResolutionState = replayGjkrTranscript(config, [
+
+        const mismatchedResolutionState = replayGjkrTranscript(gjkrConfig, [
             ...registrations,
-            ...acceptancePayloads,
-            ...pedersenPayloads,
-            complaintPayload,
-            signed({
-                sessionId: 'session-4b',
-                manifestHash: 'manifest-4b',
-                phase: 2,
-                participantIndex: 1,
-                messageType: 'complaint-resolution',
-                dealerIndex: 1,
-                complainantIndex: 3,
-                envelopeId: 'env-1-2',
-                suite: 'P-256',
-                revealedEphemeralPrivateKey:
-                    'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
-            }),
-            ...confirmationPayloads,
+            ...acceptances,
+            ...pedersenCommitments,
+            complaint,
+            complaintResolutionPayload(
+                gjkrConfig.sessionId,
+                gjkrConfig.manifestHash,
+                1,
+                1,
+                3,
+                'env-1-2',
+            ),
+            ...confirmations,
         ]);
 
         expect(foreignResolutionState.phase).toBe('completed');
@@ -678,147 +531,65 @@ describe('DKG state machines', () => {
     });
 
     it('ignores idempotent retransmissions without regressing the reducer phase', () => {
-        const gjkrState = createGjkrState({
-            protocol: 'gjkr',
-            sessionId: 'session-5',
-            manifestHash: 'manifest-5',
-            group: 'ristretto255',
-            participantCount: 3,
-            threshold: majorityThreshold(3),
-        });
-        const gjkrRegisteredState = registrationPayloads(
+        const state = createGjkrState(config('retransmit', 3));
+        const registeredState = registrationPayloads(
             3,
-            'session-5',
-            'manifest-5',
-            'roster-5',
+            'session-retransmit',
+            'manifest-retransmit',
+            'roster-retransmit',
         ).reduce(
             (currentState, payload) =>
                 processGjkrPayload(currentState, payload).newState,
-            gjkrState,
+            state,
         );
-        const gjkrAcceptance = signed({
-            sessionId: 'session-5',
-            manifestHash: 'manifest-5',
+        const acceptance = signed({
+            sessionId: 'session-retransmit',
+            manifestHash: 'manifest-retransmit',
             phase: 0,
             participantIndex: 1,
             messageType: 'manifest-acceptance',
-            rosterHash: 'roster-5',
+            rosterHash: 'roster-retransmit',
             assignedParticipantIndex: 1,
         });
-        const gjkrStateAfterAcceptance = processGjkrPayload(
+        const stateAfterAcceptance = processGjkrPayload(
             processGjkrPayload(
-                processGjkrPayload(gjkrRegisteredState, gjkrAcceptance)
-                    .newState,
+                processGjkrPayload(registeredState, acceptance).newState,
                 signed({
-                    ...gjkrAcceptance.payload,
+                    ...acceptance.payload,
                     participantIndex: 2,
                     assignedParticipantIndex: 2,
                 }),
             ).newState,
             signed({
-                ...gjkrAcceptance.payload,
+                ...acceptance.payload,
                 participantIndex: 3,
                 assignedParticipantIndex: 3,
             }),
         ).newState;
-        const gjkrStateAfterCommitment = processGjkrPayload(
-            gjkrStateAfterAcceptance,
+        const stateAfterCommitment = processGjkrPayload(
+            stateAfterAcceptance,
             signed({
-                sessionId: 'session-5',
-                manifestHash: 'manifest-5',
+                sessionId: 'session-retransmit',
+                manifestHash: 'manifest-retransmit',
                 phase: 1,
                 participantIndex: 1,
                 messageType: 'pedersen-commitment',
-                commitments: ['c-1'],
+                commitments: ['pc-1'],
             }),
         ).newState;
-        const gjkrRetransmitted = processGjkrPayload(
-            gjkrStateAfterCommitment,
-            gjkrAcceptance,
+        const retransmitted = processGjkrPayload(
+            stateAfterCommitment,
+            acceptance,
         );
 
-        expect(gjkrStateAfterCommitment.phase).toBe(1);
-        expect(gjkrRetransmitted.errors).toEqual([]);
-        expect(gjkrRetransmitted.newState).toBe(gjkrStateAfterCommitment);
-        expect(gjkrRetransmitted.newState.phase).toBe(1);
-
-        const jointState = createJointFeldmanState({
-            protocol: 'joint-feldman',
-            sessionId: 'session-6',
-            manifestHash: 'manifest-6',
-            group: 'ristretto255',
-            participantCount: 3,
-            threshold: majorityThreshold(3),
-        });
-        const jointRegisteredState = registrationPayloads(
-            3,
-            'session-6',
-            'manifest-6',
-            'roster-6',
-        ).reduce(
-            (currentState, payload) =>
-                processJointFeldmanPayload(currentState, payload).newState,
-            jointState,
-        );
-        const jointAcceptance = signed({
-            sessionId: 'session-6',
-            manifestHash: 'manifest-6',
-            phase: 0,
-            participantIndex: 1,
-            messageType: 'manifest-acceptance',
-            rosterHash: 'roster-6',
-            assignedParticipantIndex: 1,
-        });
-        const jointStateAfterAcceptance = processJointFeldmanPayload(
-            processJointFeldmanPayload(
-                processJointFeldmanPayload(
-                    jointRegisteredState,
-                    jointAcceptance,
-                ).newState,
-                signed({
-                    ...jointAcceptance.payload,
-                    participantIndex: 2,
-                    assignedParticipantIndex: 2,
-                }),
-            ).newState,
-            signed({
-                ...jointAcceptance.payload,
-                participantIndex: 3,
-                assignedParticipantIndex: 3,
-            }),
-        ).newState;
-        const jointStateAfterCommitment = processJointFeldmanPayload(
-            jointStateAfterAcceptance,
-            signed({
-                sessionId: 'session-6',
-                manifestHash: 'manifest-6',
-                phase: 1,
-                participantIndex: 1,
-                messageType: 'feldman-commitment',
-                commitments: ['c-1'],
-                proofs: [],
-            }),
-        ).newState;
-        const jointRetransmitted = processJointFeldmanPayload(
-            jointStateAfterCommitment,
-            jointAcceptance,
-        );
-
-        expect(jointStateAfterCommitment.phase).toBe(1);
-        expect(jointRetransmitted.errors).toEqual([]);
-        expect(jointRetransmitted.newState).toBe(jointStateAfterCommitment);
-        expect(jointRetransmitted.newState.phase).toBe(1);
+        expect(stateAfterCommitment.phase).toBe(1);
+        expect(retransmitted.errors).toEqual([]);
+        expect(retransmitted.newState).toBe(stateAfterCommitment);
+        expect(retransmitted.newState.phase).toBe(1);
     });
 
     it('rejects unregistered and forged reducer payloads before they affect state', () => {
-        const state = createGjkrState({
-            protocol: 'gjkr',
-            sessionId: 'session-auth',
-            manifestHash: 'manifest-auth',
-            group: 'ristretto255',
-            participantCount: 3,
-            threshold: majorityThreshold(3),
-        });
+        const state = createGjkrState(config('auth', 3));
         const unregisteredAcceptance = processGjkrPayload(
             state,
             signed({
@@ -906,35 +677,33 @@ describe('DKG state machines', () => {
     });
 
     it('rejects equivocated payloads for the same canonical slot', () => {
-        const state = createJointFeldmanState({
-            protocol: 'joint-feldman',
-            sessionId: 'session-3',
-            manifestHash: 'manifest-3',
-            group: 'ristretto255',
-            participantCount: 3,
-            threshold: majorityThreshold(3),
-        });
-        const registeredState = processJointFeldmanPayload(
+        const state = createGjkrState(config('equivocation', 3));
+        const registeredState = processGjkrPayload(
             state,
-            registrationPayloads(3, 'session-3', 'manifest-3', 'roster-3')[0],
+            registrationPayloads(
+                3,
+                'session-equivocation',
+                'manifest-equivocation',
+                'roster-equivocation',
+            )[0],
         ).newState;
-        const accepted = processJointFeldmanPayload(
+        const acceptedState = processGjkrPayload(
             registeredState,
             signed({
-                sessionId: 'session-3',
-                manifestHash: 'manifest-3',
+                sessionId: 'session-equivocation',
+                manifestHash: 'manifest-equivocation',
                 phase: 0,
                 participantIndex: 1,
                 messageType: 'manifest-acceptance',
-                rosterHash: 'roster-3',
+                rosterHash: 'roster-equivocation',
                 assignedParticipantIndex: 1,
             }),
         ).newState;
-        const equivocation = processJointFeldmanPayload(
-            accepted,
+        const equivocation = processGjkrPayload(
+            acceptedState,
             signed({
-                sessionId: 'session-3',
-                manifestHash: 'manifest-3',
+                sessionId: 'session-equivocation',
+                manifestHash: 'manifest-equivocation',
                 phase: 0,
                 participantIndex: 1,
                 messageType: 'manifest-acceptance',

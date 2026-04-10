@@ -9,19 +9,13 @@ The current package ships one built-in tally suite:
 
 - `ristretto255`
 
-All public APIs require an explicit group identifier. There is no implicit default suite.
+The suite is implicit in the public API. There is no public suite-selection switch.
 
-## Group objects
+## Fixed suite assumptions
 
-`getGroup()` returns a frozen object with:
-
-- `name`
-- `byteLength`
-- `scalarByteLength`
-- `q`: prime-order group order
-- `g`: canonical base-point encoding
-- `h`: deterministic secondary generator encoding
-- `securityEstimate`
+- `deriveH()` returns the deterministic secondary generator encoding used by the shipped Pedersen commitments.
+- Public additive, threshold, protocol, transport, and DKG helpers all assume `ristretto255`.
+- Public point and scalar values use fixed-width lowercase hexadecimal encodings over canonical 32-byte values.
 
 ## Validation helpers
 
@@ -36,7 +30,6 @@ Useful exported helpers include:
 - Manifest and transcript digests use SHA-256
 - Transport key derivation uses HKDF-SHA-256
 - The Ristretto255 backend and point derivation use `@noble/curves` and `@noble/hashes`
-- Public point and scalar values use fixed-width lowercase hexadecimal encodings over canonical 32-byte values
 - Challenge and transcript inputs use canonical byte encodings with injective length-prefixed sequence handling
 
 ## Common failures
@@ -45,7 +38,7 @@ Useful exported helpers include:
 - `InvalidGroupElementError` also covers additive ciphertexts with invalid point-or-identity components
 - `InvalidScalarError` for invalid bounds, randomness, or out-of-range scalars
 - `PlaintextDomainError` for plaintexts outside the accepted mode-specific domain
-- `UnsupportedSuiteError` for unknown group identifiers or missing Web Crypto support
+- `UnsupportedSuiteError` for missing Web Crypto support or unsupported runtime capabilities
 - `InvalidPayloadError` for malformed hex or challenge-encoding input
 
 ## Handling validation failures
@@ -62,4 +55,4 @@ Useful exported helpers include:
 
 ## Practical rule
 
-Resolve the group once, keep it explicit everywhere, and validate any value that comes from outside your trust boundary before secret-dependent use.
+Treat the shipped suite as fixed, and validate any value that comes from outside your trust boundary before secret-dependent use.

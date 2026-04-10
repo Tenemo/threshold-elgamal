@@ -17,10 +17,10 @@ Additive mode is the safe shipped ElGamal mode. On the current beta line it runs
 
 ## Typical workflow
 
-1. Generate key material with `generateParameters(group)`.
-2. Encrypt each plaintext with `encryptAdditive(message, publicKey, group, messageBound)`.
-3. Combine ciphertexts with `addEncryptedValues(left, right, group)`.
-4. Recover the sum with `decryptAdditive(ciphertext, privateKey, group, resultBound)`.
+1. Generate key material with `generateParameters()`.
+2. Encrypt each plaintext with `encryptAdditive(message, publicKey, messageBound)`.
+3. Combine ciphertexts with `addEncryptedValues(left, right)`.
+4. Recover the sum with `decryptAdditive(ciphertext, privateKey, resultBound)`.
 
 ## Planning a tally bound
 
@@ -59,7 +59,7 @@ For the shipped protocol voting helpers, treat `0` as out of policy even though 
 - Encrypting a value larger than the encryption-time bound
 - Decrypting with a bound smaller than the tally actually needs
 - Reusing one bound constant without checking whether it describes a single message or a final tally
-- Combining ciphertexts from different groups
+- Combining ciphertexts from different ceremonies or public keys
 - Assuming the library tracks or stores the bound for you
 
 See [Groups and validation](./groups-and-validation/) for the validation helpers that back these rules.

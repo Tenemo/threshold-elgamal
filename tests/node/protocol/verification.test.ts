@@ -23,9 +23,7 @@ import {
     generateTransportKeyPair,
     signPayloadBytes,
 } from '#transport';
-
-const protocolVerificationTimeoutMs = 60_000;
-
+const protocolVerificationTimeoutMs = 60000;
 const signProtocolPayload = async <
     TPayload extends RegistrationPayload | ManifestAcceptancePayload,
 >(
@@ -38,7 +36,6 @@ const signProtocolPayload = async <
         canonicalUnsignedPayloadBytes(payload),
     ),
 });
-
 const buildBallot = async (
     voterIndex: number,
     optionIndex: number,
@@ -46,13 +43,12 @@ const buildBallot = async (
     randomness: bigint,
 ): Promise<BallotTranscriptEntry> => {
     const group = getGroup('ristretto255');
-    const { publicKey } = generateParametersWithPrivateKey(123n, group.name);
+    const { publicKey } = generateParametersWithPrivateKey(123n);
     const ciphertext = encryptAdditiveWithRandomness(
         vote,
         publicKey,
         randomness,
         20n,
-        group.name,
     );
     const context: ProofContext = {
         protocolVersion: 'v1',
@@ -63,7 +59,6 @@ const buildBallot = async (
         voterIndex,
         optionIndex,
     };
-
     return {
         voterIndex,
         optionIndex,
@@ -79,7 +74,6 @@ const buildBallot = async (
         ),
     };
 };
-
 describe('protocol verification helpers', () => {
     it('verifies signed protocol payloads against the frozen roster', async () => {
         const authOne = await generateAuthKeyPair();
@@ -103,7 +97,6 @@ describe('protocol verification helpers', () => {
             },
         ] as const;
         const rosterHash = await hashRosterEntries(rosterEntries);
-
         const transcript = [
             await signProtocolPayload(authTwo.privateKey, {
                 sessionId: 'session-1',
@@ -144,9 +137,7 @@ describe('protocol verification helpers', () => {
                 assignedParticipantIndex: 1,
             }),
         ] as const;
-
         const verified = await verifySignedProtocolPayloads(transcript, 2);
-
         expect(verified.rosterHash).toBe(rosterHash);
         expect(
             verified.rosterEntries.map((entry) => entry.participantIndex),
@@ -157,7 +148,6 @@ describe('protocol verification helpers', () => {
             ),
         ).toEqual([2, 1]);
     });
-
     it('rejects tampered payload signatures and roster mismatches', async () => {
         const auth = await generateAuthKeyPair();
         const transport = await generateTransportKeyPair({ suite: 'P-256' });
@@ -191,7 +181,6 @@ describe('protocol verification helpers', () => {
             rosterHash,
             assignedParticipantIndex: 1,
         });
-
         await expect(
             verifySignedProtocolPayloads(
                 [
@@ -209,7 +198,6 @@ describe('protocol verification helpers', () => {
         ).rejects.toThrow(
             'Payload signature failed verification for participant 1 (manifest-acceptance)',
         );
-
         await expect(
             verifySignedProtocolPayloads(
                 [
@@ -227,29 +215,22 @@ describe('protocol verification helpers', () => {
             'Registration signature failed verification for participant 1',
         );
     });
-
     it(
         'recomputes ballot aggregates deterministically and exposes dropped ballots',
         {
             timeout: protocolVerificationTimeoutMs,
         },
         async () => {
-            const group = getGroup('ristretto255');
-            const { publicKey } = generateParametersWithPrivateKey(
-                123n,
-                group.name,
-            );
+            const { publicKey } = generateParametersWithPrivateKey(123n);
             const ballots = [
                 await buildBallot(3, 1, 3n, 11n),
                 await buildBallot(1, 1, 1n, 7n),
                 await buildBallot(2, 1, 2n, 9n),
             ] as const;
-
             const verified = await verifyAndAggregateBallots({
                 ballots,
                 publicKey,
                 validValues: [1n, 2n, 3n],
-                group,
                 protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
@@ -259,7 +240,6 @@ describe('protocol verification helpers', () => {
                 ballots: [...ballots].reverse(),
                 publicKey,
                 validValues: [1n, 2n, 3n],
-                group,
                 protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
@@ -269,13 +249,11 @@ describe('protocol verification helpers', () => {
                 ballots: ballots.slice(0, 2),
                 publicKey,
                 validValues: [1n, 2n, 3n],
-                group,
                 protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
                 minimumBallotCount: 2,
             });
-
             expect(verified.ballots.map((ballot) => ballot.voterIndex)).toEqual(
                 [1, 2, 3],
             );
@@ -287,35 +265,26 @@ describe('protocol verification helpers', () => {
             );
         },
     );
-
     it('rejects duplicate ballot slots, wrong voter bindings, and publication-threshold underflows', async () => {
-        const group = getGroup('ristretto255');
-        const { publicKey } = generateParametersWithPrivateKey(
-            123n,
-            group.name,
-        );
+        const { publicKey } = generateParametersWithPrivateKey(123n);
         const honestBallot = await buildBallot(1, 1, 2n, 5n);
         const secondBallot = await buildBallot(2, 1, 1n, 6n);
-
         await expect(
             verifyAndAggregateBallots({
                 ballots: [honestBallot, { ...secondBallot, voterIndex: 1 }],
                 publicKey,
                 validValues: [1n, 2n, 3n],
-                group,
                 protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
                 minimumBallotCount: 1,
             }),
         ).rejects.toThrow('Duplicate ballot slot 1:1 is not allowed');
-
         await expect(
             verifyAndAggregateBallots({
                 ballots: [{ ...honestBallot, voterIndex: 3 }],
                 publicKey,
                 validValues: [1n, 2n, 3n],
-                group,
                 protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
@@ -324,13 +293,11 @@ describe('protocol verification helpers', () => {
         ).rejects.toThrow(
             'Ballot proof failed verification for voter 3 option 1',
         );
-
         await expect(
             verifyAndAggregateBallots({
                 ballots: [honestBallot, secondBallot],
                 publicKey,
                 validValues: [1n, 2n, 3n],
-                group,
                 protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',

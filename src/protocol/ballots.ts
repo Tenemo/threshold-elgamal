@@ -1,10 +1,10 @@
 import {
     InvalidPayloadError,
+    RISTRETTO_GROUP,
     assertInSubgroup,
     sha256,
     utf8ToBytes,
     type EncodedPoint,
-    type CryptoGroup,
 } from '../core/index.js';
 import { encodePoint, RISTRETTO_ZERO } from '../core/ristretto.js';
 import { addEncryptedValues } from '../elgamal/ciphertext.js';
@@ -67,7 +67,6 @@ export type VerifyAndAggregateBallotsInput = {
     readonly ballots: readonly BallotTranscriptEntry[];
     readonly publicKey: EncodedPoint;
     readonly validValues: readonly bigint[];
-    readonly group: CryptoGroup;
     readonly protocolVersion: string;
     readonly manifestHash: string;
     readonly sessionId: string;
@@ -83,7 +82,6 @@ export type VerifyAndAggregateBallotsByOptionInput =
 
 const canonicalBallotJson = (
     ballots: readonly BallotTranscriptEntry[],
-    group: CryptoGroup,
 ): string =>
     canonicalizeJson(
         [...ballots].sort(compareBallotEntries).map((ballot) => ({
@@ -93,7 +91,7 @@ const canonicalBallotJson = (
             proof: ballot.proof,
         })),
         {
-            bigintByteLength: group.byteLength,
+            bigintByteLength: RISTRETTO_GROUP.byteLength,
         },
     );
 
@@ -102,7 +100,7 @@ const buildProofContext = (
     input: VerifyAndAggregateBallotsInput,
 ): ProofContext => ({
     protocolVersion: input.protocolVersion,
-    suiteId: input.group.name,
+    suiteId: RISTRETTO_GROUP.name,
     manifestHash: input.manifestHash,
     sessionId: input.sessionId,
     label: input.label ?? 'ballot-range-proof',
@@ -173,14 +171,12 @@ const groupBallotsByVoter = (
  * Hashes the accepted ballot transcript deterministically.
  *
  * @param ballots Verified ballot records.
- * @param group Selected group definition.
  * @returns Lowercase hexadecimal transcript hash.
  */
 export const hashAcceptedBallots = async (
     ballots: readonly BallotTranscriptEntry[],
-    group: CryptoGroup,
 ): Promise<string> =>
-    bytesToHex(await sha256(utf8ToBytes(canonicalBallotJson(ballots, group))));
+    bytesToHex(await sha256(utf8ToBytes(canonicalBallotJson(ballots))));
 
 /**
  * Verifies disjunctive ballot proofs, rejects duplicate ballot slots, and
@@ -224,7 +220,7 @@ export const verifyAndAggregateBallots = async (
             ballot.ciphertext,
             input.publicKey,
             input.validValues,
-            input.group,
+            RISTRETTO_GROUP,
             proofContext,
         );
         if (!valid) {
@@ -241,17 +237,13 @@ export const verifyAndAggregateBallots = async (
     }
 
     const ciphertext = sortedBallots.reduce(
-        (aggregate, ballot) =>
-            addEncryptedValues(aggregate, ballot.ciphertext, input.group.name),
+        (aggregate, ballot) => addEncryptedValues(aggregate, ballot.ciphertext),
         {
             c1: encodePoint(RISTRETTO_ZERO),
             c2: encodePoint(RISTRETTO_ZERO),
         } satisfies ElgamalCiphertext,
     );
-    const transcriptHash = await hashAcceptedBallots(
-        sortedBallots,
-        input.group,
-    );
+    const transcriptHash = await hashAcceptedBallots(sortedBallots);
     const aggregate = createVerifiedAggregateCiphertext(
         transcriptHash,
         ciphertext,

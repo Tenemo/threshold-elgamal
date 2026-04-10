@@ -2,7 +2,6 @@ import { bytesToHex } from '../core/bytes.js';
 import {
     InvalidPayloadError,
     assertMajorityThreshold,
-    getGroup,
     sha256,
     utf8ToBytes,
 } from '../core/index.js';
@@ -47,7 +46,6 @@ export const validateElectionManifest = (
 
     assertNonEmptyString(manifest.protocolVersion, 'Protocol version');
     assertNonEmptyString(manifest.rosterHash, 'Roster hash');
-    getGroup(manifest.suiteId);
     assertMajorityThreshold(
         manifest.reconstructionThreshold,
         manifest.participantCount,

@@ -4,6 +4,7 @@ import { createDeterministicSource } from '../../../dev-support/deterministic.js
 
 import {
     fixedBaseModPow,
+    getGroup,
     multiExponentiate,
     resetBigintMathBackend,
     setBigintMathBackend,
@@ -25,7 +26,6 @@ import {
     type DLEQStatement,
     type ProofContext,
 } from '#proofs';
-import { getGroup } from '#root';
 import { encodePoint, multiplyBase } from '#src/core/ristretto';
 import {
     combineDecryptionShares,
@@ -34,7 +34,6 @@ import {
     deriveSharesFromPolynomial,
 } from '#threshold';
 import { generatePedersenCommitments } from '#vss';
-
 const backendModPow = (
     base: bigint,
     exponent: bigint,
@@ -43,11 +42,9 @@ const backendModPow = (
     if (modulus === 1n) {
         return 0n;
     }
-
     let result = 1n;
     let currentBase = ((base % modulus) + modulus) % modulus;
     let currentExponent = exponent;
-
     while (currentExponent > 0n) {
         if ((currentExponent & 1n) === 1n) {
             result = (result * currentBase) % modulus;
@@ -55,14 +52,11 @@ const backendModPow = (
         currentExponent >>= 1n;
         currentBase = (currentBase * currentBase) % modulus;
     }
-
     return result;
 };
-
 const customBackend: BigintMathBackend = {
     modPow: backendModPow,
 };
-
 const baseContext = (label: string): ProofContext => ({
     protocolVersion: 'v1',
     suiteId: 'ristretto255',
@@ -70,7 +64,6 @@ const baseContext = (label: string): ProofContext => ({
     sessionId: 'session-id',
     label,
 });
-
 const computeArtifacts = async (): Promise<{
     readonly aggregate: {
         readonly c1: string;
@@ -105,35 +98,25 @@ const computeArtifacts = async (): Promise<{
     const secret = 19n;
     const sharePolynomial = [secret, 7n] as const;
     const shares = deriveSharesFromPolynomial(sharePolynomial, 3, group.q);
-    const publicKey = generateParametersWithPrivateKey(
-        secret,
-        group.name,
-    ).publicKey;
+    const publicKey = generateParametersWithPrivateKey(secret).publicKey;
     const pedersenCommitments = generatePedersenCommitments(
         sharePolynomial,
         [23n, 5n],
         group,
     );
-
     const ciphertextLeft = encryptAdditiveWithRandomness(
         4n,
         publicKey,
         9n,
         10n,
-        group.name,
     );
     const ciphertextRight = encryptAdditiveWithRandomness(
         2n,
         publicKey,
         11n,
         10n,
-        group.name,
     );
-    const aggregate = addEncryptedValues(
-        ciphertextLeft,
-        ciphertextRight,
-        group.name,
-    );
+    const aggregate = addEncryptedValues(ciphertextLeft, ciphertextRight);
     const verifiedAggregate = createVerifiedAggregateCiphertext(
         'aa'.repeat(32),
         aggregate,
@@ -142,15 +125,9 @@ const computeArtifacts = async (): Promise<{
     const decryptionShares = shares
         .slice(0, 2)
         .map((share) =>
-            createVerifiedDecryptionShare(verifiedAggregate, share, group),
+            createVerifiedDecryptionShare(verifiedAggregate, share),
         );
-    const tally = combineDecryptionShares(
-        aggregate,
-        decryptionShares,
-        group,
-        20n,
-    );
-
+    const tally = combineDecryptionShares(aggregate, decryptionShares, 20n);
     const schnorrContext: ProofContext = {
         ...baseContext('schnorr-proof'),
         participantIndex: 1,
@@ -162,7 +139,6 @@ const computeArtifacts = async (): Promise<{
         schnorrContext,
         createDeterministicSource(7),
     );
-
     const ballotContext: ProofContext = {
         ...baseContext('ballot-range-proof'),
         voterIndex: 1,
@@ -178,7 +154,6 @@ const computeArtifacts = async (): Promise<{
         ballotContext,
         createDeterministicSource(11),
     );
-
     const trusteeShare = shares[0];
     const dleqStatement: DLEQStatement = {
         publicKey: encodePoint(multiplyBase(trusteeShare.value)),
@@ -196,14 +171,12 @@ const computeArtifacts = async (): Promise<{
         dleqContext,
         createDeterministicSource(13),
     );
-
     const modulus = 97n;
     const multiExponentiationTerms: readonly MultiExponentiationTerm[] = [
         { base: 5n, exponent: 9n },
         { base: 7n, exponent: 4n },
         { base: 11n, exponent: 3n },
     ];
-
     return {
         ciphertextLeft,
         ciphertextRight,
@@ -241,18 +214,14 @@ const computeArtifacts = async (): Promise<{
         decryptionShares,
     };
 };
-
 describe('bigint backend injection', () => {
     afterEach(() => {
         resetBigintMathBackend();
     });
-
     it('preserves deterministic bigint helpers and Ristretto protocol artifacts', async () => {
         const baseline = await computeArtifacts();
-
         setBigintMathBackend(customBackend);
         const injected = await computeArtifacts();
-
         expect(injected).toEqual(baseline);
         expect(injected.schnorrValid).toBe(true);
         expect(injected.disjunctiveValid).toBe(true);

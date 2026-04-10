@@ -17,8 +17,8 @@ Its intended security boundary is still an honest-origin, honest-client, static-
 - Proof helpers bind protocol version, suite, manifest hash, session id, and any participant- or ballot-specific context you supply.
 - Transport envelopes authenticate context through HKDF info and AES-GCM additional data.
 - Checkpointed DKG transcripts close each setup phase on a threshold-supported snapshot hash, so clients can compare the same board view before progressing.
-- The protocol subpath can recompute ballot aggregates locally and verify one published tally per option from signed ballot, decryption-share, and tally payloads.
-- The protocol subpath can audit bulletin-board consistency, distinguish idempotent retransmission from equivocation, and expose stable ceremony digests and fingerprints.
+- The root package can recompute ballot aggregates locally and verify one published tally per option from signed ballot, decryption-share, and tally payloads.
+- The root package can audit bulletin-board consistency, distinguish idempotent retransmission from equivocation, and expose stable ceremony digests and fingerprints.
 
 ## What the library does not guarantee by itself
 

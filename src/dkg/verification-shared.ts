@@ -162,7 +162,6 @@ export const validateTranscriptShape = (
 ): void => {
     for (const signedPayload of input.transcript) {
         const expected = expectedDkgPhase(
-            input.protocol,
             signedPayload.payload.messageType,
             isPhaseCheckpointPayload(signedPayload)
                 ? signedPayload.payload
@@ -170,7 +169,7 @@ export const validateTranscriptShape = (
         );
         if (expected === null || signedPayload.payload.phase !== expected) {
             throw new InvalidPayloadError(
-                `Payload phase does not match the ${input.protocol} phase plan`,
+                'Payload phase does not match the GJKR phase plan',
             );
         }
         if (signedPayload.payload.sessionId !== input.sessionId) {

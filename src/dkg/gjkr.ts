@@ -13,7 +13,7 @@ import type { DKGConfigInput, DKGState, DKGTransition } from './types.js';
  * @returns Initial GJKR state.
  */
 export const createGjkrState = (config: DKGConfigInput): DKGState =>
-    createMajorityDkgState(config, 'gjkr');
+    createMajorityDkgState(config);
 
 /**
  * Processes one signed payload through the GJKR log reducer.

@@ -1,8 +1,7 @@
-import { randomScalarInRange } from '../core/index.js';
+import { randomScalarInRange, RISTRETTO_GROUP } from '../core/index.js';
 import { encodePoint, multiplyBase } from '../core/ristretto.js';
 
-import { resolveElgamalGroup } from './helpers.js';
-import type { ElgamalGroupInput, ElgamalParameters } from './types.js';
+import type { ElgamalKeyPair } from './types.js';
 import { assertValidPrivateKey } from './validation.js';
 
 /**
@@ -10,14 +9,11 @@ import { assertValidPrivateKey } from './validation.js';
  */
 export const generateParametersWithPrivateKey = (
     privateKey: bigint,
-    group: ElgamalGroupInput,
-): ElgamalParameters => {
-    const resolvedGroup = resolveElgamalGroup(group);
-    assertValidPrivateKey(privateKey, resolvedGroup);
+): ElgamalKeyPair => {
+    assertValidPrivateKey(privateKey);
     const publicKey = encodePoint(multiplyBase(privateKey));
 
     return {
-        group: resolvedGroup,
         publicKey,
         privateKey,
     };
@@ -26,10 +22,7 @@ export const generateParametersWithPrivateKey = (
 /**
  * Generates a fresh ElGamal key pair for the built-in suite.
  */
-export const generateParameters = (
-    group: ElgamalGroupInput,
-): ElgamalParameters => {
-    const resolvedGroup = resolveElgamalGroup(group);
-    const privateKey = randomScalarInRange(1n, resolvedGroup.q);
-    return generateParametersWithPrivateKey(privateKey, resolvedGroup.name);
-};
+export const generateParameters = (): ElgamalKeyPair =>
+    generateParametersWithPrivateKey(
+        randomScalarInRange(1n, RISTRETTO_GROUP.q),
+    );

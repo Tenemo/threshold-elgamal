@@ -2,7 +2,7 @@ import { UnsupportedSuiteError } from './errors.js';
 import { derivePedersenGenerator, RISTRETTO_BYTE_LENGTH } from './ristretto.js';
 import type { CryptoGroup, GroupIdentifier } from './types.js';
 
-const GROUP: CryptoGroup = Object.freeze({
+export const RISTRETTO_GROUP: CryptoGroup = Object.freeze({
     name: 'ristretto255',
     byteLength: RISTRETTO_BYTE_LENGTH,
     scalarByteLength: RISTRETTO_BYTE_LENGTH,
@@ -14,27 +14,21 @@ const GROUP: CryptoGroup = Object.freeze({
     securityEstimate: 128,
 });
 
-const GROUPS = Object.freeze([GROUP]);
+const GROUPS = Object.freeze([RISTRETTO_GROUP]);
 
-/**
- * Returns the immutable built-in Ristretto255 group definition.
- *
- * @param identifier Canonical shipped group name.
- * @returns The immutable built-in group definition.
- */
+/** @internal Returns the immutable built-in Ristretto255 group definition. */
 export const getGroup = (identifier: GroupIdentifier): CryptoGroup => {
-    if (identifier !== GROUP.name) {
+    if (identifier !== RISTRETTO_GROUP.name) {
         throw new UnsupportedSuiteError(
             `Unsupported group: ${String(identifier)}`,
         );
     }
 
-    return GROUP;
+    return RISTRETTO_GROUP;
 };
 
-/** Lists the immutable built-in group definitions. */
+/** @internal Lists the immutable built-in group definitions. */
 export const listGroups = (): readonly CryptoGroup[] => GROUPS;
 
 /** Returns the canonical deterministic secondary generator encoding. */
-export const deriveH = (identifier: GroupIdentifier): string =>
-    getGroup(identifier).h;
+export const deriveH = (): string => RISTRETTO_GROUP.h;

@@ -18,15 +18,11 @@ import {
     type BallotTranscriptEntry,
     type ElectionManifest,
 } from '#protocol';
-
 const toBigInt = (value: string): bigint => BigInt(value);
-
 const protocolVectorGroup = protocolVectors.group as 'ristretto255';
-
 describe('protocol reproducibility vectors', () => {
     it('round-trips the frozen manifest and injective session derivation vectors', async () => {
         const manifest = protocolVectors.manifest as ElectionManifest;
-
         expect(canonicalizeElectionManifest(manifest)).toBe(
             protocolVectors.canonicalManifest,
         );
@@ -53,10 +49,8 @@ describe('protocol reproducibility vectors', () => {
             protocolVectors.sessionIds.right,
         );
     });
-
     it('verifies the frozen Schnorr, DLEQ, and disjunctive proof vectors', async () => {
         const group = getGroup(protocolVectorGroup);
-
         await expect(
             verifySchnorrProof(
                 {
@@ -70,7 +64,6 @@ describe('protocol reproducibility vectors', () => {
                 protocolVectors.schnorr.context as ProofContext,
             ),
         ).resolves.toBe(true);
-
         await expect(
             verifyDLEQProof(
                 {
@@ -93,7 +86,6 @@ describe('protocol reproducibility vectors', () => {
                 protocolVectors.dleq.context as ProofContext,
             ),
         ).resolves.toBe(true);
-
         await expect(
             verifyDisjunctiveProof(
                 {
@@ -117,9 +109,7 @@ describe('protocol reproducibility vectors', () => {
             ),
         ).resolves.toBe(true);
     });
-
     it('recomputes the frozen ballot aggregation vector', async () => {
-        const group = getGroup(protocolVectorGroup);
         const ballots = protocolVectors.ballotAggregation.ballots.map(
             (ballot): BallotTranscriptEntry => ({
                 voterIndex: ballot.voterIndex,
@@ -136,19 +126,16 @@ describe('protocol reproducibility vectors', () => {
                 },
             }),
         );
-
         const aggregation = await verifyAndAggregateBallots({
             ballots,
             publicKey: protocolVectors.disjunctive.publicKey as EncodedPoint,
             validValues: protocolVectors.disjunctive.validValues.map(toBigInt),
-            group,
             protocolVersion: protocolVectors.manifest.protocolVersion,
             manifestHash: 'manifest-hash',
             sessionId: 'session-1',
             minimumBallotCount:
                 protocolVectors.ballotAggregation.aggregate.ballotCount - 1,
         });
-
         expect(aggregation.transcriptHash).toBe(
             protocolVectors.ballotAggregation.transcriptHash,
         );

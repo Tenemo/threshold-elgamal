@@ -9,15 +9,11 @@ or the protocol spec.
 
 ## Public module map
 
-- `threshold-elgamal`: safe root package for groups, additive ElGamal, validation helpers, and encoding helpers
-- `core`: Ristretto255 group definitions, bigint helpers, randomness, validation, and exported error classes
-- `threshold`, `vss`, `proofs`, `protocol`, `transport`, and `dkg`: supporting cryptographic and protocol helpers
-- `elgamal`: additive ElGamal helpers, bounded discrete-log recovery helpers, and key generation
-- `serialize` and `runtime`: encoding and runtime support helpers
+- `threshold-elgamal`: the only supported public import surface for additive ElGamal, threshold helpers, protocol verification, transport, runtime helpers, serialization, and GJKR DKG
 
 ## How to read this reference
 
 - Start with the curated API reference page that sits one level above this
-  generated section unless you already know which subpath you need.
+  generated section.
 - Use the generated module pages when you need exact types, signatures, and
   symbol-level details.

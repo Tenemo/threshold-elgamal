@@ -12,7 +12,6 @@ import { resolveDealerChallengeFromPublicKey } from '../transport/complaints.js'
 import { verifyPedersenShare } from '../vss/pedersen.js';
 
 import { decodePedersenShareEnvelope } from './pedersen-share-codec.js';
-import type { DKGProtocol } from './types.js';
 import {
     complaintResolutionKey,
     encryptedShareSlotKey,
@@ -113,7 +112,6 @@ export const assertEncryptedShareCoverage = (
 
 export const parsePedersenCommitmentMap = (
     transcript: readonly SignedPayload[],
-    protocol: DKGProtocol,
     threshold: number,
     group: CryptoGroup,
 ): ReadonlyMap<number, readonly EncodedPoint[]> => {
@@ -121,12 +119,6 @@ export const parsePedersenCommitmentMap = (
         (payload): payload is SignedPayload<PedersenCommitmentPayload> =>
             payload.payload.messageType === 'pedersen-commitment',
     );
-    if (protocol !== 'gjkr' && pedersenCommitments.length > 0) {
-        throw new InvalidPayloadError(
-            'Joint-Feldman transcripts must not include Pedersen commitments',
-        );
-    }
-
     const pedersenCommitmentMap = new Map<number, readonly EncodedPoint[]>();
     for (const payload of pedersenCommitments) {
         if (pedersenCommitmentMap.has(payload.payload.participantIndex)) {
@@ -262,15 +254,6 @@ export const verifyComplaintOutcomes = async (
 
         usedResolutionKeys.add(resolutionKey);
 
-        if (
-            input.protocol !== 'gjkr' &&
-            complaint.reason === 'pedersen-failure'
-        ) {
-            throw new InvalidPayloadError(
-                'Joint-Feldman transcripts cannot resolve Pedersen-failure complaints',
-            );
-        }
-
         if (resolutionPayload.suite !== matchingEnvelope.payload.suite) {
             acceptedComplaints.push(complaint);
             continue;
@@ -284,11 +267,10 @@ export const verifyComplaintOutcomes = async (
                 `Missing roster entry for complainant ${complaint.participantIndex}`,
             );
         }
-        const dealerCommitments =
-            input.protocol === 'gjkr'
-                ? pedersenCommitmentMap.get(complaint.dealerIndex)
-                : undefined;
-        if (input.protocol === 'gjkr' && dealerCommitments === undefined) {
+        const dealerCommitments = pedersenCommitmentMap.get(
+            complaint.dealerIndex,
+        );
+        if (dealerCommitments === undefined) {
             throw new InvalidPayloadError(
                 `Missing Pedersen commitments for dealer ${complaint.dealerIndex}`,
             );
@@ -319,19 +301,17 @@ export const verifyComplaintOutcomes = async (
                 complaint.participantIndex,
                 'Complaint resolution',
             );
-            if (input.protocol === 'gjkr') {
-                if (
-                    !verifyPedersenShare(
-                        decryptedShare,
-                        {
-                            commitments: dealerCommitments!,
-                        },
-                        group,
-                    )
-                ) {
-                    acceptedComplaints.push(complaint);
-                    continue;
-                }
+            if (
+                !verifyPedersenShare(
+                    decryptedShare,
+                    {
+                        commitments: dealerCommitments,
+                    },
+                    group,
+                )
+            ) {
+                acceptedComplaints.push(complaint);
+                continue;
             }
         } catch (error) {
             if (error instanceof InvalidPayloadError) {

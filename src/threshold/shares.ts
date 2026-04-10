@@ -1,13 +1,12 @@
 import {
     InvalidScalarError,
+    RISTRETTO_GROUP,
     assertScalarInZq,
     assertThreshold,
     assertValidParticipantIndex,
     randomScalarInRange,
 } from '../core/index.js';
 import { encodePoint, multiplyBase } from '../core/ristretto.js';
-import { resolveElgamalGroup } from '../elgamal/helpers.js';
-import type { ElgamalGroupInput } from '../elgamal/types.js';
 
 import {
     evaluatePolynomial,
@@ -47,14 +46,11 @@ const createSharesFromPolynomial = (
 export const dealerKeyGen = (
     threshold: number,
     participantCount: number,
-    group: ElgamalGroupInput,
 ): ThresholdKeySet => {
-    const resolvedGroup = resolveElgamalGroup(group);
-
     assertThreshold(threshold, participantCount);
 
-    const secret = randomScalarInRange(1n, resolvedGroup.q);
-    const polynomial = generatePolynomial(secret, threshold, resolvedGroup.q);
+    const secret = randomScalarInRange(1n, RISTRETTO_GROUP.q);
+    const polynomial = generatePolynomial(secret, threshold, RISTRETTO_GROUP.q);
 
     return {
         threshold,
@@ -63,9 +59,8 @@ export const dealerKeyGen = (
         shares: createSharesFromPolynomial(
             polynomial,
             participantCount,
-            resolvedGroup.q,
+            RISTRETTO_GROUP.q,
         ),
-        group: resolvedGroup,
     };
 };
 

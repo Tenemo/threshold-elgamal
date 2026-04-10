@@ -16,7 +16,7 @@
 
 ---
 
-`threshold-elgamal` is a browser-native TypeScript library for verifiable score-voting research prototypes. The shipped `1.0.0-beta` line centers on additive ElGamal over `ristretto255`, threshold decryption, verifiable secret sharing, proof systems, typed protocol payloads, authenticated share transport, and log-driven DKG reducers.
+`threshold-elgamal` is a browser-native TypeScript library for verifiable score-voting research prototypes. The shipped `1.0.0-beta` line centers on additive ElGamal over `ristretto255`, threshold decryption, typed protocol payloads, authenticated share transport, and log-driven GJKR DKG.
 
 The library is intentionally library-only. It stays pure, deterministic, synchronous, and Worker-safe. WebSockets, retries, persistence, bulletin-board storage, and application orchestration remain outside the package.
 
@@ -42,25 +42,11 @@ Start with these guides:
 
 ## What the library includes
 
-### Encryption and validation
-
-- [Ristretto255 groups, encodings, and validation rules](https://tenemo.github.io/threshold-elgamal/guides/groups-and-validation/) define the shipped group model and the input rules the library enforces.
-- [Additive ElGamal, ciphertext combination, and bounded discrete-log recovery](https://tenemo.github.io/threshold-elgamal/guides/additive-elgamal/) cover the safe encryption path used by the root package.
-- [The safe root package API](https://tenemo.github.io/threshold-elgamal/api/root-package/) exposes the additive-only surface for encryption, decryption, encoding, and validation.
-
-### Threshold and protocol building blocks
-
-- [Threshold sharing and decryption helpers](https://tenemo.github.io/threshold-elgamal/api/reference/threshold/) provide dealer-based Shamir sharing, verified decryption shares, and aggregate decryption support.
-- [Feldman and Pedersen VSS helpers](https://tenemo.github.io/threshold-elgamal/api/reference/vss/) cover verifiable secret sharing commitments and share checks.
-- [Typed protocol payloads, manifest handling, board auditing, and full ceremony verification](https://tenemo.github.io/threshold-elgamal/api/reference/protocol/) cover the signed ceremony and tally surface.
-- [Log-driven Joint-Feldman and GJKR reducers](https://tenemo.github.io/threshold-elgamal/api/reference/dkg/) provide the distributed key-generation state machines behind the threshold workflow, including checkpointed phase closure and verifier-side `QUAL` reduction when setup participants drop out.
-
-### Proofs, transport, and runtime
-
-- [Schnorr, DLEQ, and disjunctive proofs](https://tenemo.github.io/threshold-elgamal/api/reference/proofs/) support ballot and decryption verification.
-- [Authenticated transport envelopes and complaint-resolution helpers](https://tenemo.github.io/threshold-elgamal/api/reference/transport/) cover the share-delivery layer used by the DKG flow.
+- [Ristretto255 assumptions, encodings, and validation rules](https://tenemo.github.io/threshold-elgamal/guides/groups-and-validation/) explain the fixed shipped suite and the input rules the library enforces.
+- [Additive ElGamal, ciphertext combination, and bounded discrete-log recovery](https://tenemo.github.io/threshold-elgamal/guides/additive-elgamal/) cover the safe encryption path.
+- [The root package API](https://tenemo.github.io/threshold-elgamal/api/root-package/) describes the supported public import surface.
+- [The generated API reference](https://tenemo.github.io/threshold-elgamal/api/reference/threshold-elgamal/) contains the exact root-level types and signatures for additive, threshold, protocol, transport, runtime, serialization, and GJKR helpers.
 - [Runtime and browser compatibility guidance](https://tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility/) documents the supported environments and feature expectations.
-- [The subpath overview](https://tenemo.github.io/threshold-elgamal/api/subpath-overview/) shows how the public API is split between the safe root package and narrower advanced modules.
 
 ## Installation
 
@@ -77,7 +63,7 @@ pnpm add threshold-elgamal
 ## Performance model
 
 - Keep worker orchestration in the application. `threshold-elgamal` stays pure and importable inside a Web Worker, while the app decides pool size, chunking, and lifecycle.
-- The library exposes a pluggable bigint backend through `setBigintMathBackend()` in `threshold-elgamal/core`. JavaScript remains the default backend. Optional WASM acceleration should be installed explicitly by the caller.
+- The library exposes a pluggable bigint backend through `setBigintMathBackend()` on the root package. JavaScript remains the default backend. Optional WASM acceleration should be installed explicitly by the caller.
 - `minimumPublishedVoterCount` is a publication privacy floor for tally release. It is not the DKG reconstruction threshold.
 - The current recommended default DKG regression size is `10` all-equal participants. Larger symmetric ceremonies remain experimental.
 
@@ -87,26 +73,24 @@ pnpm add threshold-elgamal
 import {
     addEncryptedValues,
     decryptAdditive,
+    deriveH,
     encryptAdditive,
     generateParameters,
-    getGroup,
 } from "threshold-elgamal";
 
-const group = "ristretto255" as const;
-const { publicKey, privateKey } = generateParameters(group);
-const suite = getGroup(group);
+const { publicKey, privateKey } = generateParameters();
 const messageBound = 10n;
 const tallyBound = 20n;
 
-const left = encryptAdditive(6n, publicKey, group, messageBound);
-const right = encryptAdditive(7n, publicKey, group, messageBound);
-const sum = addEncryptedValues(left, right, group);
+const left = encryptAdditive(6n, publicKey, messageBound);
+const right = encryptAdditive(7n, publicKey, messageBound);
+const sum = addEncryptedValues(left, right);
 
-console.log(decryptAdditive(sum, privateKey, group, tallyBound)); // 13n
-console.log(suite.byteLength); // 32
+console.log(decryptAdditive(sum, privateKey, tallyBound)); // 13n
+console.log(deriveH().length); // 64 hex chars
 ```
 
-All public APIs require explicit group selection. The shipped canonical suite is `ristretto255`.
+The shipped canonical suite is implicit and fixed to `ristretto255`.
 
 ## Choosing additive bounds
 
@@ -127,7 +111,7 @@ For the shipped voting path, each score is in `1..10`. If you tally `50` ballots
 - Accepted voters must submit exactly one ballot per option slot.
 - `protocolVersion` is application-supplied manifest data and is transcript-bound by the verifier and proof contexts.
 
-For end-to-end verification, the protocol subpath exposes `verifyElectionCeremonyDetailed(...)`. It verifies the manifest, registrations, acceptances, DKG transcript, local joint-key derivation, ballot proofs, locally recomputed per-option aggregates, decryption shares, tally publications, and board-consistency digests in one pass.
+For end-to-end verification, the root package exposes `verifyElectionCeremonyDetailed(...)`. It verifies the manifest, registrations, acceptances, DKG transcript, local joint-key derivation, ballot proofs, locally recomputed per-option aggregates, decryption shares, tally publications, and board-consistency digests in one pass.
 
 ## Documentation
 

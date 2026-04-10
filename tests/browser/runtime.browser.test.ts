@@ -25,20 +25,18 @@ import {
     resolveTransportSuite,
     signPayloadBytes,
 } from '#transport';
-
 const buildBrowserBallot = async (
     voterIndex: number,
     vote: bigint,
     randomness: bigint,
 ): Promise<BallotTranscriptEntry> => {
     const group = getGroup('ristretto255');
-    const { publicKey } = generateParametersWithPrivateKey(123n, group.name);
+    const { publicKey } = generateParametersWithPrivateKey(123n);
     const ciphertext = encryptAdditiveWithRandomness(
         vote,
         publicKey,
         randomness,
         20n,
-        group.name,
     );
     const context: ProofContext = {
         protocolVersion: 'v1',
@@ -49,7 +47,6 @@ const buildBrowserBallot = async (
         voterIndex,
         optionIndex: 1,
     };
-
     return {
         voterIndex,
         optionIndex: 1,
@@ -65,12 +62,10 @@ const buildBrowserBallot = async (
         ),
     };
 };
-
 describe('browser runtime coverage', () => {
     it('verifies roster signatures, ballot proofs, and chunked browser work', async () => {
         expect(window).toBeDefined();
         expect(crypto.subtle).toBeDefined();
-
         const auth = await generateAuthKeyPair();
         const transport = await generateTransportKeyPair({ suite: 'P-256' });
         const authPublicKey = await exportAuthPublicKey(auth.publicKey);
@@ -103,7 +98,6 @@ describe('browser runtime coverage', () => {
             rosterHash,
             assignedParticipantIndex: 1,
         };
-
         await expect(
             verifySignedProtocolPayloads(
                 [
@@ -127,12 +121,7 @@ describe('browser runtime coverage', () => {
         ).resolves.toMatchObject({
             rosterHash,
         });
-
-        const group = getGroup('ristretto255');
-        const { publicKey } = generateParametersWithPrivateKey(
-            123n,
-            group.name,
-        );
+        const { publicKey } = generateParametersWithPrivateKey(123n);
         const ballots = await mapChunked(
             [
                 [2, 7],
@@ -149,26 +138,22 @@ describe('browser runtime coverage', () => {
             ballots,
             publicKey,
             validValues: [1n, 2n, 3n],
-            group,
             protocolVersion: 'v1',
             manifestHash: 'manifest-hash',
             sessionId: 'session-1',
             minimumBallotCount: 2,
         });
-
         expect(verified.ballots.map((ballot) => ballot.voterIndex)).toEqual([
             1, 2, 3,
         ]);
         expect(verified.aggregate.ballotCount).toBe(3);
         expect(verified.transcriptHash).toHaveLength(64);
     });
-
     it('resolves the preferred transport suite and round-trips browser envelopes', async () => {
         const resolvedSuite = await resolveTransportSuite();
         expect(resolvedSuite).toBe(
             (await isX25519Supported()) ? 'X25519' : 'P-256',
         );
-
         const recipient = await generateTransportKeyPair({
             suite: resolvedSuite,
         });
@@ -176,7 +161,6 @@ describe('browser runtime coverage', () => {
             recipient.publicKey,
         );
         const plaintext = new TextEncoder().encode('browser-envelope');
-
         const { envelope } = await encryptEnvelope(
             plaintext,
             recipientPublicKey,
@@ -193,7 +177,6 @@ describe('browser runtime coverage', () => {
             },
         );
         const decrypted = await decryptEnvelope(envelope, recipient.privateKey);
-
         expect(new TextDecoder().decode(decrypted)).toBe('browser-envelope');
     });
 });

@@ -25,13 +25,11 @@ import {
     multiplyBase,
     pointMultiply,
 } from '#src/core/ristretto';
-
 const bigintReplacer = (_key: string, value: unknown): unknown =>
     typeof value === 'bigint' ? value.toString() : value;
 const validScores = Array.from({ length: 10 }, (_value, index) =>
     BigInt(index + 1),
 );
-
 const buildBallot = async (
     voterIndex: number,
     vote: bigint,
@@ -45,7 +43,6 @@ const buildBallot = async (
         publicKey,
         randomness,
         40n,
-        group.name,
     );
     const context: ProofContext = {
         protocolVersion,
@@ -56,7 +53,6 @@ const buildBallot = async (
         voterIndex,
         optionIndex: 1,
     };
-
     return {
         voterIndex,
         optionIndex: 1,
@@ -75,12 +71,10 @@ const buildBallot = async (
         ),
     };
 };
-
 const main = async (): Promise<void> => {
     const group = getGroup('ristretto255');
     const manifest: ElectionManifest = {
         protocolVersion: 'v1',
-        suiteId: group.name,
         reconstructionThreshold: 3,
         participantCount: 5,
         minimumPublishedVoterCount: 4,
@@ -120,7 +114,6 @@ const main = async (): Promise<void> => {
             sessionInputs.right.timestamp,
         ),
     };
-
     const schnorrContext: ProofContext = {
         protocolVersion: 'v1',
         suiteId: group.name,
@@ -141,15 +134,8 @@ const main = async (): Promise<void> => {
             postCallOffset: 17,
         }),
     );
-
     const publicKey = encodePoint(multiplyBase(123n));
-    const ciphertext = encryptAdditiveWithRandomness(
-        3n,
-        publicKey,
-        19n,
-        40n,
-        group.name,
-    );
+    const ciphertext = encryptAdditiveWithRandomness(3n, publicKey, 19n, 40n);
     const dleqSecret = 17n;
     const dleqStatement: DLEQStatement = {
         publicKey: encodePoint(multiplyBase(dleqSecret)),
@@ -175,7 +161,6 @@ const main = async (): Promise<void> => {
             postCallOffset: 17,
         }),
     );
-
     const disjunctiveContext: ProofContext = {
         protocolVersion: 'v1',
         suiteId: group.name,
@@ -197,7 +182,6 @@ const main = async (): Promise<void> => {
             postCallOffset: 17,
         }),
     );
-
     const ballots = await Promise.all([
         buildBallot(3, 3n, 11n, publicKey, manifest.protocolVersion, group),
         buildBallot(1, 1n, 7n, publicKey, manifest.protocolVersion, group),
@@ -207,13 +191,11 @@ const main = async (): Promise<void> => {
         ballots,
         publicKey,
         validValues: validScores,
-        group,
         protocolVersion: manifest.protocolVersion,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',
         minimumBallotCount: 2,
     });
-
     await writeFile(
         new URL('../test-vectors/protocol.json', import.meta.url),
         `${JSON.stringify(
@@ -252,8 +234,6 @@ const main = async (): Promise<void> => {
         )}\n`,
         'utf8',
     );
-
     console.log('Generated protocol test vectors.');
 };
-
 void main();

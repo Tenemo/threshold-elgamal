@@ -1,4 +1,4 @@
-import type { EncodedPoint, GroupName } from '../core/types.js';
+import type { EncodedPoint } from '../core/types.js';
 import type {
     EncodedAuthPublicKey,
     EncodedTransportPrivateKey,
@@ -235,7 +235,6 @@ export type SignedPayload<TPayload extends ProtocolPayload = ProtocolPayload> =
 /** Canonical election-manifest shape bound into protocol transcripts. */
 export type ElectionManifest = {
     readonly protocolVersion: string;
-    readonly suiteId: GroupName;
     readonly reconstructionThreshold: number;
     readonly participantCount: number;
     /** Minimum accepted voter count required before publication, separate from the DKG reconstruction threshold. */

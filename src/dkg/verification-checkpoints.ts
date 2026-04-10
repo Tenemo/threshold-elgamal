@@ -8,7 +8,6 @@ import {
     requiredCheckpointPhases,
     type FinalizedPhaseCheckpoint,
 } from './checkpoints.js';
-import type { DKGProtocol } from './types.js';
 import {
     assertIndexSubset,
     assertUniqueSortedParticipantIndices,
@@ -17,17 +16,16 @@ import type { ResolvePhaseCheckpointInput } from './verification-types.js';
 
 export const assertSupportedCheckpointPayloads = (
     transcript: readonly SignedPayload[],
-    protocol: DKGProtocol,
 ): void => {
     for (const signedPayload of transcript) {
         if (
             isPhaseCheckpointPayload(signedPayload) &&
-            !requiredCheckpointPhases(protocol).includes(
+            !requiredCheckpointPhases().includes(
                 signedPayload.payload.checkpointPhase,
             )
         ) {
             throw new InvalidPayloadError(
-                `Checkpoint phase ${signedPayload.payload.checkpointPhase} is not part of the ${protocol} phase plan`,
+                `Checkpoint phase ${signedPayload.payload.checkpointPhase} is not part of the GJKR phase plan`,
             );
         }
     }

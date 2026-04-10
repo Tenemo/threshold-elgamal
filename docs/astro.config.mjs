@@ -47,7 +47,6 @@ export default defineConfig({
                     items: [
                         'api',
                         'api/root-package',
-                        'api/subpath-overview',
                         {
                             label: 'Generated reference',
                             collapsed: true,

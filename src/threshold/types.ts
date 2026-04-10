@@ -1,4 +1,4 @@
-import type { CryptoGroup, EncodedPoint } from '../core/types.js';
+import type { EncodedPoint } from '../core/types.js';
 import type { ElgamalCiphertext } from '../elgamal/types.js';
 
 /** A single indexed Shamir share over `Z_q`. */
@@ -19,8 +19,6 @@ export type ThresholdKeySet = {
     readonly publicKey: EncodedPoint;
     /** Dealer-produced shares indexed `1..n`. */
     readonly shares: readonly Share[];
-    /** Resolved built-in group definition. */
-    readonly group: CryptoGroup;
 };
 
 /** A participant's partial decryption contribution. */

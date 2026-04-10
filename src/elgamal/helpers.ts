@@ -1,8 +1,4 @@
-import {
-    InvalidScalarError,
-    getGroup,
-    type CryptoGroup,
-} from '../core/index.js';
+import { InvalidScalarError, RISTRETTO_GROUP } from '../core/index.js';
 import {
     decodePoint,
     encodePoint,
@@ -10,16 +6,10 @@ import {
     type InternalPoint,
 } from '../core/ristretto.js';
 
-import type { ElgamalCiphertext, ElgamalGroupInput } from './types.js';
+import type { ElgamalCiphertext } from './types.js';
 
-export const resolveElgamalGroup = (group: ElgamalGroupInput): CryptoGroup =>
-    getGroup(group);
-
-export const assertEncryptionRandomness = (
-    randomness: bigint,
-    q: bigint,
-): void => {
-    if (randomness <= 0n || randomness >= q) {
+export const assertEncryptionRandomness = (randomness: bigint): void => {
+    if (randomness <= 0n || randomness >= RISTRETTO_GROUP.q) {
         throw new InvalidScalarError(
             'Encryption randomness must be in the range 1..q-1',
         );

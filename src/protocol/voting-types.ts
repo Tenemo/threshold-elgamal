@@ -1,5 +1,4 @@
 import type { EncodedPoint } from '../core/types.js';
-import type { DKGProtocol } from '../dkg/types.js';
 import type { VerifiedDKGTranscript } from '../dkg/verification.js';
 import type { DecryptionShare } from '../threshold/index.js';
 
@@ -67,7 +66,6 @@ export type VerifyDecryptionSharePayloadsByOptionInput = {
 
 /** Input bundle for verifying one published tally. */
 export type VerifyPublishedVotingResultInput = {
-    readonly protocol: DKGProtocol;
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
     readonly dkgTranscript: readonly SignedPayload[];
@@ -78,7 +76,6 @@ export type VerifyPublishedVotingResultInput = {
 
 /** Input bundle for verifying one full published tally set across all options. */
 export type VerifyPublishedVotingResultsInput = {
-    readonly protocol: DKGProtocol;
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
     readonly dkgTranscript: readonly SignedPayload[];
