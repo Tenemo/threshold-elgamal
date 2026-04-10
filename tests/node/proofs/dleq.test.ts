@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../dev-support/deterministic.js';
-
 import {
-    InvalidProofError,
-    InvalidScalarError,
-    getGroup,
-    modPowP,
-} from '#core';
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointMultiply,
+} from '../../../src/core/ristretto.js';
+
+import { InvalidProofError, InvalidScalarError, getGroup } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDLEQProof,
@@ -17,9 +18,9 @@ import {
 } from '#proofs';
 
 describe('DLEQ proofs', () => {
-    const group = getGroup(2048);
+    const group = getGroup('ristretto255');
     const secret = 12345n;
-    const publicKey = modPowP(group.g, secret, group.p);
+    const publicKey = encodePoint(multiplyBase(secret));
     const ciphertext = encryptAdditiveWithRandomness(
         7n,
         publicKey,
@@ -30,7 +31,9 @@ describe('DLEQ proofs', () => {
     const statement: DLEQStatement = {
         publicKey,
         ciphertext,
-        decryptionShare: modPowP(ciphertext.c1, secret, group.p),
+        decryptionShare: encodePoint(
+            pointMultiply(decodePoint(ciphertext.c1), secret),
+        ),
     };
     const context: ProofContext = {
         protocolVersion: 'v1',
@@ -72,7 +75,7 @@ describe('DLEQ proofs', () => {
         );
         const forgedKeyStatement: DLEQStatement = {
             ...statement,
-            publicKey: modPowP(group.g, secret + 1n, group.p),
+            publicKey: encodePoint(multiplyBase(secret + 1n)),
         };
         const otherCiphertext = encryptAdditiveWithRandomness(
             7n,

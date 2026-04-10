@@ -19,7 +19,7 @@ import type {
  */
 export type VerifyBallotSubmissionPayloadsInput = {
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
-    readonly publicKey: bigint;
+    readonly publicKey: string;
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
 };

@@ -2,31 +2,42 @@ import {
     assertAdditiveBound as assertSharedAdditiveBound,
     assertAdditivePlaintext,
 } from './additive-validation.js';
-import { modPowP } from './bigint.js';
 import {
     IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidScalarError,
     ThresholdViolationError,
 } from './errors.js';
+import { decodePoint, RISTRETTO_ORDER } from './ristretto.js';
 
-/** Returns `true` when the value is a non-identity element of the order-`q` subgroup. */
-export const isInSubgroup = (value: bigint, p: bigint, q: bigint): boolean =>
-    value > 1n && value < p - 1n && modPowP(value, q, p) === 1n;
+/** Returns `true` when the value is a non-identity valid Ristretto point. */
+export const isInSubgroup = (value: string): boolean => {
+    try {
+        return !decodePoint(value).is0();
+    } catch {
+        return false;
+    }
+};
 
-/** Returns `true` when the value is the subgroup identity or a valid subgroup element. */
-export const isInSubgroupOrIdentity = (
-    value: bigint,
-    p: bigint,
-    q: bigint,
-): boolean => value === 1n || isInSubgroup(value, p, q);
+/** Returns `true` when the value is a valid Ristretto point, including identity. */
+export const isInSubgroupOrIdentity = (value: string): boolean => {
+    try {
+        decodePoint(value);
+        return true;
+    } catch {
+        return false;
+    }
+};
 
 /**
  * Validates that a scalar belongs to `Z_q`.
  *
  * @throws {@link InvalidScalarError} When the value is outside `0..q-1`.
  */
-export const assertScalarInZq = (value: bigint, q: bigint): void => {
+export const assertScalarInZq = (
+    value: bigint,
+    q: bigint = RISTRETTO_ORDER,
+): void => {
     if (value < 0n || value >= q) {
         throw new InvalidScalarError(
             `Scalar ${value} is outside the valid Z_q range`,
@@ -86,12 +97,6 @@ export const assertThreshold = (
 
 /**
  * Derives the minimum strict-majority threshold `floor(n / 2) + 1`.
- *
- * @param participantCount Total participant count `n`.
- * @returns Minimum supported reconstruction threshold `k`.
- *
- * @throws {@link ThresholdViolationError} When `participantCount` is not a
- * positive integer.
  */
 export const majorityThreshold = (participantCount: number): number => {
     if (!Number.isInteger(participantCount) || participantCount < 1) {
@@ -106,13 +111,6 @@ export const majorityThreshold = (participantCount: number): number => {
 /**
  * Validates that the supplied threshold satisfies the shipped strict-majority
  * policy.
- *
- * @param threshold Claimed reconstruction threshold.
- * @param participantCount Total participant count `n`.
- * @returns The validated reconstruction threshold.
- *
- * @throws {@link ThresholdViolationError} When the threshold falls outside the
- * supported strict-majority policy.
  */
 export const assertMajorityThreshold = (
     threshold: number,
@@ -137,12 +135,7 @@ export const assertMajorityThreshold = (
     return threshold;
 };
 
-/**
- * Validates a 1-based participant index without assuming a fixed participant
- * count.
- *
- * @throws {@link IndexOutOfRangeError} When `index` is not a positive integer.
- */
+/** Validates a 1-based participant index without assuming a fixed count. */
 export const assertPositiveParticipantIndex = (index: number): void => {
     if (!Number.isInteger(index)) {
         throw new IndexOutOfRangeError('Participant index must be an integer');
@@ -155,12 +148,7 @@ export const assertPositiveParticipantIndex = (index: number): void => {
     }
 };
 
-/**
- * Validates a 1-based participant index for a fixed participant count.
- *
- * @throws {@link IndexOutOfRangeError} When the inputs are not integers or
- * `index` is outside `1..participantCount`.
- */
+/** Validates a 1-based participant index for a fixed participant count. */
 export const assertValidParticipantIndex = (
     index: number,
     participantCount: number,
@@ -184,53 +172,29 @@ export const assertValidParticipantIndex = (
     }
 };
 
-/**
- * Validates that a value is a non-identity element of the prime-order subgroup.
- *
- * @throws {@link InvalidGroupElementError} When the value is outside the
- * subgroup.
- */
-export const assertInSubgroup = (value: bigint, p: bigint, q: bigint): void => {
-    if (!isInSubgroup(value, p, q)) {
+/** Validates that a value is a non-identity valid Ristretto point. */
+export const assertInSubgroup = (value: string): void => {
+    if (!isInSubgroup(value)) {
         throw new InvalidGroupElementError(
-            'Element is not in the prime-order subgroup',
+            'Element is not a valid non-identity Ristretto point',
         );
     }
 };
 
-/**
- * Validates that a value is either the subgroup identity or a non-identity
- * subgroup element.
- *
- * @throws {@link InvalidGroupElementError} When the value is outside the
- * subgroup-or-identity domain.
- */
-export const assertInSubgroupOrIdentity = (
-    value: bigint,
-    p: bigint,
-    q: bigint,
-): void => {
-    if (!isInSubgroupOrIdentity(value, p, q)) {
+/** Validates that a value is a valid Ristretto point, including identity. */
+export const assertInSubgroupOrIdentity = (value: string): void => {
+    if (!isInSubgroupOrIdentity(value)) {
         throw new InvalidGroupElementError(
-            'Element is not in the prime-order subgroup or its identity',
+            'Element is not a valid Ristretto point',
         );
     }
 };
 
-/**
- * Validates a public key as a non-identity prime-order subgroup element.
- *
- * @throws {@link InvalidGroupElementError} When the value is not a valid
- * subgroup public key.
- */
-export const assertValidPublicKey = (
-    value: bigint,
-    p: bigint,
-    q: bigint,
-): void => {
-    if (!isInSubgroup(value, p, q)) {
+/** Validates a public key as a non-identity Ristretto point. */
+export const assertValidPublicKey = (value: string): void => {
+    if (!isInSubgroup(value)) {
         throw new InvalidGroupElementError(
-            'Public key must be a valid prime-order subgroup element',
+            'Public key must be a valid non-identity Ristretto point',
         );
     }
 };

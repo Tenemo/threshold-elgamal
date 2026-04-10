@@ -122,7 +122,7 @@ export const createComplaintResolutionPayload = async (
         envelopeId: envelopeArtifact.envelope.envelopeId,
         suite: envelopeArtifact.envelope.suite,
         revealedEphemeralPrivateKey: envelopeArtifact.ephemeralPrivateKey,
-    });
+    } satisfies ComplaintResolutionPayload);
 
 export const createPhaseCheckpointPayload = async (
     signer: ParticipantRuntime,

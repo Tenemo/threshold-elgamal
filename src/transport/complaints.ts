@@ -12,6 +12,8 @@ import {
 } from './key-agreement.js';
 import type {
     ComplaintResolution,
+    EncodedTransportPrivateKey,
+    EncodedTransportPublicKey,
     EncryptedEnvelope,
     KeyAgreementSuite,
 } from './types.js';
@@ -45,8 +47,8 @@ const decryptEnvelopeFromSharedSecret = async (
  * @returns `true` when the local key material matches the registration.
  */
 export const verifyComplaintPrecondition = async (
-    privateKey: CryptoKey | string,
-    expectedPublicKeyHex: string,
+    privateKey: CryptoKey | EncodedTransportPrivateKey,
+    expectedPublicKeyHex: EncodedTransportPublicKey,
     suite: KeyAgreementSuite,
 ): Promise<boolean> =>
     verifyLocalTransportKey(privateKey, expectedPublicKeyHex, suite);
@@ -62,8 +64,8 @@ export const verifyComplaintPrecondition = async (
  */
 export const resolveDealerChallengeFromPublicKey = async (
     envelope: EncryptedEnvelope,
-    recipientPublicKeyHex: string,
-    revealedEphemeralPrivateKeyHex: string,
+    recipientPublicKeyHex: EncodedTransportPublicKey,
+    revealedEphemeralPrivateKeyHex: EncodedTransportPrivateKey,
 ): Promise<ComplaintResolution> => {
     const ephemeralKeyMatches = await verifyLocalTransportKey(
         revealedEphemeralPrivateKeyHex,
@@ -123,8 +125,8 @@ export const resolveDealerChallengeFromPublicKey = async (
  */
 export const resolveDealerChallenge = async (
     envelope: EncryptedEnvelope,
-    recipientPrivateKey: CryptoKey | string,
-    revealedEphemeralPrivateKeyHex: string,
+    recipientPrivateKey: CryptoKey | EncodedTransportPrivateKey,
+    revealedEphemeralPrivateKeyHex: EncodedTransportPrivateKey,
 ): Promise<ComplaintResolution> => {
     const resolvedRecipientPrivateKey =
         typeof recipientPrivateKey === 'string'

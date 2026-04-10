@@ -2,6 +2,8 @@ import { toBufferSource } from '../core/bytes.js';
 import { getWebCrypto } from '../core/index.js';
 import { bytesToHex, hexToBytes } from '../serialize/index.js';
 
+import type { EncodedAuthPublicKey } from './types.js';
+
 /** Options controlling authentication-key generation. */
 export type GenerateAuthKeyPairOptions = {
     /** Whether the generated private key should be extractable. Defaults to `false`. */
@@ -33,12 +35,12 @@ export const generateAuthKeyPair = async (
  */
 export const exportAuthPublicKey = async (
     publicKey: CryptoKey,
-): Promise<string> =>
+): Promise<EncodedAuthPublicKey> =>
     bytesToHex(
         new Uint8Array(
             await getWebCrypto().subtle.exportKey('spki', publicKey),
         ),
-    );
+    ) as EncodedAuthPublicKey;
 
 /**
  * Imports an authentication public key from SPKI hex.
@@ -47,7 +49,7 @@ export const exportAuthPublicKey = async (
  * @returns Imported public key.
  */
 export const importAuthPublicKey = async (
-    spkiHex: string,
+    spkiHex: EncodedAuthPublicKey,
 ): Promise<CryptoKey> =>
     getWebCrypto().subtle.importKey(
         'spki',

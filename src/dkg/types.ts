@@ -1,4 +1,4 @@
-import type { GroupName } from '../core/types.js';
+import type { GroupIdentifier } from '../core/types.js';
 import type { ComplaintPayload, SignedPayload } from '../protocol/types.js';
 
 /** Supported DKG reducer variants. */
@@ -17,7 +17,7 @@ export type DKGConfigInput = {
     readonly protocol: DKGProtocol;
     readonly sessionId: string;
     readonly manifestHash: string;
-    readonly group: GroupName;
+    readonly group: GroupIdentifier;
     readonly participantCount: number;
     readonly threshold: number;
 };

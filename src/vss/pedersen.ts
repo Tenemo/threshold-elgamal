@@ -3,9 +3,15 @@ import {
     assertPositiveParticipantIndex,
     assertScalarInZq,
     ThresholdViolationError,
-    multiExponentiate,
     type CryptoGroup,
 } from '../core/index.js';
+import {
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointAdd,
+    pointMultiply,
+} from '../core/ristretto.js';
 import {
     evaluatePolynomial,
     type Polynomial,
@@ -16,11 +22,6 @@ import type { PedersenCommitments, PedersenShare } from './types.js';
 
 /**
  * Computes Pedersen commitments for matching secret and blinding polynomials.
- *
- * @param secretPolynomial Secret polynomial coefficients.
- * @param blindingPolynomial Blinding polynomial coefficients.
- * @param group Resolved group definition.
- * @returns Pedersen commitments for every coefficient pair.
  */
 export const generatePedersenCommitments = (
     secretPolynomial: readonly bigint[],
@@ -33,6 +34,8 @@ export const generatePedersenCommitments = (
         );
     }
 
+    const h = decodePoint(group.h, 'Pedersen generator');
+
     return {
         commitments: secretPolynomial.map((coefficient, index) => {
             const blinding = blindingPolynomial[index];
@@ -40,12 +43,8 @@ export const generatePedersenCommitments = (
             assertScalarInZq(coefficient, group.q);
             assertScalarInZq(blinding, group.q);
 
-            return multiExponentiate(
-                [
-                    { base: group.g, exponent: coefficient },
-                    { base: group.h, exponent: blinding },
-                ],
-                group.p,
+            return encodePoint(
+                pointAdd(multiplyBase(coefficient), pointMultiply(h, blinding)),
             );
         }),
     };
@@ -54,12 +53,6 @@ export const generatePedersenCommitments = (
 /**
  * Derives indexed Pedersen share pairs from matching secret and blinding
  * polynomials.
- *
- * @param secretPolynomial Secret polynomial coefficients.
- * @param blindingPolynomial Blinding polynomial coefficients.
- * @param participantCount Total participant count.
- * @param q Prime-order subgroup order.
- * @returns Secret and blinding share pairs for `1..participantCount`.
  */
 export const derivePedersenShares = (
     secretPolynomial: Polynomial,
@@ -98,11 +91,6 @@ export const derivePedersenShares = (
 
 /**
  * Verifies a Pedersen share pair against the published commitments.
- *
- * @param share Indexed secret and blinding share pair.
- * @param commitments Published Pedersen commitments.
- * @param group Resolved group definition.
- * @returns `true` when the share pair matches the commitments.
  */
 export const verifyPedersenShare = (
     share: PedersenShare,
@@ -113,17 +101,22 @@ export const verifyPedersenShare = (
     assertScalarInZq(share.secretValue, group.q);
     assertScalarInZq(share.blindingValue, group.q);
     commitments.commitments.forEach((commitment) =>
-        assertInSubgroup(commitment, group.p, group.q),
+        assertInSubgroup(commitment),
     );
 
-    return (
-        multiExponentiate(
-            [
-                { base: group.g, exponent: share.secretValue },
-                { base: group.h, exponent: share.blindingValue },
-            ],
-            group.p,
-        ) ===
-        evaluateCommitmentProduct(commitments.commitments, share.index, group)
+    const h = decodePoint(group.h, 'Pedersen generator');
+    const expected = pointAdd(
+        multiplyBase(share.secretValue),
+        pointMultiply(h, share.blindingValue),
+    );
+
+    return expected.equals(
+        decodePoint(
+            evaluateCommitmentProduct(
+                commitments.commitments,
+                share.index,
+                group,
+            ),
+        ),
     );
 };

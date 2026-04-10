@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import protocolVectors from '../../../test-vectors/protocol.json';
 
-import { getGroup } from '#core';
+import { getGroup, type EncodedPoint } from '#core';
+import type { ElgamalCiphertext } from '#elgamal';
 import {
     verifyDLEQProof,
     verifyDisjunctiveProof,
     verifySchnorrProof,
+    type ProofContext,
 } from '#proofs';
 import {
     canonicalizeElectionManifest,
@@ -18,6 +20,8 @@ import {
 } from '#protocol';
 
 const toBigInt = (value: string): bigint => BigInt(value);
+
+const protocolVectorGroup = protocolVectors.group as 'ristretto255';
 
 describe('protocol reproducibility vectors', () => {
     it('round-trips the frozen manifest and injective session derivation vectors', async () => {
@@ -51,7 +55,7 @@ describe('protocol reproducibility vectors', () => {
     });
 
     it('verifies the frozen Schnorr, DLEQ, and disjunctive proof vectors', async () => {
-        const group = getGroup(protocolVectors.group as 'ffdhe2048');
+        const group = getGroup(protocolVectorGroup);
 
         await expect(
             verifySchnorrProof(
@@ -61,12 +65,9 @@ describe('protocol reproducibility vectors', () => {
                     ),
                     response: toBigInt(protocolVectors.schnorr.proof.response),
                 },
-                toBigInt(protocolVectors.schnorr.statement),
+                protocolVectors.schnorr.statement as EncodedPoint,
                 group,
-                {
-                    ...protocolVectors.schnorr.context,
-                    suiteId: group.name,
-                },
+                protocolVectors.schnorr.context as ProofContext,
             ),
         ).resolves.toBe(true);
 
@@ -77,26 +78,19 @@ describe('protocol reproducibility vectors', () => {
                     response: toBigInt(protocolVectors.dleq.proof.response),
                 },
                 {
-                    publicKey: toBigInt(
-                        protocolVectors.dleq.statement.publicKey,
-                    ),
+                    publicKey: protocolVectors.dleq.statement
+                        .publicKey as EncodedPoint,
                     ciphertext: {
-                        c1: toBigInt(
-                            protocolVectors.dleq.statement.ciphertext.c1,
-                        ),
-                        c2: toBigInt(
-                            protocolVectors.dleq.statement.ciphertext.c2,
-                        ),
-                    },
-                    decryptionShare: toBigInt(
-                        protocolVectors.dleq.statement.decryptionShare,
-                    ),
+                        c1: protocolVectors.dleq.statement.ciphertext
+                            .c1 as EncodedPoint,
+                        c2: protocolVectors.dleq.statement.ciphertext
+                            .c2 as EncodedPoint,
+                    } as ElgamalCiphertext,
+                    decryptionShare: protocolVectors.dleq.statement
+                        .decryptionShare as EncodedPoint,
                 },
                 group,
-                {
-                    ...protocolVectors.dleq.context,
-                    suiteId: group.name,
-                },
+                protocolVectors.dleq.context as ProofContext,
             ),
         ).resolves.toBe(true);
 
@@ -111,30 +105,29 @@ describe('protocol reproducibility vectors', () => {
                     ),
                 },
                 {
-                    c1: toBigInt(protocolVectors.disjunctive.ciphertext.c1),
-                    c2: toBigInt(protocolVectors.disjunctive.ciphertext.c2),
-                },
-                toBigInt(protocolVectors.disjunctive.publicKey),
+                    c1: protocolVectors.disjunctive.ciphertext
+                        .c1 as EncodedPoint,
+                    c2: protocolVectors.disjunctive.ciphertext
+                        .c2 as EncodedPoint,
+                } as ElgamalCiphertext,
+                protocolVectors.disjunctive.publicKey as EncodedPoint,
                 protocolVectors.disjunctive.validValues.map(toBigInt),
                 group,
-                {
-                    ...protocolVectors.disjunctive.context,
-                    suiteId: group.name,
-                },
+                protocolVectors.disjunctive.context as ProofContext,
             ),
         ).resolves.toBe(true);
     });
 
     it('recomputes the frozen ballot aggregation vector', async () => {
-        const group = getGroup(protocolVectors.group as 'ffdhe2048');
+        const group = getGroup(protocolVectorGroup);
         const ballots = protocolVectors.ballotAggregation.ballots.map(
             (ballot): BallotTranscriptEntry => ({
                 voterIndex: ballot.voterIndex,
                 optionIndex: ballot.optionIndex,
                 ciphertext: {
-                    c1: toBigInt(ballot.ciphertext.c1),
-                    c2: toBigInt(ballot.ciphertext.c2),
-                },
+                    c1: ballot.ciphertext.c1 as EncodedPoint,
+                    c2: ballot.ciphertext.c2 as EncodedPoint,
+                } as ElgamalCiphertext,
                 proof: {
                     branches: ballot.proof.branches.map((branch) => ({
                         challenge: toBigInt(branch.challenge),
@@ -146,9 +139,10 @@ describe('protocol reproducibility vectors', () => {
 
         const aggregation = await verifyAndAggregateBallots({
             ballots,
-            publicKey: toBigInt(protocolVectors.disjunctive.publicKey),
+            publicKey: protocolVectors.disjunctive.publicKey as EncodedPoint,
             validValues: protocolVectors.disjunctive.validValues.map(toBigInt),
             group,
+            protocolVersion: protocolVectors.manifest.protocolVersion,
             manifestHash: 'manifest-hash',
             sessionId: 'session-1',
             minimumBallotCount:
@@ -165,12 +159,8 @@ describe('protocol reproducibility vectors', () => {
             protocolVectors.ballotAggregation.aggregate.ballotCount,
         );
         expect(aggregation.aggregate.ciphertext).toEqual({
-            c1: toBigInt(
-                protocolVectors.ballotAggregation.aggregate.ciphertext.c1,
-            ),
-            c2: toBigInt(
-                protocolVectors.ballotAggregation.aggregate.ciphertext.c2,
-            ),
+            c1: protocolVectors.ballotAggregation.aggregate.ciphertext.c1,
+            c2: protocolVectors.ballotAggregation.aggregate.ciphertext.c2,
         });
     });
 });

@@ -5,24 +5,21 @@ sidebar:
   order: 3
 ---
 
-This guide shows a full 3-participant flow for the current shipped surface:
+This guide shows the shipped 3-participant flow on the current beta line:
 
 - roster freeze, manifest hashing, and signed setup payloads
-- GJKR-style setup material with Pedersen commitments, encrypted shares, and
-  Feldman extraction proofs
-- additive ballots with disjunctive proofs
+- GJKR-style setup material with Pedersen commitments, encrypted shares, and Feldman extraction proofs
+- additive ballots with disjunctive proofs over the fixed score domain `1..10`
 - local aggregate recomputation
 - threshold decryption shares with DLEQ proofs
-- typed ballot, decryption-share, and tally payloads on the safe protocol path
+- typed ballot, decryption-share, tally, and board-audit helpers on the safe protocol path
 
-The complete tested version lives in
-`tests/node/integration/voting-flow-harness.ts`. The snippets below keep the same
-structure but omit repeated helper boilerplate.
+The complete tested flow lives in `dev-support/voting-flow-harness.ts` and the node integration tests that exercise it.
 
 ## Imports and helper style
 
 ```typescript
-import { getGroup, modP, modPowP, modQ, sha256, utf8ToBytes } from "threshold-elgamal/core";
+import { getGroup, sha256, utf8ToBytes } from "threshold-elgamal/core";
 import { addEncryptedValues, encryptAdditiveWithRandomness } from "threshold-elgamal/elgamal";
 import {
     createDLEQProof,
@@ -35,106 +32,59 @@ import {
     type ProofContext,
 } from "threshold-elgamal/proofs";
 import {
-    canonicalUnsignedPayloadBytes,
-    canonicalizeJson,
     deriveSessionId,
     hashElectionManifest,
     hashRosterEntries,
-    hashProtocolTranscript,
-    verifyPublishedVotingResult,
+    scoreVotingDomain,
+    verifyElectionCeremonyDetailed,
     type ElectionManifest,
-    type ProtocolPayload,
-    type SignedPayload,
 } from "threshold-elgamal/protocol";
-import { bytesToHex, fixedHexToBigint } from "threshold-elgamal/serialize";
 import {
     combineDecryptionShares,
     createVerifiedDecryptionShare,
     type Share,
 } from "threshold-elgamal/threshold";
 import {
-    decryptEnvelope,
     encryptEnvelope,
-    exportAuthPublicKey,
-    exportTransportPrivateKey,
-    exportTransportPublicKey,
     generateAuthKeyPair,
     generateTransportKeyPair,
-    signPayloadBytes,
-    verifyPayloadSignature,
 } from "threshold-elgamal/transport";
 import {
     derivePedersenShares,
     generateFeldmanCommitments,
     generatePedersenCommitments,
 } from "threshold-elgamal/vss";
-
-const hashJson = async (value: unknown, bigintByteLength?: number): Promise<string> =>
-    bytesToHex(
-        await sha256(
-            utf8ToBytes(
-                canonicalizeJson(value as never, {
-                    bigintByteLength,
-                }),
-            ),
-        ),
-    );
-
-const signProtocolPayload = async <TPayload extends ProtocolPayload>(
-    privateKey: CryptoKey,
-    payload: TPayload,
-): Promise<SignedPayload<TPayload>> => ({
-    payload,
-    signature: await signPayloadBytes(
-        privateKey,
-        canonicalUnsignedPayloadBytes(payload),
-    ),
-});
 ```
 
-## Freeze the roster and collect setup signatures
+## Freeze the roster and manifest
 
-The library ships `hashRosterEntries()`, so the application can freeze the
-setup roster before building the manifest and signing the phase-0 payloads.
+The library ships `hashRosterEntries()`, so the application can freeze the setup roster before building the manifest and signing the phase-0 payloads.
 
 ```typescript
-const group = getGroup("ffdhe2048");
-const participants = await Promise.all(
-    [1, 2, 3].map(async (index) => {
-        const auth = await generateAuthKeyPair();
-        const transport = await generateTransportKeyPair("P-256");
+const group = getGroup("ristretto255");
 
-        return {
-            index,
-            auth,
-            authPublicKeyHex: await exportAuthPublicKey(auth.publicKey),
-            transportPublicKeyHex: await exportTransportPublicKey(
-                transport.publicKey,
-            ),
-            transportPrivateKeyHex: await exportTransportPrivateKey(
-                transport.privateKey,
-            ),
-        };
-    }),
+const participants = await Promise.all(
+    [1, 2, 3].map(async (participantIndex) => ({
+        participantIndex,
+        auth: await generateAuthKeyPair(),
+        transport: await generateTransportKeyPair("X25519"),
+    })),
 );
 
 const rosterHash = await hashRosterEntries(
     participants.map((participant) => ({
-        participantIndex: participant.index,
-        authPublicKey: participant.authPublicKeyHex,
-        transportPublicKey: participant.transportPublicKeyHex,
+        participantIndex: participant.participantIndex,
+        authPublicKey: "exported-auth-key",
+        transportPublicKey: "exported-transport-key",
     })),
 );
 
 const manifest: ElectionManifest = {
     protocolVersion: "v1",
     suiteId: group.name,
-    threshold: 2,
+    reconstructionThreshold: 2,
     participantCount: 3,
-    minimumPublicationThreshold: 3,
-    allowAbstention: false,
-    scoreDomainMin: 1,
-    scoreDomainMax: 10,
+    minimumPublishedVoterCount: 3,
     ballotFinality: "first-valid",
     rosterHash,
     optionList: ["Option A"],
@@ -150,18 +100,11 @@ const sessionId = await deriveSessionId(
 );
 ```
 
-Each participant then signs a registration payload and a manifest-acceptance
-payload. The integration test verifies every signature with
-`verifyPayloadSignature()`.
-
-In this manifest, `threshold` is the DKG reconstruction threshold. By
-contrast, `minimumPublicationThreshold` is only the minimum accepted ballot
-count required before a tally may be published.
+In this manifest, `reconstructionThreshold` is the real cryptographic threshold. `minimumPublishedVoterCount` is only the publication floor counted over distinct accepted voters.
 
 ## Build the setup transcript
 
-For a 2-of-3 example, each participant uses a degree-1 secret polynomial and a
-matching degree-1 blinding polynomial.
+For a 2-of-3 example, each participant uses a degree-1 secret polynomial and a matching degree-1 blinding polynomial. Feldman and Pedersen commitments are point encodings, and share delivery stays on the existing authenticated transport split.
 
 ```typescript
 const dealerInputs = [
@@ -176,20 +119,18 @@ for (const dealer of dealerInputs) {
         dealer.blindingPolynomial,
         group,
     );
-    const pedersenShares = derivePedersenShares(
+    const feldmanCommitments = generateFeldmanCommitments(
+        dealer.secretPolynomial,
+        group,
+    );
+    const shares = derivePedersenShares(
         dealer.secretPolynomial,
         dealer.blindingPolynomial,
         3,
         group.q,
     );
-    const feldmanCommitments = generateFeldmanCommitments(
-        dealer.secretPolynomial,
-        group,
-    );
 
-    for (const [coefficientIndex, coefficient] of dealer.secretPolynomial.entries()) {
-        const proofCoefficientIndex = coefficientIndex + 1;
-        const statement = feldmanCommitments.commitments[coefficientIndex];
+    for (const [offset, coefficient] of dealer.secretPolynomial.entries()) {
         const proofContext: ProofContext = {
             protocolVersion: "v1",
             suiteId: group.name,
@@ -197,8 +138,10 @@ for (const dealer of dealerInputs) {
             sessionId,
             label: "feldman-coefficient-proof",
             participantIndex: dealer.participantIndex,
-            coefficientIndex: proofCoefficientIndex,
+            coefficientIndex: offset + 1,
         };
+
+        const statement = feldmanCommitments.commitments[offset];
         const proof = await createSchnorrProof(
             coefficient,
             statement,
@@ -211,80 +154,47 @@ for (const dealer of dealerInputs) {
         }
     }
 
-    for (const recipient of participants.filter(
-        (participant) => participant.index !== dealer.participantIndex,
-    )) {
-        const share = pedersenShares[recipient.index - 1];
-        const plaintext = utf8ToBytes(
-            canonicalizeJson(
-                {
-                    index: recipient.index,
-                    secretValue: share.secretValue,
-                    blindingValue: share.blindingValue,
-                },
-                {
-                    bigintByteLength: group.byteLength,
-                },
-            ),
-        );
-        const { envelope } = await encryptEnvelope(
-            plaintext,
-            recipient.transportPublicKeyHex,
+    const recipient = participants.find(
+        (participant) => participant.participantIndex !== dealer.participantIndex,
+    );
+
+    if (recipient !== undefined) {
+        await encryptEnvelope(
+            utf8ToBytes(JSON.stringify(shares[recipient.participantIndex - 1])),
+            "recipient-public-key",
             {
                 sessionId,
                 rosterHash,
                 phase: 1,
                 dealerIndex: dealer.participantIndex,
-                recipientIndex: recipient.index,
-                envelopeId: `env-${dealer.participantIndex}-${recipient.index}`,
+                recipientIndex: recipient.participantIndex,
+                envelopeId: `env-${dealer.participantIndex}-${recipient.participantIndex}`,
                 payloadType: "encrypted-dual-share",
                 protocolVersion: "v1",
-                suite: "P-256",
+                suite: "X25519",
             },
         );
-
-        const decrypted = await decryptEnvelope(
-            envelope,
-            recipient.transportPrivateKeyHex,
-        );
-        const decoded = JSON.parse(new TextDecoder().decode(decrypted)) as {
-            blindingValue: string;
-            index: number;
-            secretValue: string;
-        };
-
-        if (fixedHexToBigint(decoded.secretValue) !== share.secretValue) {
-            throw new Error("Encrypted share mismatch");
-        }
     }
+
+    void pedersenCommitments;
 }
 ```
 
 At the end of setup, the application derives:
 
-- each participant's final share `x_j` by summing the received secret shares
-  modulo `q`
-- the joint public key by multiplying the constant Feldman commitments
-- each transcript-derived verification key `Y_j` from the published Feldman
-  commitments
+- each participant's final share `x_j` by summing the received secret shares modulo `q`
+- the joint public key from the constant Feldman commitments
+- each transcript-derived verification key `Y_j` from the published Feldman commitments
 
-The integration test then feeds the signed setup payloads through the shipped
-GJKR reducer and expects a completed `QUAL = [1, 2, 3]`. In the current
-checkpointed flow, each closed setup phase is also signed against a canonical
-phase-snapshot hash so clients can detect divergent board views.
+The shipped DKG verifier replays this transcript deterministically, checks checkpoint hashes, applies complaint outcomes, and reduces `QUAL` when setup participants are disqualified.
 
 ## Encrypt ballots and verify score proofs
 
-The current library ships typed ballot, decryption-share, and tally payload
-schemas together with high-level published-result verifiers. Use
-`verifyPublishedVotingResult()` for a single-option manifest or
-`verifyPublishedVotingResults()` for per-option verification across a
-multi-option manifest. The ballot-level cryptography is still available directly
-when you need to stage or inspect intermediate artifacts.
+The shipped voting surface fixes the valid score domain to `1..10`. Each accepted voter must submit exactly one ballot for every option slot.
 
 ```typescript
-const jointPublicKey = /* product of A_i,0 from the setup transcript */;
-const validScores = [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n] as const;
+const jointPublicKey = "derived-joint-public-key";
+const validScores = scoreVotingDomain();
 
 const ballots = await Promise.all(
     [7n, 4n, 9n].map(async (vote, offset) => {
@@ -329,41 +239,24 @@ const ballots = await Promise.all(
             throw new Error("Ballot proof verification failed");
         }
 
-        return {
-            voterIndex,
-            ciphertext,
-            proof,
-        };
+        return { voterIndex, ciphertext, proof };
     }),
 );
 ```
 
 ## Recompute the aggregate and threshold-decrypt it
 
-Every participant recomputes the aggregate locally from the accepted ballots.
-That aggregate is then anchored to the accepted ballot log hash before any
-decryption share is produced.
+Every participant recomputes the aggregate locally from the accepted ballots before producing any decryption share. That same locally recomputed aggregate is what the published-result verifier checks later.
 
 ```typescript
 const aggregate = ballots
     .map((ballot) => ballot.ciphertext)
-    .reduce(
-        (accumulator, ciphertext) =>
-            addEncryptedValues(accumulator, ciphertext, group.name),
-        { c1: 1n, c2: 1n },
+    .reduce((accumulator, ciphertext) =>
+        addEncryptedValues(accumulator, ciphertext, group.name),
     );
 
-const ballotLogHash = await hashJson(
-    ballots.map((ballot) => ({
-        voterIndex: ballot.voterIndex,
-        ciphertext: ballot.ciphertext,
-        proof: ballot.proof,
-    })),
-    group.byteLength,
-);
-
 const verifiedAggregate = {
-    transcriptHash: ballotLogHash,
+    transcriptHash: "accepted-ballot-transcript-hash",
     ciphertext: aggregate,
 };
 
@@ -380,7 +273,7 @@ const decryptionShares = await Promise.all(
             group,
         );
         const statement: DLEQStatement = {
-            publicKey: /* transcript-derived Y_j */,
+            publicKey: "transcript-derived-verification-key",
             ciphertext: aggregate,
             decryptionShare: partial.value,
         };
@@ -411,24 +304,36 @@ const tally = combineDecryptionShares(aggregate, decryptionShares, group, 30n);
 console.log(tally); // 20n
 ```
 
-On the safe published path, the application signs typed ballot payloads,
-typed decryption-share payloads, and one tally-publication payload per option,
-then calls `verifyPublishedVotingResult()` for a single-option manifest or
-`verifyPublishedVotingResults()` for a multi-option manifest. The verifier
-replays the DKG log, recomputes the ballot aggregate locally, verifies the DLEQ
-proofs, and checks the announced tally before accepting it.
+## Verify the whole ceremony from the public record
 
-## What the integration test also checks
+On the safe published path, the application signs typed ballot payloads, typed decryption-share payloads, and one tally-publication payload per option, then calls `verifyElectionCeremonyDetailed(...)` to replay the whole ceremony from the public record.
 
-The tested end-to-end flow does more than the snippets above:
+```typescript
+const verified = await verifyElectionCeremonyDetailed({
+    protocol: "gjkr",
+    manifest,
+    sessionId,
+    dkgTranscript,
+    ballotPayloads,
+    decryptionSharePayloads,
+    tallyPublications,
+});
 
-- verifies every setup, share-distribution, extraction, and confirmation
-  signature
-- checks that local aggregate recomputation is order-independent
-- confirms that a truncated aggregate does not match the locally recomputed
-  aggregate
-- derives `Y_j` from the Feldman transcript and checks that it equals `g^{x_j}`
-- verifies the same tally with a threshold subset and with all shares
-- exercises an AES-GCM complaint path where a malformed dealer envelope
-  disqualifies the dealer and aborts a 3-of-3 ceremony
+console.log(verified.qual); // [1, 2, 3]
+console.log(verified.perOptionTallies[0]?.tally); // 20n
+console.log(verified.boardAudit.overall.fingerprint);
+```
 
+The verifier checks the manifest, registrations, acceptances, DKG transcript, locally derived joint public key, ballot proofs, locally recomputed aggregates, decryption shares, tally publications, and board-consistency digests before accepting the result.
+
+## What the tested flow also checks
+
+The end-to-end harness and integration tests do more than the snippets above:
+
+- verify setup, share-distribution, extraction, checkpoint, and tally signatures
+- check that local aggregate recomputation is order-independent
+- confirm that a truncated or forged aggregate does not match the locally recomputed aggregate
+- derive `Y_j` from the Feldman transcript and verify decryption shares against that locally derived key
+- verify the same tally with a threshold subset and with all shares
+- treat exact duplicate payloads as idempotent retransmissions and conflicting slot re-use as board equivocation
+- exercise an AES-GCM complaint path where a malformed dealer envelope disqualifies the dealer and can abort a ceremony

@@ -1,4 +1,9 @@
-import type { GroupName } from '../core/types.js';
+import type { EncodedPoint, GroupName } from '../core/types.js';
+import type {
+    EncodedAuthPublicKey,
+    EncodedTransportPrivateKey,
+    EncodedTransportPublicKey,
+} from '../transport/types.js';
 
 /** Canonical protocol payload type identifiers. */
 export type ProtocolMessageType =
@@ -63,12 +68,18 @@ export type EncodedDisjunctiveProof = {
     readonly branches: readonly EncodedDisjunctiveBranch[];
 };
 
+/** Supported completeness policy for grouped per-option voter ballots. */
+export type BallotCompletenessPolicy = 'ALL_OPTIONS_REQUIRED';
+
+/** Supported score domain policy for the shipped score-voting workflow. */
+export type ScoreDomainPolicy = '1..10';
+
 /** Registration payload carrying ceremony auth and transport keys. */
 export type RegistrationPayload = BaseProtocolPayload & {
     readonly messageType: 'registration';
     readonly rosterHash: string;
-    readonly authPublicKey: string;
-    readonly transportPublicKey: string;
+    readonly authPublicKey: EncodedAuthPublicKey;
+    readonly transportPublicKey: EncodedTransportPublicKey;
 };
 
 /** Participant-signed manifest acceptance payload. */
@@ -99,7 +110,7 @@ export type EncryptedDualSharePayload = BaseProtocolPayload & {
     readonly recipientIndex: number;
     readonly envelopeId: string;
     readonly suite: 'X25519' | 'P-256';
-    readonly ephemeralPublicKey: string;
+    readonly ephemeralPublicKey: EncodedTransportPublicKey;
     readonly iv: string;
     readonly ciphertext: string;
 };
@@ -122,7 +133,7 @@ export type ComplaintResolutionPayload = BaseProtocolPayload & {
     readonly complainantIndex: number;
     readonly envelopeId: string;
     readonly suite: 'X25519' | 'P-256';
-    readonly revealedEphemeralPrivateKey: string;
+    readonly revealedEphemeralPrivateKey: EncodedTransportPrivateKey;
 };
 
 /** Broadcast payload carrying Feldman commitments and coefficient proofs. */
@@ -147,7 +158,7 @@ export type FeldmanShareRevealPayload = BaseProtocolPayload & {
 export type KeyDerivationConfirmation = BaseProtocolPayload & {
     readonly messageType: 'key-derivation-confirmation';
     readonly qualHash: string;
-    readonly publicKey: string;
+    readonly publicKey: EncodedPoint;
 };
 
 /** Signed manifest-publication payload anchoring the frozen manifest. */
@@ -173,7 +184,7 @@ export type DecryptionSharePayload = BaseProtocolPayload & {
     readonly optionIndex: number;
     readonly transcriptHash: string;
     readonly ballotCount: number;
-    readonly decryptionShare: string;
+    readonly decryptionShare: EncodedPoint;
     readonly proof: EncodedCompactProof;
 };
 
@@ -225,14 +236,13 @@ export type SignedPayload<TPayload extends ProtocolPayload = ProtocolPayload> =
 export type ElectionManifest = {
     readonly protocolVersion: string;
     readonly suiteId: GroupName;
-    readonly threshold: number;
+    readonly reconstructionThreshold: number;
     readonly participantCount: number;
-    /** Minimum accepted ballot count required before publication, separate from the DKG threshold. */
-    readonly minimumPublicationThreshold: number;
-    readonly allowAbstention: boolean;
-    readonly scoreDomainMin: number;
-    readonly scoreDomainMax: number;
+    /** Minimum accepted voter count required before publication, separate from the DKG reconstruction threshold. */
+    readonly minimumPublishedVoterCount: number;
+    readonly ballotCompletenessPolicy: BallotCompletenessPolicy;
     readonly ballotFinality: 'first-valid';
+    readonly scoreDomain: ScoreDomainPolicy;
     readonly rosterHash: string;
     readonly optionList: readonly string[];
     /** Application coordination deadlines carried in the manifest but not yet enforced by transcript verification. */

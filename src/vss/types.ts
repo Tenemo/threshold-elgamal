@@ -1,13 +1,15 @@
-/** Feldman coefficient commitments `A_m = g^{a_m} mod p`. */
+import type { EncodedPoint } from '../core/types.js';
+
+/** Feldman coefficient commitments `A_m = a_m G`. */
 export type FeldmanCommitments = {
     /** Coefficient commitments in ascending polynomial order. */
-    readonly commitments: readonly bigint[];
+    readonly commitments: readonly EncodedPoint[];
 };
 
-/** Pedersen coefficient commitments `C_m = g^{a_m} * h^{b_m} mod p`. */
+/** Pedersen coefficient commitments `C_m = a_m G + b_m H`. */
 export type PedersenCommitments = {
     /** Coefficient commitments in ascending polynomial order. */
-    readonly commitments: readonly bigint[];
+    readonly commitments: readonly EncodedPoint[];
 };
 
 /** A Pedersen share pair for one participant index. */

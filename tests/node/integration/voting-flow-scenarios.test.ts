@@ -17,7 +17,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 2-of-3 mixed tally',
         participantCount: 3,
-        scoreDomainMax: 3,
         votes: [1n, 2n, 3n],
         decryptionParticipantIndices: [1, 3],
         expectedQual: [1, 2, 3],
@@ -25,7 +24,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 2-of-3 unanimous maximum tally',
         participantCount: 3,
-        scoreDomainMax: 3,
         votes: [3n, 3n, 3n],
         decryptionParticipantIndices: [1, 2],
         expectedQual: [1, 2, 3],
@@ -33,7 +31,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 2-of-3 partial recovery flow',
         participantCount: 3,
-        scoreDomainMax: 3,
         votes: [2n, 1n, 3n],
         decryptionParticipantIndices: [1, 2],
         expectedQual: [1, 2, 3],
@@ -41,7 +38,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 3-of-4 even-participant flow',
         participantCount: 4,
-        scoreDomainMax: 3,
         votes: [1n, 2n, 3n, 1n],
         decryptionParticipantIndices: [1, 3, 4],
         expectedQual: [1, 2, 3, 4],
@@ -49,24 +45,20 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 3-of-5 majority flow',
         participantCount: 5,
-        scoreDomainMax: 3,
         votes: [3n, 2n, 1n, 3n, 2n],
         decryptionParticipantIndices: [1, 3, 5],
         expectedQual: [1, 2, 3, 4, 5],
     },
     {
-        name: 'completes a 3-of-5 abstention-aware flow',
+        name: 'completes a 3-of-5 low-score flow',
         participantCount: 5,
-        scoreDomainMax: 3,
-        votes: [0n, 3n, 0n, 3n, 3n],
-        allowAbstention: true,
+        votes: [1n, 3n, 1n, 3n, 3n],
         decryptionParticipantIndices: [2, 4, 5],
         expectedQual: [1, 2, 3, 4, 5],
     },
     {
         name: 'completes a 2-of-3 flow after one dealer complaint',
         participantCount: 3,
-        scoreDomainMax: 3,
         votes: [3n, 1n, 2n],
         complaints: [
             {
@@ -81,7 +73,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 3-of-4 flow after one dealer complaint',
         participantCount: 4,
-        scoreDomainMax: 3,
         votes: [1n, 2n, 3n, 1n],
         complaints: [
             {
@@ -96,7 +87,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 2-of-3 flow after one resolved complaint',
         participantCount: 3,
-        scoreDomainMax: 3,
         votes: [2n, 2n, 2n],
         complaints: [
             {
@@ -111,7 +101,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 3-of-4 flow when one dealer misses encrypted-share rows',
         participantCount: 4,
-        scoreDomainMax: 3,
         votes: [3n, 2n, 1n, 3n],
         missingEncryptedShareDealerIndices: [4],
         decryptionParticipantIndices: [1, 2, 3],
@@ -120,7 +109,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 3-of-4 flow when one dealer misses Pedersen commitments',
         participantCount: 4,
-        scoreDomainMax: 3,
         votes: [1n, 3n, 2n, 1n],
         missingPedersenCommitmentParticipantIndices: [4],
         decryptionParticipantIndices: [1, 2, 3],
@@ -129,7 +117,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 3-of-4 flow when one dealer misses Feldman commitments',
         participantCount: 4,
-        scoreDomainMax: 3,
         votes: [2n, 3n, 1n, 2n],
         missingFeldmanCommitmentParticipantIndices: [4],
         decryptionParticipantIndices: [1, 2, 3],
@@ -138,7 +125,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
     {
         name: 'completes a 3-of-4 flow with threshold-only checkpoints and confirmations',
         participantCount: 4,
-        scoreDomainMax: 3,
         votes: [2n, 1n, 3n, 2n],
         includeKeyDerivationConfirmations: true,
         missingKeyDerivationConfirmationParticipantIndices: [4],

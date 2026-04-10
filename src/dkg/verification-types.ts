@@ -1,4 +1,5 @@
 import type { CryptoGroup } from '../core/index.js';
+import type { EncodedPoint } from '../core/types.js';
 import type {
     ComplaintPayload,
     ElectionManifest,
@@ -29,10 +30,10 @@ export type VerifyDKGTranscriptInput = {
 /** Verified DKG transcript result with reusable derived ceremony material. */
 export type VerifiedDKGTranscript = {
     readonly acceptedComplaints: readonly ComplaintPayload[];
-    readonly derivedPublicKey: bigint;
+    readonly derivedPublicKey: EncodedPoint;
     readonly feldmanCommitments: readonly {
         readonly dealerIndex: number;
-        readonly commitments: readonly bigint[];
+        readonly commitments: readonly EncodedPoint[];
     }[];
     readonly group: CryptoGroup;
     readonly manifestAccepted: readonly number[];
@@ -57,7 +58,7 @@ export type EncryptedShareMatrix = {
 
 export type ParsedFeldmanCommitment = {
     readonly dealerIndex: number;
-    readonly commitments: readonly bigint[];
+    readonly commitments: readonly EncodedPoint[];
     readonly payload: FeldmanCommitmentPayload;
 };
 

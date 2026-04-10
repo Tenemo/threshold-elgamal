@@ -1,9 +1,12 @@
-import { InvalidPayloadError } from '../core/index.js';
+import {
+    InvalidPayloadError,
+    assertInSubgroupOrIdentity,
+} from '../core/index.js';
 import { deriveTranscriptVerificationKey } from '../dkg/verification.js';
 import { verifyDLEQProof, type DLEQStatement } from '../proofs/dleq.js';
-import { fixedHexToBigint } from '../serialize/index.js';
 import type { DecryptionShare } from '../threshold/index.js';
 
+import { auditSignedPayloads } from './board-audit.js';
 import type { DecryptionSharePayload, SignedPayload } from './types.js';
 import { decodeCompactProof } from './voting-codecs.js';
 import {
@@ -41,6 +44,9 @@ export const verifyDecryptionSharePayloadsByOption = async (
         input.manifest,
         input.sessionId,
     );
+    const auditedShares = await auditSignedPayloads(
+        input.decryptionSharePayloads,
+    );
     const qualSet = new Set(input.dkg.qual);
     const aggregateMap = buildOptionAggregateMap(
         input.aggregates,
@@ -59,7 +65,7 @@ export const verifyDecryptionSharePayloadsByOption = async (
         payloadsByOption.set(optionIndex, []);
     }
 
-    for (const signedPayload of input.decryptionSharePayloads) {
+    for (const signedPayload of auditedShares.acceptedPayloads) {
         const payload = signedPayload.payload;
         assertPhase(payload, DECRYPTION_SHARE_PHASE, 'Decryption share');
         assertValidOptionIndex(
@@ -84,9 +90,9 @@ export const verifyDecryptionSharePayloadsByOption = async (
                 `Missing verified aggregate for option ${optionIndex}`,
             );
         }
-        if (optionPayloads.length < context.manifest.threshold) {
+        if (optionPayloads.length < context.manifest.reconstructionThreshold) {
             throw new InvalidPayloadError(
-                `At least ${context.manifest.threshold} decryption shares are required for option ${optionIndex}`,
+                `At least ${context.manifest.reconstructionThreshold} decryption shares are required for option ${optionIndex}`,
             );
         }
 
@@ -134,9 +140,10 @@ export const verifyDecryptionSharePayloadsByOption = async (
                 );
             }
 
+            assertInSubgroupOrIdentity(payload.decryptionShare);
             const decryptionShare = {
                 index: payload.participantIndex,
-                value: fixedHexToBigint(payload.decryptionShare),
+                value: payload.decryptionShare,
             } satisfies DecryptionShare;
             const statement: DLEQStatement = {
                 publicKey: deriveTranscriptVerificationKey(
@@ -152,7 +159,11 @@ export const verifyDecryptionSharePayloadsByOption = async (
                 proof,
                 statement,
                 input.dkg.group,
-                decryptionProofContext(payload, input.dkg.group),
+                decryptionProofContext(
+                    payload,
+                    context.manifest.protocolVersion,
+                    input.dkg.group,
+                ),
             );
 
             if (!valid) {

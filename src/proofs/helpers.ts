@@ -1,11 +1,6 @@
-import { bytesToBigInt } from '../core/bytes.js';
-import {
-    InvalidProofError,
-    modQ,
-    sha256,
-    type CryptoGroup,
-} from '../core/index.js';
-import { bigintToFixedBytes } from '../serialize/index.js';
+import { hexToBytes } from '../core/bytes.js';
+import { InvalidProofError, modQ, type CryptoGroup } from '../core/index.js';
+import { encodeScalar, hashChallengeToScalar } from '../core/ristretto.js';
 
 import type { ProofContext } from './types.js';
 
@@ -77,16 +72,20 @@ export const contextElements = (
     return fields;
 };
 
-export const fixed = (value: bigint, group: CryptoGroup): Uint8Array =>
-    bigintToFixedBytes(value, group.byteLength);
+export const fixedPoint = (value: string): Uint8Array => hexToBytes(value);
+
+export const fixedScalar = (value: bigint, group: CryptoGroup): Uint8Array => {
+    void group;
+    return hexToBytes(encodeScalar(value));
+};
 
 export const negateExponent = (value: bigint, q: bigint): bigint =>
     modQ(q - value, q);
 
-export const hashChallenge = async (
+export const hashChallenge = (
     payload: Uint8Array,
     q: bigint,
-): Promise<bigint> => modQ(bytesToBigInt(await sha256(payload)), q);
+): Promise<bigint> => Promise.resolve(modQ(hashChallengeToScalar(payload), q));
 
 export const sumChallenges = (values: readonly bigint[], q: bigint): bigint =>
     values.reduce((sum, value) => modQ(sum + value, q), 0n);

@@ -11,7 +11,12 @@ import {
     importTransportPrivateKey,
     importTransportPublicKey,
 } from './key-agreement.js';
-import type { EncryptedEnvelope, EnvelopeContext } from './types.js';
+import type {
+    EncodedTransportPrivateKey,
+    EncodedTransportPublicKey,
+    EncryptedEnvelope,
+    EnvelopeContext,
+} from './types.js';
 
 /**
  * Encrypts a payload into a sender-ephemeral authenticated envelope.
@@ -23,11 +28,11 @@ import type { EncryptedEnvelope, EnvelopeContext } from './types.js';
  */
 export const encryptEnvelope = async (
     plaintext: Uint8Array,
-    recipientPublicKeyHex: string,
+    recipientPublicKeyHex: EncodedTransportPublicKey,
     context: EnvelopeContext,
 ): Promise<{
     readonly envelope: EncryptedEnvelope;
-    readonly ephemeralPrivateKey: string;
+    readonly ephemeralPrivateKey: EncodedTransportPrivateKey;
 }> => {
     const ephemeral = await generateTransportKeyPair({
         suite: context.suite,
@@ -80,7 +85,7 @@ export const encryptEnvelope = async (
  */
 export const decryptEnvelope = async (
     envelope: EncryptedEnvelope,
-    recipientPrivateKey: CryptoKey | string,
+    recipientPrivateKey: CryptoKey | EncodedTransportPrivateKey,
 ): Promise<Uint8Array> => {
     const resolvedRecipientPrivateKey =
         typeof recipientPrivateKey === 'string'

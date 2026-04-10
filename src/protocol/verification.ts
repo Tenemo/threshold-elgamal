@@ -9,6 +9,10 @@ import {
     importAuthPublicKey,
     verifyPayloadSignature,
 } from '../transport/auth.js';
+import type {
+    EncodedAuthPublicKey,
+    EncodedTransportPublicKey,
+} from '../transport/types.js';
 
 import { canonicalizeJson } from './canonical-json.js';
 import { canonicalUnsignedPayloadBytes } from './payloads.js';
@@ -17,8 +21,8 @@ import type { RegistrationPayload, SignedPayload } from './types.js';
 /** Roster entry used for deterministic roster hashing. */
 export type RosterEntry = {
     readonly participantIndex: number;
-    readonly authPublicKey: string;
-    readonly transportPublicKey: string;
+    readonly authPublicKey: EncodedAuthPublicKey;
+    readonly transportPublicKey: EncodedTransportPublicKey;
 };
 
 /** Verified protocol-signature result with the frozen registration roster. */

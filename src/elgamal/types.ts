@@ -1,12 +1,16 @@
-import type { CryptoGroup, GroupName, PrimeBits } from '../core/types.js';
+import type {
+    CryptoGroup,
+    EncodedPoint,
+    GroupIdentifier,
+} from '../core/types.js';
 
 /** Accepted group identifier input for public ElGamal APIs. */
-export type ElgamalGroupInput = GroupName | PrimeBits;
+export type ElgamalGroupInput = GroupIdentifier;
 
-/** Public and private key pair for a selected ElGamal suite. */
+/** Public and private key pair for the shipped Ristretto255 suite. */
 export type ElgamalKeyPair = {
-    /** Public key `y = g^x mod p`. */
-    readonly publicKey: bigint;
+    /** Public key `Y = xG` encoded as a canonical Ristretto point. */
+    readonly publicKey: EncodedPoint;
     /** Private scalar `x` in the range `1..q-1`. */
     readonly privateKey: bigint;
 };
@@ -17,10 +21,10 @@ export type ElgamalParameters = ElgamalKeyPair & {
     readonly group: CryptoGroup;
 };
 
-/** Standard ElGamal ciphertext pair `(c1, c2)`. */
+/** Standard additive ElGamal ciphertext pair `(c1, c2)` encoded as points. */
 export type ElgamalCiphertext = {
-    /** Ephemeral component `g^r mod p`. */
-    readonly c1: bigint;
-    /** Payload component whose interpretation depends on the selected mode. */
-    readonly c2: bigint;
+    /** Ephemeral component `rG`. */
+    readonly c1: EncodedPoint;
+    /** Payload component `mG + rY`. */
+    readonly c2: EncodedPoint;
 };

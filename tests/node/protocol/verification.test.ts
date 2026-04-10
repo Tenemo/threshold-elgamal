@@ -45,7 +45,7 @@ const buildBallot = async (
     vote: bigint,
     randomness: bigint,
 ): Promise<BallotTranscriptEntry> => {
-    const group = getGroup('ffdhe2048');
+    const group = getGroup('ristretto255');
     const { publicKey } = generateParametersWithPrivateKey(123n, group.name);
     const ciphertext = encryptAdditiveWithRandomness(
         vote,
@@ -234,7 +234,7 @@ describe('protocol verification helpers', () => {
             timeout: protocolVerificationTimeoutMs,
         },
         async () => {
-            const group = getGroup('ffdhe2048');
+            const group = getGroup('ristretto255');
             const { publicKey } = generateParametersWithPrivateKey(
                 123n,
                 group.name,
@@ -250,6 +250,7 @@ describe('protocol verification helpers', () => {
                 publicKey,
                 validValues: [1n, 2n, 3n],
                 group,
+                protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
                 minimumBallotCount: 2,
@@ -259,6 +260,7 @@ describe('protocol verification helpers', () => {
                 publicKey,
                 validValues: [1n, 2n, 3n],
                 group,
+                protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
                 minimumBallotCount: 2,
@@ -268,6 +270,7 @@ describe('protocol verification helpers', () => {
                 publicKey,
                 validValues: [1n, 2n, 3n],
                 group,
+                protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
                 minimumBallotCount: 2,
@@ -286,7 +289,7 @@ describe('protocol verification helpers', () => {
     );
 
     it('rejects duplicate ballot slots, wrong voter bindings, and publication-threshold underflows', async () => {
-        const group = getGroup('ffdhe2048');
+        const group = getGroup('ristretto255');
         const { publicKey } = generateParametersWithPrivateKey(
             123n,
             group.name,
@@ -300,6 +303,7 @@ describe('protocol verification helpers', () => {
                 publicKey,
                 validValues: [1n, 2n, 3n],
                 group,
+                protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
                 minimumBallotCount: 1,
@@ -312,6 +316,7 @@ describe('protocol verification helpers', () => {
                 publicKey,
                 validValues: [1n, 2n, 3n],
                 group,
+                protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
                 minimumBallotCount: 1,
@@ -326,6 +331,7 @@ describe('protocol verification helpers', () => {
                 publicKey,
                 validValues: [1n, 2n, 3n],
                 group,
+                protocolVersion: 'v1',
                 manifestHash: 'manifest-hash',
                 sessionId: 'session-1',
                 minimumBallotCount: 3,

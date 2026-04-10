@@ -1,5 +1,22 @@
+import type { Brand } from '../core/types.js';
+
 /** Supported transport key-agreement suites. */
 export type KeyAgreementSuite = 'X25519' | 'P-256';
+
+/** Canonical lowercase hexadecimal SPKI encoding for auth public keys. */
+export type EncodedAuthPublicKey = Brand<string, 'EncodedAuthPublicKey'>;
+
+/** Canonical lowercase hexadecimal raw encoding for transport public keys. */
+export type EncodedTransportPublicKey = Brand<
+    string,
+    'EncodedTransportPublicKey'
+>;
+
+/** Canonical lowercase hexadecimal PKCS#8 encoding for transport private keys. */
+export type EncodedTransportPrivateKey = Brand<
+    string,
+    'EncodedTransportPrivateKey'
+>;
 
 /** Transport key pair tagged with its negotiated suite. */
 export type TransportKeyPair = {
@@ -23,7 +40,7 @@ export type EnvelopeContext = {
 
 /** Sender-ephemeral encrypted transport envelope. */
 export type EncryptedEnvelope = EnvelopeContext & {
-    readonly ephemeralPublicKey: string;
+    readonly ephemeralPublicKey: EncodedTransportPublicKey;
     readonly iv: string;
     readonly ciphertext: string;
 };

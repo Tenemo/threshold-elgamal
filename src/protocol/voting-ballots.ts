@@ -6,6 +6,7 @@ import {
     type VerifiedBallotAggregation,
     type VerifiedOptionBallotAggregation,
 } from './ballots.js';
+import { auditSignedPayloads } from './board-audit.js';
 import type { BallotSubmissionPayload } from './types.js';
 import { decodeCiphertext, decodeDisjunctiveProof } from './voting-codecs.js';
 import {
@@ -56,7 +57,8 @@ export const verifyBallotSubmissionPayloadsByOption = async (
         input.manifest,
         input.sessionId,
     );
-    const ballotEntries = input.ballotPayloads.map((payload) => {
+    const auditedBallots = await auditSignedPayloads(input.ballotPayloads);
+    const ballotEntries = auditedBallots.acceptedPayloads.map((payload) => {
         if (payload.payload.sessionId !== context.sessionId) {
             throw new InvalidPayloadError(
                 'Ballot submission payload session does not match the verification input',
@@ -74,11 +76,12 @@ export const verifyBallotSubmissionPayloadsByOption = async (
     return verifyAndAggregateBallotsByOption({
         ballots: ballotEntries,
         publicKey: input.publicKey,
-        validValues: context.scoreDomain,
+        validValues: context.scoreDomainValues,
         group: context.group,
+        protocolVersion: context.manifest.protocolVersion,
         manifestHash: context.manifestHash,
         sessionId: context.sessionId,
-        minimumBallotCount: context.manifest.minimumPublicationThreshold,
+        minimumBallotCount: context.manifest.minimumPublishedVoterCount,
         optionCount: context.optionCount,
     });
 };

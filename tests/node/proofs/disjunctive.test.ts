@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../dev-support/deterministic.js';
+import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
 
-import { InvalidProofError, getGroup, modPowP } from '#core';
+import { InvalidProofError, getGroup } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDisjunctiveProof,
@@ -11,9 +12,9 @@ import {
 } from '#proofs';
 
 describe('disjunctive proofs', () => {
-    const group = getGroup(2048);
+    const group = getGroup('ristretto255');
     const secret = 12345n;
-    const publicKey = modPowP(group.g, secret, group.p);
+    const publicKey = encodePoint(multiplyBase(secret));
     const validValues = [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n] as const;
     const plaintext = 7n;
     const randomness = 42n;
@@ -102,7 +103,7 @@ describe('disjunctive proofs', () => {
                 { ...context, voterIndex: 5 },
             ),
         ).resolves.toBe(false);
-    }, 10_000);
+    });
 
     it('rejects garbled branch data and malformed proof contexts', async () => {
         const proof = await createDisjunctiveProof(
