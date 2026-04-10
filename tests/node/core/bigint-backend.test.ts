@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../dev-support/deterministic.js';
-import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
 
 import {
     fixedBaseModPow,
@@ -27,11 +26,12 @@ import {
     type ProofContext,
 } from '#proofs';
 import { getGroup } from '#root';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
 import {
     combineDecryptionShares,
+    createVerifiedAggregateCiphertext,
     createVerifiedDecryptionShare,
     deriveSharesFromPolynomial,
-    type VerifiedAggregateCiphertext,
 } from '#threshold';
 import { generatePedersenCommitments } from '#vss';
 
@@ -134,11 +134,11 @@ const computeArtifacts = async (): Promise<{
         ciphertextRight,
         group.name,
     );
-    const verifiedAggregate = {
-        transcriptHash: 'aa'.repeat(32),
-        ballotCount: 2,
-        ciphertext: aggregate,
-    } as VerifiedAggregateCiphertext;
+    const verifiedAggregate = createVerifiedAggregateCiphertext(
+        'aa'.repeat(32),
+        aggregate,
+        2,
+    );
     const decryptionShares = shares
         .slice(0, 2)
         .map((share) =>

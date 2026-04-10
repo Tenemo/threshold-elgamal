@@ -1,4 +1,3 @@
-import { encodeScalar } from '../../src/core/ristretto.js';
 import { createDeterministicSource } from '../deterministic.js';
 
 import { invariant, signPayload } from './common.js';
@@ -28,6 +27,7 @@ import {
     type TallyPublicationPayload,
     type VerifiedBallotAggregation,
 } from '#protocol';
+import { encodeScalar } from '#src/core/ristretto';
 import { createVerifiedDecryptionShare, type Share } from '#threshold';
 
 export const createBallotArtifacts = async (

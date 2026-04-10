@@ -19,7 +19,7 @@ const GROUPS = Object.freeze([GROUP]);
 /**
  * Returns the immutable built-in Ristretto255 group definition.
  *
- * @param identifier Canonical group name or accepted beta alias.
+ * @param identifier Canonical shipped group name.
  * @returns The immutable built-in group definition.
  */
 export const getGroup = (identifier: GroupIdentifier): CryptoGroup => {
@@ -36,7 +36,5 @@ export const getGroup = (identifier: GroupIdentifier): CryptoGroup => {
 export const listGroups = (): readonly CryptoGroup[] => GROUPS;
 
 /** Returns the canonical deterministic secondary generator encoding. */
-export const deriveH = (identifier: GroupIdentifier): string => {
-    void identifier;
-    return GROUP.h;
-};
+export const deriveH = (identifier: GroupIdentifier): string =>
+    getGroup(identifier).h;

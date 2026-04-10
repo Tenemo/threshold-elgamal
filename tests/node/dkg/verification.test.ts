@@ -13,11 +13,14 @@ import {
 } from '#dkg';
 import {
     canonicalUnsignedPayloadBytes,
+    type ComplaintResolutionPayload,
+    hashProtocolTranscript,
     type KeyDerivationConfirmation,
     type ProtocolPayload,
     type SignedPayload,
 } from '#protocol';
-import { signPayloadBytes } from '#transport';
+import { generateTransportKeyPair, signPayloadBytes } from '#transport';
+import { exportTransportPrivateKey } from '#transport-advanced';
 
 const expectCompleted = (
     result: VotingFlowResult,
@@ -57,6 +60,7 @@ describe('DKG transcript verification', () => {
     let completedWithoutConfirmations: CompletedVotingFlowResult;
     let withDealerFaultComplaint: CompletedVotingFlowResult;
     let withResolvedComplaint: CompletedVotingFlowResult;
+    let withResolvedComplaintAndConfirmations: CompletedVotingFlowResult;
 
     beforeAll(async () => {
         const completedResult = await runVotingFlowScenario({
@@ -92,6 +96,19 @@ describe('DKG transcript verification', () => {
                 },
             ],
         });
+        const resolvedComplaintWithConfirmationsResult =
+            await runVotingFlowScenario({
+                participantCount: 3,
+                votes: [1n, 2n, 3n],
+                includeKeyDerivationConfirmations: true,
+                complaints: [
+                    {
+                        dealerIndex: 1,
+                        recipientIndex: 2,
+                        resolutionOutcome: 'complainant-fault',
+                    },
+                ],
+            });
 
         completed = expectCompleted(
             completedResult,
@@ -108,6 +125,10 @@ describe('DKG transcript verification', () => {
         withResolvedComplaint = expectCompleted(
             resolvedComplaintResult,
             'Expected the resolved complaint fixture scenario to finish',
+        );
+        withResolvedComplaintAndConfirmations = expectCompleted(
+            resolvedComplaintWithConfirmationsResult,
+            'Expected the resolved complaint fixture scenario with confirmations to finish',
         );
     }, 180_000);
 
@@ -168,13 +189,93 @@ describe('DKG transcript verification', () => {
     it('accepts valid complaint resolutions and keeps the dealer in QUAL', async () => {
         const verified = await verifyDKGTranscript({
             protocol: 'gjkr',
-            transcript: withResolvedComplaint.dkgTranscript,
-            manifest: withResolvedComplaint.manifest,
-            sessionId: withResolvedComplaint.sessionId,
+            transcript: withResolvedComplaintAndConfirmations.dkgTranscript,
+            manifest: withResolvedComplaintAndConfirmations.manifest,
+            sessionId: withResolvedComplaintAndConfirmations.sessionId,
         });
 
         expect(verified.acceptedComplaints).toEqual([]);
         expect(verified.qual).toEqual([1, 2, 3]);
+    });
+
+    it('treats malformed or mismatched complaint resolutions as unresolved complaints instead of transcript-fatal errors', async () => {
+        const resolutionFixture = withResolvedComplaintAndConfirmations;
+        const resolutionIndex = resolutionFixture.dkgTranscript.findIndex(
+            (entry) => entry.payload.messageType === 'complaint-resolution',
+        );
+        if (resolutionIndex < 0) {
+            throw new Error(
+                'Expected the resolved complaint fixture transcript',
+            );
+        }
+
+        const originalResolution = resolutionFixture.dkgTranscript[
+            resolutionIndex
+        ] as SignedPayload<ComplaintResolutionPayload>;
+        const wrongEphemeralKey = await generateTransportKeyPair({
+            suite: 'P-256',
+            extractable: true,
+        });
+        const wrongResolution = await resignPayload(resolutionFixture, {
+            ...originalResolution.payload,
+            revealedEphemeralPrivateKey: await exportTransportPrivateKey(
+                wrongEphemeralKey.privateKey,
+            ),
+        } as ProtocolPayload);
+        const malformedResolution = await resignPayload(resolutionFixture, {
+            ...originalResolution.payload,
+            revealedEphemeralPrivateKey: '00'.repeat(
+                67,
+            ) as typeof originalResolution.payload.revealedEphemeralPrivateKey,
+        } as ProtocolPayload);
+
+        for (const replacement of [wrongResolution, malformedResolution]) {
+            const complaintAdjustedTranscript = resolutionFixture.dkgTranscript
+                .map((entry, index) =>
+                    index === resolutionIndex ? replacement : entry,
+                )
+                .filter(
+                    (entry) =>
+                        entry.payload.messageType !== 'phase-checkpoint' &&
+                        !(
+                            entry.payload.messageType ===
+                                'key-derivation-confirmation' &&
+                            entry.payload.participantIndex === 1
+                        ),
+                );
+            const updatedQualHash = await hashProtocolTranscript(
+                complaintAdjustedTranscript
+                    .filter(
+                        (entry) =>
+                            entry.payload.messageType !==
+                            'key-derivation-confirmation',
+                    )
+                    .map((entry) => entry.payload),
+                resolutionFixture.group.byteLength,
+            );
+            const updatedTranscript = await Promise.all(
+                complaintAdjustedTranscript.map((entry) =>
+                    entry.payload.messageType === 'key-derivation-confirmation'
+                        ? resignPayload(resolutionFixture, {
+                              ...entry.payload,
+                              qualHash: updatedQualHash,
+                              publicKey:
+                                  withDealerFaultComplaint.jointPublicKey,
+                          } as ProtocolPayload)
+                        : Promise.resolve(entry),
+                ),
+            );
+            const verified = await verifyDKGTranscript({
+                protocol: 'gjkr',
+                transcript: updatedTranscript,
+                manifest: resolutionFixture.manifest,
+                sessionId: resolutionFixture.sessionId,
+            });
+
+            expect(verified.acceptedComplaints).toHaveLength(1);
+            expect(verified.acceptedComplaints[0].dealerIndex).toBe(1);
+            expect(verified.qual).toEqual([2, 3]);
+        }
     });
 
     it('rejects missing encrypted shares and missing Feldman commitments', async () => {

@@ -3,6 +3,7 @@ import {
     assertInSubgroup,
     sha256,
     utf8ToBytes,
+    type EncodedPoint,
     type CryptoGroup,
 } from '../core/index.js';
 import { encodePoint, RISTRETTO_ZERO } from '../core/ristretto.js';
@@ -11,7 +12,10 @@ import type { ElgamalCiphertext } from '../elgamal/types.js';
 import { verifyDisjunctiveProof } from '../proofs/disjunctive.js';
 import type { DisjunctiveProof, ProofContext } from '../proofs/types.js';
 import { bytesToHex } from '../serialize/index.js';
-import type { VerifiedAggregateCiphertext } from '../threshold/types.js';
+import {
+    createVerifiedAggregateCiphertext,
+    type VerifiedAggregateCiphertext,
+} from '../threshold/types.js';
 
 import { canonicalizeJson } from './canonical-json.js';
 
@@ -61,7 +65,7 @@ export type VoterBallot = {
 /** Input bundle for ballot verification and aggregation. */
 export type VerifyAndAggregateBallotsInput = {
     readonly ballots: readonly BallotTranscriptEntry[];
-    readonly publicKey: string;
+    readonly publicKey: EncodedPoint;
     readonly validValues: readonly bigint[];
     readonly group: CryptoGroup;
     readonly protocolVersion: string;
@@ -232,7 +236,7 @@ export const verifyAndAggregateBallots = async (
 
     if (sortedBallots.length < input.minimumBallotCount) {
         throw new InvalidPayloadError(
-            `Accepted ballot count ${sortedBallots.length} is below the minimum publication threshold ${input.minimumBallotCount}`,
+            `Accepted ballot count ${sortedBallots.length} is below the minimum published voter count requirement ${input.minimumBallotCount}`,
         );
     }
 
@@ -248,11 +252,11 @@ export const verifyAndAggregateBallots = async (
         sortedBallots,
         input.group,
     );
-    const aggregate = Object.freeze({
+    const aggregate = createVerifiedAggregateCiphertext(
         transcriptHash,
         ciphertext,
-        ballotCount: sortedBallots.length,
-    }) as unknown as VerifiedAggregateCiphertext;
+        sortedBallots.length,
+    );
 
     return {
         aggregate,
@@ -281,7 +285,7 @@ export const verifyAndAggregateBallotsByOption = async (
     );
     if (groupedVoterBallots.length < input.minimumBallotCount) {
         throw new InvalidPayloadError(
-            `Accepted voter count ${groupedVoterBallots.length} is below the minimum publication threshold ${input.minimumBallotCount}`,
+            `Accepted voter count ${groupedVoterBallots.length} is below the minimum published voter count requirement ${input.minimumBallotCount}`,
         );
     }
 

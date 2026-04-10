@@ -6,7 +6,8 @@
             "#root": ["./src/index.ts"],
             "#core": ["./src/core/index.ts"],
             "#elgamal": ["./src/elgamal/index.ts"],
-            "#serialize": ["./src/serialize/index.ts"]
+            "#serialize": ["./src/serialize/index.ts"],
+            "#src/*": ["./src/*"]
         },
         "target": "ES2020",
         "module": "ESNext",

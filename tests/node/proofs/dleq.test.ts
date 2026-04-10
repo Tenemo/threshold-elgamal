@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../dev-support/deterministic.js';
-import {
-    decodePoint,
-    encodePoint,
-    multiplyBase,
-    pointMultiply,
-} from '../../../src/core/ristretto.js';
 
 import { InvalidProofError, InvalidScalarError, getGroup } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
@@ -16,6 +10,12 @@ import {
     type DLEQStatement,
     type ProofContext,
 } from '#proofs';
+import {
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointMultiply,
+} from '#src/core/ristretto';
 
 describe('DLEQ proofs', () => {
     const group = getGroup('ristretto255');

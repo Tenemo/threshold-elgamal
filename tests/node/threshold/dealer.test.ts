@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
-import { createDecryptionShare } from '../../../src/threshold/decrypt.js';
 import thresholdVector from '../../../test-vectors/threshold.json';
 
 import {
@@ -19,6 +17,8 @@ import {
     encryptAdditiveWithRandomness,
 } from '#elgamal';
 import type { ElgamalCiphertext } from '#elgamal';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
+import { createDecryptionShare } from '#src/threshold/decrypt';
 import {
     combineDecryptionShares,
     createVerifiedDecryptionShare,

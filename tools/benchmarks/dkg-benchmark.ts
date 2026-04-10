@@ -1,13 +1,10 @@
 import { performance } from 'node:perf_hooks';
 
 import { runVotingFlowScenario } from '../../dev-support/voting-flow-harness.js';
-import {
-    majorityThreshold,
-    type GroupIdentifier,
-    type GroupName,
-} from '../../src/core/index.js';
-import { verifyDKGTranscript } from '../../src/dkg/index.js';
-import type { KeyAgreementSuite } from '../../src/transport/index.js';
+
+import { majorityThreshold, type GroupIdentifier, type GroupName } from '#core';
+import { verifyDKGTranscript } from '#dkg';
+import type { KeyAgreementSuite } from '#transport';
 
 type BenchmarkRow = {
     readonly group: GroupName;

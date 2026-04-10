@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { encodePoint, RISTRETTO_ZERO } from '../../../src/core/ristretto.js';
-
 import { deriveH, getGroup, listGroups, UnsupportedSuiteError } from '#core';
+import { encodePoint, RISTRETTO_ZERO } from '#src/core/ristretto';
 
 describe('core groups', () => {
     it('exposes the shipped ristretto255 group definition', () => {
@@ -33,6 +32,9 @@ describe('core groups', () => {
 
     it('rejects unsupported groups', () => {
         expect(() => getGroup('ffdhe2048' as never)).toThrow(
+            UnsupportedSuiteError,
+        );
+        expect(() => deriveH('ffdhe2048' as never)).toThrow(
             UnsupportedSuiteError,
         );
         expect(() => getGroup(2048 as never)).toThrow(UnsupportedSuiteError);

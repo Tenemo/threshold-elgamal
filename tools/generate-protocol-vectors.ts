@@ -1,21 +1,16 @@
 import { writeFile } from 'node:fs/promises';
 
 import { createDeterministicSource } from '../dev-support/deterministic.js';
-import { getGroup } from '../src/core/index.js';
-import {
-    decodePoint,
-    encodePoint,
-    multiplyBase,
-    pointMultiply,
-} from '../src/core/ristretto.js';
-import { encryptAdditiveWithRandomness } from '../src/elgamal/index.js';
+
+import { getGroup } from '#core';
+import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDLEQProof,
     createDisjunctiveProof,
     createSchnorrProof,
     type DLEQStatement,
     type ProofContext,
-} from '../src/proofs/index.js';
+} from '#proofs';
 import {
     canonicalizeElectionManifest,
     deriveSessionId,
@@ -23,7 +18,13 @@ import {
     verifyAndAggregateBallots,
     type BallotTranscriptEntry,
     type ElectionManifest,
-} from '../src/protocol/index.js';
+} from '#protocol';
+import {
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointMultiply,
+} from '#src/core/ristretto';
 
 const bigintReplacer = (_key: string, value: unknown): unknown =>
     typeof value === 'bigint' ? value.toString() : value;

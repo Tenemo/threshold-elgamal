@@ -337,7 +337,7 @@ describe('protocol verification helpers', () => {
                 minimumBallotCount: 3,
             }),
         ).rejects.toThrow(
-            'Accepted ballot count 2 is below the minimum publication threshold 3',
+            'Accepted ballot count 2 is below the minimum published voter count requirement 3',
         );
     });
 });

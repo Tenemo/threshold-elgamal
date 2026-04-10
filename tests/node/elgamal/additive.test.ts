@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
-
 import type { ElgamalCiphertext } from '#elgamal';
 import {
     addEncryptedValues,
@@ -19,6 +17,7 @@ import {
     PlaintextDomainError,
     UnsupportedSuiteError,
 } from '#root';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
 
 const additiveIdentity = (): ElgamalCiphertext => {
     const identity = encodePoint(multiplyBase(0n));

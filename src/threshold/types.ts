@@ -31,7 +31,9 @@ export type DecryptionShare = {
     readonly value: EncodedPoint;
 };
 
-declare const verifiedAggregateBrand: unique symbol;
+const verifiedAggregateBrand: unique symbol = Symbol(
+    'verifiedAggregateCiphertext',
+);
 
 /** A threshold aggregate tied to a verified additive ciphertext. */
 export type VerifiedAggregateCiphertext = {
@@ -44,3 +46,27 @@ export type VerifiedAggregateCiphertext = {
     /** Opaque brand preventing arbitrary object-literal construction. */
     readonly [verifiedAggregateBrand]: true;
 };
+
+/**
+ * Brands a locally recomputed aggregate ciphertext as verified without making
+ * the brand property part of the public serialized shape.
+ */
+export const createVerifiedAggregateCiphertext = (
+    transcriptHash: string,
+    ciphertext: ElgamalCiphertext,
+    ballotCount: number,
+): VerifiedAggregateCiphertext =>
+    Object.freeze(
+        Object.defineProperty(
+            {
+                transcriptHash,
+                ciphertext,
+                ballotCount,
+            },
+            verifiedAggregateBrand,
+            {
+                value: true,
+                enumerable: false,
+            },
+        ),
+    ) as VerifiedAggregateCiphertext;

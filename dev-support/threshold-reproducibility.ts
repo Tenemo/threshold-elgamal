@@ -1,4 +1,4 @@
-import { assertValidParticipantIndex, getGroup } from '../src/core/index.js';
+import { assertValidParticipantIndex, getGroup } from '#core';
 import {
     decodePoint,
     encodePoint,
@@ -7,16 +7,16 @@ import {
     pointMultiply,
     pointSubtract,
     RISTRETTO_ZERO,
-} from '../src/core/ristretto.js';
-import type { GroupIdentifier, GroupName } from '../src/core/types.js';
-import { encryptAdditiveWithRandomness } from '../src/elgamal/additive.js';
-import { babyStepGiantStep } from '../src/elgamal/bsgs.js';
+} from '#src/core/ristretto';
+import type { EncodedPoint, GroupIdentifier, GroupName } from '#src/core/types';
+import { encryptAdditiveWithRandomness } from '#src/elgamal/additive';
+import { babyStepGiantStep } from '#src/elgamal/bsgs';
 import {
     combineDecryptionShares,
     createDecryptionShare,
-} from '../src/threshold/decrypt.js';
-import { lagrangeCoefficient } from '../src/threshold/lagrange.js';
-import { deriveSharesFromPolynomial } from '../src/threshold/shares.js';
+} from '#src/threshold/decrypt';
+import { lagrangeCoefficient } from '#src/threshold/lagrange';
+import { deriveSharesFromPolynomial } from '#src/threshold/shares';
 
 type ThresholdVectorConfig = {
     readonly bound: bigint;
@@ -50,10 +50,10 @@ type ThresholdVectorRecord = {
     readonly participantCount: number;
     readonly participantPublicKeys: readonly {
         readonly index: number;
-        readonly value: string;
+        readonly value: EncodedPoint;
     }[];
     readonly polynomial: readonly bigint[];
-    readonly publicKey: string;
+    readonly publicKey: EncodedPoint;
     readonly recovered: bigint;
     readonly shares: readonly {
         readonly index: number;

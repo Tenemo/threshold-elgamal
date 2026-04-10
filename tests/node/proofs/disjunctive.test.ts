@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../dev-support/deterministic.js';
-import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
 
 import { InvalidProofError, getGroup } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
@@ -10,6 +9,7 @@ import {
     verifyDisjunctiveProof,
     type ProofContext,
 } from '#proofs';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
 
 describe('disjunctive proofs', () => {
     const group = getGroup('ristretto255');

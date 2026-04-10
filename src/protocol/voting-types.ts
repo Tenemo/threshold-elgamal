@@ -1,3 +1,4 @@
+import type { EncodedPoint } from '../core/types.js';
 import type { DKGProtocol } from '../dkg/types.js';
 import type { VerifiedDKGTranscript } from '../dkg/verification.js';
 import type { DecryptionShare } from '../threshold/index.js';
@@ -19,7 +20,7 @@ import type {
  */
 export type VerifyBallotSubmissionPayloadsInput = {
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
-    readonly publicKey: string;
+    readonly publicKey: EncodedPoint;
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
 };

@@ -1,4 +1,4 @@
-import { modQ, type CryptoGroup } from '../core/index.js';
+import { modQ, type CryptoGroup, type EncodedPoint } from '../core/index.js';
 import {
     decodePoint,
     encodePoint,
@@ -8,10 +8,10 @@ import {
 } from '../core/ristretto.js';
 
 export const evaluateCommitmentProduct = (
-    commitments: readonly string[],
+    commitments: readonly EncodedPoint[],
     index: number,
     group: CryptoGroup,
-): string => {
+): EncodedPoint => {
     let result = RISTRETTO_ZERO;
     let exponent = 1n;
     const point = BigInt(index);

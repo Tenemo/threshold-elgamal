@@ -1,5 +1,3 @@
-import { encodePoint, multiplyBase } from '../src/core/ristretto.js';
-
 import {
     computeRosterHash,
     createPhaseCheckpointPayload,
@@ -49,6 +47,7 @@ import {
     verifyPublishedVotingResults,
     type KeyDerivationConfirmation,
 } from '#protocol';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
 import {
     combineDecryptionShares,
     createVerifiedDecryptionShare,

@@ -1,27 +1,23 @@
 import { performance } from 'node:perf_hooks';
 
-import {
-    fixedBaseModPow,
-    getGroup,
-    utf8ToBytes,
-} from '../../src/core/index.js';
+import { fixedBaseModPow, getGroup, utf8ToBytes } from '#core';
 import {
     generateParametersWithPrivateKey,
     encryptAdditiveWithRandomness,
-} from '../../src/elgamal/index.js';
+} from '#elgamal';
 import {
     createDisjunctiveProof,
     createSchnorrProof,
     verifyDisjunctiveProof,
     verifySchnorrProof,
     type ProofContext,
-} from '../../src/proofs/index.js';
+} from '#proofs';
 import {
     decryptEnvelope,
     encryptEnvelope,
     exportTransportPublicKey,
     generateTransportKeyPair,
-} from '../../src/transport/index.js';
+} from '#transport';
 
 type BenchmarkRow = {
     readonly averageMs: number;

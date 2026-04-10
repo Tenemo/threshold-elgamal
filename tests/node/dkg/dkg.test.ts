@@ -1,3 +1,4 @@
+import { p256 } from '@noble/curves/nist.js';
 import { describe, expect, it } from 'vitest';
 
 import thresholdVector from '../../../test-vectors/threshold.json';
@@ -22,15 +23,81 @@ import type {
     ComplaintResolutionPayload,
     KeyDerivationConfirmation,
     ProtocolPayload,
+    RegistrationPayload,
     SignedPayload,
 } from '#protocol';
+import { canonicalUnsignedPayloadBytes } from '#protocol';
+import { bytesToHex } from '#serialize';
+
+const AUTH_PUBLIC_KEY_SPKI_PREFIX =
+    '3059301306072a8648ce3d020106082a8648ce3d030107034200';
+
+type ReducerSigner = {
+    readonly participantIndex: number;
+    readonly secretKey: Uint8Array;
+    readonly authPublicKey: RegistrationPayload['authPublicKey'];
+    readonly transportPublicKey: RegistrationPayload['transportPublicKey'];
+};
+
+const reducerSignerCache = new Map<number, ReducerSigner>();
+
+const reducerSigner = (participantIndex: number): ReducerSigner => {
+    const cached = reducerSignerCache.get(participantIndex);
+    if (cached !== undefined) {
+        return cached;
+    }
+
+    const secretKey = new Uint8Array(32);
+    secretKey[31] = participantIndex;
+
+    const signer: ReducerSigner = {
+        participantIndex,
+        secretKey,
+        authPublicKey: `${AUTH_PUBLIC_KEY_SPKI_PREFIX}${bytesToHex(
+            p256.getPublicKey(secretKey, false),
+        )}` as RegistrationPayload['authPublicKey'],
+        transportPublicKey: bytesToHex(
+            Uint8Array.from([participantIndex, participantIndex]),
+        ) as RegistrationPayload['transportPublicKey'],
+    };
+
+    reducerSignerCache.set(participantIndex, signer);
+    return signer;
+};
 
 const signed = <TPayload extends ProtocolPayload>(
     payload: TPayload,
 ): SignedPayload<TPayload> => ({
     payload,
-    signature: `${payload.messageType}-${payload.participantIndex}`,
+    signature: bytesToHex(
+        p256.sign(
+            canonicalUnsignedPayloadBytes(payload),
+            reducerSigner(payload.participantIndex).secretKey,
+        ),
+    ),
 });
+
+const registrationPayloads = (
+    participantCount: number,
+    sessionId: string,
+    manifestHash: string,
+    rosterHash: string,
+): readonly SignedPayload<RegistrationPayload>[] =>
+    Array.from({ length: participantCount }, (_value, index) => {
+        const participantIndex = index + 1;
+        const signer = reducerSigner(participantIndex);
+
+        return signed({
+            sessionId,
+            manifestHash,
+            phase: 0,
+            participantIndex,
+            messageType: 'registration',
+            rosterHash,
+            authPublicKey: signer.authPublicKey,
+            transportPublicKey: signer.transportPublicKey,
+        });
+    });
 
 const thresholdVectorGroup = thresholdVector.group as 'ristretto255';
 
@@ -83,8 +150,12 @@ describe('DKG state machines', () => {
             participantCount: 3,
             threshold: majorityThreshold(3),
         });
-        const transition = processGjkrPayload(
+        const registeredState = processGjkrPayload(
             state,
+            registrationPayloads(3, 'session-1', 'manifest-1', 'roster-1')[0],
+        ).newState;
+        const transition = processGjkrPayload(
+            registeredState,
             signed({
                 sessionId: 'session-1',
                 manifestHash: 'manifest-1',
@@ -96,7 +167,7 @@ describe('DKG state machines', () => {
         );
 
         expect(transition.errors[0]?.code).toBe('manifest-acceptance-required');
-        expect(transition.newState).toBe(state);
+        expect(transition.newState).toBe(registeredState);
     });
 
     it('replays Joint-Feldman transcripts deterministically', () => {
@@ -109,6 +180,7 @@ describe('DKG state machines', () => {
             threshold: majorityThreshold(3),
         } as const;
         const transcript = [
+            ...registrationPayloads(3, 'session-1', 'manifest-1', 'roster-1'),
             signed({
                 sessionId: 'session-1',
                 manifestHash: 'manifest-1',
@@ -208,18 +280,60 @@ describe('DKG state machines', () => {
             participantCount: 3,
             threshold: majorityThreshold(3),
         } as const;
+        const sharedRegistrations = registrationPayloads(
+            3,
+            baseConfig.sessionId,
+            baseConfig.manifestHash,
+            'roster-shared',
+        );
+        const sharedAcceptances = [1, 2, 3].map((participantIndex) =>
+            signed({
+                sessionId: baseConfig.sessionId,
+                manifestHash: baseConfig.manifestHash,
+                phase: 0,
+                participantIndex,
+                messageType: 'manifest-acceptance',
+                rosterHash: 'roster-shared',
+                assignedParticipantIndex: participantIndex,
+            }),
+        );
+        const complaintPayload = signed({
+            sessionId: baseConfig.sessionId,
+            manifestHash: baseConfig.manifestHash,
+            phase: 2,
+            participantIndex: 2,
+            messageType: 'complaint',
+            dealerIndex: 1,
+            envelopeId: 'env-1-2',
+            reason: 'aes-gcm-failure',
+        });
+        const resolutionPayload = signed({
+            sessionId: baseConfig.sessionId,
+            manifestHash: baseConfig.manifestHash,
+            phase: 2,
+            participantIndex: 1,
+            messageType: 'complaint-resolution',
+            dealerIndex: 1,
+            complainantIndex: 2,
+            envelopeId: 'env-1-2',
+            suite: 'P-256',
+            revealedEphemeralPrivateKey:
+                'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
+        });
+        const jointConfirmations = [1, 2, 3].map((participantIndex) =>
+            signed({
+                sessionId: baseConfig.sessionId,
+                manifestHash: baseConfig.manifestHash,
+                phase: 3,
+                participantIndex,
+                messageType: 'key-derivation-confirmation',
+                qualHash: 'qual',
+                publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
+            }),
+        );
         const jointTranscript = [
-            ...[1, 2, 3].map((participantIndex) =>
-                signed({
-                    sessionId: baseConfig.sessionId,
-                    manifestHash: baseConfig.manifestHash,
-                    phase: 0,
-                    participantIndex,
-                    messageType: 'manifest-acceptance',
-                    rosterHash: 'roster-shared',
-                    assignedParticipantIndex: participantIndex,
-                }),
-            ),
+            ...sharedRegistrations,
+            ...sharedAcceptances,
             ...[1, 2, 3].map((participantIndex) =>
                 signed({
                     sessionId: baseConfig.sessionId,
@@ -231,43 +345,13 @@ describe('DKG state machines', () => {
                     proofs: [],
                 }),
             ),
-            signed({
-                sessionId: baseConfig.sessionId,
-                manifestHash: baseConfig.manifestHash,
-                phase: 2,
-                participantIndex: 2,
-                messageType: 'complaint',
-                dealerIndex: 1,
-                envelopeId: 'env-1-2',
-                reason: 'aes-gcm-failure',
-            }),
-            signed({
-                sessionId: baseConfig.sessionId,
-                manifestHash: baseConfig.manifestHash,
-                phase: 2,
-                participantIndex: 1,
-                messageType: 'complaint-resolution',
-                dealerIndex: 1,
-                complainantIndex: 2,
-                envelopeId: 'env-1-2',
-                suite: 'P-256',
-                revealedEphemeralPrivateKey:
-                    'ephemeral-private-key' as ComplaintResolutionPayload['revealedEphemeralPrivateKey'],
-            }),
-            ...[1, 2, 3].map((participantIndex) =>
-                signed({
-                    sessionId: baseConfig.sessionId,
-                    manifestHash: baseConfig.manifestHash,
-                    phase: 3,
-                    participantIndex,
-                    messageType: 'key-derivation-confirmation',
-                    qualHash: 'qual',
-                    publicKey: 'pk' as KeyDerivationConfirmation['publicKey'],
-                }),
-            ),
+            complaintPayload,
+            resolutionPayload,
+            ...jointConfirmations,
         ] as const;
         const gjkrTranscript = [
-            ...jointTranscript.slice(0, 3),
+            ...sharedRegistrations,
+            ...sharedAcceptances,
             ...[1, 2, 3].map((participantIndex) =>
                 signed({
                     sessionId: baseConfig.sessionId,
@@ -278,8 +362,9 @@ describe('DKG state machines', () => {
                     commitments: [`pc-${participantIndex}`],
                 }),
             ),
-            ...jointTranscript.slice(6, 8),
-            ...jointTranscript.slice(8).map((entry) =>
+            complaintPayload,
+            resolutionPayload,
+            ...jointConfirmations.map((entry) =>
                 entry.payload.messageType === 'key-derivation-confirmation'
                     ? signed({
                           ...entry.payload,
@@ -321,6 +406,7 @@ describe('DKG state machines', () => {
             threshold: majorityThreshold(5),
         } as const;
         const transcript = [
+            ...registrationPayloads(5, 'session-2', 'manifest-2', 'roster-2'),
             ...[1, 2, 3, 4, 5].map((participantIndex) =>
                 signed({
                     sessionId: 'session-2',
@@ -411,6 +497,7 @@ describe('DKG state machines', () => {
             threshold: majorityThreshold(3),
         } as const;
         const transcript = [
+            ...registrationPayloads(3, 'session-4', 'manifest-4', 'roster-4'),
             ...[1, 2, 3].map((participantIndex) =>
                 signed({
                     sessionId: 'session-4',
@@ -470,10 +557,10 @@ describe('DKG state machines', () => {
 
         const prefixState = replayGjkrTranscript(
             config,
-            transcript.slice(0, 5),
+            transcript.slice(0, 8),
         );
         let resumedState = prefixState;
-        for (const payload of transcript.slice(5)) {
+        for (const payload of transcript.slice(8)) {
             resumedState = processGjkrPayload(resumedState, payload).newState;
         }
 
@@ -494,6 +581,12 @@ describe('DKG state machines', () => {
             participantCount: 3,
             threshold: majorityThreshold(3),
         } as const;
+        const registrations = registrationPayloads(
+            3,
+            'session-4b',
+            'manifest-4b',
+            'roster-4b',
+        );
         const acceptancePayloads = [1, 2, 3].map((participantIndex) =>
             signed({
                 sessionId: 'session-4b',
@@ -538,6 +631,7 @@ describe('DKG state machines', () => {
         );
 
         const foreignResolutionState = replayGjkrTranscript(config, [
+            ...registrations,
             ...acceptancePayloads,
             ...pedersenPayloads,
             complaintPayload,
@@ -557,6 +651,7 @@ describe('DKG state machines', () => {
             ...confirmationPayloads,
         ]);
         const mismatchedResolutionState = replayGjkrTranscript(config, [
+            ...registrations,
             ...acceptancePayloads,
             ...pedersenPayloads,
             complaintPayload,
@@ -591,6 +686,16 @@ describe('DKG state machines', () => {
             participantCount: 3,
             threshold: majorityThreshold(3),
         });
+        const gjkrRegisteredState = registrationPayloads(
+            3,
+            'session-5',
+            'manifest-5',
+            'roster-5',
+        ).reduce(
+            (currentState, payload) =>
+                processGjkrPayload(currentState, payload).newState,
+            gjkrState,
+        );
         const gjkrAcceptance = signed({
             sessionId: 'session-5',
             manifestHash: 'manifest-5',
@@ -602,7 +707,8 @@ describe('DKG state machines', () => {
         });
         const gjkrStateAfterAcceptance = processGjkrPayload(
             processGjkrPayload(
-                processGjkrPayload(gjkrState, gjkrAcceptance).newState,
+                processGjkrPayload(gjkrRegisteredState, gjkrAcceptance)
+                    .newState,
                 signed({
                     ...gjkrAcceptance.payload,
                     participantIndex: 2,
@@ -644,6 +750,16 @@ describe('DKG state machines', () => {
             participantCount: 3,
             threshold: majorityThreshold(3),
         });
+        const jointRegisteredState = registrationPayloads(
+            3,
+            'session-6',
+            'manifest-6',
+            'roster-6',
+        ).reduce(
+            (currentState, payload) =>
+                processJointFeldmanPayload(currentState, payload).newState,
+            jointState,
+        );
         const jointAcceptance = signed({
             sessionId: 'session-6',
             manifestHash: 'manifest-6',
@@ -655,8 +771,10 @@ describe('DKG state machines', () => {
         });
         const jointStateAfterAcceptance = processJointFeldmanPayload(
             processJointFeldmanPayload(
-                processJointFeldmanPayload(jointState, jointAcceptance)
-                    .newState,
+                processJointFeldmanPayload(
+                    jointRegisteredState,
+                    jointAcceptance,
+                ).newState,
                 signed({
                     ...jointAcceptance.payload,
                     participantIndex: 2,
@@ -690,6 +808,58 @@ describe('DKG state machines', () => {
         expect(jointRetransmitted.errors).toEqual([]);
         expect(jointRetransmitted.newState).toBe(jointStateAfterCommitment);
         expect(jointRetransmitted.newState.phase).toBe(1);
+    });
+
+    it('rejects unregistered and forged reducer payloads before they affect state', () => {
+        const state = createGjkrState({
+            protocol: 'gjkr',
+            sessionId: 'session-auth',
+            manifestHash: 'manifest-auth',
+            group: 'ristretto255',
+            participantCount: 3,
+            threshold: majorityThreshold(3),
+        });
+        const unregisteredAcceptance = processGjkrPayload(
+            state,
+            signed({
+                sessionId: 'session-auth',
+                manifestHash: 'manifest-auth',
+                phase: 0,
+                participantIndex: 1,
+                messageType: 'manifest-acceptance',
+                rosterHash: 'roster-auth',
+                assignedParticipantIndex: 1,
+            }),
+        );
+        const registeredState = registrationPayloads(
+            3,
+            'session-auth',
+            'manifest-auth',
+            'roster-auth',
+        ).reduce(
+            (currentState, payload) =>
+                processGjkrPayload(currentState, payload).newState,
+            state,
+        );
+        const forgedAcceptance = processGjkrPayload(registeredState, {
+            payload: {
+                sessionId: 'session-auth',
+                manifestHash: 'manifest-auth',
+                phase: 0,
+                participantIndex: 1,
+                messageType: 'manifest-acceptance',
+                rosterHash: 'roster-auth',
+                assignedParticipantIndex: 1,
+            },
+            signature: '00'.repeat(64),
+        });
+
+        expect(unregisteredAcceptance.errors[0]?.code).toBe(
+            'registration-required',
+        );
+        expect(unregisteredAcceptance.newState).toBe(state);
+        expect(forgedAcceptance.errors[0]?.code).toBe('signature-invalid');
+        expect(forgedAcceptance.newState).toBe(registeredState);
     });
 
     it('groups matching phase checkpoints across multiple signers into one variant', () => {
@@ -744,8 +914,12 @@ describe('DKG state machines', () => {
             participantCount: 3,
             threshold: majorityThreshold(3),
         });
-        const accepted = processJointFeldmanPayload(
+        const registeredState = processJointFeldmanPayload(
             state,
+            registrationPayloads(3, 'session-3', 'manifest-3', 'roster-3')[0],
+        ).newState;
+        const accepted = processJointFeldmanPayload(
+            registeredState,
             signed({
                 sessionId: 'session-3',
                 manifestHash: 'manifest-3',
@@ -756,8 +930,9 @@ describe('DKG state machines', () => {
                 assignedParticipantIndex: 1,
             }),
         ).newState;
-        const equivocation = processJointFeldmanPayload(accepted, {
-            payload: {
+        const equivocation = processJointFeldmanPayload(
+            accepted,
+            signed({
                 sessionId: 'session-3',
                 manifestHash: 'manifest-3',
                 phase: 0,
@@ -765,9 +940,8 @@ describe('DKG state machines', () => {
                 messageType: 'manifest-acceptance',
                 rosterHash: 'other-roster',
                 assignedParticipantIndex: 1,
-            },
-            signature: 'different-signature',
-        });
+            }),
+        );
 
         expect(equivocation.errors[0]?.code).toBe('equivocation');
         expect(equivocation.newState.phase).toBe('aborted');

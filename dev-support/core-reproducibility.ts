@@ -1,4 +1,4 @@
-import { deriveH, getGroup, listGroups } from '../src/core/groups.js';
+import { deriveH, getGroup, listGroups } from '#src/core/groups';
 
 type FrozenHDerivationCheck = {
     readonly derived: string;

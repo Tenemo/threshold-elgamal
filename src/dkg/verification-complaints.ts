@@ -262,10 +262,18 @@ export const verifyComplaintOutcomes = async (
 
         usedResolutionKeys.add(resolutionKey);
 
-        if (resolutionPayload.suite !== matchingEnvelope.payload.suite) {
+        if (
+            input.protocol !== 'gjkr' &&
+            complaint.reason === 'pedersen-failure'
+        ) {
             throw new InvalidPayloadError(
-                `Complaint resolution suite mismatch for envelope ${complaint.envelopeId}`,
+                'Joint-Feldman transcripts cannot resolve Pedersen-failure complaints',
             );
+        }
+
+        if (resolutionPayload.suite !== matchingEnvelope.payload.suite) {
+            acceptedComplaints.push(complaint);
+            continue;
         }
 
         const complainantRosterEntry = rosterEntryMap.get(
@@ -276,55 +284,62 @@ export const verifyComplaintOutcomes = async (
                 `Missing roster entry for complainant ${complaint.participantIndex}`,
             );
         }
-
-        const resolution = await resolveDealerChallengeFromPublicKey(
-            {
-                ...matchingEnvelope.payload,
-                dealerIndex: matchingEnvelope.payload.participantIndex,
-                rosterHash: input.manifest.rosterHash,
-                payloadType: 'encrypted-dual-share',
-                protocolVersion: input.manifest.protocolVersion,
-            },
-            complainantRosterEntry.transportPublicKey,
-            resolutionPayload.revealedEphemeralPrivateKey,
-        );
-        if (resolution.valid !== true || resolution.plaintext === undefined) {
+        const dealerCommitments =
+            input.protocol === 'gjkr'
+                ? pedersenCommitmentMap.get(complaint.dealerIndex)
+                : undefined;
+        if (input.protocol === 'gjkr' && dealerCommitments === undefined) {
             throw new InvalidPayloadError(
-                `Complaint resolution failed verification for complainant ${complaint.participantIndex} against dealer ${complaint.dealerIndex}`,
+                `Missing Pedersen commitments for dealer ${complaint.dealerIndex}`,
             );
         }
 
-        const decryptedShare = decodePedersenShareEnvelope(
-            resolution.plaintext,
-            complaint.participantIndex,
-            'Complaint resolution',
-        );
-        const dealerCommitments = pedersenCommitmentMap.get(
-            complaint.dealerIndex,
-        );
-        if (input.protocol === 'gjkr') {
-            if (dealerCommitments === undefined) {
-                throw new InvalidPayloadError(
-                    `Missing Pedersen commitments for dealer ${complaint.dealerIndex}`,
-                );
-            }
-            if (
-                !verifyPedersenShare(
-                    decryptedShare,
-                    {
-                        commitments: dealerCommitments,
-                    },
-                    group,
-                )
-            ) {
-                throw new InvalidPayloadError(
-                    `Complaint resolution share failed Pedersen verification for dealer ${complaint.dealerIndex} and complainant ${complaint.participantIndex}`,
-                );
-            }
-        } else if (complaint.reason === 'pedersen-failure') {
-            throw new InvalidPayloadError(
-                'Joint-Feldman transcripts cannot resolve Pedersen-failure complaints',
+        try {
+            const resolution = await resolveDealerChallengeFromPublicKey(
+                {
+                    ...matchingEnvelope.payload,
+                    dealerIndex: matchingEnvelope.payload.participantIndex,
+                    rosterHash: input.manifest.rosterHash,
+                    payloadType: 'encrypted-dual-share',
+                    protocolVersion: input.manifest.protocolVersion,
+                },
+                complainantRosterEntry.transportPublicKey,
+                resolutionPayload.revealedEphemeralPrivateKey,
             );
+            if (
+                resolution.valid !== true ||
+                resolution.plaintext === undefined
+            ) {
+                acceptedComplaints.push(complaint);
+                continue;
+            }
+
+            const decryptedShare = decodePedersenShareEnvelope(
+                resolution.plaintext,
+                complaint.participantIndex,
+                'Complaint resolution',
+            );
+            if (input.protocol === 'gjkr') {
+                if (
+                    !verifyPedersenShare(
+                        decryptedShare,
+                        {
+                            commitments: dealerCommitments!,
+                        },
+                        group,
+                    )
+                ) {
+                    acceptedComplaints.push(complaint);
+                    continue;
+                }
+            }
+        } catch (error) {
+            if (error instanceof InvalidPayloadError) {
+                acceptedComplaints.push(complaint);
+                continue;
+            }
+
+            throw error;
         }
     }
 

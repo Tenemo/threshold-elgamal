@@ -25,6 +25,7 @@ import {
     withError,
 } from './complaints.js';
 import { expectedDkgPhase } from './phase-plan.js';
+import { validateAuthenticatedPayload } from './reducer-auth.js';
 import type {
     DKGProtocol,
     DKGState,
@@ -179,6 +180,18 @@ export const processMajorityDkgPayload = (
         signedPayload.payload.participantIndex,
         state.config.participantCount,
     );
+
+    const authenticationError = validateAuthenticatedPayload(
+        state.transcript,
+        signedPayload,
+    );
+    if (authenticationError !== null) {
+        return {
+            newState: state,
+            outgoingPayloads: [],
+            errors: [authenticationError],
+        };
+    }
 
     if (isPhaseCheckpointPayload(signedPayload)) {
         if (

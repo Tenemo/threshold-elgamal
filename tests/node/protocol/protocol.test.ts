@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    auditSignedPayloads,
     canonicalUnsignedPayloadBytes,
     canonicalizeElectionManifest,
     canonicalizeJson,
@@ -308,7 +309,7 @@ describe('protocol payloads and transcripts', () => {
                     response: '07',
                 },
             }),
-        ).toBe(`session-1:6:2:decryption-share:2:${'aa'.repeat(32)}`);
+        ).toBe('session-1:6:2:decryption-share:2');
         expect(
             payloadSlotKey({
                 sessionId: 'session-1',
@@ -322,7 +323,7 @@ describe('protocol payloads and transcripts', () => {
                 tally: '08',
                 decryptionParticipantIndices: [1, 3],
             }),
-        ).toBe(`session-1:7:1:tally-publication:2:${'bb'.repeat(32)}`);
+        ).toBe('session-1:7:1:tally-publication:2');
         expect(
             payloadSlotKey({
                 sessionId: 'session-1',
@@ -373,6 +374,101 @@ describe('protocol payloads and transcripts', () => {
         expect(classifySlotConflict(identicalUnsigned, equivocated)).toBe(
             'equivocation',
         );
+    });
+
+    it('treats conflicting decryption-share and tally-publication transcript hashes as equivocation', async () => {
+        const conflictingDecryptionShares = [
+            {
+                payload: {
+                    sessionId: 'session-1',
+                    manifestHash: 'manifest-1',
+                    phase: 6,
+                    participantIndex: 2,
+                    messageType: 'decryption-share' as const,
+                    optionIndex: 1,
+                    transcriptHash: 'aa'.repeat(32),
+                    ballotCount: 3,
+                    decryptionShare:
+                        '05' as DecryptionSharePayload['decryptionShare'],
+                    proof: {
+                        challenge: '06',
+                        response: '07',
+                    },
+                },
+                signature: 'aaaa',
+            },
+            {
+                payload: {
+                    sessionId: 'session-1',
+                    manifestHash: 'manifest-1',
+                    phase: 6,
+                    participantIndex: 2,
+                    messageType: 'decryption-share' as const,
+                    optionIndex: 1,
+                    transcriptHash: 'bb'.repeat(32),
+                    ballotCount: 3,
+                    decryptionShare:
+                        '05' as DecryptionSharePayload['decryptionShare'],
+                    proof: {
+                        challenge: '06',
+                        response: '07',
+                    },
+                },
+                signature: 'bbbb',
+            },
+        ] as const;
+        const conflictingTallyPublications = [
+            {
+                payload: {
+                    sessionId: 'session-1',
+                    manifestHash: 'manifest-1',
+                    phase: 7,
+                    participantIndex: 1,
+                    messageType: 'tally-publication' as const,
+                    optionIndex: 1,
+                    transcriptHash: 'cc'.repeat(32),
+                    ballotCount: 3,
+                    tally: '08',
+                    decryptionParticipantIndices: [1, 3],
+                },
+                signature: 'cccc',
+            },
+            {
+                payload: {
+                    sessionId: 'session-1',
+                    manifestHash: 'manifest-1',
+                    phase: 7,
+                    participantIndex: 1,
+                    messageType: 'tally-publication' as const,
+                    optionIndex: 1,
+                    transcriptHash: 'dd'.repeat(32),
+                    ballotCount: 3,
+                    tally: '08',
+                    decryptionParticipantIndices: [1, 3],
+                },
+                signature: 'dddd',
+            },
+        ] as const;
+
+        expect(
+            classifySlotConflict(
+                conflictingDecryptionShares[0],
+                conflictingDecryptionShares[1],
+            ),
+        ).toBe('equivocation');
+        expect(
+            classifySlotConflict(
+                conflictingTallyPublications[0],
+                conflictingTallyPublications[1],
+            ),
+        ).toBe('equivocation');
+
+        await expect(
+            auditSignedPayloads(conflictingDecryptionShares),
+        ).rejects.toThrow('Detected equivocation for canonical slot');
+        await expect(
+            auditSignedPayloads(conflictingTallyPublications),
+        ).rejects.toThrow('Detected equivocation for canonical slot');
     });
 
     it('hashes phase snapshots without including checkpoints or restart links', async () => {

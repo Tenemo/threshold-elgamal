@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { encodePoint, RISTRETTO_ZERO } from '../../../src/core/ristretto.js';
-
 import {
     assertMajorityThreshold,
     assertInSubgroup,
@@ -21,6 +19,7 @@ import {
     PlaintextDomainError,
     ThresholdViolationError,
 } from '#core';
+import { encodePoint, RISTRETTO_ZERO } from '#src/core/ristretto';
 
 describe('core validation', () => {
     const group = getGroup('ristretto255');
@@ -61,7 +60,11 @@ describe('core validation', () => {
             InvalidGroupElementError,
         );
         expect(() => assertInSubgroupOrIdentity(identity)).not.toThrow();
+        expect(isInSubgroup(group.g.toUpperCase())).toBe(false);
         expect(() => assertValidPublicKey(invalidPoint)).toThrow(
+            InvalidGroupElementError,
+        );
+        expect(() => assertValidPublicKey(group.g.toUpperCase())).toThrow(
             InvalidGroupElementError,
         );
         expect(() => assertValidPublicKey(group.g)).not.toThrow();
