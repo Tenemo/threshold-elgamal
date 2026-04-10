@@ -1,6 +1,6 @@
 # Threshold ElGamal
 
-[![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://badge.fury.io/js/threshold-elgamal)
+[![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://www.npmjs.com/package/threshold-elgamal)
 [![npm downloads](https://img.shields.io/npm/dm/threshold-elgamal)](https://www.npmjs.com/package/threshold-elgamal)
 
 ---
@@ -16,26 +16,23 @@
 
 ---
 
-`threshold-elgamal` is a TypeScript library for applications where a group of
-people need to submit encrypted scores, verify a shared public record, and
-reveal only the final result once enough participants cooperate.
+`threshold-elgamal` is a browser-native TypeScript library for verifiable score-voting research prototypes. The shipped `1.0.0-beta` line centers on additive ElGamal over `ristretto255`, threshold decryption, verifiable secret sharing, proof systems, typed protocol payloads, authenticated share transport, and log-driven DKG reducers.
 
-In practice, that means browser-native finite-field ElGamal research
-prototypes for verifiable voting, encrypted group decisions, and other
-small-ceremony threshold workflows built on native `bigint`.
+The library is intentionally library-only. It stays pure, deterministic, synchronous, and Worker-safe. WebSockets, retries, persistence, bulletin-board storage, and application orchestration remain outside the package.
 
-The published package has `0` runtime dependencies and ships as a fully
-self-contained library.
+The cryptographic backend uses [`@noble/curves`](https://github.com/paulmillr/noble-curves) and [`@noble/hashes`](https://github.com/paulmillr/noble-hashes) where appropriate, plus Web Crypto for randomness, signatures, key agreement, and AES-GCM envelopes.
 
 This library is a hardened research prototype. It has not been audited.
 
-The current `1.x` scope is additive score voting with public rosters, private
-ballots, strict-majority threshold decryption, and locally verifiable per-option
-sum tallies that callers can interpret as arithmetic means. The current
-checkpointed DKG path is intended for small thesis-scale all-equal ceremonies.
-Treat `10` participants as the recommended default size for regression testing
-and mobile-first deployments today. Treat `50` all-equal participants as an
-experimental upper target, not the default operating point.
+The current beta line supports:
+
+- additive-only tallying
+- fixed score voting in `1..10`
+- per-option ballot slots with grouped voter-ballot verification
+- strict-majority threshold policies `floor(n / 2) + 1 <= k <= n - 1`
+- manifest acceptance, checkpoints, complaint handling, and `QUAL` reduction
+- mandatory local aggregate recomputation before decryption and tally acceptance
+- full board-audit and end-to-end ceremony verification helpers
 
 Start with these guides:
 
@@ -47,7 +44,7 @@ Start with these guides:
 
 ### Encryption and validation
 
-- [Validated RFC 7919 FFDHE groups and subgroup checks](https://tenemo.github.io/threshold-elgamal/guides/groups-and-validation/) define the group model and the input rules the library enforces.
+- [Ristretto255 groups, encodings, and validation rules](https://tenemo.github.io/threshold-elgamal/guides/groups-and-validation/) define the shipped group model and the input rules the library enforces.
 - [Additive ElGamal, ciphertext combination, and bounded discrete-log recovery](https://tenemo.github.io/threshold-elgamal/guides/additive-elgamal/) cover the safe encryption path used by the root package.
 - [The safe root package API](https://tenemo.github.io/threshold-elgamal/api/root-package/) exposes the additive-only surface for encryption, decryption, encoding, and validation.
 
@@ -55,7 +52,7 @@ Start with these guides:
 
 - [Threshold sharing and decryption helpers](https://tenemo.github.io/threshold-elgamal/api/reference/threshold/) provide dealer-based Shamir sharing, verified decryption shares, and aggregate decryption support.
 - [Feldman and Pedersen VSS helpers](https://tenemo.github.io/threshold-elgamal/api/reference/vss/) cover verifiable secret sharing commitments and share checks.
-- [Typed protocol payloads, manifest handling, transcript hashing, and per-option published tally verification](https://tenemo.github.io/threshold-elgamal/api/reference/protocol/) cover the library's signed ceremony and tally surface.
+- [Typed protocol payloads, manifest handling, board auditing, and full ceremony verification](https://tenemo.github.io/threshold-elgamal/api/reference/protocol/) cover the signed ceremony and tally surface.
 - [Log-driven Joint-Feldman and GJKR reducers](https://tenemo.github.io/threshold-elgamal/api/reference/dkg/) provide the distributed key-generation state machines behind the threshold workflow, including checkpointed phase closure and verifier-side `QUAL` reduction when setup participants drop out.
 
 ### Proofs, transport, and runtime
@@ -80,8 +77,9 @@ pnpm add threshold-elgamal
 ## Performance model
 
 - Keep worker orchestration in the application. `threshold-elgamal` stays pure and importable inside a Web Worker, while the app decides pool size, chunking, and lifecycle.
-- The library now exposes a pluggable bigint backend through `setBigintMathBackend()` in `threshold-elgamal/core`. JavaScript remains the default backend. Optional WASM acceleration should be installed explicitly by the caller.
-- `minimumPublicationThreshold` is a publication privacy floor for tally release. It is not the DKG reconstruction threshold.
+- The library exposes a pluggable bigint backend through `setBigintMathBackend()` in `threshold-elgamal/core`. JavaScript remains the default backend. Optional WASM acceleration should be installed explicitly by the caller.
+- `minimumPublishedVoterCount` is a publication privacy floor for tally release. It is not the DKG reconstruction threshold.
+- The current recommended default DKG regression size is `10` all-equal participants. Larger symmetric ceremonies remain experimental.
 
 ## Quickstart
 
@@ -94,7 +92,7 @@ import {
     getGroup,
 } from "threshold-elgamal";
 
-const group = "ffdhe3072" as const;
+const group = "ristretto255" as const;
 const { publicKey, privateKey } = generateParameters(group);
 const suite = getGroup(group);
 const messageBound = 10n;
@@ -105,19 +103,31 @@ const right = encryptAdditive(7n, publicKey, group, messageBound);
 const sum = addEncryptedValues(left, right, group);
 
 console.log(decryptAdditive(sum, privateKey, group, tallyBound)); // 13n
-console.log(suite.q > 0n); // true
+console.log(suite.byteLength); // 32
 ```
 
-All public APIs require explicit group selection. There is no implicit default suite.
+All public APIs require explicit group selection. The shipped canonical suite is `ristretto255`.
 
-## Choosing an additive bound
+During the beta transition, legacy identifiers such as `ffdhe2048`, `ffdhe3072`, `ffdhe4096`, `2048`, `3072`, and `4096` are accepted as input aliases only. They all resolve to the same shipped `ristretto255` suite and should not be used in new code.
+
+## Choosing additive bounds
 
 - The encryption-time `bound` validates the plaintext for that one ciphertext. Use the maximum single message you allow.
 - The decryption-time `bound` must cover the plaintext you expect to recover. For aggregates, that usually means the maximum tally, which is often larger than the per-message bound.
 - Ciphertexts do not store or authenticate the bound for you. You must carry that policy in your application logic.
 - Larger bounds make decryption slower and more memory-hungry because baby-step giant-step work grows roughly with `sqrt(bound)`.
 
-For example, if each ballot is in `0..10` and you tally `50` ballots, encrypt each ballot with `10n` and decrypt the final sum with `500n`.
+For the shipped voting path, each score is in `1..10`. If you tally `50` ballots, encrypt each ballot with `10n` and decrypt the final sum with `500n`.
+
+## Protocol defaults
+
+- `reconstructionThreshold` is the real cryptographic threshold `k`.
+- `minimumPublishedVoterCount` is the publication floor counted over distinct accepted voters.
+- `ballotFinality` is fixed to `first-valid`.
+- Accepted voters must submit exactly one ballot per option slot.
+- The shipped score domain is fixed to `1..10`.
+
+For end-to-end verification, the protocol subpath exposes `verifyElectionCeremonyDetailed(...)`. It verifies the manifest, registrations, acceptances, DKG transcript, local joint-key derivation, ballot proofs, locally recomputed per-option aggregates, decryption shares, tally publications, and board-consistency digests in one pass.
 
 ## Documentation
 
@@ -128,17 +138,11 @@ For example, if each ballot is in `0..10` and you tally `50` ballots, encrypt ea
 - API reference: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
 - Docs source: [`docs/src/content/docs/`](docs/src/content/docs/)
 
-## Changes since v0.x.x
+## Beta-line notes
 
-This library has been substantially rewritten around a smaller and stricter public surface. The current release keeps the validated group definitions, deterministic suite-derived `h`, secure randomness, additive ElGamal, key generation, threshold sharing, proofs, protocol helpers, transport primitives, and log-driven DKG reducers. Raw multiplicative mode has been removed.
+The current beta line intentionally standardizes the shipped workflow on Ristretto255, additive-only tallying, fixed `1..10` score voting semantics, and the renamed manifest fields `reconstructionThreshold` and `minimumPublishedVoterCount`.
 
-The reason is privacy leakage at the individual ciphertext level, not any problem with the geometric mean itself. In multiplicative ElGamal, `c2 = m * y^r mod p`. The masking term `y^r` is always a quadratic residue because it stays inside the prime-order subgroup, so `c2` inherits the Legendre symbol of `m`. Anyone observing the public ciphertext can compute that symbol and learn whether the plaintext score is in the quadratic-residue half of the score domain or the non-residue half. For a small domain such as `{1, ..., 10}`, that leaks about one bit per ballot and narrows each encrypted score from ten possibilities to roughly five before any decryption happens.
-
-In additive ElGamal, `c2 = g^m * y^r mod p`. Both factors lie in the same prime-order subgroup, so `c2` is always a quadratic residue. The Legendre symbol therefore leaks nothing about the individual plaintext. That makes additive mode strictly better on per-ballot privacy.
-
-The remaining inference problem comes from publishing exact aggregates over small groups, and that problem exists in both designs. If a small board publishes an exact sum, participants can reason backward from the total and their own vote. If it publishes an exact product, they can do the same thing from the product. No homomorphic encryption scheme fixes that by itself. The only real mitigations are changing what gets published, suppressing small results, or adding noise, all of which change the voting system semantics.
-
-This does create a real tradeoff: additive homomorphism gives sums and arithmetic means, while multiplicative homomorphism gives products and geometric means. If a scoring system truly requires geometric-mean behavior, additive mode does not reproduce that semantics directly. The library now chooses the mode that does not leak information from each posted ciphertext.
+That means the current beta API and wire format should be treated as a reset relative to earlier finite-field beta fixtures and examples. Regenerate vectors and re-sign manifests when moving old experiments onto this line.
 
 ## Development
 
@@ -152,32 +156,10 @@ pnpm run ci
 For the recommended default regression benchmark, run:
 
 ```bash
-pnpm run bench:dkg -- --group=ffdhe3072 --transport=X25519 --options=3 10
+pnpm run bench:dkg -- --group=ristretto255 --transport=X25519 --options=3 10
 ```
 
-Measurements were collected on this machine:
-
-- Windows 10 Pro 22H2
-- Intel Core i9-14900K
-- DDR5-5000 RAM
-
-Results:
-
-- Group: `ffdhe3072`
-- Transport: `X25519`
-- Options: `3`
-- Participants: `10`
-- Threshold: `6`
-- Total elapsed time: `2 min 36.369 s`
-
-| Participants (`n`) | Threshold (`k`) | Options | Transcript messages | Full voting flow | Transcript verification | Total          |
-| ------------------ | --------------- | ------- | ------------------- | ---------------- | ----------------------- | -------------- |
-| 10                 | 6               | 3       | 155                 | 2 min 31.076 s   | 5.294 s                 | 2 min 36.369 s |
-
-The current DKG path is still all-to-all in the setup phase, so this benchmark
-is a readiness spot check for a recommended default size of `10` participants,
-not evidence that the symmetric all-equal flow is suitable for thousands of
-participants.
+Benchmark results depend heavily on device class and browser/runtime overhead. Treat the current all-to-all DKG path as a readiness spot check for `10` participants, not as evidence that the symmetric all-equal flow is suitable for large ceremonies.
 
 ## License
 

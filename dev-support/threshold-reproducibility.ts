@@ -1,11 +1,14 @@
+import { assertValidParticipantIndex, getGroup } from '../src/core/index.js';
 import {
-    assertValidParticipantIndex,
-    getGroup,
-    modInvP,
-    modP,
-    modPowP,
-} from '../src/core/index.js';
-import type { GroupName } from '../src/core/types.js';
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointAdd,
+    pointMultiply,
+    pointSubtract,
+    RISTRETTO_ZERO,
+} from '../src/core/ristretto.js';
+import type { GroupIdentifier, GroupName } from '../src/core/types.js';
 import { encryptAdditiveWithRandomness } from '../src/elgamal/additive.js';
 import { babyStepGiantStep } from '../src/elgamal/bsgs.js';
 import {
@@ -17,7 +20,7 @@ import { deriveSharesFromPolynomial } from '../src/threshold/shares.js';
 
 type ThresholdVectorConfig = {
     readonly bound: bigint;
-    readonly groupName: GroupName;
+    readonly groupName: GroupIdentifier;
     readonly message: bigint;
     readonly participantCount: number;
     readonly polynomial: readonly bigint[];
@@ -28,17 +31,17 @@ type ThresholdVectorConfig = {
 type ThresholdVectorRecord = {
     readonly ciphertext: {
         readonly bound: bigint;
-        readonly c1: bigint;
-        readonly c2: bigint;
+        readonly c1: string;
+        readonly c2: string;
         readonly message: bigint;
         readonly randomness: bigint;
     };
-    readonly combinedFactor: bigint;
+    readonly combinedFactor: string;
     readonly decryptionShares: readonly {
         readonly index: number;
-        readonly value: bigint;
+        readonly value: string;
     }[];
-    readonly encodedMessage: bigint;
+    readonly encodedMessage: string;
     readonly group: GroupName;
     readonly lagrangeCoefficients: readonly {
         readonly index: number;
@@ -47,10 +50,10 @@ type ThresholdVectorRecord = {
     readonly participantCount: number;
     readonly participantPublicKeys: readonly {
         readonly index: number;
-        readonly value: bigint;
+        readonly value: string;
     }[];
     readonly polynomial: readonly bigint[];
-    readonly publicKey: bigint;
+    readonly publicKey: string;
     readonly recovered: bigint;
     readonly shares: readonly {
         readonly index: number;
@@ -105,10 +108,10 @@ export const generateThresholdVectorRecord = (
         config.participantCount,
         group.q,
     );
-    const publicKey = modPowP(group.g, config.polynomial[0], group.p);
+    const publicKey = encodePoint(multiplyBase(config.polynomial[0]));
     const participantPublicKeys = shares.map((share) => ({
         index: share.index,
-        value: modPowP(group.g, share.value, group.p),
+        value: encodePoint(multiplyBase(share.value)),
     }));
     const ciphertext = encryptAdditiveWithRandomness(
         config.message,
@@ -132,7 +135,7 @@ export const generateThresholdVectorRecord = (
         ),
     }));
 
-    let combinedFactor = 1n;
+    let combinedFactor = RISTRETTO_ZERO;
 
     for (const decryptionShare of decryptionShares) {
         const lambda = lagrangeCoefficients.find(
@@ -145,16 +148,14 @@ export const generateThresholdVectorRecord = (
             );
         }
 
-        combinedFactor = modP(
-            combinedFactor *
-                modPowP(decryptionShare.value, lambda.value, group.p),
-            group.p,
+        combinedFactor = pointAdd(
+            combinedFactor,
+            pointMultiply(decodePoint(decryptionShare.value), lambda.value),
         );
     }
 
-    const encodedMessage = modP(
-        ciphertext.c2 * modInvP(combinedFactor, group.p),
-        group.p,
+    const encodedMessage = encodePoint(
+        pointSubtract(decodePoint(ciphertext.c2), combinedFactor),
     );
     const recovered = combineDecryptionShares(
         ciphertext,
@@ -170,7 +171,6 @@ export const generateThresholdVectorRecord = (
     const discreteLog = babyStepGiantStep(
         encodedMessage,
         group.g,
-        group.p,
         config.bound,
     );
     if (discreteLog !== config.message) {
@@ -194,7 +194,7 @@ export const generateThresholdVectorRecord = (
         subsetIndices: config.subsetIndices,
         decryptionShares,
         lagrangeCoefficients,
-        combinedFactor,
+        combinedFactor: encodePoint(combinedFactor),
         encodedMessage,
         recovered,
     };

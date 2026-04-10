@@ -1,7 +1,13 @@
 import { writeFile } from 'node:fs/promises';
 
 import { createDeterministicSource } from '../dev-support/deterministic.js';
-import { getGroup, modPowP } from '../src/core/index.js';
+import { getGroup } from '../src/core/index.js';
+import {
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointMultiply,
+} from '../src/core/ristretto.js';
 import { encryptAdditiveWithRandomness } from '../src/elgamal/index.js';
 import {
     createDLEQProof,
@@ -21,13 +27,16 @@ import {
 
 const bigintReplacer = (_key: string, value: unknown): unknown =>
     typeof value === 'bigint' ? value.toString() : value;
+const validScores = Array.from({ length: 10 }, (_value, index) =>
+    BigInt(index + 1),
+);
 
 const buildBallot = async (
     voterIndex: number,
     vote: bigint,
     randomness: bigint,
-    publicKey: bigint,
-    group = getGroup('ffdhe2048'),
+    publicKey: string,
+    group = getGroup('ristretto255'),
 ): Promise<BallotTranscriptEntry> => {
     const ciphertext = encryptAdditiveWithRandomness(
         vote,
@@ -55,27 +64,24 @@ const buildBallot = async (
             randomness,
             ciphertext,
             publicKey,
-            [1n, 2n, 3n, 4n, 5n],
+            validScores,
             group,
             context,
             createDeterministicSource(90 + voterIndex, {
-                advanceBetweenCalls: false,
+                postCallOffset: 17,
             }),
         ),
     };
 };
 
 const main = async (): Promise<void> => {
-    const group = getGroup('ffdhe2048');
+    const group = getGroup('ristretto255');
     const manifest: ElectionManifest = {
         protocolVersion: 'v1',
         suiteId: group.name,
-        threshold: 3,
+        reconstructionThreshold: 3,
         participantCount: 5,
-        minimumPublicationThreshold: 4,
-        allowAbstention: false,
-        scoreDomainMin: 1,
-        scoreDomainMax: 10,
+        minimumPublishedVoterCount: 4,
         ballotFinality: 'first-valid',
         rosterHash: 'roster-hash',
         optionList: ['Alpha', 'Beta'],
@@ -121,18 +127,18 @@ const main = async (): Promise<void> => {
         coefficientIndex: 1,
     };
     const schnorrSecret = 77n;
-    const schnorrStatement = modPowP(group.g, schnorrSecret, group.p);
+    const schnorrStatement = encodePoint(multiplyBase(schnorrSecret));
     const schnorrProof = await createSchnorrProof(
         schnorrSecret,
         schnorrStatement,
         group,
         schnorrContext,
         createDeterministicSource(10, {
-            advanceBetweenCalls: false,
+            postCallOffset: 17,
         }),
     );
 
-    const publicKey = modPowP(group.g, 123n, group.p);
+    const publicKey = encodePoint(multiplyBase(123n));
     const ciphertext = encryptAdditiveWithRandomness(
         3n,
         publicKey,
@@ -142,9 +148,11 @@ const main = async (): Promise<void> => {
     );
     const dleqSecret = 17n;
     const dleqStatement: DLEQStatement = {
-        publicKey: modPowP(group.g, dleqSecret, group.p),
+        publicKey: encodePoint(multiplyBase(dleqSecret)),
         ciphertext,
-        decryptionShare: modPowP(ciphertext.c1, dleqSecret, group.p),
+        decryptionShare: encodePoint(
+            pointMultiply(decodePoint(ciphertext.c1), dleqSecret),
+        ),
     };
     const dleqContext: ProofContext = {
         protocolVersion: 'v1',
@@ -160,7 +168,7 @@ const main = async (): Promise<void> => {
         group,
         dleqContext,
         createDeterministicSource(20, {
-            advanceBetweenCalls: false,
+            postCallOffset: 17,
         }),
     );
 
@@ -178,11 +186,11 @@ const main = async (): Promise<void> => {
         19n,
         ciphertext,
         publicKey,
-        [1n, 2n, 3n, 4n, 5n],
+        validScores,
         group,
         disjunctiveContext,
         createDeterministicSource(30, {
-            advanceBetweenCalls: false,
+            postCallOffset: 17,
         }),
     );
 
@@ -194,7 +202,7 @@ const main = async (): Promise<void> => {
     const ballotAggregation = await verifyAndAggregateBallots({
         ballots,
         publicKey,
-        validValues: [1n, 2n, 3n, 4n, 5n],
+        validValues: validScores,
         group,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',
@@ -228,7 +236,7 @@ const main = async (): Promise<void> => {
                     plaintext: 3n,
                     randomness: 19n,
                     ciphertext,
-                    validValues: [1n, 2n, 3n, 4n, 5n],
+                    validValues: validScores,
                     context: disjunctiveContext,
                     proof: disjunctiveProof,
                 },

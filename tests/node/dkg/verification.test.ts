@@ -61,20 +61,17 @@ describe('DKG transcript verification', () => {
     beforeAll(async () => {
         const completedResult = await runVotingFlowScenario({
             participantCount: 3,
-            scoreDomainMax: 3,
             votes: [1n, 2n, 3n],
             includeKeyDerivationConfirmations: true,
         });
         const completedWithoutConfirmationsResult = await runVotingFlowScenario(
             {
                 participantCount: 3,
-                scoreDomainMax: 3,
                 votes: [1n, 2n, 3n],
             },
         );
         const dealerFaultComplaintResult = await runVotingFlowScenario({
             participantCount: 3,
-            scoreDomainMax: 3,
             votes: [1n, 2n, 3n],
             complaints: [
                 {
@@ -86,7 +83,6 @@ describe('DKG transcript verification', () => {
         });
         const resolvedComplaintResult = await runVotingFlowScenario({
             participantCount: 3,
-            scoreDomainMax: 3,
             votes: [1n, 2n, 3n],
             complaints: [
                 {
@@ -288,7 +284,7 @@ describe('DKG transcript verification', () => {
                 sessionId: completed.sessionId,
             }),
         ).rejects.toThrow(
-            'Duplicate encrypted share payload for dealer 1 and recipient 3',
+            'Phase 1 checkpoint transcript hash does not match the signed transcript snapshot',
         );
     });
 

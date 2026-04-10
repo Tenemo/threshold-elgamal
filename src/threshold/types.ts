@@ -1,4 +1,4 @@
-import type { CryptoGroup } from '../core/types.js';
+import type { CryptoGroup, EncodedPoint } from '../core/types.js';
 import type { ElgamalCiphertext } from '../elgamal/types.js';
 
 /** A single indexed Shamir share over `Z_q`. */
@@ -15,8 +15,8 @@ export type ThresholdKeySet = {
     readonly threshold: number;
     /** Total participant count `n`. */
     readonly participantCount: number;
-    /** Group public key `Y = g^s mod p`. */
-    readonly publicKey: bigint;
+    /** Group public key `Y = sG`. */
+    readonly publicKey: EncodedPoint;
     /** Dealer-produced shares indexed `1..n`. */
     readonly shares: readonly Share[];
     /** Resolved built-in group definition. */
@@ -27,8 +27,8 @@ export type ThresholdKeySet = {
 export type DecryptionShare = {
     /** 1-based participant index matching the source share. */
     readonly index: number;
-    /** Partial decryption value `d_i = c1^{x_i} mod p`. */
-    readonly value: bigint;
+    /** Partial decryption value `d_i = x_i C_1`. */
+    readonly value: EncodedPoint;
 };
 
 declare const verifiedAggregateBrand: unique symbol;

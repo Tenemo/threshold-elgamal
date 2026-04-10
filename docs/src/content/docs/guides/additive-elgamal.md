@@ -5,7 +5,7 @@ sidebar:
   order: 2
 ---
 
-Additive mode is the safe shipped ElGamal mode. It encrypts a plaintext `m` as `g^m`, which makes homomorphic addition possible at the ciphertext level.
+Additive mode is the safe shipped ElGamal mode. On the current beta line it runs on `ristretto255`, encoding a plaintext `m` as the additive scalar multiple `mG` so ciphertexts can be combined by point addition.
 
 ## Bounds and plaintext domain
 
@@ -30,14 +30,14 @@ For an aggregate, choose `bound` as the largest plaintext the decrypted result m
 
 Example:
 
-- Each ballot score is in `0..10`
+- Each ballot score is in `1..10`
 - A board tally combines `50` ballots
 - Encrypt each ballot with `10n`
 - Decrypt the final tally with `500n`
 
 ## When BSGS is appropriate
 
-The additive decrypt path uses baby-step giant-step under the hood. That is practical only when the final plaintext stays within a caller-controlled bound.
+The additive decrypt path uses baby-step giant-step over Ristretto points under the hood. That is practical only when the final plaintext stays within a caller-controlled bound.
 
 Runtime and memory both grow roughly with `sqrt(bound)`, because the solver builds a baby-step table sized to that search range.
 
@@ -51,6 +51,8 @@ Do not use additive mode when:
 
 - the decoded result could exceed any realistic bound you are willing to search
 - you need multiplicative or geometric-mean semantics, because those APIs are intentionally not shipped
+
+For the shipped protocol voting helpers, treat `0` as out of policy even though the low-level additive primitive can represent it. The supported score-voting surface is fixed to `1..10` with no abstention encoding.
 
 ## Common mistakes
 

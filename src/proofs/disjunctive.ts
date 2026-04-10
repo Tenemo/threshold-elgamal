@@ -2,20 +2,21 @@ import {
     assertInSubgroup,
     assertInSubgroupOrIdentity,
     assertScalarInZq,
-    fixedBaseModPow,
     InvalidProofError,
-    modInvP,
-    modP,
-    modPowP,
-    multiExponentiate,
     modQ,
     randomScalarBelow,
     type CryptoGroup,
     type RandomBytesSource,
 } from '../core/index.js';
+import {
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointMultiply,
+    pointSubtract,
+} from '../core/ristretto.js';
 import type { ElgamalCiphertext } from '../elgamal/types.js';
 import {
-    bigintToFixedBytes,
     concatBytes,
     encodeForChallenge,
     encodeSequenceForChallenge,
@@ -24,9 +25,9 @@ import {
 import {
     assertProofContext,
     contextElements,
-    fixed,
+    fixedPoint,
+    fixedScalar,
     hashChallenge,
-    negateExponent,
     sumChallenges,
 } from './helpers.js';
 import { hedgedNonce } from './nonces.js';
@@ -40,46 +41,46 @@ const candidateEncoding = (
     ciphertext: ElgamalCiphertext,
     candidateValue: bigint,
     group: CryptoGroup,
-): bigint =>
-    modP(
-        ciphertext.c2 *
-            modInvP(fixedBaseModPow(group.g, candidateValue, group.p), group.p),
-        group.p,
+): string =>
+    encodePoint(
+        pointSubtract(
+            decodePoint(ciphertext.c2, 'Ciphertext c2'),
+            multiplyBase(modQ(candidateValue, group.q)),
+        ),
     );
 
 const commitmentSequence = (
-    commitments: readonly { a1: bigint; a2: bigint }[],
-    group: CryptoGroup,
+    commitments: readonly { a1: string; a2: string }[],
 ): Uint8Array =>
     encodeSequenceForChallenge(
         commitments.map((commitment) =>
             concatBytes(
-                encodeForChallenge(fixed(commitment.a1, group)),
-                encodeForChallenge(fixed(commitment.a2, group)),
+                encodeForChallenge(fixedPoint(commitment.a1)),
+                encodeForChallenge(fixedPoint(commitment.a2)),
             ),
         ),
     );
 
 const challengePayload = (
     ciphertext: ElgamalCiphertext,
-    publicKey: bigint,
+    publicKey: string,
     validValues: readonly bigint[],
-    commitments: readonly { a1: bigint; a2: bigint }[],
+    commitments: readonly { a1: string; a2: string }[],
     group: CryptoGroup,
     context: ProofContext,
 ): Uint8Array =>
     encodeForChallenge(
         ...contextElements(context),
-        fixed(group.g, group),
-        fixed(publicKey, group),
-        fixed(ciphertext.c1, group),
-        fixed(ciphertext.c2, group),
+        fixedPoint(group.g),
+        fixedPoint(publicKey),
+        fixedPoint(ciphertext.c1),
+        fixedPoint(ciphertext.c2),
         encodeSequenceForChallenge(
             validValues.map((value) =>
-                bigintToFixedBytes(value, group.byteLength),
+                fixedScalar(modQ(value, group.q), group),
             ),
         ),
-        commitmentSequence(commitments, group),
+        commitmentSequence(commitments),
     );
 
 /**
@@ -99,16 +100,16 @@ export const createDisjunctiveProof = async (
     plaintext: bigint,
     randomness: bigint,
     ciphertext: ElgamalCiphertext,
-    publicKey: bigint,
+    publicKey: string,
     validValues: readonly bigint[],
     group: CryptoGroup,
     context: ProofContext,
     randomSource?: RandomBytesSource,
 ): Promise<DisjunctiveProof> => {
     assertProofContext(context, group);
-    assertInSubgroup(publicKey, group.p, group.q);
-    assertInSubgroup(ciphertext.c1, group.p, group.q);
-    assertInSubgroupOrIdentity(ciphertext.c2, group.p, group.q);
+    assertInSubgroup(publicKey);
+    assertInSubgroup(ciphertext.c1);
+    assertInSubgroupOrIdentity(ciphertext.c2);
 
     const realIndex = validValues.findIndex((value) => value === plaintext);
     if (realIndex < 0) {
@@ -119,7 +120,7 @@ export const createDisjunctiveProof = async (
 
     const challenges: bigint[] = [];
     const responses: bigint[] = [];
-    const commitments: { a1: bigint; a2: bigint }[] = [];
+    const commitments: { a1: string; a2: string }[] = [];
 
     for (const [index, candidateValue] of validValues.entries()) {
         const beta = candidateEncoding(ciphertext, candidateValue, group);
@@ -130,18 +131,23 @@ export const createDisjunctiveProof = async (
                 randomness,
                 encodeForChallenge(
                     ...contextElements(context),
-                    fixed(publicKey, group),
-                    fixed(ciphertext.c1, group),
-                    fixed(ciphertext.c2, group),
-                    fixed(beta, group),
+                    fixedPoint(publicKey),
+                    fixedPoint(ciphertext.c1),
+                    fixedPoint(ciphertext.c2),
+                    fixedPoint(beta),
                 ),
                 group,
                 randomSource,
             );
             responses.push(nonce);
             commitments.push({
-                a1: fixedBaseModPow(group.g, nonce, group.p),
-                a2: modPowP(publicKey, nonce, group.p),
+                a1: encodePoint(multiplyBase(nonce)),
+                a2: encodePoint(
+                    pointMultiply(
+                        decodePoint(publicKey, 'Ballot public key'),
+                        nonce,
+                    ),
+                ),
             });
             continue;
         }
@@ -152,25 +158,26 @@ export const createDisjunctiveProof = async (
         challenges.push(challenge);
         responses.push(response);
         commitments.push({
-            a1: multiExponentiate(
-                [
-                    { base: group.g, exponent: response },
-                    {
-                        base: ciphertext.c1,
-                        exponent: negateExponent(challenge, group.q),
-                    },
-                ],
-                group.p,
+            a1: encodePoint(
+                pointSubtract(
+                    multiplyBase(response),
+                    pointMultiply(
+                        decodePoint(ciphertext.c1, 'Ciphertext c1'),
+                        challenge,
+                    ),
+                ),
             ),
-            a2: multiExponentiate(
-                [
-                    { base: publicKey, exponent: response },
-                    {
-                        base: beta,
-                        exponent: negateExponent(challenge, group.q),
-                    },
-                ],
-                group.p,
+            a2: encodePoint(
+                pointSubtract(
+                    pointMultiply(
+                        decodePoint(publicKey, 'Ballot public key'),
+                        response,
+                    ),
+                    pointMultiply(
+                        decodePoint(beta, 'Candidate encoding'),
+                        challenge,
+                    ),
+                ),
             ),
         });
     }
@@ -222,15 +229,15 @@ export const createDisjunctiveProof = async (
 export const verifyDisjunctiveProof = async (
     proof: DisjunctiveProof,
     ciphertext: ElgamalCiphertext,
-    publicKey: bigint,
+    publicKey: string,
     validValues: readonly bigint[],
     group: CryptoGroup,
     context: ProofContext,
 ): Promise<boolean> => {
     assertProofContext(context, group);
-    assertInSubgroup(publicKey, group.p, group.q);
-    assertInSubgroup(ciphertext.c1, group.p, group.q);
-    assertInSubgroupOrIdentity(ciphertext.c2, group.p, group.q);
+    assertInSubgroup(publicKey);
+    assertInSubgroup(ciphertext.c1);
+    assertInSubgroupOrIdentity(ciphertext.c2);
 
     if (
         proof.branches.length !== validValues.length ||
@@ -252,25 +259,26 @@ export const verifyDisjunctiveProof = async (
         const beta = candidateEncoding(ciphertext, validValues[index], group);
 
         return {
-            a1: multiExponentiate(
-                [
-                    { base: group.g, exponent: branch.response },
-                    {
-                        base: ciphertext.c1,
-                        exponent: negateExponent(branch.challenge, group.q),
-                    },
-                ],
-                group.p,
+            a1: encodePoint(
+                pointSubtract(
+                    multiplyBase(branch.response),
+                    pointMultiply(
+                        decodePoint(ciphertext.c1, 'Ciphertext c1'),
+                        branch.challenge,
+                    ),
+                ),
             ),
-            a2: multiExponentiate(
-                [
-                    { base: publicKey, exponent: branch.response },
-                    {
-                        base: beta,
-                        exponent: negateExponent(branch.challenge, group.q),
-                    },
-                ],
-                group.p,
+            a2: encodePoint(
+                pointSubtract(
+                    pointMultiply(
+                        decodePoint(publicKey, 'Ballot public key'),
+                        branch.response,
+                    ),
+                    pointMultiply(
+                        decodePoint(beta, 'Candidate encoding'),
+                        branch.challenge,
+                    ),
+                ),
             ),
         };
     });

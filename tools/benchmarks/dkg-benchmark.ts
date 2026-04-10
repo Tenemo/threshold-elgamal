@@ -1,7 +1,11 @@
 import { performance } from 'node:perf_hooks';
 
 import { runVotingFlowScenario } from '../../dev-support/voting-flow-harness.js';
-import { majorityThreshold, type GroupName } from '../../src/core/index.js';
+import {
+    majorityThreshold,
+    type GroupIdentifier,
+    type GroupName,
+} from '../../src/core/index.js';
 import { verifyDKGTranscript } from '../../src/dkg/index.js';
 import type { KeyAgreementSuite } from '../../src/transport/index.js';
 
@@ -59,7 +63,7 @@ const buildVotesByOption = (
     );
 
 const parseArgs = (): {
-    readonly group: GroupName;
+    readonly group: GroupIdentifier;
     readonly optionCount: number;
     readonly participantCounts: readonly number[];
     readonly transportSuite: KeyAgreementSuite;
@@ -68,7 +72,7 @@ const parseArgs = (): {
         .slice(2)
         .map((argument) => argument.trim())
         .filter((argument) => argument !== '' && argument !== '--');
-    let group: GroupName = 'ffdhe3072';
+    let group: GroupIdentifier = 'ristretto255';
     let optionCount = 1;
     let transportSuite: KeyAgreementSuite = 'X25519';
 
@@ -192,7 +196,7 @@ const main = async (): Promise<void> => {
         );
 
         rows.push({
-            group,
+            group: result.group.name,
             optionCount,
             participantCount,
             threshold,

@@ -5,6 +5,7 @@ import {
     utf8ToBytes,
     type CryptoGroup,
 } from '../core/index.js';
+import { encodePoint, RISTRETTO_ZERO } from '../core/ristretto.js';
 import { addEncryptedValues } from '../elgamal/ciphertext.js';
 import type { ElgamalCiphertext } from '../elgamal/types.js';
 import { verifyDisjunctiveProof } from '../proofs/disjunctive.js';
@@ -51,10 +52,16 @@ export type VerifiedOptionBallotAggregation = VerifiedBallotAggregation & {
     readonly optionIndex: number;
 };
 
+/** Grouped view of one accepted voter's ballot across all option slots. */
+export type VoterBallot = {
+    readonly voterIndex: number;
+    readonly ballots: readonly BallotTranscriptEntry[];
+};
+
 /** Input bundle for ballot verification and aggregation. */
 export type VerifyAndAggregateBallotsInput = {
     readonly ballots: readonly BallotTranscriptEntry[];
-    readonly publicKey: bigint;
+    readonly publicKey: string;
     readonly validValues: readonly bigint[];
     readonly group: CryptoGroup;
     readonly manifestHash: string;
@@ -98,6 +105,65 @@ const buildProofContext = (
     optionIndex: ballot.optionIndex,
 });
 
+const groupBallotsByVoter = (
+    ballots: readonly BallotTranscriptEntry[],
+    optionCount: number,
+): readonly VoterBallot[] => {
+    const sortedBallots = [...ballots].sort(compareBallotEntries);
+    const seenSlots = new Set<string>();
+    const byVoter = new Map<number, Map<number, BallotTranscriptEntry>>();
+
+    for (const ballot of sortedBallots) {
+        assertPositiveInteger(ballot.voterIndex, 'Ballot voter index');
+        assertPositiveInteger(ballot.optionIndex, 'Ballot option index');
+
+        if (ballot.optionIndex > optionCount) {
+            throw new InvalidPayloadError(
+                `Ballot option index ${ballot.optionIndex} exceeds the manifest option count ${optionCount}`,
+            );
+        }
+
+        const slotKey = `${ballot.voterIndex}:${ballot.optionIndex}`;
+        if (seenSlots.has(slotKey)) {
+            throw new InvalidPayloadError(
+                `Duplicate ballot slot ${slotKey} is not allowed`,
+            );
+        }
+        seenSlots.add(slotKey);
+
+        const voterBallots =
+            byVoter.get(ballot.voterIndex) ??
+            new Map<number, BallotTranscriptEntry>();
+        voterBallots.set(ballot.optionIndex, ballot);
+        byVoter.set(ballot.voterIndex, voterBallots);
+    }
+
+    return [...byVoter.entries()]
+        .sort(([left], [right]) => left - right)
+        .map(([voterIndex, optionMap]) => {
+            const groupedBallots: BallotTranscriptEntry[] = [];
+
+            for (
+                let optionIndex = 1;
+                optionIndex <= optionCount;
+                optionIndex += 1
+            ) {
+                const ballot = optionMap.get(optionIndex);
+                if (ballot === undefined) {
+                    throw new InvalidPayloadError(
+                        `Accepted voter ${voterIndex} must submit exactly one ballot for every option slot`,
+                    );
+                }
+                groupedBallots.push(ballot);
+            }
+
+            return {
+                voterIndex,
+                ballots: groupedBallots,
+            };
+        });
+};
+
 /**
  * Hashes the accepted ballot transcript deterministically.
  *
@@ -121,7 +187,7 @@ export const hashAcceptedBallots = async (
 export const verifyAndAggregateBallots = async (
     input: VerifyAndAggregateBallotsInput,
 ): Promise<VerifiedBallotAggregation> => {
-    assertInSubgroup(input.publicKey, input.group.p, input.group.q);
+    assertInSubgroup(input.publicKey);
 
     if (
         !Number.isInteger(input.minimumBallotCount) ||
@@ -172,7 +238,10 @@ export const verifyAndAggregateBallots = async (
     const ciphertext = sortedBallots.reduce(
         (aggregate, ballot) =>
             addEncryptedValues(aggregate, ballot.ciphertext, input.group.name),
-        { c1: 1n, c2: 1n },
+        {
+            c1: encodePoint(RISTRETTO_ZERO),
+            c2: encodePoint(RISTRETTO_ZERO),
+        } satisfies ElgamalCiphertext,
     );
     const transcriptHash = await hashAcceptedBallots(
         sortedBallots,
@@ -182,7 +251,7 @@ export const verifyAndAggregateBallots = async (
         transcriptHash,
         ciphertext,
         ballotCount: sortedBallots.length,
-    }) as VerifiedAggregateCiphertext;
+    }) as unknown as VerifiedAggregateCiphertext;
 
     return {
         aggregate,
@@ -205,24 +274,14 @@ export const verifyAndAggregateBallotsByOption = async (
         throw new InvalidPayloadError('optionCount must be a positive integer');
     }
 
-    const ballotsByOption = new Map<number, BallotTranscriptEntry[]>();
-    for (
-        let optionIndex = 1;
-        optionIndex <= input.optionCount;
-        optionIndex += 1
-    ) {
-        ballotsByOption.set(optionIndex, []);
-    }
-
-    for (const ballot of input.ballots) {
-        assertPositiveInteger(ballot.optionIndex, 'Ballot option index');
-        if (ballot.optionIndex > input.optionCount) {
-            throw new InvalidPayloadError(
-                `Ballot option index ${ballot.optionIndex} exceeds the manifest option count ${input.optionCount}`,
-            );
-        }
-
-        ballotsByOption.get(ballot.optionIndex)?.push(ballot);
+    const groupedVoterBallots = groupBallotsByVoter(
+        input.ballots,
+        input.optionCount,
+    );
+    if (groupedVoterBallots.length < input.minimumBallotCount) {
+        throw new InvalidPayloadError(
+            `Accepted voter count ${groupedVoterBallots.length} is below the minimum publication threshold ${input.minimumBallotCount}`,
+        );
     }
 
     const aggregations: VerifiedOptionBallotAggregation[] = [];
@@ -231,7 +290,9 @@ export const verifyAndAggregateBallotsByOption = async (
         optionIndex <= input.optionCount;
         optionIndex += 1
     ) {
-        const ballots = ballotsByOption.get(optionIndex) ?? [];
+        const ballots = groupedVoterBallots.map(
+            (voterBallot) => voterBallot.ballots[optionIndex - 1],
+        );
         let aggregation: VerifiedBallotAggregation;
         try {
             aggregation = await verifyAndAggregateBallots({

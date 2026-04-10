@@ -16,6 +16,12 @@ import {
 } from '#transport';
 import { exportTransportPrivateKey } from '#transport-advanced';
 
+const corruptHexTailByte = (value: string): string => {
+    const lastByte = Number.parseInt(value.slice(-2), 16);
+    const corruptedByte = (lastByte ^ 0x01).toString(16).padStart(2, '0');
+    return `${value.slice(0, -2)}${corruptedByte}`;
+};
+
 describe('transport and authentication', () => {
     it('signs and verifies payload bytes with P-256 authentication keys', async () => {
         const auth = await generateAuthKeyPair();
@@ -203,7 +209,9 @@ describe('transport and authentication', () => {
             resolveDealerChallenge(
                 {
                     ...envelope,
-                    ephemeralPublicKey: `${envelope.ephemeralPublicKey.slice(0, -2)}00`,
+                    ephemeralPublicKey: corruptHexTailByte(
+                        envelope.ephemeralPublicKey,
+                    ),
                 },
                 recipient.privateKey,
                 ephemeralPrivateKey,
@@ -249,7 +257,7 @@ describe('transport and authentication', () => {
         ).resolves.toBe(false);
         await expect(
             decryptEnvelope(
-                { ...envelope, iv: `${envelope.iv.slice(0, -2)}00` },
+                { ...envelope, iv: corruptHexTailByte(envelope.iv) },
                 recipient.privateKey,
             ),
         ).rejects.toThrow();
@@ -257,7 +265,9 @@ describe('transport and authentication', () => {
             resolveDealerChallenge(
                 {
                     ...envelope,
-                    ephemeralPublicKey: `${envelope.ephemeralPublicKey.slice(0, -2)}00`,
+                    ephemeralPublicKey: corruptHexTailByte(
+                        envelope.ephemeralPublicKey,
+                    ),
                 },
                 recipient.privateKey,
                 ephemeralPrivateKey,

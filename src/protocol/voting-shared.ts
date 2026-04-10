@@ -19,7 +19,7 @@ import type {
     RegistrationPayload,
     SignedPayload,
 } from './types.js';
-import { manifestScoreDomain } from './voting-codecs.js';
+import { scoreVotingDomain } from './voting-codecs.js';
 import type { OptionAggregateInput } from './voting-types.js';
 
 export const BALLOT_SUBMISSION_PHASE = 5;
@@ -115,7 +115,7 @@ export const buildVotingManifestContext = async (
         manifestHash: await hashElectionManifest(validatedManifest),
         group: getGroup(validatedManifest.suiteId),
         optionCount: validatedManifest.optionList.length,
-        scoreDomain: manifestScoreDomain(validatedManifest),
+        scoreDomain: scoreVotingDomain(),
         sessionId,
     };
 };

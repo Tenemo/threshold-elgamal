@@ -5,46 +5,46 @@ sidebar:
   order: 4
 ---
 
-The current package ships three RFC 7919 FFDHE suites:
+The current package ships one built-in tally suite:
 
-- `ffdhe2048`
-- `ffdhe3072`
-- `ffdhe4096`
+- `ristretto255`
 
-All public APIs require one of these identifiers explicitly. There is no implicit default suite.
+All public APIs require an explicit group identifier. There is no implicit default suite.
+
+During the beta transition, `getGroup()` also accepts the legacy aliases `ffdhe2048`, `ffdhe3072`, `ffdhe4096`, `2048`, `3072`, and `4096`. These are input aliases only. They all resolve to the same shipped `ristretto255` suite and should not be used in new code.
 
 ## Group objects
 
 `getGroup()` returns a frozen object with:
 
-- `p`: safe-prime modulus
-- `q`: prime-order subgroup order
-- `g`: primary generator
-- `h`: deterministic secondary generator
-- `bits`
+- `name`
 - `byteLength`
+- `scalarByteLength`
+- `q`: prime-order group order
+- `g`: canonical base-point encoding
+- `h`: deterministic secondary generator encoding
 - `securityEstimate`
 
 ## Validation helpers
 
 Useful exported helpers include:
 
-- `assertValidPublicKey` for subgroup public keys
+- `assertValidPublicKey` for non-identity public keys
 - `assertValidAdditiveCiphertext` and `assertValidFreshAdditiveCiphertext`
 - `assertScalarInZq`
 
 ## Current primitive surface
 
-- Hashing uses SHA-256
-- HKDF uses HKDF-SHA-256
-- Encoded bigint values use fixed-width lowercase big-endian hexadecimal strings
-- Challenge and transcript inputs use injective length-prefixed `encodeForChallenge()` encoding
+- Manifest and transcript digests use SHA-256
+- Transport key derivation uses HKDF-SHA-256
+- The Ristretto255 backend and point derivation use `@noble/curves` and `@noble/hashes`
+- Public point and scalar values use fixed-width lowercase hexadecimal encodings over canonical 32-byte values
+- Challenge and transcript inputs use canonical byte encodings with injective length-prefixed sequence handling
 
 ## Common failures
 
-- `InvalidGroupElementError` for invalid subgroup elements or public keys
-- `InvalidGroupElementError` also covers shipped additive ciphertexts with
-  invalid subgroup-or-identity components
+- `InvalidGroupElementError` for invalid Ristretto point encodings or public keys
+- `InvalidGroupElementError` also covers additive ciphertexts with invalid point-or-identity components
 - `InvalidScalarError` for invalid bounds, randomness, or out-of-range scalars
 - `PlaintextDomainError` for plaintexts outside the accepted mode-specific domain
 - `UnsupportedSuiteError` for unknown group identifiers or missing Web Crypto support
@@ -60,6 +60,7 @@ Useful exported helpers include:
 
 - Additive mode rejects values outside `0..bound`
 - Additive decryption fails if the ciphertext decodes outside the supplied search bound
+- The shipped voting layer adds a stricter rule on top: accepted ballot scores are fixed to `1..10`
 
 ## Practical rule
 

@@ -1,4 +1,11 @@
-import { InvalidScalarError, modInvP, modP, modPowP } from '../core/index.js';
+import { InvalidScalarError } from '../core/index.js';
+import {
+    decodePoint,
+    encodePoint,
+    pointAdd,
+    pointSubtract,
+    pointMultiply,
+} from '../core/ristretto.js';
 
 const integerSquareRootCeil = (value: bigint): bigint => {
     if (value < 0n) {
@@ -34,25 +41,10 @@ const integerSquareRootCeil = (value: bigint): bigint => {
 
 /**
  * Solves a bounded discrete logarithm with the baby-step giant-step method.
- *
- * It returns `null` instead of throwing when the target does not decode to a
- * discrete log within the supplied bound.
- *
- * Runtime and memory both grow roughly with `sqrt(bound)` because the solver
- * materializes a baby-step table for the searched range.
- *
- * @param target Group element whose discrete log should be recovered.
- * @param base Generator used to encode plaintexts.
- * @param p Prime modulus for the multiplicative group.
- * @param bound Maximum discrete log to search for.
- * @returns The recovered discrete log, or `null` when no solution exists within `bound`.
- *
- * @throws {@link InvalidScalarError} When `bound` is negative.
  */
 export const babyStepGiantStep = (
-    target: bigint,
-    base: bigint,
-    p: bigint,
+    target: string,
+    base: string,
     bound: bigint,
 ): bigint | null => {
     if (bound < 0n) {
@@ -61,27 +53,29 @@ export const babyStepGiantStep = (
         );
     }
 
-    if (target === 1n) {
+    const targetPoint = decodePoint(target, 'Discrete-log target');
+    if (targetPoint.is0()) {
         return 0n;
     }
 
+    const basePoint = decodePoint(base, 'Discrete-log base');
     const stepSize = integerSquareRootCeil(bound + 1n);
-    const babySteps = new Map<bigint, bigint>();
-    let babyStep = 1n;
+    const babySteps = new Map<string, bigint>();
+    let babyStep = basePoint.subtract(basePoint);
     let exponent = 0n;
 
     while (exponent < stepSize) {
-        babySteps.set(babyStep, exponent);
-        babyStep = modP(babyStep * base, p);
+        babySteps.set(encodePoint(babyStep), exponent);
+        babyStep = pointAdd(babyStep, basePoint);
         exponent += 1n;
     }
 
-    const factor = modInvP(modPowP(base, stepSize, p), p);
-    let giantStep = modP(target, p);
+    const giantFactor = pointMultiply(basePoint, stepSize);
+    let giantStep = targetPoint;
     let giantIndex = 0n;
 
     while (giantIndex <= stepSize) {
-        const babyIndex = babySteps.get(giantStep);
+        const babyIndex = babySteps.get(encodePoint(giantStep));
         if (babyIndex !== undefined) {
             const discreteLog = giantIndex * stepSize + babyIndex;
             if (discreteLog <= bound) {
@@ -89,7 +83,7 @@ export const babyStepGiantStep = (
             }
         }
 
-        giantStep = modP(giantStep * factor, p);
+        giantStep = pointSubtract(giantStep, giantFactor);
         giantIndex += 1n;
     }
 

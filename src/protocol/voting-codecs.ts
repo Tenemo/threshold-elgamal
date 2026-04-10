@@ -1,9 +1,8 @@
+import { decodePoint, decodeScalar, encodeScalar } from '../core/ristretto.js';
+import type { ElgamalCiphertext } from '../elgamal/types.js';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types.js';
-import { bigintToFixedHex, fixedHexToBigint } from '../serialize/index.js';
 
-import { validateElectionManifest } from './manifest.js';
 import type {
-    ElectionManifest,
     EncodedCiphertext,
     EncodedCompactProof,
     EncodedDisjunctiveProof,
@@ -17,11 +16,12 @@ import type {
  * @returns Protocol ciphertext encoding.
  */
 export const encodeCiphertext = (
-    ciphertext: { readonly c1: bigint; readonly c2: bigint },
+    ciphertext: ElgamalCiphertext,
     byteLength: number,
 ): EncodedCiphertext => ({
-    c1: bigintToFixedHex(ciphertext.c1, byteLength),
-    c2: bigintToFixedHex(ciphertext.c2, byteLength),
+    ...(void byteLength, {}),
+    c1: ciphertext.c1,
+    c2: ciphertext.c2,
 });
 
 /**
@@ -32,10 +32,15 @@ export const encodeCiphertext = (
  */
 export const decodeCiphertext = (
     ciphertext: EncodedCiphertext,
-): { readonly c1: bigint; readonly c2: bigint } => ({
-    c1: fixedHexToBigint(ciphertext.c1),
-    c2: fixedHexToBigint(ciphertext.c2),
-});
+): ElgamalCiphertext => {
+    decodePoint(ciphertext.c1, 'Ciphertext c1');
+    decodePoint(ciphertext.c2, 'Ciphertext c2');
+
+    return {
+        c1: ciphertext.c1 as ElgamalCiphertext['c1'],
+        c2: ciphertext.c2 as ElgamalCiphertext['c2'],
+    };
+};
 
 /**
  * Encodes a compact challenge-response proof into fixed-width protocol hex.
@@ -48,8 +53,9 @@ export const encodeCompactProof = (
     proof: { readonly challenge: bigint; readonly response: bigint },
     byteLength: number,
 ): EncodedCompactProof => ({
-    challenge: bigintToFixedHex(proof.challenge, byteLength),
-    response: bigintToFixedHex(proof.response, byteLength),
+    ...(void byteLength, {}),
+    challenge: encodeScalar(proof.challenge),
+    response: encodeScalar(proof.response),
 });
 
 /**
@@ -59,8 +65,8 @@ export const encodeCompactProof = (
  * @returns Decoded compact proof.
  */
 export const decodeCompactProof = (proof: EncodedCompactProof): DLEQProof => ({
-    challenge: fixedHexToBigint(proof.challenge),
-    response: fixedHexToBigint(proof.response),
+    challenge: decodeScalar(proof.challenge, 'Compact proof challenge'),
+    response: decodeScalar(proof.response, 'Compact proof response'),
 });
 
 /**
@@ -92,23 +98,9 @@ export const decodeDisjunctiveProof = (
 });
 
 /**
- * Builds the ordered score domain implied by the manifest.
- *
- * @param manifest Validated election manifest.
- * @returns Ordered valid additive score values.
+ * Returns the fixed shipped score-voting domain `1..10`.
  */
-export const manifestScoreDomain = (
-    manifest: ElectionManifest,
-): readonly bigint[] => {
-    const validatedManifest = validateElectionManifest(manifest);
-
-    return Array.from(
-        {
-            length:
-                validatedManifest.scoreDomainMax -
-                validatedManifest.scoreDomainMin +
-                1,
-        },
-        (_value, index) => BigInt(validatedManifest.scoreDomainMin + index),
+export const scoreVotingDomain = (): readonly bigint[] =>
+    Object.freeze(
+        Array.from({ length: 10 }, (_value, index) => BigInt(index + 1)),
     );
-};

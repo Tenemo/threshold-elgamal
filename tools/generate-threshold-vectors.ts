@@ -7,7 +7,7 @@ const bigintReplacer = (_key: string, value: unknown): unknown =>
 
 const main = async (): Promise<void> => {
     const payload = generateThresholdVectorRecord({
-        groupName: 'ffdhe3072',
+        groupName: 'ristretto255',
         polynomial: [12345n, 67890n, 13579n],
         participantCount: 5,
         message: 13n,

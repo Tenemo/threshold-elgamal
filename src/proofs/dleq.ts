@@ -2,22 +2,25 @@ import {
     assertInSubgroup,
     assertInSubgroupOrIdentity,
     assertScalarInZq,
-    fixedBaseModPow,
-    multiExponentiate,
-    modPowP,
     modQ,
     type CryptoGroup,
     type RandomBytesSource,
 } from '../core/index.js';
+import {
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointMultiply,
+    pointSubtract,
+} from '../core/ristretto.js';
 import type { ElgamalCiphertext } from '../elgamal/types.js';
 import { encodeForChallenge } from '../serialize/index.js';
 
 import {
     assertProofContext,
     contextElements,
-    fixed,
+    fixedPoint,
     hashChallenge,
-    negateExponent,
 } from './helpers.js';
 import { hedgedNonce } from './nonces.js';
 import type { DLEQProof, ProofContext } from './types.js';
@@ -25,11 +28,11 @@ import type { DLEQProof, ProofContext } from './types.js';
 /** Statement tuple for a Chaum-Pedersen equality-of-discrete-logs proof. */
 export type DLEQStatement = {
     /** Transcript-derived trustee verification key. */
-    readonly publicKey: bigint;
+    readonly publicKey: string;
     /** Ciphertext being partially decrypted. */
     readonly ciphertext: ElgamalCiphertext;
     /** Partial decryption share `d_j = c1^{x_j} mod p`. */
-    readonly decryptionShare: bigint;
+    readonly decryptionShare: string;
 };
 
 const nonceContext = (
@@ -39,29 +42,29 @@ const nonceContext = (
 ): Uint8Array =>
     encodeForChallenge(
         ...contextElements(context),
-        fixed(group.g, group),
-        fixed(statement.ciphertext.c1, group),
-        fixed(statement.ciphertext.c2, group),
-        fixed(statement.publicKey, group),
-        fixed(statement.decryptionShare, group),
+        fixedPoint(group.g),
+        fixedPoint(statement.ciphertext.c1),
+        fixedPoint(statement.ciphertext.c2),
+        fixedPoint(statement.publicKey),
+        fixedPoint(statement.decryptionShare),
     );
 
 const challengePayload = (
     statement: DLEQStatement,
-    a1: bigint,
-    a2: bigint,
+    a1: string,
+    a2: string,
     group: CryptoGroup,
     context: ProofContext,
 ): Uint8Array =>
     encodeForChallenge(
         ...contextElements(context),
-        fixed(group.g, group),
-        fixed(statement.ciphertext.c1, group),
-        fixed(statement.ciphertext.c2, group),
-        fixed(statement.publicKey, group),
-        fixed(statement.decryptionShare, group),
-        fixed(a1, group),
-        fixed(a2, group),
+        fixedPoint(group.g),
+        fixedPoint(statement.ciphertext.c1),
+        fixedPoint(statement.ciphertext.c2),
+        fixedPoint(statement.publicKey),
+        fixedPoint(statement.decryptionShare),
+        fixedPoint(a1),
+        fixedPoint(a2),
     );
 
 /**
@@ -83,10 +86,10 @@ export const createDLEQProof = async (
 ): Promise<DLEQProof> => {
     assertProofContext(context, group);
     assertScalarInZq(secret, group.q);
-    assertInSubgroup(statement.publicKey, group.p, group.q);
-    assertInSubgroup(statement.ciphertext.c1, group.p, group.q);
-    assertInSubgroupOrIdentity(statement.ciphertext.c2, group.p, group.q);
-    assertInSubgroupOrIdentity(statement.decryptionShare, group.p, group.q);
+    assertInSubgroup(statement.publicKey);
+    assertInSubgroup(statement.ciphertext.c1);
+    assertInSubgroupOrIdentity(statement.ciphertext.c2);
+    assertInSubgroupOrIdentity(statement.decryptionShare);
 
     const nonce = await hedgedNonce(
         secret,
@@ -94,8 +97,13 @@ export const createDLEQProof = async (
         group,
         randomSource,
     );
-    const a1 = fixedBaseModPow(group.g, nonce, group.p);
-    const a2 = modPowP(statement.ciphertext.c1, nonce, group.p);
+    const a1 = encodePoint(multiplyBase(nonce));
+    const a2 = encodePoint(
+        pointMultiply(
+            decodePoint(statement.ciphertext.c1, 'Ciphertext c1'),
+            nonce,
+        ),
+    );
     const challenge = await hashChallenge(
         challengePayload(statement, a1, a2, group, context),
         group.q,
@@ -125,30 +133,34 @@ export const verifyDLEQProof = async (
     assertProofContext(context, group);
     assertScalarInZq(proof.challenge, group.q);
     assertScalarInZq(proof.response, group.q);
-    assertInSubgroup(statement.publicKey, group.p, group.q);
-    assertInSubgroup(statement.ciphertext.c1, group.p, group.q);
-    assertInSubgroupOrIdentity(statement.ciphertext.c2, group.p, group.q);
-    assertInSubgroupOrIdentity(statement.decryptionShare, group.p, group.q);
+    assertInSubgroup(statement.publicKey);
+    assertInSubgroup(statement.ciphertext.c1);
+    assertInSubgroupOrIdentity(statement.ciphertext.c2);
+    assertInSubgroupOrIdentity(statement.decryptionShare);
 
-    const a1 = multiExponentiate(
-        [
-            { base: group.g, exponent: proof.response },
-            {
-                base: statement.publicKey,
-                exponent: negateExponent(proof.challenge, group.q),
-            },
-        ],
-        group.p,
+    const a1 = encodePoint(
+        pointSubtract(
+            multiplyBase(proof.response),
+            pointMultiply(
+                decodePoint(statement.publicKey, 'DLEQ public key'),
+                proof.challenge,
+            ),
+        ),
     );
-    const a2 = multiExponentiate(
-        [
-            { base: statement.ciphertext.c1, exponent: proof.response },
-            {
-                base: statement.decryptionShare,
-                exponent: negateExponent(proof.challenge, group.q),
-            },
-        ],
-        group.p,
+    const a2 = encodePoint(
+        pointSubtract(
+            pointMultiply(
+                decodePoint(statement.ciphertext.c1, 'Ciphertext c1'),
+                proof.response,
+            ),
+            pointMultiply(
+                decodePoint(
+                    statement.decryptionShare,
+                    'Decryption share statement',
+                ),
+                proof.challenge,
+            ),
+        ),
     );
     const expected = await hashChallenge(
         challengePayload(statement, a1, a2, group, context),

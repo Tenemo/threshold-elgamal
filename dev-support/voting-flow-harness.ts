@@ -1,3 +1,5 @@
+import { encodePoint, multiplyBase } from '../src/core/ristretto.js';
+
 import {
     computeRosterHash,
     createPhaseCheckpointPayload,
@@ -29,7 +31,7 @@ import {
     createThresholdShareArtifacts,
 } from './voting-flow/voting.js';
 
-import { getGroup, majorityThreshold, modP, modPowP, modQ } from '#core';
+import { getGroup, majorityThreshold, modQ } from '#core';
 import {
     deriveJointPublicKey,
     deriveTranscriptVerificationKeys,
@@ -47,7 +49,6 @@ import {
     verifyPublishedVotingResults,
     type KeyDerivationConfirmation,
 } from '#protocol';
-import { bigintToFixedHex } from '#serialize';
 import {
     combineDecryptionShares,
     createVerifiedDecryptionShare,
@@ -61,20 +62,12 @@ export type {
 } from './voting-flow/types.js';
 
 const DEFAULT_GROUP = 'ffdhe2048';
+const RISTRETTO_IDENTITY = encodePoint(multiplyBase(0n));
 
-const singleBallotBound = (scenario: VotingFlowScenario): bigint =>
-    BigInt(scenario.scoreDomainMax ?? 10);
+const singleBallotBound = (): bigint => 10n;
 
-const validScores = (scenario: VotingFlowScenario): readonly bigint[] =>
-    Array.from(
-        {
-            length:
-                (scenario.scoreDomainMax ?? 10) -
-                (scenario.allowAbstention ? 0 : 1) +
-                1,
-        },
-        (_value, index) => BigInt(index + (scenario.allowAbstention ? 0 : 1)),
-    );
+const validScores = (): readonly bigint[] =>
+    Array.from({ length: 10 }, (_value, index) => BigInt(index + 1));
 
 const normalizedVotesByOption = (
     scenario: VotingFlowScenario,
@@ -146,8 +139,8 @@ export const runVotingFlowScenario = async (
         `Supported DKG threshold must satisfy floor(n / 2) + 1 <= k <= n - 1 (received ${threshold} for n = ${scenario.participantCount})`,
     );
 
-    const validValues = validScores(scenario);
-    const bound = singleBallotBound(scenario);
+    const validValues = validScores();
+    const bound = singleBallotBound();
 
     votesByOption.forEach((votes, optionOffset) => {
         invariant(
@@ -389,6 +382,14 @@ export const runVotingFlowScenario = async (
               )
             : [];
 
+    const directJointSecret = modQ(
+        qualDealerMaterials.reduce(
+            (sum, dealer) => sum + dealer.secretPolynomial[0],
+            0n,
+        ),
+        group.q,
+    );
+    const directJointPublicKey = encodePoint(multiplyBase(directJointSecret));
     const preConfirmationTranscript = [
         ...phase0CheckpointTranscript,
         ...phase0Checkpoints,
@@ -426,19 +427,7 @@ export const runVotingFlowScenario = async (
                                   participantIndex,
                                   messageType: 'key-derivation-confirmation',
                                   qualHash: preConfirmationQualHash,
-                                  publicKey: bigintToFixedHex(
-                                      qualDealerMaterials.reduce(
-                                          (accumulator, dealer) =>
-                                              modP(
-                                                  accumulator *
-                                                      dealer
-                                                          .feldmanCommitments[0],
-                                                  group.p,
-                                              ),
-                                          1n,
-                                      ),
-                                      group.byteLength,
-                                  ),
+                                  publicKey: directJointPublicKey,
                               } satisfies KeyDerivationConfirmation,
                           ),
                       ),
@@ -477,7 +466,10 @@ export const runVotingFlowScenario = async (
         };
 
         return {
-            aggregate: { c1: 1n, c2: 1n },
+            aggregate: {
+                c1: RISTRETTO_IDENTITY,
+                c2: RISTRETTO_IDENTITY,
+            },
             ballots: [],
             complaintResolutions,
             dkgTranscript,
@@ -543,16 +535,9 @@ export const runVotingFlowScenario = async (
         })),
         group,
     );
-    const directJointSecret = modQ(
-        qualDealerMaterials.reduce(
-            (sum, dealer) => sum + dealer.secretPolynomial[0],
-            0n,
-        ),
-        group.q,
-    );
 
     invariant(
-        jointPublicKey === modPowP(group.g, directJointSecret, group.p),
+        jointPublicKey === directJointPublicKey,
         'Joint public key does not match the direct secret sum',
     );
     invariant(
@@ -568,7 +553,7 @@ export const runVotingFlowScenario = async (
     transcriptDerivedVerificationKeys.forEach((transcriptKey, offset) => {
         invariant(
             transcriptKey.value ===
-                modPowP(group.g, finalShares[offset].value, group.p),
+                encodePoint(multiplyBase(finalShares[offset].value)),
             `Transcript-derived verification key mismatch for participant ${transcriptKey.index}`,
         );
     });
@@ -657,7 +642,10 @@ export const runVotingFlowScenario = async (
                 .reduce(
                     (accumulator, ciphertext) =>
                         addEncryptedValues(accumulator, ciphertext, group.name),
-                    { c1: 1n, c2: 1n },
+                    {
+                        c1: RISTRETTO_IDENTITY,
+                        c2: RISTRETTO_IDENTITY,
+                    },
                 );
 
             invariant(

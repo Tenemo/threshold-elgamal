@@ -1,9 +1,14 @@
 import {
-    getGroup,
     InvalidScalarError,
-    modP,
+    getGroup,
     type CryptoGroup,
 } from '../core/index.js';
+import {
+    decodePoint,
+    encodePoint,
+    pointAdd,
+    type InternalPoint,
+} from '../core/ristretto.js';
 
 import type { ElgamalCiphertext, ElgamalGroupInput } from './types.js';
 
@@ -24,8 +29,14 @@ export const assertEncryptionRandomness = (
 export const combineCiphertextComponents = (
     left: ElgamalCiphertext,
     right: ElgamalCiphertext,
-    p: bigint,
 ): ElgamalCiphertext => ({
-    c1: modP(left.c1 * right.c1, p),
-    c2: modP(left.c2 * right.c2, p),
+    c1: encodePoint(pointAdd(decodePoint(left.c1), decodePoint(right.c1))),
+    c2: encodePoint(pointAdd(decodePoint(left.c2), decodePoint(right.c2))),
+});
+
+export const pointFromCiphertext = (
+    ciphertext: ElgamalCiphertext,
+): { readonly c1: InternalPoint; readonly c2: InternalPoint } => ({
+    c1: decodePoint(ciphertext.c1),
+    c2: decodePoint(ciphertext.c2),
 });

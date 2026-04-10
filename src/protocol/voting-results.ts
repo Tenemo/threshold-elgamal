@@ -1,12 +1,13 @@
 import { InvalidPayloadError } from '../core/index.js';
+import { decodeScalar } from '../core/ristretto.js';
 import {
     verifyDKGTranscript,
     type VerifiedDKGTranscript,
 } from '../dkg/verification.js';
-import { fixedHexToBigint } from '../serialize/index.js';
 import { combineDecryptionShares } from '../threshold/index.js';
 
 import type { VerifiedOptionBallotAggregation } from './ballots.js';
+import { auditSignedPayloads } from './board-audit.js';
 import type { SignedPayload, TallyPublicationPayload } from './types.js';
 import { verifyBallotSubmissionPayloadsByOption } from './voting-ballots.js';
 import { verifyDecryptionSharePayloadsByOption } from './voting-decryption.js';
@@ -33,10 +34,8 @@ function recomputePublishedTally(
     ballots: VerifiedOptionBallotAggregation,
     decryptionShares: readonly VerifiedDecryptionSharePayload[],
     dkg: VerifiedDKGTranscript,
-    scoreDomainMax: number,
 ): bigint {
-    const bound =
-        BigInt(ballots.aggregate.ballotCount) * BigInt(scoreDomainMax);
+    const bound = BigInt(ballots.aggregate.ballotCount) * 10n;
 
     return combineDecryptionShares(
         ballots.aggregate.ciphertext,
@@ -63,7 +62,7 @@ function verifyPublishedTallyPayload(
             `Tally publication ballot count does not match the accepted ballot transcript for option ${optionIndex}`,
         );
     }
-    if (fixedHexToBigint(payload.tally) !== tally) {
+    if (decodeScalar(payload.tally, 'Published tally') !== tally) {
         throw new InvalidPayloadError(
             `Tally publication does not match the recomputed tally for option ${optionIndex}`,
         );
@@ -108,23 +107,34 @@ export const verifyPublishedVotingResults = async (
         manifest: context.manifest,
         sessionId: context.sessionId,
     });
+    const auditedBallots = await auditSignedPayloads(input.ballotPayloads);
+    const auditedDecryptionShares = await auditSignedPayloads(
+        input.decryptionSharePayloads,
+    );
     const tallyPublications =
         input.tallyPublications === undefined ||
         input.tallyPublications.length === 0
             ? undefined
-            : input.tallyPublications;
+            : (await auditSignedPayloads(input.tallyPublications))
+                  .acceptedPayloads;
+    await auditSignedPayloads([
+        ...input.dkgTranscript,
+        ...auditedBallots.acceptedPayloads,
+        ...auditedDecryptionShares.acceptedPayloads,
+        ...(tallyPublications ?? []),
+    ]);
 
     await verifyPayloadsAgainstRegistrations(
         [
-            ...input.ballotPayloads,
-            ...input.decryptionSharePayloads,
+            ...auditedBallots.acceptedPayloads,
+            ...auditedDecryptionShares.acceptedPayloads,
             ...(tallyPublications ?? []),
         ],
         dkg.registrations,
     );
 
     const ballots = await verifyBallotSubmissionPayloadsByOption({
-        ballotPayloads: input.ballotPayloads,
+        ballotPayloads: auditedBallots.acceptedPayloads,
         publicKey: dkg.derivedPublicKey,
         manifest: context.manifest,
         sessionId: context.sessionId,
@@ -135,7 +145,7 @@ export const verifyPublishedVotingResults = async (
             aggregate: optionBallots.aggregate,
         })),
         dkg,
-        decryptionSharePayloads: input.decryptionSharePayloads,
+        decryptionSharePayloads: auditedDecryptionShares.acceptedPayloads,
         manifest: context.manifest,
         sessionId: context.sessionId,
     });
@@ -206,7 +216,6 @@ export const verifyPublishedVotingResults = async (
             optionBallots,
             optionDecryptionShares.decryptionShares,
             dkg,
-            context.manifest.scoreDomainMax,
         );
         const publication = tallyPublicationMap.get(optionIndex);
 

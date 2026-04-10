@@ -1,4 +1,5 @@
 import { InvalidPayloadError, type CryptoGroup } from '../core/index.js';
+import type { EncodedPoint } from '../core/types.js';
 import type {
     ComplaintPayload,
     ComplaintResolutionPayload,
@@ -115,7 +116,7 @@ export const parsePedersenCommitmentMap = (
     protocol: DKGProtocol,
     threshold: number,
     group: CryptoGroup,
-): ReadonlyMap<number, readonly bigint[]> => {
+): ReadonlyMap<number, readonly EncodedPoint[]> => {
     const pedersenCommitments = transcript.filter(
         (payload): payload is SignedPayload<PedersenCommitmentPayload> =>
             payload.payload.messageType === 'pedersen-commitment',
@@ -126,7 +127,7 @@ export const parsePedersenCommitmentMap = (
         );
     }
 
-    const pedersenCommitmentMap = new Map<number, readonly bigint[]>();
+    const pedersenCommitmentMap = new Map<number, readonly EncodedPoint[]>();
     for (const payload of pedersenCommitments) {
         if (pedersenCommitmentMap.has(payload.payload.participantIndex)) {
             throw new InvalidPayloadError(
@@ -148,7 +149,7 @@ export const parsePedersenCommitmentMap = (
 };
 
 export const assertPedersenCommitmentCoverage = (
-    pedersenCommitmentMap: ReadonlyMap<number, readonly bigint[]>,
+    pedersenCommitmentMap: ReadonlyMap<number, readonly EncodedPoint[]>,
     dealerIndices: readonly number[],
 ): void => {
     for (const dealerIndex of dealerIndices) {
@@ -209,7 +210,7 @@ export const verifyComplaintOutcomes = async (
     input: VerifyDKGTranscriptInput,
     verifiedSignatures: VerifiedProtocolSignatures,
     encryptedShareMatrix: EncryptedShareMatrix,
-    pedersenCommitmentMap: ReadonlyMap<number, readonly bigint[]>,
+    pedersenCommitmentMap: ReadonlyMap<number, readonly EncodedPoint[]>,
     group: CryptoGroup,
     allowedParticipants: ReadonlySet<number>,
 ): Promise<readonly ComplaintPayload[]> => {

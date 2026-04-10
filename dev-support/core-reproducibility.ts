@@ -1,31 +1,27 @@
 import { deriveH, getGroup, listGroups } from '../src/core/groups.js';
 
 type FrozenHDerivationCheck = {
-    readonly derived: bigint;
-    readonly frozen: bigint;
+    readonly derived: string;
+    readonly frozen: string;
     readonly groupName: string;
     readonly matches: boolean;
 };
 
-const verifyFrozenHDerivations = async (): Promise<
-    readonly FrozenHDerivationCheck[]
-> =>
-    Promise.all(
-        listGroups().map(async (group) => {
-            const derived = await deriveH(group.name);
-            const frozen = getGroup(group.name).h;
+const verifyFrozenHDerivations = (): readonly FrozenHDerivationCheck[] =>
+    listGroups().map((group) => {
+        const derived = deriveH(group.name);
+        const frozen = getGroup(group.name).h;
 
-            return {
-                groupName: group.name,
-                derived,
-                frozen,
-                matches: derived === frozen,
-            };
-        }),
-    );
+        return {
+            groupName: group.name,
+            derived,
+            frozen,
+            matches: derived === frozen,
+        };
+    });
 
-export const assertFrozenHDerivationsMatch = async (): Promise<void> => {
-    const mismatches = (await verifyFrozenHDerivations()).filter(
+export const assertFrozenHDerivationsMatch = (): void => {
+    const mismatches = verifyFrozenHDerivations().filter(
         (result) => !result.matches,
     );
 

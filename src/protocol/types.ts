@@ -225,13 +225,10 @@ export type SignedPayload<TPayload extends ProtocolPayload = ProtocolPayload> =
 export type ElectionManifest = {
     readonly protocolVersion: string;
     readonly suiteId: GroupName;
-    readonly threshold: number;
+    readonly reconstructionThreshold: number;
     readonly participantCount: number;
-    /** Minimum accepted ballot count required before publication, separate from the DKG threshold. */
-    readonly minimumPublicationThreshold: number;
-    readonly allowAbstention: boolean;
-    readonly scoreDomainMin: number;
-    readonly scoreDomainMax: number;
+    /** Minimum accepted voter count required before publication, separate from the DKG reconstruction threshold. */
+    readonly minimumPublishedVoterCount: number;
     readonly ballotFinality: 'first-valid';
     readonly rosterHash: string;
     readonly optionList: readonly string[];

@@ -1,15 +1,16 @@
 import {
     InvalidPayloadError,
-    assertInSubgroup,
+    assertInSubgroupOrIdentity,
     type CryptoGroup,
 } from '../core/index.js';
+import { decodePoint } from '../core/ristretto.js';
+import type { EncodedPoint } from '../core/types.js';
 import type { ProofContext } from '../proofs/index.js';
 import { classifySlotConflict } from '../protocol/payloads.js';
 import type {
     FeldmanCommitmentPayload,
     SignedPayload,
 } from '../protocol/types.js';
-import { fixedHexToBigint } from '../serialize/index.js';
 
 import { isPhaseCheckpointPayload } from './checkpoints.js';
 import { expectedDkgPhase } from './phase-plan.js';
@@ -65,20 +66,28 @@ export const requireExactlyOnePayload = <TPayload>(
 export const parseCommitmentVector = (
     commitments: readonly string[],
     expectedLength: number,
-    group: CryptoGroup,
+    _group: CryptoGroup,
     label: string,
-): readonly bigint[] => {
+): readonly EncodedPoint[] => {
     if (commitments.length !== expectedLength) {
         throw new InvalidPayloadError(
             `${label} must contain exactly ${expectedLength} commitments`,
         );
     }
 
-    return commitments.map((commitment) => {
-        const parsed = fixedHexToBigint(commitment);
-        assertInSubgroup(parsed, group.p, group.q);
-        return parsed;
+    const parsed = commitments.map((commitment) => {
+        assertInSubgroupOrIdentity(commitment);
+        return commitment as EncodedPoint;
     });
+    if (
+        decodePoint(parsed[parsed.length - 1], `${label} last commitment`).is0()
+    ) {
+        throw new InvalidPayloadError(
+            `${label} must commit to the exact claimed polynomial degree`,
+        );
+    }
+
+    return parsed;
 };
 
 export const buildSchnorrContext = (

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    type EncodedPoint,
     IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidScalarError,
@@ -123,7 +124,7 @@ describe('verifiable secret sharing', () => {
                 shares[0],
                 {
                     commitments: [
-                        0n,
+                        'ff'.repeat(32) as EncodedPoint,
                         ...pedersenCommitments.commitments.slice(1),
                     ],
                 },

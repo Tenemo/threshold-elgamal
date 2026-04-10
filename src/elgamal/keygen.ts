@@ -1,4 +1,5 @@
-import { modPowP, randomScalarInRange } from '../core/index.js';
+import { randomScalarInRange } from '../core/index.js';
+import { encodePoint, multiplyBase } from '../core/ristretto.js';
 
 import { resolveElgamalGroup } from './helpers.js';
 import type { ElgamalGroupInput, ElgamalParameters } from './types.js';
@@ -6,18 +7,6 @@ import { assertValidPrivateKey } from './validation.js';
 
 /**
  * Derives the public key for a caller-supplied private scalar.
- *
- * @param privateKey Private scalar in the range `1..q-1`.
- * @param group Built-in group identifier that fixes `(p, q, g, h)`.
- * @returns Key material containing the resolved group, public key, and private key.
- *
- * @throws `InvalidScalarError` When `privateKey` is outside `1..q-1`.
- * @throws `UnsupportedSuiteError` When `group` does not resolve to a built-in suite.
- *
- * @example
- * ```ts
- * const params = generateParametersWithPrivateKey(12345n, 'ffdhe3072');
- * ```
  */
 export const generateParametersWithPrivateKey = (
     privateKey: bigint,
@@ -25,7 +14,7 @@ export const generateParametersWithPrivateKey = (
 ): ElgamalParameters => {
     const resolvedGroup = resolveElgamalGroup(group);
     assertValidPrivateKey(privateKey, resolvedGroup);
-    const publicKey = modPowP(resolvedGroup.g, privateKey, resolvedGroup.p);
+    const publicKey = encodePoint(multiplyBase(privateKey));
 
     return {
         group: resolvedGroup,
@@ -35,17 +24,7 @@ export const generateParametersWithPrivateKey = (
 };
 
 /**
- * Generates a fresh ElGamal key pair for a built-in group.
- *
- * @param group Built-in group identifier that fixes `(p, q, g, h)`.
- * @returns Key material containing the resolved group, public and private keys.
- *
- * @throws `UnsupportedSuiteError` When `group` does not resolve to a built-in suite.
- *
- * @example
- * ```ts
- * const { publicKey, privateKey, group } = generateParameters('ffdhe3072');
- * ```
+ * Generates a fresh ElGamal key pair for the built-in suite.
  */
 export const generateParameters = (
     group: ElgamalGroupInput,

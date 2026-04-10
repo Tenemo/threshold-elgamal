@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
     canonicalizeElectionManifest,
-    defaultMinimumPublicationThreshold,
+    defaultMinimumPublishedVoterCount,
     deriveSessionId,
     validateElectionManifest,
     type ElectionManifest,
@@ -10,13 +10,10 @@ import {
 
 const baseManifest = (): ElectionManifest => ({
     protocolVersion: 'v1',
-    suiteId: 'ffdhe3072',
-    threshold: 3,
+    suiteId: 'ristretto255',
+    reconstructionThreshold: 3,
     participantCount: 5,
-    minimumPublicationThreshold: 4,
-    allowAbstention: false,
-    scoreDomainMin: 1,
-    scoreDomainMax: 10,
+    minimumPublishedVoterCount: 4,
     ballotFinality: 'first-valid',
     rosterHash: 'roster-hash',
     optionList: ['Alpha', 'Beta'],
@@ -29,14 +26,14 @@ describe('manifest validation', () => {
 
         expect(validateElectionManifest(manifest)).toBe(manifest);
         expect(canonicalizeElectionManifest(manifest)).toBe(
-            '{"allowAbstention":false,"ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z","2026-04-08T13:00:00Z"],"minimumPublicationThreshold":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","rosterHash":"roster-hash","scoreDomainMax":10,"scoreDomainMin":1,"suiteId":"ffdhe3072","threshold":3}',
+            '{"ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z","2026-04-08T13:00:00Z"],"minimumPublishedVoterCount":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","reconstructionThreshold":3,"rosterHash":"roster-hash","suiteId":"ristretto255"}',
         );
     });
 
     it('rejects thresholds outside the supported strict-majority policy', () => {
         const manifest = {
             ...baseManifest(),
-            threshold: 2,
+            reconstructionThreshold: 2,
         };
 
         expect(() => validateElectionManifest(manifest)).toThrow(
@@ -48,8 +45,8 @@ describe('manifest validation', () => {
         const manifest = {
             ...baseManifest(),
             participantCount: 4,
-            threshold: 2,
-            minimumPublicationThreshold: 3,
+            reconstructionThreshold: 2,
+            minimumPublishedVoterCount: 3,
         };
 
         expect(() => validateElectionManifest(manifest)).toThrow(
@@ -61,8 +58,8 @@ describe('manifest validation', () => {
         const manifest = {
             ...baseManifest(),
             participantCount: 2,
-            threshold: 1,
-            minimumPublicationThreshold: 2,
+            reconstructionThreshold: 1,
+            minimumPublishedVoterCount: 2,
         };
 
         expect(() => validateElectionManifest(manifest)).toThrow(
@@ -74,22 +71,14 @@ describe('manifest validation', () => {
         const manifest = {
             ...baseManifest(),
             participantCount: 6,
-            threshold: 5,
-            minimumPublicationThreshold: 6,
+            reconstructionThreshold: 5,
+            minimumPublishedVoterCount: 6,
         };
 
         expect(validateElectionManifest(manifest)).toBe(manifest);
     });
 
-    it('rejects invalid score, finality, option, and deadline invariants', () => {
-        expect(() =>
-            validateElectionManifest({
-                ...baseManifest(),
-                allowAbstention: true,
-                scoreDomainMin: 1,
-            }),
-        ).toThrow('Allowing abstention requires scoreDomainMin = 0');
-
+    it('rejects invalid finality, option, and deadline invariants', () => {
         expect(() =>
             validateElectionManifest({
                 ...baseManifest(),
@@ -117,14 +106,39 @@ describe('manifest validation', () => {
     });
 
     it('rejects publication floors below the shipped privacy minimum', () => {
-        expect(defaultMinimumPublicationThreshold(3, 5)).toBe(4);
+        expect(defaultMinimumPublishedVoterCount(3, 5)).toBe(4);
 
         expect(() =>
             validateElectionManifest({
                 ...baseManifest(),
-                minimumPublicationThreshold: 3,
+                minimumPublishedVoterCount: 3,
             }),
-        ).toThrow('Minimum publication threshold must be an integer in 4..5');
+        ).toThrow('Minimum published voter count must be an integer in 4..5');
+    });
+
+    it('rejects legacy manifest fields explicitly', () => {
+        const legacyThreshold = {
+            ...baseManifest(),
+            threshold: 3,
+        } as unknown as ElectionManifest;
+        const legacyFloor = {
+            ...baseManifest(),
+            minimumPublicationThreshold: 4,
+        } as unknown as ElectionManifest;
+        const legacyAbstention = {
+            ...baseManifest(),
+            allowAbstention: false,
+        } as unknown as ElectionManifest;
+
+        expect(() => validateElectionManifest(legacyThreshold)).toThrow(
+            'Legacy manifest field "threshold" is not supported on the Ristretto beta line',
+        );
+        expect(() => validateElectionManifest(legacyFloor)).toThrow(
+            'Legacy manifest field "minimumPublicationThreshold" is not supported on the Ristretto beta line',
+        );
+        expect(() => validateElectionManifest(legacyAbstention)).toThrow(
+            'Legacy manifest field "allowAbstention" is not supported on the Ristretto beta line',
+        );
     });
 
     it('derives session identifiers injectively', async () => {

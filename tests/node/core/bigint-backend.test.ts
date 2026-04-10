@@ -1,18 +1,21 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../dev-support/deterministic.js';
+import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
 
 import {
     fixedBaseModPow,
-    getGroup,
-    modPowP,
     multiExponentiate,
     resetBigintMathBackend,
     setBigintMathBackend,
     type BigintMathBackend,
     type MultiExponentiationTerm,
 } from '#core';
-import { addEncryptedValues, encryptAdditiveWithRandomness } from '#elgamal';
+import {
+    addEncryptedValues,
+    encryptAdditiveWithRandomness,
+    generateParametersWithPrivateKey,
+} from '#elgamal';
 import {
     createDLEQProof,
     createDisjunctiveProof,
@@ -23,6 +26,7 @@ import {
     type DLEQStatement,
     type ProofContext,
 } from '#proofs';
+import { getGroup } from '#root';
 import {
     combineDecryptionShares,
     createVerifiedDecryptionShare,
@@ -61,7 +65,7 @@ const customBackend: BigintMathBackend = {
 
 const baseContext = (label: string): ProofContext => ({
     protocolVersion: 'v1',
-    suiteId: 'ffdhe2048',
+    suiteId: 'ristretto255',
     manifestHash: 'manifest-hash',
     sessionId: 'session-id',
     label,
@@ -69,20 +73,20 @@ const baseContext = (label: string): ProofContext => ({
 
 const computeArtifacts = async (): Promise<{
     readonly aggregate: {
-        readonly c1: bigint;
-        readonly c2: bigint;
+        readonly c1: string;
+        readonly c2: string;
     };
     readonly ciphertextLeft: {
-        readonly c1: bigint;
-        readonly c2: bigint;
+        readonly c1: string;
+        readonly c2: string;
     };
     readonly ciphertextRight: {
-        readonly c1: bigint;
-        readonly c2: bigint;
+        readonly c1: string;
+        readonly c2: string;
     };
     readonly decryptionShares: readonly {
         readonly index: number;
-        readonly value: bigint;
+        readonly value: string;
     }[];
     readonly disjunctiveProof: Awaited<
         ReturnType<typeof createDisjunctiveProof>
@@ -92,16 +96,19 @@ const computeArtifacts = async (): Promise<{
     readonly dleqValid: boolean;
     readonly fixedBasePower: bigint;
     readonly multiExponentiation: bigint;
-    readonly pedersenCommitments: readonly bigint[];
+    readonly pedersenCommitments: readonly string[];
     readonly schnorrProof: Awaited<ReturnType<typeof createSchnorrProof>>;
     readonly schnorrValid: boolean;
     readonly tally: bigint;
 }> => {
-    const group = getGroup('ffdhe2048');
+    const group = getGroup('ristretto255');
     const secret = 19n;
     const sharePolynomial = [secret, 7n] as const;
     const shares = deriveSharesFromPolynomial(sharePolynomial, 3, group.q);
-    const publicKey = modPowP(group.g, secret, group.p);
+    const publicKey = generateParametersWithPrivateKey(
+        secret,
+        group.name,
+    ).publicKey;
     const pedersenCommitments = generatePedersenCommitments(
         sharePolynomial,
         [23n, 5n],
@@ -174,7 +181,7 @@ const computeArtifacts = async (): Promise<{
 
     const trusteeShare = shares[0];
     const dleqStatement: DLEQStatement = {
-        publicKey: modPowP(group.g, trusteeShare.value, group.p),
+        publicKey: encodePoint(multiplyBase(trusteeShare.value)),
         ciphertext: aggregate,
         decryptionShare: decryptionShares[0].value,
     };
@@ -190,10 +197,11 @@ const computeArtifacts = async (): Promise<{
         createDeterministicSource(13),
     );
 
+    const modulus = 97n;
     const multiExponentiationTerms: readonly MultiExponentiationTerm[] = [
-        { base: group.g, exponent: 9n },
-        { base: publicKey, exponent: 4n },
-        { base: pedersenCommitments.commitments[0], exponent: 3n },
+        { base: 5n, exponent: 9n },
+        { base: 7n, exponent: 4n },
+        { base: 11n, exponent: 3n },
     ];
 
     return {
@@ -202,10 +210,10 @@ const computeArtifacts = async (): Promise<{
         aggregate,
         tally,
         pedersenCommitments: pedersenCommitments.commitments,
-        fixedBasePower: fixedBaseModPow(group.g, 19n, group.p),
+        fixedBasePower: fixedBaseModPow(5n, 19n, modulus),
         multiExponentiation: multiExponentiate(
             multiExponentiationTerms,
-            group.p,
+            modulus,
         ),
         schnorrProof,
         schnorrValid: await verifySchnorrProof(
@@ -239,7 +247,7 @@ describe('bigint backend injection', () => {
         resetBigintMathBackend();
     });
 
-    it('preserves deterministic ciphertexts, proofs, shares, and tallies', async () => {
+    it('preserves deterministic bigint helpers and Ristretto protocol artifacts', async () => {
         const baseline = await computeArtifacts();
 
         setBigintMathBackend(customBackend);
@@ -250,5 +258,7 @@ describe('bigint backend injection', () => {
         expect(injected.disjunctiveValid).toBe(true);
         expect(injected.dleqValid).toBe(true);
         expect(injected.tally).toBe(6n);
+        expect(injected.fixedBasePower).toBe(38n);
+        expect(injected.multiExponentiation).toBe(40n);
     });
 });

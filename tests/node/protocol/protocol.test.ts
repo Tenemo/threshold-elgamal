@@ -6,7 +6,7 @@ import {
     canonicalizeJson,
     classifySlotConflict,
     compareProtocolPayloads,
-    defaultMinimumPublicationThreshold,
+    defaultMinimumPublishedVoterCount,
     deriveSessionId,
     formatSessionFingerprint,
     hashElectionManifest,
@@ -25,13 +25,10 @@ import {
 describe('protocol payloads and transcripts', () => {
     const manifest: ElectionManifest = {
         protocolVersion: 'v1',
-        suiteId: 'ffdhe3072',
-        threshold: 3,
+        suiteId: 'ristretto255',
+        reconstructionThreshold: 3,
         participantCount: 5,
-        minimumPublicationThreshold: 4,
-        allowAbstention: false,
-        scoreDomainMin: 1,
-        scoreDomainMax: 10,
+        minimumPublishedVoterCount: 4,
         ballotFinality: 'first-valid',
         rosterHash: 'roster-hash',
         optionList: ['Alpha', 'Beta'],
@@ -68,7 +65,7 @@ describe('protocol payloads and transcripts', () => {
 
     it('canonicalizes and hashes manifests deterministically', async () => {
         expect(canonicalizeElectionManifest(manifest)).toBe(
-            '{"allowAbstention":false,"ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z"],"minimumPublicationThreshold":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","rosterHash":"roster-hash","scoreDomainMax":10,"scoreDomainMin":1,"suiteId":"ffdhe3072","threshold":3}',
+            '{"ballotFinality":"first-valid","epochDeadlines":["2026-04-08T12:00:00Z"],"minimumPublishedVoterCount":4,"optionList":["Alpha","Beta"],"participantCount":5,"protocolVersion":"v1","reconstructionThreshold":3,"rosterHash":"roster-hash","suiteId":"ristretto255"}',
         );
 
         await expect(hashElectionManifest(manifest)).resolves.toHaveLength(64);
@@ -77,9 +74,9 @@ describe('protocol payloads and transcripts', () => {
         ).resolves.toHaveLength(64);
     });
 
-    it('derives the shipped publication floor as t plus two ballots', () => {
-        expect(defaultMinimumPublicationThreshold(3, 5)).toBe(4);
-        expect(defaultMinimumPublicationThreshold(26, 51)).toBe(27);
+    it('derives the shipped publication floor as k plus one accepted voter', () => {
+        expect(defaultMinimumPublishedVoterCount(3, 5)).toBe(4);
+        expect(defaultMinimumPublishedVoterCount(26, 51)).toBe(27);
     });
 
     it('orders protocol payloads deterministically', () => {

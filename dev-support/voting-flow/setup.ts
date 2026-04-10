@@ -3,7 +3,7 @@ import type { ParticipantRuntime, VotingFlowScenario } from './types.js';
 
 import { majorityThreshold, type CryptoGroup } from '#core';
 import {
-    defaultMinimumPublicationThreshold,
+    defaultMinimumPublishedVoterCount,
     type ElectionManifest,
     type ManifestAcceptancePayload,
     type RegistrationPayload,
@@ -61,15 +61,12 @@ export const buildManifest = (
     return {
         protocolVersion: 'v1',
         suiteId: group.name,
-        threshold,
+        reconstructionThreshold: threshold,
         participantCount: scenario.participantCount,
-        minimumPublicationThreshold: defaultMinimumPublicationThreshold(
+        minimumPublishedVoterCount: defaultMinimumPublishedVoterCount(
             threshold,
             scenario.participantCount,
         ),
-        allowAbstention: scenario.allowAbstention ?? false,
-        scoreDomainMin: scenario.allowAbstention ? 0 : 1,
-        scoreDomainMax: scenario.scoreDomainMax ?? 10,
         ballotFinality: 'first-valid',
         rosterHash,
         optionList,

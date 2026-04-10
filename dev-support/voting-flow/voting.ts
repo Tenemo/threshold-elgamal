@@ -1,3 +1,4 @@
+import { encodeScalar } from '../../src/core/ristretto.js';
 import { createDeterministicSource } from '../deterministic.js';
 
 import { invariant, signPayload } from './common.js';
@@ -7,7 +8,7 @@ import type {
     ThresholdShareArtifact,
 } from './types.js';
 
-import { type CryptoGroup } from '#core';
+import { type CryptoGroup, EncodedPoint } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDLEQProof,
@@ -27,12 +28,11 @@ import {
     type TallyPublicationPayload,
     type VerifiedBallotAggregation,
 } from '#protocol';
-import { bigintToFixedHex } from '#serialize';
 import { createVerifiedDecryptionShare, type Share } from '#threshold';
 
 export const createBallotArtifacts = async (
     votes: readonly bigint[],
-    jointPublicKey: bigint,
+    jointPublicKey: EncodedPoint,
     group: CryptoGroup,
     manifestHash: string,
     sessionId: string,
@@ -125,7 +125,7 @@ export const createThresholdShareArtifacts = async (
     aggregate: VerifiedBallotAggregation['aggregate'],
     transcriptDerivedVerificationKeys: readonly {
         readonly index: number;
-        readonly value: bigint;
+        readonly value: EncodedPoint;
     }[],
     group: CryptoGroup,
     manifestHash: string,
@@ -207,10 +207,7 @@ export const createDecryptionSharePayloads = async (
                     optionIndex,
                     transcriptHash,
                     ballotCount,
-                    decryptionShare: bigintToFixedHex(
-                        artifact.share.value,
-                        group.byteLength,
-                    ),
+                    decryptionShare: artifact.share.value,
                     proof: encodeCompactProof(artifact.proof, group.byteLength),
                 },
             ),
@@ -225,7 +222,7 @@ export const createTallyPublicationPayload = async (
     ballotCount: number,
     tally: bigint,
     decryptionParticipantIndices: readonly number[],
-    group: CryptoGroup,
+    _group: CryptoGroup,
     optionIndex = 1,
 ): Promise<SignedPayload<TallyPublicationPayload>> =>
     signPayload(publisher.auth.privateKey, {
@@ -237,7 +234,7 @@ export const createTallyPublicationPayload = async (
         optionIndex,
         transcriptHash,
         ballotCount,
-        tally: bigintToFixedHex(tally, group.byteLength),
+        tally: encodeScalar(tally),
         decryptionParticipantIndices: [...decryptionParticipantIndices].sort(
             (left, right) => left - right,
         ),

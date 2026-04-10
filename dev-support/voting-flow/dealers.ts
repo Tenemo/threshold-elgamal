@@ -1,3 +1,4 @@
+import { encodeScalar } from '../../src/core/ristretto.js';
 import { encodePedersenShareEnvelope } from '../../src/dkg/pedersen-share-codec.js';
 import { createDeterministicSource } from '../deterministic.js';
 
@@ -25,7 +26,6 @@ import type {
     EncryptedDualSharePayload,
     SignedPayload,
 } from '#protocol';
-import { bigintToFixedHex } from '#serialize';
 import {
     decryptEnvelope,
     encryptEnvelope,
@@ -240,9 +240,7 @@ export const buildDealerMaterial = async (
                 phase: 1,
                 participantIndex: participant.index,
                 messageType: 'pedersen-commitment',
-                commitments: pedersenCommitments.commitments.map((value) =>
-                    bigintToFixedHex(value, group.byteLength),
-                ),
+                commitments: pedersenCommitments.commitments,
             },
         ),
         feldmanCommitments: feldmanCommitments.commitments,
@@ -254,19 +252,11 @@ export const buildDealerMaterial = async (
                 phase: 3,
                 participantIndex: participant.index,
                 messageType: 'feldman-commitment',
-                commitments: feldmanCommitments.commitments.map((value) =>
-                    bigintToFixedHex(value, group.byteLength),
-                ),
+                commitments: feldmanCommitments.commitments,
                 proofs: schnorrProofs.map((proof) => ({
                     coefficientIndex: proof.coefficientIndex,
-                    challenge: bigintToFixedHex(
-                        proof.challenge,
-                        group.byteLength,
-                    ),
-                    response: bigintToFixedHex(
-                        proof.response,
-                        group.byteLength,
-                    ),
+                    challenge: encodeScalar(proof.challenge),
+                    response: encodeScalar(proof.response),
                 })),
             },
         ),

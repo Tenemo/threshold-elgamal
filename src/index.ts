@@ -12,7 +12,12 @@ export {
     UnsupportedSuiteError,
 } from './core/errors.js';
 export { deriveH, getGroup, listGroups } from './core/groups.js';
-export type { CryptoGroup, GroupName, PrimeBits } from './core/types.js';
+export type {
+    CryptoGroup,
+    GroupIdentifier,
+    GroupName,
+    PrimeBits,
+} from './core/types.js';
 export {
     assertInSubgroup,
     assertInSubgroupOrIdentity,

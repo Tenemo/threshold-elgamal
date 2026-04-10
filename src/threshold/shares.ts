@@ -3,9 +3,9 @@ import {
     assertScalarInZq,
     assertThreshold,
     assertValidParticipantIndex,
-    modPowP,
     randomScalarInRange,
 } from '../core/index.js';
+import { encodePoint, multiplyBase } from '../core/ristretto.js';
 import { resolveElgamalGroup } from '../elgamal/helpers.js';
 import type { ElgamalGroupInput } from '../elgamal/types.js';
 
@@ -43,11 +43,6 @@ const createSharesFromPolynomial = (
 /**
  * Splits a fresh secret into indexed Shamir shares and derives the threshold
  * public key for dealer-based threshold decryption.
- *
- * @param threshold Reconstruction threshold `k`.
- * @param participantCount Total participant count `n`.
- * @param group Built-in group identifier used for the key material.
- * @returns Dealer-produced threshold key material and indexed shares.
  */
 export const dealerKeyGen = (
     threshold: number,
@@ -64,7 +59,7 @@ export const dealerKeyGen = (
     return {
         threshold,
         participantCount,
-        publicKey: modPowP(resolvedGroup.g, secret, resolvedGroup.p),
+        publicKey: encodePoint(multiplyBase(secret)),
         shares: createSharesFromPolynomial(
             polynomial,
             participantCount,
@@ -76,14 +71,6 @@ export const dealerKeyGen = (
 
 /**
  * Deterministically derives indexed shares from a caller-supplied polynomial.
- *
- * This helper is exported for reproducible vector generation and transcript
- * fixtures.
- *
- * @param polynomial Polynomial coefficients in ascending order.
- * @param participantCount Total participant count `n`.
- * @param q Prime-order subgroup order.
- * @returns Indexed shares evaluated at `1..n`.
  */
 export const deriveSharesFromPolynomial = (
     polynomial: Polynomial,

@@ -4,6 +4,8 @@ import {
     getGroup,
     type CryptoGroup,
 } from '../core/index.js';
+import type { EncodedPoint } from '../core/types.js';
+import { auditSignedPayloads } from '../protocol/board-audit.js';
 import { hashElectionManifest } from '../protocol/manifest.js';
 import type { ComplaintPayload } from '../protocol/types.js';
 import type { VerifiedProtocolSignatures } from '../protocol/verification.js';
@@ -88,7 +90,7 @@ const normalizeFeldmanCommitments = (
     feldmanCommitments: readonly ParsedFeldmanCommitment[],
 ): readonly {
     readonly dealerIndex: number;
-    readonly commitments: readonly bigint[];
+    readonly commitments: readonly EncodedPoint[];
 }[] =>
     feldmanCommitments.map((entry) => ({
         dealerIndex: entry.dealerIndex,
@@ -336,14 +338,29 @@ export const verifyDKGTranscript = async (
     input: VerifyDKGTranscriptInput,
 ): Promise<VerifiedDKGTranscript> => {
     const manifestHash = await hashElectionManifest(input.manifest);
-    const group = getGroup(input.manifest.suiteId);
+    const auditedTranscript = await auditSignedPayloads(input.transcript);
+    const normalizedInput: VerifyDKGTranscriptInput = {
+        ...input,
+        transcript: auditedTranscript.acceptedPayloads,
+    };
+    const group = getGroup(normalizedInput.manifest.suiteId);
     const threshold = assertMajorityThreshold(
-        input.manifest.threshold,
-        input.manifest.participantCount,
+        normalizedInput.manifest.reconstructionThreshold,
+        normalizedInput.manifest.participantCount,
     );
-    validateTranscriptShape(input, manifestHash);
+    validateTranscriptShape(normalizedInput, manifestHash);
 
-    return input.transcript.some(isPhaseCheckpointPayload)
-        ? verifyCheckpointedDKGTranscript(input, manifestHash, group, threshold)
-        : verifyLegacyDKGTranscript(input, manifestHash, group, threshold);
+    return normalizedInput.transcript.some(isPhaseCheckpointPayload)
+        ? verifyCheckpointedDKGTranscript(
+              normalizedInput,
+              manifestHash,
+              group,
+              threshold,
+          )
+        : verifyLegacyDKGTranscript(
+              normalizedInput,
+              manifestHash,
+              group,
+              threshold,
+          );
 };
