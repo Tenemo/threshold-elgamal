@@ -22,7 +22,7 @@ The current surface is browser-native and depends on two JavaScript runtime feat
 ## Concurrency and acceleration
 
 - Keep Web Worker orchestration in the application. The library is designed to be imported inside workers, but it does not spawn or manage them itself.
-- `threshold-elgamal/core` exposes `setBigintMathBackend()` for optional backend injection. Keep the JavaScript backend as the default path and install any WASM backend explicitly from the caller.
+- The root package exposes `setBigintMathBackend()` for optional backend injection. Keep the JavaScript backend as the default path and install any WASM backend explicitly from the caller.
 - The current recommended default DKG regression size is `10` participants. Larger symmetric ceremonies remain much more sensitive to mobile CPU limits and connection dropouts.
 
 ## Randomness behavior

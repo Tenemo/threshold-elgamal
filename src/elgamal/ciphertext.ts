@@ -1,5 +1,5 @@
-import { combineCiphertextComponents, resolveElgamalGroup } from './helpers.js';
-import type { ElgamalCiphertext, ElgamalGroupInput } from './types.js';
+import { combineCiphertextComponents } from './helpers.js';
+import type { ElgamalCiphertext } from './types.js';
 import { assertValidAdditiveCiphertext } from './validation.js';
 
 /**
@@ -8,11 +8,9 @@ import { assertValidAdditiveCiphertext } from './validation.js';
 export const addEncryptedValues = (
     left: ElgamalCiphertext,
     right: ElgamalCiphertext,
-    group: ElgamalGroupInput,
 ): ElgamalCiphertext => {
-    const resolvedGroup = resolveElgamalGroup(group);
-    assertValidAdditiveCiphertext(left, resolvedGroup);
-    assertValidAdditiveCiphertext(right, resolvedGroup);
+    assertValidAdditiveCiphertext(left);
+    assertValidAdditiveCiphertext(right);
 
     return combineCiphertextComponents(left, right);
 };

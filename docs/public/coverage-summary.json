@@ -1,28 +1,28 @@
 {
   "total": {
     "lines": {
-      "total": 1595,
-      "covered": 1435,
+      "total": 2226,
+      "covered": 1930,
       "skipped": 0,
-      "pct": 89.96
+      "pct": 86.7
     },
     "statements": {
-      "total": 1639,
-      "covered": 1476,
+      "total": 2278,
+      "covered": 1979,
       "skipped": 0,
-      "pct": 90.05
+      "pct": 86.87
     },
     "functions": {
-      "total": 352,
-      "covered": 335,
+      "total": 458,
+      "covered": 428,
       "skipped": 0,
-      "pct": 95.17
+      "pct": 93.44
     },
     "branches": {
-      "total": 680,
-      "covered": 507,
+      "total": 907,
+      "covered": 661,
       "skipped": 0,
-      "pct": 74.55
+      "pct": 72.87
     },
     "branchesTrue": {
       "total": 0,
@@ -57,38 +57,12 @@
       "pct": 100
     }
   },
-  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\bigint.ts": {
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\additive-validation.ts": {
     "lines": {
-      "total": 53,
-      "covered": 52,
-      "skipped": 0,
-      "pct": 98.11
-    },
-    "functions": {
-      "total": 11,
-      "covered": 11,
+      "total": 7,
+      "covered": 7,
       "skipped": 0,
       "pct": 100
-    },
-    "statements": {
-      "total": 55,
-      "covered": 54,
-      "skipped": 0,
-      "pct": 98.18
-    },
-    "branches": {
-      "total": 14,
-      "covered": 13,
-      "skipped": 0,
-      "pct": 92.85
-    }
-  },
-  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\bytes.ts": {
-    "lines": {
-      "total": 10,
-      "covered": 9,
-      "skipped": 0,
-      "pct": 90
     },
     "functions": {
       "total": 2,
@@ -97,36 +71,88 @@
       "pct": 100
     },
     "statements": {
-      "total": 10,
-      "covered": 9,
+      "total": 7,
+      "covered": 7,
       "skipped": 0,
-      "pct": 90
+      "pct": 100
     },
     "branches": {
-      "total": 2,
-      "covered": 1,
+      "total": 8,
+      "covered": 8,
       "skipped": 0,
-      "pct": 50
+      "pct": 100
     }
   },
-  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\crypto.ts": {
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\bigint.ts": {
     "lines": {
-      "total": 22,
-      "covered": 21,
+      "total": 128,
+      "covered": 116,
       "skipped": 0,
-      "pct": 95.45
+      "pct": 90.62
     },
     "functions": {
-      "total": 6,
-      "covered": 6,
+      "total": 24,
+      "covered": 22,
+      "skipped": 0,
+      "pct": 91.66
+    },
+    "statements": {
+      "total": 132,
+      "covered": 119,
+      "skipped": 0,
+      "pct": 90.15
+    },
+    "branches": {
+      "total": 44,
+      "covered": 33,
+      "skipped": 0,
+      "pct": 75
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\bytes.ts": {
+    "lines": {
+      "total": 24,
+      "covered": 22,
+      "skipped": 0,
+      "pct": 91.66
+    },
+    "functions": {
+      "total": 5,
+      "covered": 5,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 22,
-      "covered": 21,
+      "total": 26,
+      "covered": 24,
       "skipped": 0,
-      "pct": 95.45
+      "pct": 92.3
+    },
+    "branches": {
+      "total": 7,
+      "covered": 5,
+      "skipped": 0,
+      "pct": 71.42
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\crypto.ts": {
+    "lines": {
+      "total": 20,
+      "covered": 19,
+      "skipped": 0,
+      "pct": 95
+    },
+    "functions": {
+      "total": 5,
+      "covered": 5,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 20,
+      "covered": 19,
+      "skipped": 0,
+      "pct": 95
     },
     "branches": {
       "total": 8,
@@ -163,28 +189,28 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\groups.ts": {
     "lines": {
-      "total": 27,
-      "covered": 26,
+      "total": 9,
+      "covered": 9,
       "skipped": 0,
-      "pct": 96.29
+      "pct": 100
     },
     "functions": {
-      "total": 5,
-      "covered": 5,
+      "total": 3,
+      "covered": 3,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 29,
-      "covered": 28,
+      "total": 10,
+      "covered": 10,
       "skipped": 0,
-      "pct": 96.55
+      "pct": 100
     },
     "branches": {
-      "total": 7,
-      "covered": 6,
+      "total": 2,
+      "covered": 2,
       "skipped": 0,
-      "pct": 85.71
+      "pct": 100
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\index.ts": {
@@ -239,30 +265,30 @@
       "pct": 95.23
     }
   },
-  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\reproducibility.ts": {
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\ristretto.ts": {
     "lines": {
-      "total": 12,
-      "covered": 0,
+      "total": 55,
+      "covered": 49,
       "skipped": 0,
-      "pct": 0
+      "pct": 89.09
     },
     "functions": {
-      "total": 5,
-      "covered": 0,
+      "total": 14,
+      "covered": 12,
       "skipped": 0,
-      "pct": 0
+      "pct": 85.71
     },
     "statements": {
-      "total": 12,
-      "covered": 0,
+      "total": 59,
+      "covered": 53,
       "skipped": 0,
-      "pct": 0
+      "pct": 89.83
     },
     "branches": {
-      "total": 2,
-      "covered": 0,
+      "total": 20,
+      "covered": 13,
       "skipped": 0,
-      "pct": 0
+      "pct": 65
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\types.ts": {
@@ -293,80 +319,106 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\core\\validation.ts": {
     "lines": {
-      "total": 50,
-      "covered": 46,
+      "total": 56,
+      "covered": 52,
       "skipped": 0,
-      "pct": 92
+      "pct": 92.85
     },
     "functions": {
-      "total": 12,
-      "covered": 12,
+      "total": 13,
+      "covered": 13,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 50,
-      "covered": 46,
+      "total": 57,
+      "covered": 53,
       "skipped": 0,
-      "pct": 92
+      "pct": 92.98
     },
     "branches": {
-      "total": 53,
-      "covered": 49,
+      "total": 45,
+      "covered": 41,
       "skipped": 0,
-      "pct": 92.45
+      "pct": 91.11
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\checkpoints.ts": {
+    "lines": {
+      "total": 26,
+      "covered": 26,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 10,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 27,
+      "covered": 27,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 12,
+      "covered": 11,
+      "skipped": 0,
+      "pct": 91.66
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\complaints.ts": {
     "lines": {
-      "total": 34,
-      "covered": 32,
-      "skipped": 0,
-      "pct": 94.11
-    },
-    "functions": {
-      "total": 15,
-      "covered": 15,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
       "total": 36,
       "covered": 34,
       "skipped": 0,
       "pct": 94.44
     },
-    "branches": {
-      "total": 16,
-      "covered": 14,
-      "skipped": 0,
-      "pct": 87.5
-    }
-  },
-  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\gjkr.ts": {
-    "lines": {
-      "total": 53,
-      "covered": 49,
-      "skipped": 0,
-      "pct": 92.45
-    },
     "functions": {
-      "total": 15,
-      "covered": 15,
+      "total": 17,
+      "covered": 17,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 55,
-      "covered": 51,
+      "total": 39,
+      "covered": 37,
       "skipped": 0,
-      "pct": 92.72
+      "pct": 94.87
     },
     "branches": {
-      "total": 38,
-      "covered": 31,
+      "total": 20,
+      "covered": 18,
       "skipped": 0,
-      "pct": 81.57
+      "pct": 90
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\gjkr.ts": {
+    "lines": {
+      "total": 8,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 3,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 9,
+      "covered": 9,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\index.ts": {
@@ -397,28 +449,106 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\joint-feldman.ts": {
     "lines": {
-      "total": 53,
-      "covered": 44,
+      "total": 8,
+      "covered": 8,
       "skipped": 0,
-      "pct": 83.01
+      "pct": 100
     },
     "functions": {
-      "total": 15,
-      "covered": 13,
+      "total": 3,
+      "covered": 3,
       "skipped": 0,
-      "pct": 86.66
+      "pct": 100
     },
     "statements": {
-      "total": 54,
-      "covered": 45,
+      "total": 9,
+      "covered": 9,
       "skipped": 0,
-      "pct": 83.33
+      "pct": 100
     },
     "branches": {
-      "total": 38,
-      "covered": 23,
+      "total": 0,
+      "covered": 0,
       "skipped": 0,
-      "pct": 60.52
+      "pct": 100
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\majority-reducer.ts": {
+    "lines": {
+      "total": 75,
+      "covered": 70,
+      "skipped": 0,
+      "pct": 93.33
+    },
+    "functions": {
+      "total": 18,
+      "covered": 18,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 75,
+      "covered": 70,
+      "skipped": 0,
+      "pct": 93.33
+    },
+    "branches": {
+      "total": 58,
+      "covered": 52,
+      "skipped": 0,
+      "pct": 89.65
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\pedersen-share-codec.ts": {
+    "lines": {
+      "total": 9,
+      "covered": 7,
+      "skipped": 0,
+      "pct": 77.77
+    },
+    "functions": {
+      "total": 2,
+      "covered": 2,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 9,
+      "covered": 7,
+      "skipped": 0,
+      "pct": 77.77
+    },
+    "branches": {
+      "total": 2,
+      "covered": 1,
+      "skipped": 0,
+      "pct": 50
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\phase-plan.ts": {
+    "lines": {
+      "total": 4,
+      "covered": 4,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 1,
+      "covered": 1,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 4,
+      "covered": 4,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 6,
+      "covered": 5,
+      "skipped": 0,
+      "pct": 83.33
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\reconstruction.ts": {
@@ -447,7 +577,215 @@
       "pct": 100
     }
   },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\reducer-auth.ts": {
+    "lines": {
+      "total": 53,
+      "covered": 39,
+      "skipped": 0,
+      "pct": 73.58
+    },
+    "functions": {
+      "total": 5,
+      "covered": 5,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 54,
+      "covered": 40,
+      "skipped": 0,
+      "pct": 74.07
+    },
+    "branches": {
+      "total": 26,
+      "covered": 18,
+      "skipped": 0,
+      "pct": 69.23
+    }
+  },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\types.ts": {
+    "lines": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\verification-checkpoints.ts": {
+    "lines": {
+      "total": 27,
+      "covered": 22,
+      "skipped": 0,
+      "pct": 81.48
+    },
+    "functions": {
+      "total": 4,
+      "covered": 4,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 27,
+      "covered": 22,
+      "skipped": 0,
+      "pct": 81.48
+    },
+    "branches": {
+      "total": 14,
+      "covered": 9,
+      "skipped": 0,
+      "pct": 64.28
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\verification-complaints.ts": {
+    "lines": {
+      "total": 109,
+      "covered": 88,
+      "skipped": 0,
+      "pct": 80.73
+    },
+    "functions": {
+      "total": 13,
+      "covered": 13,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 109,
+      "covered": 88,
+      "skipped": 0,
+      "pct": 80.73
+    },
+    "branches": {
+      "total": 61,
+      "covered": 40,
+      "skipped": 0,
+      "pct": 65.57
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\verification-derivation.ts": {
+    "lines": {
+      "total": 33,
+      "covered": 25,
+      "skipped": 0,
+      "pct": 75.75
+    },
+    "functions": {
+      "total": 15,
+      "covered": 12,
+      "skipped": 0,
+      "pct": 80
+    },
+    "statements": {
+      "total": 34,
+      "covered": 26,
+      "skipped": 0,
+      "pct": 76.47
+    },
+    "branches": {
+      "total": 4,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\verification-feldman.ts": {
+    "lines": {
+      "total": 49,
+      "covered": 41,
+      "skipped": 0,
+      "pct": 83.67
+    },
+    "functions": {
+      "total": 10,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 49,
+      "covered": 41,
+      "skipped": 0,
+      "pct": 83.67
+    },
+    "branches": {
+      "total": 21,
+      "covered": 13,
+      "skipped": 0,
+      "pct": 61.9
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\verification-roster.ts": {
+    "lines": {
+      "total": 31,
+      "covered": 25,
+      "skipped": 0,
+      "pct": 80.64
+    },
+    "functions": {
+      "total": 9,
+      "covered": 9,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 31,
+      "covered": 25,
+      "skipped": 0,
+      "pct": 80.64
+    },
+    "branches": {
+      "total": 14,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 57.14
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\verification-shared.ts": {
+    "lines": {
+      "total": 62,
+      "covered": 52,
+      "skipped": 0,
+      "pct": 83.87
+    },
+    "functions": {
+      "total": 14,
+      "covered": 14,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 64,
+      "covered": 54,
+      "skipped": 0,
+      "pct": 84.37
+    },
+    "branches": {
+      "total": 31,
+      "covered": 21,
+      "skipped": 0,
+      "pct": 67.74
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\verification-types.ts": {
     "lines": {
       "total": 0,
       "covered": 0,
@@ -475,34 +813,34 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\dkg\\verification.ts": {
     "lines": {
-      "total": 242,
-      "covered": 193,
+      "total": 66,
+      "covered": 65,
       "skipped": 0,
-      "pct": 79.75
+      "pct": 98.48
     },
     "functions": {
-      "total": 47,
-      "covered": 44,
+      "total": 10,
+      "covered": 10,
       "skipped": 0,
-      "pct": 93.61
+      "pct": 100
     },
     "statements": {
-      "total": 245,
-      "covered": 196,
+      "total": 67,
+      "covered": 66,
       "skipped": 0,
-      "pct": 80
+      "pct": 98.5
     },
     "branches": {
-      "total": 122,
-      "covered": 64,
+      "total": 10,
+      "covered": 6,
       "skipped": 0,
-      "pct": 52.45
+      "pct": 60
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\elgamal\\additive.ts": {
     "lines": {
-      "total": 35,
-      "covered": 35,
+      "total": 38,
+      "covered": 38,
       "skipped": 0,
       "pct": 100
     },
@@ -513,8 +851,8 @@
       "pct": 100
     },
     "statements": {
-      "total": 35,
-      "covered": 35,
+      "total": 38,
+      "covered": 38,
       "skipped": 0,
       "pct": 100
     },
@@ -527,10 +865,10 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\elgamal\\bsgs.ts": {
     "lines": {
-      "total": 41,
-      "covered": 39,
+      "total": 43,
+      "covered": 41,
       "skipped": 0,
-      "pct": 95.12
+      "pct": 95.34
     },
     "functions": {
       "total": 2,
@@ -539,10 +877,10 @@
       "pct": 100
     },
     "statements": {
-      "total": 41,
-      "covered": 39,
+      "total": 43,
+      "covered": 41,
       "skipped": 0,
-      "pct": 95.12
+      "pct": 95.34
     },
     "branches": {
       "total": 16,
@@ -579,22 +917,22 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\elgamal\\helpers.ts": {
     "lines": {
-      "total": 6,
-      "covered": 6,
-      "skipped": 0,
-      "pct": 100
-    },
-    "functions": {
-      "total": 3,
-      "covered": 3,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
-      "total": 7,
+      "total": 8,
       "covered": 7,
       "skipped": 0,
-      "pct": 100
+      "pct": 87.5
+    },
+    "functions": {
+      "total": 4,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 75
+    },
+    "statements": {
+      "total": 9,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 88.88
     },
     "branches": {
       "total": 4,
@@ -684,9 +1022,9 @@
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\elgamal\\validation.ts": {
     "lines": {
       "total": 18,
-      "covered": 16,
+      "covered": 17,
       "skipped": 0,
-      "pct": 88.88
+      "pct": 94.44
     },
     "functions": {
       "total": 6,
@@ -696,15 +1034,15 @@
     },
     "statements": {
       "total": 18,
-      "covered": 16,
+      "covered": 17,
       "skipped": 0,
-      "pct": 88.88
+      "pct": 94.44
     },
     "branches": {
-      "total": 12,
-      "covered": 10,
+      "total": 4,
+      "covered": 3,
       "skipped": 0,
-      "pct": 83.33
+      "pct": 75
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\proofs\\disjunctive.ts": {
@@ -761,22 +1099,22 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\proofs\\helpers.ts": {
     "lines": {
-      "total": 28,
-      "covered": 26,
-      "skipped": 0,
-      "pct": 92.85
-    },
-    "functions": {
-      "total": 8,
-      "covered": 8,
-      "skipped": 0,
-      "pct": 100
-    },
-    "statements": {
       "total": 31,
       "covered": 29,
       "skipped": 0,
       "pct": 93.54
+    },
+    "functions": {
+      "total": 9,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 88.88
+    },
+    "statements": {
+      "total": 34,
+      "covered": 31,
+      "skipped": 0,
+      "pct": 91.17
     },
     "branches": {
       "total": 16,
@@ -891,36 +1229,62 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\ballots.ts": {
     "lines": {
-      "total": 38,
-      "covered": 36,
+      "total": 83,
+      "covered": 76,
       "skipped": 0,
-      "pct": 94.73
+      "pct": 91.56
     },
     "functions": {
-      "total": 8,
-      "covered": 8,
+      "total": 13,
+      "covered": 13,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 38,
-      "covered": 36,
+      "total": 83,
+      "covered": 76,
       "skipped": 0,
-      "pct": 94.73
+      "pct": 91.56
+    },
+    "branches": {
+      "total": 36,
+      "covered": 28,
+      "skipped": 0,
+      "pct": 77.77
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\board-audit.ts": {
+    "lines": {
+      "total": 57,
+      "covered": 42,
+      "skipped": 0,
+      "pct": 73.68
+    },
+    "functions": {
+      "total": 12,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 83.33
+    },
+    "statements": {
+      "total": 60,
+      "covered": 44,
+      "skipped": 0,
+      "pct": 73.33
     },
     "branches": {
       "total": 18,
-      "covered": 16,
+      "covered": 10,
       "skipped": 0,
-      "pct": 88.88
+      "pct": 55.55
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\canonical-json.ts": {
     "lines": {
       "total": 24,
-      "covered": 22,
+      "covered": 21,
       "skipped": 0,
-      "pct": 91.66
+      "pct": 87.5
     },
     "functions": {
       "total": 4,
@@ -930,15 +1294,41 @@
     },
     "statements": {
       "total": 24,
-      "covered": 22,
+      "covered": 21,
       "skipped": 0,
-      "pct": 91.66
+      "pct": 87.5
     },
     "branches": {
       "total": 17,
-      "covered": 15,
+      "covered": 14,
       "skipped": 0,
-      "pct": 88.23
+      "pct": 82.35
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\election-verification.ts": {
+    "lines": {
+      "total": 100,
+      "covered": 6,
+      "skipped": 0,
+      "pct": 6
+    },
+    "functions": {
+      "total": 17,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
+    },
+    "statements": {
+      "total": 100,
+      "covered": 6,
+      "skipped": 0,
+      "pct": 6
+    },
+    "branches": {
+      "total": 46,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 0
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\index.ts": {
@@ -970,9 +1360,9 @@
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\manifest.ts": {
     "lines": {
       "total": 49,
-      "covered": 42,
+      "covered": 45,
       "skipped": 0,
-      "pct": 85.71
+      "pct": 91.83
     },
     "functions": {
       "total": 6,
@@ -982,23 +1372,23 @@
     },
     "statements": {
       "total": 49,
-      "covered": 42,
+      "covered": 45,
       "skipped": 0,
-      "pct": 85.71
+      "pct": 91.83
     },
     "branches": {
-      "total": 35,
-      "covered": 28,
+      "total": 27,
+      "covered": 23,
       "skipped": 0,
-      "pct": 80
+      "pct": 85.18
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\ordering.ts": {
     "lines": {
       "total": 22,
-      "covered": 20,
+      "covered": 21,
       "skipped": 0,
-      "pct": 90.9
+      "pct": 95.45
     },
     "functions": {
       "total": 3,
@@ -1008,21 +1398,21 @@
     },
     "statements": {
       "total": 22,
-      "covered": 20,
+      "covered": 21,
       "skipped": 0,
-      "pct": 90.9
+      "pct": 95.45
     },
     "branches": {
       "total": 14,
-      "covered": 12,
+      "covered": 13,
       "skipped": 0,
-      "pct": 85.71
+      "pct": 92.85
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\payloads.ts": {
     "lines": {
-      "total": 19,
-      "covered": 19,
+      "total": 20,
+      "covered": 20,
       "skipped": 0,
       "pct": 100
     },
@@ -1033,42 +1423,42 @@
       "pct": 100
     },
     "statements": {
-      "total": 19,
-      "covered": 19,
+      "total": 20,
+      "covered": 20,
       "skipped": 0,
       "pct": 100
     },
     "branches": {
-      "total": 13,
-      "covered": 13,
+      "total": 14,
+      "covered": 14,
       "skipped": 0,
       "pct": 100
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\transcript.ts": {
     "lines": {
-      "total": 6,
-      "covered": 6,
+      "total": 13,
+      "covered": 13,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 3,
-      "covered": 3,
+      "total": 7,
+      "covered": 7,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 6,
-      "covered": 6,
+      "total": 13,
+      "covered": 13,
       "skipped": 0,
       "pct": 100
     },
     "branches": {
-      "total": 2,
-      "covered": 1,
+      "total": 6,
+      "covered": 5,
       "skipped": 0,
-      "pct": 50
+      "pct": 83.33
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\types.ts": {
@@ -1123,30 +1513,186 @@
       "pct": 53.33
     }
   },
-  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\voting.ts": {
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\voting-ballots.ts": {
     "lines": {
-      "total": 112,
-      "covered": 95,
+      "total": 19,
+      "covered": 13,
       "skipped": 0,
-      "pct": 84.82
+      "pct": 68.42
     },
     "functions": {
-      "total": 22,
-      "covered": 22,
+      "total": 4,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 75
+    },
+    "statements": {
+      "total": 19,
+      "covered": 13,
+      "skipped": 0,
+      "pct": 68.42
+    },
+    "branches": {
+      "total": 4,
+      "covered": 2,
+      "skipped": 0,
+      "pct": 50
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\voting-codecs.ts": {
+    "lines": {
+      "total": 20,
+      "covered": 20,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 10,
+      "covered": 10,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 113,
-      "covered": 96,
+      "total": 21,
+      "covered": 21,
       "skipped": 0,
-      "pct": 84.95
+      "pct": 100
     },
     "branches": {
-      "total": 42,
-      "covered": 23,
+      "total": 0,
+      "covered": 0,
       "skipped": 0,
-      "pct": 54.76
+      "pct": 100
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\voting-decryption.ts": {
+    "lines": {
+      "total": 56,
+      "covered": 45,
+      "skipped": 0,
+      "pct": 80.35
+    },
+    "functions": {
+      "total": 2,
+      "covered": 1,
+      "skipped": 0,
+      "pct": 50
+    },
+    "statements": {
+      "total": 56,
+      "covered": 45,
+      "skipped": 0,
+      "pct": 80.35
+    },
+    "branches": {
+      "total": 20,
+      "covered": 12,
+      "skipped": 0,
+      "pct": 60
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\voting-results.ts": {
+    "lines": {
+      "total": 66,
+      "covered": 56,
+      "skipped": 0,
+      "pct": 84.84
+    },
+    "functions": {
+      "total": 10,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 66,
+      "covered": 56,
+      "skipped": 0,
+      "pct": 84.84
+    },
+    "branches": {
+      "total": 38,
+      "covered": 22,
+      "skipped": 0,
+      "pct": 57.89
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\voting-shared.ts": {
+    "lines": {
+      "total": 58,
+      "covered": 49,
+      "skipped": 0,
+      "pct": 84.48
+    },
+    "functions": {
+      "total": 11,
+      "covered": 11,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 59,
+      "covered": 50,
+      "skipped": 0,
+      "pct": 84.74
+    },
+    "branches": {
+      "total": 26,
+      "covered": 17,
+      "skipped": 0,
+      "pct": 65.38
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\voting-types.ts": {
+    "lines": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\protocol\\voting.ts": {
+    "lines": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\runtime\\index.ts": {
@@ -1331,32 +1877,6 @@
       "pct": 100
     }
   },
-  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\threshold\\reproducibility.ts": {
-    "lines": {
-      "total": 42,
-      "covered": 24,
-      "skipped": 0,
-      "pct": 57.14
-    },
-    "functions": {
-      "total": 8,
-      "covered": 2,
-      "skipped": 0,
-      "pct": 25
-    },
-    "statements": {
-      "total": 45,
-      "covered": 24,
-      "skipped": 0,
-      "pct": 53.33
-    },
-    "branches": {
-      "total": 14,
-      "covered": 5,
-      "skipped": 0,
-      "pct": 35.71
-    }
-  },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\threshold\\shares.ts": {
     "lines": {
       "total": 18,
@@ -1385,20 +1905,20 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\threshold\\storage.ts": {
     "lines": {
-      "total": 15,
-      "covered": 15,
+      "total": 13,
+      "covered": 13,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 6,
-      "covered": 6,
+      "total": 5,
+      "covered": 5,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 16,
-      "covered": 16,
+      "total": 14,
+      "covered": 14,
       "skipped": 0,
       "pct": 100
     },
@@ -1411,20 +1931,20 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\threshold\\types.ts": {
     "lines": {
-      "total": 0,
-      "covered": 0,
+      "total": 3,
+      "covered": 3,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 0,
-      "covered": 0,
+      "total": 1,
+      "covered": 1,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 0,
-      "covered": 0,
+      "total": 3,
+      "covered": 3,
       "skipped": 0,
       "pct": 100
     },
@@ -1463,20 +1983,20 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\transport\\auth.ts": {
     "lines": {
-      "total": 12,
-      "covered": 12,
+      "total": 10,
+      "covered": 10,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 6,
-      "covered": 6,
+      "total": 5,
+      "covered": 5,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 12,
-      "covered": 12,
+      "total": 10,
+      "covered": 10,
       "skipped": 0,
       "pct": 100
     },
@@ -1489,46 +2009,72 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\transport\\complaints.ts": {
     "lines": {
-      "total": 28,
-      "covered": 26,
+      "total": 23,
+      "covered": 22,
       "skipped": 0,
-      "pct": 92.85
+      "pct": 95.65
     },
     "functions": {
-      "total": 9,
-      "covered": 9,
+      "total": 4,
+      "covered": 4,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 31,
-      "covered": 29,
+      "total": 23,
+      "covered": 22,
       "skipped": 0,
-      "pct": 93.54
+      "pct": 95.65
     },
     "branches": {
       "total": 6,
-      "covered": 4,
+      "covered": 6,
       "skipped": 0,
-      "pct": 66.66
+      "pct": 100
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\transport\\envelope-crypto.ts": {
+    "lines": {
+      "total": 5,
+      "covered": 5,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 3,
+      "covered": 3,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 6,
+      "covered": 6,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 1,
+      "covered": 1,
+      "skipped": 0,
+      "pct": 100
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\transport\\envelopes.ts": {
     "lines": {
-      "total": 21,
-      "covered": 21,
+      "total": 14,
+      "covered": 14,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 7,
-      "covered": 7,
+      "total": 2,
+      "covered": 2,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 24,
-      "covered": 24,
+      "total": 14,
+      "covered": 14,
       "skipped": 0,
       "pct": 100
     },
@@ -1567,28 +2113,28 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\transport\\key-agreement.ts": {
     "lines": {
-      "total": 57,
-      "covered": 53,
+      "total": 76,
+      "covered": 70,
       "skipped": 0,
-      "pct": 92.98
+      "pct": 92.1
     },
     "functions": {
-      "total": 19,
-      "covered": 18,
-      "skipped": 0,
-      "pct": 94.73
-    },
-    "statements": {
-      "total": 59,
-      "covered": 55,
-      "skipped": 0,
-      "pct": 93.22
-    },
-    "branches": {
-      "total": 24,
+      "total": 20,
       "covered": 20,
       "skipped": 0,
-      "pct": 83.33
+      "pct": 100
+    },
+    "statements": {
+      "total": 79,
+      "covered": 73,
+      "skipped": 0,
+      "pct": 92.4
+    },
+    "branches": {
+      "total": 34,
+      "covered": 28,
+      "skipped": 0,
+      "pct": 82.35
     }
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\transport\\types.ts": {
@@ -1617,22 +2163,48 @@
       "pct": 100
     }
   },
-  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\vss\\feldman.ts": {
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\vss\\commitment-product.ts": {
     "lines": {
-      "total": 17,
-      "covered": 17,
+      "total": 8,
+      "covered": 8,
       "skipped": 0,
       "pct": 100
     },
     "functions": {
-      "total": 5,
-      "covered": 5,
+      "total": 1,
+      "covered": 1,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 18,
-      "covered": 18,
+      "total": 8,
+      "covered": 8,
+      "skipped": 0,
+      "pct": 100
+    },
+    "branches": {
+      "total": 0,
+      "covered": 0,
+      "skipped": 0,
+      "pct": 100
+    }
+  },
+  "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\vss\\feldman.ts": {
+    "lines": {
+      "total": 10,
+      "covered": 10,
+      "skipped": 0,
+      "pct": 100
+    },
+    "functions": {
+      "total": 4,
+      "covered": 4,
+      "skipped": 0,
+      "pct": 100
+    },
+    "statements": {
+      "total": 11,
+      "covered": 11,
       "skipped": 0,
       "pct": 100
     },
@@ -1671,22 +2243,22 @@
   },
   "C:\\_sync\\_personal\\pollub\\_magisterka\\threshold-elgamal\\src\\vss\\pedersen.ts": {
     "lines": {
-      "total": 31,
-      "covered": 30,
+      "total": 26,
+      "covered": 25,
       "skipped": 0,
-      "pct": 96.77
+      "pct": 96.15
     },
     "functions": {
-      "total": 6,
-      "covered": 6,
+      "total": 5,
+      "covered": 5,
       "skipped": 0,
       "pct": 100
     },
     "statements": {
-      "total": 33,
-      "covered": 32,
+      "total": 28,
+      "covered": 27,
       "skipped": 0,
-      "pct": 96.96
+      "pct": 96.42
     },
     "branches": {
       "total": 8,

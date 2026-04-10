@@ -25,15 +25,8 @@ import {
     withError,
 } from './complaints.js';
 import { expectedDkgPhase } from './phase-plan.js';
-import type {
-    DKGProtocol,
-    DKGState,
-    DKGTransition,
-    DKGConfigInput,
-} from './types.js';
-
-const protocolLabel = (protocol: DKGProtocol): string =>
-    protocol === 'gjkr' ? 'GJKR' : 'Joint-Feldman';
+import { validateAuthenticatedPayload } from './reducer-auth.js';
+import type { DKGState, DKGTransition, DKGConfigInput } from './types.js';
 
 const acceptedParticipants = (
     transcript: readonly SignedPayload[],
@@ -48,12 +41,11 @@ const acceptedParticipants = (
 
 const contiguousFinalizedCheckpoints = (
     transcript: readonly SignedPayload[],
-    protocol: DKGProtocol,
     threshold: number,
 ): readonly FinalizedPhaseCheckpoint[] => {
     const resolved: FinalizedPhaseCheckpoint[] = [];
 
-    for (const checkpointPhase of requiredCheckpointPhases(protocol)) {
+    for (const checkpointPhase of requiredCheckpointPhases()) {
         const checkpoint = resolveFinalizedPhaseCheckpoint(
             transcript,
             checkpointPhase,
@@ -70,14 +62,9 @@ const contiguousFinalizedCheckpoints = (
 
 const latestCheckpointQual = (
     transcript: readonly SignedPayload[],
-    protocol: DKGProtocol,
     threshold: number,
 ): readonly number[] | null => {
-    const checkpoints = contiguousFinalizedCheckpoints(
-        transcript,
-        protocol,
-        threshold,
-    );
+    const checkpoints = contiguousFinalizedCheckpoints(transcript, threshold);
 
     return (
         checkpoints[checkpoints.length - 1]?.payload.qualParticipantIndices ??
@@ -112,23 +99,17 @@ const complaintResolutionsFromTranscript = (
         )
         .map((item) => item.payload);
 
-export const createMajorityDkgState = (
-    config: DKGConfigInput,
-    protocol: DKGProtocol,
-): DKGState => {
+export const createMajorityDkgState = (config: DKGConfigInput): DKGState => {
     assertMajorityThreshold(config.threshold, config.participantCount);
 
-    return createBaseState({
-        ...config,
-        protocol,
-    });
+    return createBaseState(config);
 };
 
 export const processMajorityDkgPayload = (
     state: DKGState,
     signedPayload: SignedPayload,
 ): DKGTransition => {
-    const label = protocolLabel(state.config.protocol);
+    const label = 'GJKR';
 
     if (state.phase === 'aborted' || state.phase === 'completed') {
         return withError(
@@ -140,7 +121,7 @@ export const processMajorityDkgPayload = (
 
     if (
         isPhaseCheckpointPayload(signedPayload) &&
-        !requiredCheckpointPhases(state.config.protocol).includes(
+        !requiredCheckpointPhases().includes(
             signedPayload.payload.checkpointPhase,
         )
     ) {
@@ -161,7 +142,6 @@ export const processMajorityDkgPayload = (
     }
 
     const phase = expectedDkgPhase(
-        state.config.protocol,
         signedPayload.payload.messageType,
         isPhaseCheckpointPayload(signedPayload)
             ? signedPayload.payload
@@ -179,6 +159,18 @@ export const processMajorityDkgPayload = (
         signedPayload.payload.participantIndex,
         state.config.participantCount,
     );
+
+    const authenticationError = validateAuthenticatedPayload(
+        state.transcript,
+        signedPayload,
+    );
+    if (authenticationError !== null) {
+        return {
+            newState: state,
+            outgoingPayloads: [],
+            errors: [authenticationError],
+        };
+    }
 
     if (isPhaseCheckpointPayload(signedPayload)) {
         if (
@@ -237,7 +229,6 @@ export const processMajorityDkgPayload = (
     const complaints = complaintsFromTranscript(nextTranscriptState.transcript);
     const latestCheckpointQualIndices = latestCheckpointQual(
         nextTranscriptState.transcript,
-        state.config.protocol,
         state.config.threshold,
     );
     const qual =
@@ -289,12 +280,11 @@ export const processMajorityDkgPayload = (
     );
     const contiguousCheckpoints = contiguousFinalizedCheckpoints(
         nextTranscriptState.transcript,
-        state.config.protocol,
         state.config.threshold,
     );
     const completedByCheckpoint =
         contiguousCheckpoints[contiguousCheckpoints.length - 1]?.payload
-            .checkpointPhase === finalCheckpointPhase(state.config.protocol);
+            .checkpointPhase === finalCheckpointPhase();
     const completed =
         completedByCheckpoint ||
         (!hasCheckpointFlow(nextTranscriptState.transcript) &&

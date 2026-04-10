@@ -1,8 +1,5 @@
-import type { GroupIdentifier } from '../core/types.js';
 import type { ComplaintPayload, SignedPayload } from '../protocol/types.js';
 
-/** Supported DKG reducer variants. */
-export type DKGProtocol = 'joint-feldman' | 'gjkr';
 /** Reducer step markers used by the log-driven DKG state machines. */
 export type DKGPhase = 0 | 1 | 2 | 3 | 4 | 'aborted' | 'completed';
 
@@ -14,10 +11,8 @@ export type DKGError = {
 
 /** Supported strict-majority DKG input for a log-driven reducer. */
 export type DKGConfigInput = {
-    readonly protocol: DKGProtocol;
     readonly sessionId: string;
     readonly manifestHash: string;
-    readonly group: GroupIdentifier;
     readonly participantCount: number;
     readonly threshold: number;
 };

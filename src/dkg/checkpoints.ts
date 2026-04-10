@@ -3,8 +3,6 @@ import type {
     SignedPayload,
 } from '../protocol/types.js';
 
-import type { DKGProtocol } from './types.js';
-
 /** Finalized threshold-supported checkpoint for one DKG phase. */
 export type FinalizedPhaseCheckpoint = {
     readonly payload: PhaseCheckpointPayload;
@@ -31,16 +29,12 @@ export const isPhaseCheckpointPayload = (
 ): payload is SignedPayload<PhaseCheckpointPayload> =>
     payload.payload.messageType === 'phase-checkpoint';
 
-/** Returns the required checkpoint phases for the selected DKG protocol. */
-export const requiredCheckpointPhases = (
-    protocol: DKGProtocol,
-): readonly number[] => (protocol === 'gjkr' ? [0, 1, 2, 3] : [0, 1, 2]);
+/** Returns the required checkpoint phases for the shipped GJKR reducer. */
+export const requiredCheckpointPhases = (): readonly number[] => [0, 1, 2, 3];
 
-/** Returns the last required checkpoint phase for the selected DKG protocol. */
-export const finalCheckpointPhase = (protocol: DKGProtocol): number =>
-    requiredCheckpointPhases(protocol)[
-        requiredCheckpointPhases(protocol).length - 1
-    ] ?? 0;
+/** Returns the last required checkpoint phase for the shipped GJKR reducer. */
+export const finalCheckpointPhase = (): number =>
+    requiredCheckpointPhases()[requiredCheckpointPhases().length - 1] ?? 0;
 
 /** Groups all checkpoint variants observed for one closed DKG phase. */
 export const collectCheckpointVariants = (

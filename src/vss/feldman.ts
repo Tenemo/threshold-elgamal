@@ -16,13 +16,16 @@ import type { FeldmanCommitments } from './types.js';
 export const generateFeldmanCommitments = (
     polynomial: readonly bigint[],
     group: CryptoGroup,
-): FeldmanCommitments => ({
-    ...(void group, {}),
-    commitments: polynomial.map((coefficient) => {
-        assertScalarInZq(coefficient);
-        return encodePoint(multiplyBase(coefficient));
-    }),
-});
+): FeldmanCommitments => {
+    void group;
+
+    return {
+        commitments: polynomial.map((coefficient) => {
+            assertScalarInZq(coefficient);
+            return encodePoint(multiplyBase(coefficient));
+        }),
+    };
+};
 
 /**
  * Verifies a Feldman share against the published coefficient commitments.

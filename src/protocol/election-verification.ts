@@ -83,7 +83,6 @@ export type VerifiedElectionCeremonyDetailed = {
     readonly manifest: ElectionManifest;
     readonly manifestHash: string;
     readonly sessionId: string;
-    readonly suiteId: ElectionManifest['suiteId'];
     readonly qual: readonly number[];
     readonly acceptedVoterIndices: readonly number[];
     readonly perOptionAcceptedCounts: readonly {
@@ -139,12 +138,10 @@ const wrapStageError = (
 const recomputePublishedTally = (
     ballots: VerifiedOptionBallotAggregation,
     decryptionShares: readonly VerifiedDecryptionSharePayload[],
-    dkg: VerifiedDKGTranscript,
 ): bigint =>
     combineDecryptionShares(
         ballots.aggregate.ciphertext,
         decryptionShares.map((entry) => entry.share),
-        dkg.group,
         BigInt(ballots.aggregate.ballotCount) * 10n,
     );
 
@@ -252,7 +249,6 @@ export const verifyElectionCeremonyDetailed = async (
     let dkg!: VerifiedDKGTranscript;
     try {
         dkg = await verifyDKGTranscript({
-            protocol: input.protocol,
             transcript: dkgAudit.acceptedPayloads,
             manifest: context.manifest,
             sessionId: context.sessionId,
@@ -372,7 +368,6 @@ export const verifyElectionCeremonyDetailed = async (
             const tally = recomputePublishedTally(
                 optionBallots,
                 optionDecryptionShares,
-                dkg,
             );
             const publication = tallyPublicationMap.get(optionIndex);
 
@@ -413,7 +408,6 @@ export const verifyElectionCeremonyDetailed = async (
         manifest: context.manifest,
         manifestHash: context.manifestHash,
         sessionId: context.sessionId,
-        suiteId: context.manifest.suiteId,
         qual: dkg.qual,
         acceptedVoterIndices,
         perOptionAcceptedCounts: options.map((option) => ({

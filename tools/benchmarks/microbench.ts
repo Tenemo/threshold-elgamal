@@ -1,50 +1,41 @@
 import { performance } from 'node:perf_hooks';
 
-import {
-    fixedBaseModPow,
-    getGroup,
-    utf8ToBytes,
-} from '../../src/core/index.js';
+import { fixedBaseModPow, getGroup, utf8ToBytes } from '#core';
 import {
     generateParametersWithPrivateKey,
     encryptAdditiveWithRandomness,
-} from '../../src/elgamal/index.js';
+} from '#elgamal';
 import {
     createDisjunctiveProof,
     createSchnorrProof,
     verifyDisjunctiveProof,
     verifySchnorrProof,
     type ProofContext,
-} from '../../src/proofs/index.js';
+} from '#proofs';
 import {
     decryptEnvelope,
     encryptEnvelope,
     exportTransportPublicKey,
     generateTransportKeyPair,
-} from '../../src/transport/index.js';
-
+} from '#transport';
 type BenchmarkRow = {
     readonly averageMs: number;
     readonly iterations: number;
     readonly name: string;
     readonly totalMs: number;
 };
-
-const round = (value: number): number => Math.round(value * 1_000) / 1_000;
-
+const round = (value: number): number => Math.round(value * 1000) / 1000;
 const measure = async (
     name: string,
     iterations: number,
     task: () => Promise<void> | void,
 ): Promise<BenchmarkRow> => {
     await task();
-
     const start = performance.now();
     for (let index = 0; index < iterations; index += 1) {
         await task();
     }
     const totalMs = performance.now() - start;
-
     return {
         name,
         iterations,
@@ -52,17 +43,10 @@ const measure = async (
         averageMs: round(totalMs / iterations),
     };
 };
-
 const main = async (): Promise<void> => {
     const group = getGroup('ristretto255');
-    const publicKey = generateParametersWithPrivateKey(
-        123n,
-        group.name,
-    ).publicKey;
-    const schnorrStatement = generateParametersWithPrivateKey(
-        77n,
-        group.name,
-    ).publicKey;
+    const publicKey = generateParametersWithPrivateKey(123n).publicKey;
+    const schnorrStatement = generateParametersWithPrivateKey(77n).publicKey;
     const proofContext: ProofContext = {
         protocolVersion: 'v1',
         suiteId: 'ristretto255',
@@ -78,13 +62,7 @@ const main = async (): Promise<void> => {
         group,
         proofContext,
     );
-    const ciphertext = encryptAdditiveWithRandomness(
-        3n,
-        publicKey,
-        19n,
-        40n,
-        'ristretto255',
-    );
+    const ciphertext = encryptAdditiveWithRandomness(3n, publicKey, 19n, 40n);
     const disjunctiveProof = await createDisjunctiveProof(
         3n,
         19n,
@@ -117,10 +95,9 @@ const main = async (): Promise<void> => {
         recipientPublicKey,
         envelopeContext,
     );
-
     const rows = await Promise.all([
         measure('fixedBaseModPow', 250, () => {
-            fixedBaseModPow(5n, 123_456n, 97n);
+            fixedBaseModPow(5n, 123456n, 97n);
         }),
         measure('createSchnorrProof', 40, async () => {
             await createSchnorrProof(
@@ -159,8 +136,6 @@ const main = async (): Promise<void> => {
             await decryptEnvelope(encrypted.envelope, recipient.privateKey);
         }),
     ]);
-
     console.table(rows);
 };
-
 void main();

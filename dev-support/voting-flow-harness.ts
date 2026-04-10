@@ -1,5 +1,3 @@
-import { encodePoint, multiplyBase } from '../src/core/ristretto.js';
-
 import {
     computeRosterHash,
     createPhaseCheckpointPayload,
@@ -49,37 +47,33 @@ import {
     verifyPublishedVotingResults,
     type KeyDerivationConfirmation,
 } from '#protocol';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
 import {
     combineDecryptionShares,
     createVerifiedDecryptionShare,
     type Share,
 } from '#threshold';
-
 export type {
     CompletedVotingFlowResult,
     VotingFlowScenario,
     VotingFlowResult,
 } from './voting-flow/types.js';
-
 const DEFAULT_GROUP = 'ristretto255';
 const RISTRETTO_IDENTITY = encodePoint(multiplyBase(0n));
-
 const singleBallotBound = (): bigint => 10n;
-
 const validScores = (): readonly bigint[] =>
     Array.from({ length: 10 }, (_value, index) => BigInt(index + 1));
-
 const normalizedVotesByOption = (
     scenario: VotingFlowScenario,
 ): readonly (readonly bigint[])[] => scenario.votesByOption ?? [scenario.votes];
-
 const votesFingerprint = (
     votesByOption: readonly (readonly bigint[])[],
 ): string => votesByOption.map((votes) => votes.join('-')).join('|');
-
 const excludeParticipants = <
     TPayload extends {
-        readonly payload: { readonly participantIndex: number };
+        readonly payload: {
+            readonly participantIndex: number;
+        };
     },
 >(
     payloads: readonly TPayload[],
@@ -88,7 +82,6 @@ const excludeParticipants = <
     payloads.filter(
         (payload) => !excluded.has(payload.payload.participantIndex),
     );
-
 const checkpointSigners = (
     qual: readonly number[],
     threshold: number,
@@ -97,15 +90,12 @@ const checkpointSigners = (
     const signers = qual.filter(
         (participantIndex) => !excluded.has(participantIndex),
     );
-
     invariant(
         signers.length >= threshold,
         `Checkpoint signer subset must contain at least ${threshold} participants`,
     );
-
     return signers.slice(0, threshold);
 };
-
 /**
  * Runs a parameterized end-to-end voting-flow scenario.
  *
@@ -124,13 +114,11 @@ export const runVotingFlowScenario = async (
         votesByOption.length >= 1,
         'Scenario must define at least one option vote set',
     );
-
     invariant(
         scenario.optionList === undefined ||
             scenario.optionList.length === votesByOption.length,
         'Scenario option list must match the number of option vote sets',
     );
-
     const threshold =
         scenario.threshold ?? majorityThreshold(scenario.participantCount);
     invariant(
@@ -138,16 +126,13 @@ export const runVotingFlowScenario = async (
             threshold <= scenario.participantCount - 1,
         `Supported DKG threshold must satisfy floor(n / 2) + 1 <= k <= n - 1 (received ${threshold} for n = ${scenario.participantCount})`,
     );
-
     const validValues = validScores();
     const bound = singleBallotBound();
-
     votesByOption.forEach((votes, optionOffset) => {
         invariant(
             votes.length === scenario.participantCount,
             `Scenario votes for option ${optionOffset + 1} must match the participant count`,
         );
-
         votes.forEach((vote, index) => {
             invariant(
                 validValues.includes(vote),
@@ -159,14 +144,13 @@ export const runVotingFlowScenario = async (
             );
         });
     });
-
     const group = getGroup(scenario.group ?? DEFAULT_GROUP);
     const participants = await createParticipants(
         scenario.participantCount,
         scenario.transportSuite ?? 'P-256',
     );
     const rosterHash = await computeRosterHash(participants);
-    const manifest = buildManifest(rosterHash, group, scenario);
+    const manifest = buildManifest(rosterHash, scenario);
     const manifestHash = await hashElectionManifest(manifest);
     const sessionId = await deriveSessionId(
         manifestHash,
@@ -192,25 +176,21 @@ export const runVotingFlowScenario = async (
         manifestHash,
         rosterHash,
     );
-
     await verifySignedTranscript(participants, [
         manifestPublication,
         ...registrations,
         ...acceptances,
     ]);
-
     const setupTranscriptHash = await hashProtocolTranscript(
         [manifestPublication, ...registrations, ...acceptances].map(
             (item) => item.payload,
         ),
     );
     const sessionFingerprint = formatSessionFingerprint(setupTranscriptHash);
-
     invariant(
         /^[0-9A-F]{4}(?:-[0-9A-F]{4}){7}$/.test(sessionFingerprint),
         'Session fingerprint formatting is invalid',
     );
-
     const dealerMaterials = await Promise.all(
         participants.map((participant) =>
             buildDealerMaterial(
@@ -239,7 +219,6 @@ export const runVotingFlowScenario = async (
     );
     const missingCheckpointSignerIndices =
         scenario.missingPhaseCheckpointSignerIndices ?? {};
-
     const phase0Qual = participants.map((participant) => participant.index);
     const phase0CheckpointSigners = checkpointSigners(
         phase0Qual,
@@ -316,7 +295,6 @@ export const runVotingFlowScenario = async (
                   ),
               )
             : [];
-
     const complaintQual = phase1Qual.filter(
         (participantIndex) => !complainedDealerIndices.has(participantIndex),
     );
@@ -344,7 +322,6 @@ export const runVotingFlowScenario = async (
                   ),
               )
             : [];
-
     const finalQual = complaintQual.filter(
         (participantIndex) =>
             !missingFeldmanCommitmentIndices.has(participantIndex),
@@ -382,7 +359,6 @@ export const runVotingFlowScenario = async (
                   ),
               )
             : [];
-
     const directJointSecret = modQ(
         qualDealerMaterials.reduce(
             (sum, dealer) => sum + dealer.secretPolynomial[0],
@@ -434,7 +410,6 @@ export const runVotingFlowScenario = async (
                       ),
               )
             : [];
-
     const dkgTranscript = [
         ...phase0CheckpointTranscript,
         ...phase0Checkpoints,
@@ -451,21 +426,17 @@ export const runVotingFlowScenario = async (
     await verifySignedTranscript(participants, dkgTranscript);
     const finalState = replayGjkrTranscript(
         {
-            protocol: 'gjkr',
             sessionId,
             manifestHash,
-            group: group.name,
             participantCount: scenario.participantCount,
             threshold,
         },
         dkgTranscript,
     );
-
     if (finalState.phase === 'aborted') {
         const abortedState = finalState as DKGState & {
             readonly phase: 'aborted';
         };
-
         return {
             aggregate: {
                 c1: RISTRETTO_IDENTITY,
@@ -493,14 +464,11 @@ export const runVotingFlowScenario = async (
             sessionId,
         };
     }
-
     const verifiedTranscript = await verifyDKGTranscript({
-        protocol: 'gjkr',
         transcript: dkgTranscript,
         manifest,
         sessionId,
     });
-
     invariant(
         finalState.phase === 'completed',
         'Expected the DKG scenario to complete',
@@ -516,7 +484,6 @@ export const runVotingFlowScenario = async (
         JSON.stringify(verifiedTranscript.qual) === JSON.stringify(finalQual),
         'Verified transcript QUAL set does not match the checkpointed DKG outcomes',
     );
-
     const finalShares: readonly Share[] = finalQual.map((participantIndex) => ({
         index: participantIndex,
         value: modQ(
@@ -536,7 +503,6 @@ export const runVotingFlowScenario = async (
         })),
         group,
     );
-
     invariant(
         jointPublicKey === directJointPublicKey,
         'Joint public key does not match the direct secret sum',
@@ -545,7 +511,6 @@ export const runVotingFlowScenario = async (
         verifiedTranscript.derivedPublicKey === jointPublicKey,
         'Verified transcript public key does not match the derived joint public key',
     );
-
     const transcriptDerivedVerificationKeys = deriveTranscriptVerificationKeys(
         verifiedTranscript.feldmanCommitments,
         finalShares.map((share) => share.index),
@@ -558,7 +523,6 @@ export const runVotingFlowScenario = async (
             `Transcript-derived verification key mismatch for participant ${transcriptKey.index}`,
         );
     });
-
     const ballotsByOption = await Promise.all(
         votesByOption.map((votes, optionOffset) =>
             createBallotArtifacts(
@@ -596,7 +560,6 @@ export const runVotingFlowScenario = async (
             manifest,
             sessionId,
         });
-
     verifiedBallotsByOption.forEach((verifiedBallots, offset) => {
         const reversedBallots = reversedVerifiedBallotsByOption[offset];
         invariant(
@@ -615,15 +578,12 @@ export const runVotingFlowScenario = async (
             `Transcript hashing must be order-independent for option ${verifiedBallots.optionIndex}`,
         );
     });
-
     const selectedIndices =
         scenario.decryptionParticipantIndices ?? finalQual.slice(0, threshold);
-
     invariant(
         selectedIndices.length >= threshold,
         'Scenario decryption subset must contain at least threshold participants',
     );
-
     const selectedShares = selectedIndices.map((index) => {
         const share = finalShares.find((item) => item.index === index);
         invariant(
@@ -632,7 +592,6 @@ export const runVotingFlowScenario = async (
         );
         return share;
     });
-
     const optionResults = await Promise.all(
         verifiedBallotsByOption.map(async (verifiedBallots, offset) => {
             const optionBallots = ballotsByOption[offset] ?? [];
@@ -643,19 +602,17 @@ export const runVotingFlowScenario = async (
                 .map((ballot) => ballot.ciphertext)
                 .reduce(
                     (accumulator, ciphertext) =>
-                        addEncryptedValues(accumulator, ciphertext, group.name),
+                        addEncryptedValues(accumulator, ciphertext),
                     {
                         c1: RISTRETTO_IDENTITY,
                         c2: RISTRETTO_IDENTITY,
                     },
                 );
-
             invariant(
                 mismatchedAggregate.c1 !== aggregate.c1 ||
                     mismatchedAggregate.c2 !== aggregate.c2,
                 `Dropped-ballot aggregate should not equal the full aggregate for option ${optionIndex}`,
             );
-
             const thresholdShareArtifacts = await createThresholdShareArtifacts(
                 selectedShares,
                 verifiedBallots.aggregate,
@@ -669,7 +626,6 @@ export const runVotingFlowScenario = async (
             const recovered = combineDecryptionShares(
                 aggregate,
                 thresholdShareArtifacts.map((item) => item.share),
-                group,
                 BigInt(verifiedBallots.aggregate.ballotCount) * bound,
             );
             const recoveredWithAllShares = combineDecryptionShares(
@@ -678,10 +634,8 @@ export const runVotingFlowScenario = async (
                     createVerifiedDecryptionShare(
                         verifiedBallots.aggregate,
                         share,
-                        group,
                     ),
                 ),
-                group,
                 BigInt(verifiedBallots.aggregate.ballotCount) * bound,
             );
             const expectedTally = votesByOption[offset].reduce(
@@ -709,7 +663,6 @@ export const runVotingFlowScenario = async (
                 group,
                 optionIndex,
             );
-
             invariant(
                 recovered === expectedTally,
                 `Threshold subset recovered the wrong tally for option ${optionIndex}`,
@@ -718,7 +671,6 @@ export const runVotingFlowScenario = async (
                 recoveredWithAllShares === expectedTally,
                 `All-share threshold recovery returned the wrong tally for option ${optionIndex}`,
             );
-
             return {
                 optionIndex,
                 aggregate,
@@ -734,7 +686,6 @@ export const runVotingFlowScenario = async (
             };
         }),
     );
-
     const decryptionSharePayloads = optionResults.flatMap(
         (result) => result.decryptionSharePayloads,
     );
@@ -742,7 +693,6 @@ export const runVotingFlowScenario = async (
         (result) => result.tallyPublication,
     );
     const verifiedPublished = await verifyPublishedVotingResults({
-        protocol: 'gjkr',
         manifest,
         sessionId,
         dkgTranscript,
@@ -750,12 +700,10 @@ export const runVotingFlowScenario = async (
         decryptionSharePayloads,
         tallyPublications,
     });
-
     optionResults.forEach((result) => {
         const verifiedOption = verifiedPublished.options.find(
             (entry) => entry.optionIndex === result.optionIndex,
         );
-
         invariant(
             verifiedOption !== undefined,
             `Missing verified published tally for option ${result.optionIndex}`,
@@ -774,9 +722,7 @@ export const runVotingFlowScenario = async (
             `Published tally verification accepted the wrong number of decryption shares for option ${result.optionIndex}`,
         );
     });
-
     const primaryOption = optionResults[0];
-
     return {
         aggregate: primaryOption.aggregate,
         ballotLogHash: primaryOption.ballotLogHash,

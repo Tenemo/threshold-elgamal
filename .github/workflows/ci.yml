@@ -64,7 +64,12 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
+      options: --ipc=host
     timeout-minutes: 20
+    env:
+      HOME: /root
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: pnpm/action-setup@v5.0.0
@@ -75,7 +80,6 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run test:browser
 
   release-smoke:

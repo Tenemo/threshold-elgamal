@@ -1,5 +1,3 @@
-import { decodePedersenShareEnvelope } from '../../src/dkg/pedersen-share-codec.js';
-
 import type { EnvelopeArtifact, ParticipantRuntime } from './types.js';
 
 import {
@@ -13,6 +11,7 @@ import {
     type ProtocolPayload,
     type SignedPayload,
 } from '#protocol';
+import { decodePedersenShareEnvelope } from '#src/dkg/pedersen-share-codec';
 import { signPayloadBytes, verifyPayloadSignature } from '#transport';
 import type { PedersenShare } from '#vss';
 

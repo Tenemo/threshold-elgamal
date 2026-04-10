@@ -1,17 +1,14 @@
-import { deriveH, getGroup, listGroups } from '../src/core/groups.js';
-
+import { deriveH, getGroup, listGroups } from '#src/core/groups';
 type FrozenHDerivationCheck = {
     readonly derived: string;
     readonly frozen: string;
     readonly groupName: string;
     readonly matches: boolean;
 };
-
 const verifyFrozenHDerivations = (): readonly FrozenHDerivationCheck[] =>
     listGroups().map((group) => {
-        const derived = deriveH(group.name);
+        const derived = deriveH();
         const frozen = getGroup(group.name).h;
-
         return {
             groupName: group.name,
             derived,
@@ -19,12 +16,10 @@ const verifyFrozenHDerivations = (): readonly FrozenHDerivationCheck[] =>
             matches: derived === frozen,
         };
     });
-
 export const assertFrozenHDerivationsMatch = (): void => {
     const mismatches = verifyFrozenHDerivations().filter(
         (result) => !result.matches,
     );
-
     if (mismatches.length > 0) {
         const details = mismatches
             .map(
