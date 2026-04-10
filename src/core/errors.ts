@@ -8,7 +8,7 @@ class ThresholdElgamalError extends Error {
 
 /** Raised when a scalar value falls outside the expected mathematical domain. */
 export class InvalidScalarError extends ThresholdElgamalError {}
-/** Raised when a group element is not valid for the selected finite-field suite. */
+/** Raised when a group element is not valid for the selected suite. */
 export class InvalidGroupElementError extends ThresholdElgamalError {}
 /** Raised when a participant index falls outside the valid `1..n` range. */
 export class IndexOutOfRangeError extends ThresholdElgamalError {}

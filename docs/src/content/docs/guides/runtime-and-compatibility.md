@@ -16,19 +16,14 @@ The current surface is browser-native and depends on two JavaScript runtime feat
 - Node must be version `24.14.1` or newer and expose `globalThis.crypto`
 - The published package is ESM-only, so consumers must use `import` rather than CommonJS `require()`
 - If Web Crypto is missing, the library raises `UnsupportedSuiteError`
-- Transport key agreement prefers `X25519` when the runtime exposes it and
-  falls back to `P-256` otherwise
+- Transport key agreement prefers `X25519` when the runtime exposes it and falls back to `P-256` otherwise
+- The shipped `ristretto255` backend is implemented with `@noble/curves` and `@noble/hashes`
 
 ## Concurrency and acceleration
 
-- Keep Web Worker orchestration in the application. The library is designed to
-  be imported inside workers, but it does not spawn or manage them itself.
-- `threshold-elgamal/core` exposes `setBigintMathBackend()` for optional
-  backend injection. Keep the JavaScript backend as the default path and install
-  any WASM backend explicitly from the caller.
-- The current recommended default DKG regression size is `10` participants.
-  Larger symmetric ceremonies remain much more sensitive to mobile CPU limits
-  and connection dropouts.
+- Keep Web Worker orchestration in the application. The library is designed to be imported inside workers, but it does not spawn or manage them itself.
+- `threshold-elgamal/core` exposes `setBigintMathBackend()` for optional backend injection. Keep the JavaScript backend as the default path and install any WASM backend explicitly from the caller.
+- The current recommended default DKG regression size is `10` participants. Larger symmetric ceremonies remain much more sensitive to mobile CPU limits and connection dropouts.
 
 ## Randomness behavior
 
@@ -49,6 +44,6 @@ The current package ships:
 
 - fixed-width hexadecimal helpers
 - byte concatenation helpers
-- injective `encodeForChallenge()` encoding for future transcript and proof work
+- injective `encodeForChallenge()` encoding for transcript and proof work
 
 For exact function contracts, use the [API reference](../api/).

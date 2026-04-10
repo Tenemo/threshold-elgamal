@@ -1,7 +1,14 @@
 import { performance } from 'node:perf_hooks';
 
-import { getGroup, modPowP, utf8ToBytes } from '../../src/core/index.js';
-import { encryptAdditiveWithRandomness } from '../../src/elgamal/index.js';
+import {
+    fixedBaseModPow,
+    getGroup,
+    utf8ToBytes,
+} from '../../src/core/index.js';
+import {
+    generateParametersWithPrivateKey,
+    encryptAdditiveWithRandomness,
+} from '../../src/elgamal/index.js';
 import {
     createDisjunctiveProof,
     createSchnorrProof,
@@ -47,18 +54,24 @@ const measure = async (
 };
 
 const main = async (): Promise<void> => {
-    const group = getGroup('ffdhe2048');
-    const publicKey = modPowP(group.g, 123n, group.p);
+    const group = getGroup('ristretto255');
+    const publicKey = generateParametersWithPrivateKey(
+        123n,
+        group.name,
+    ).publicKey;
+    const schnorrStatement = generateParametersWithPrivateKey(
+        77n,
+        group.name,
+    ).publicKey;
     const proofContext: ProofContext = {
         protocolVersion: 'v1',
-        suiteId: group.name,
+        suiteId: 'ristretto255',
         manifestHash: 'manifest-hash',
         sessionId: 'session-bench',
         label: 'bench-proof',
         participantIndex: 1,
         optionIndex: 1,
     };
-    const schnorrStatement = modPowP(group.g, 77n, group.p);
     const schnorrProof = await createSchnorrProof(
         77n,
         schnorrStatement,
@@ -70,7 +83,7 @@ const main = async (): Promise<void> => {
         publicKey,
         19n,
         40n,
-        group.name,
+        'ristretto255',
     );
     const disjunctiveProof = await createDisjunctiveProof(
         3n,
@@ -106,8 +119,8 @@ const main = async (): Promise<void> => {
     );
 
     const rows = await Promise.all([
-        measure('modPowP', 250, () => {
-            modPowP(group.g, 123_456n, group.p);
+        measure('fixedBaseModPow', 250, () => {
+            fixedBaseModPow(5n, 123_456n, 97n);
         }),
         measure('createSchnorrProof', 40, async () => {
             await createSchnorrProof(

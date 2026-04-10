@@ -1,5 +1,6 @@
-import type { CryptoGroup, GroupName } from '#core';
+import type { CryptoGroup, EncodedPoint, GroupIdentifier } from '#core';
 import type { DKGState } from '#dkg';
+import type { ElgamalCiphertext } from '#elgamal';
 import type { DLEQProof, DisjunctiveProof, ProofContext } from '#proofs';
 import type {
     BallotSubmissionPayload,
@@ -15,6 +16,9 @@ import type {
 } from '#protocol';
 import type { DecryptionShare, Share } from '#threshold';
 import type {
+    EncodedAuthPublicKey,
+    EncodedTransportPrivateKey,
+    EncodedTransportPublicKey,
     ComplaintResolution,
     EncryptedEnvelope,
     KeyAgreementSuite,
@@ -23,16 +27,16 @@ import type { PedersenShare } from '#vss';
 
 export type ParticipantRuntime = {
     readonly auth: CryptoKeyPair;
-    readonly authPublicKeyHex: string;
+    readonly authPublicKeyHex: EncodedAuthPublicKey;
     readonly index: number;
     readonly transportPrivateKey: CryptoKey;
-    readonly transportPublicKeyHex: string;
+    readonly transportPublicKeyHex: EncodedTransportPublicKey;
     readonly transportSuite: KeyAgreementSuite;
 };
 
 export type EnvelopeArtifact = {
     readonly envelope: EncryptedEnvelope;
-    readonly ephemeralPrivateKey: string;
+    readonly ephemeralPrivateKey: EncodedTransportPrivateKey;
     readonly recipientIndex: number;
     readonly share: PedersenShare;
     readonly signedPayload: SignedPayload<EncryptedDualSharePayload>;
@@ -41,7 +45,7 @@ export type EnvelopeArtifact = {
 export type DealerMaterial = {
     readonly encryptedShares: readonly EnvelopeArtifact[];
     readonly feldmanCommitmentPayload: SignedPayload<FeldmanCommitmentPayload>;
-    readonly feldmanCommitments: readonly bigint[];
+    readonly feldmanCommitments: readonly EncodedPoint[];
     readonly participantIndex: number;
     readonly pedersenCommitmentPayload: SignedPayload<PedersenCommitmentPayload>;
     readonly pedersenShares: readonly PedersenShare[];
@@ -60,10 +64,9 @@ export type ComplaintInjection = {
 };
 
 export type VotingFlowScenario = {
-    readonly allowAbstention?: boolean;
     readonly complaints?: readonly ComplaintInjection[];
     readonly decryptionParticipantIndices?: readonly number[];
-    readonly group?: GroupName;
+    readonly group?: GroupIdentifier;
     readonly includeKeyDerivationConfirmations?: boolean;
     readonly missingEncryptedShareDealerIndices?: readonly number[];
     readonly missingFeldmanCommitmentParticipantIndices?: readonly number[];
@@ -74,7 +77,6 @@ export type VotingFlowScenario = {
     >;
     readonly optionList?: readonly string[];
     readonly participantCount: number;
-    readonly scoreDomainMax?: number;
     readonly threshold?: number;
     readonly transportSuite?: KeyAgreementSuite;
     readonly votes: readonly bigint[];
@@ -82,7 +84,7 @@ export type VotingFlowScenario = {
 };
 
 export type BallotArtifact = {
-    readonly ciphertext: { readonly c1: bigint; readonly c2: bigint };
+    readonly ciphertext: ElgamalCiphertext;
     readonly proof: DisjunctiveProof;
     readonly proofContext: ProofContext;
     readonly vote: bigint;
@@ -95,14 +97,11 @@ export type ThresholdShareArtifact = {
 };
 
 export type OptionVotingArtifacts = {
-    readonly aggregate: { readonly c1: bigint; readonly c2: bigint };
+    readonly aggregate: ElgamalCiphertext;
     readonly ballotLogHash: string;
     readonly ballots: readonly BallotArtifact[];
     readonly expectedTally: bigint;
-    readonly mismatchedAggregate: {
-        readonly c1: bigint;
-        readonly c2: bigint;
-    };
+    readonly mismatchedAggregate: ElgamalCiphertext;
     readonly optionIndex: number;
     readonly recovered: bigint;
     readonly recoveredWithAllShares: bigint;
@@ -111,7 +110,7 @@ export type OptionVotingArtifacts = {
 };
 
 type CommonScenarioResult = {
-    readonly aggregate: { readonly c1: bigint; readonly c2: bigint };
+    readonly aggregate: ElgamalCiphertext;
     readonly ballotLogHash?: string;
     readonly ballotPayloads?: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly ballots: readonly BallotArtifact[];
@@ -126,13 +125,10 @@ type CommonScenarioResult = {
     readonly finalShares?: readonly Share[];
     readonly finalState: DKGState;
     readonly group: CryptoGroup;
-    readonly jointPublicKey?: bigint;
+    readonly jointPublicKey?: EncodedPoint;
     readonly manifest: ElectionManifest;
     readonly manifestHash: string;
-    readonly mismatchedAggregate?: {
-        readonly c1: bigint;
-        readonly c2: bigint;
-    };
+    readonly mismatchedAggregate?: ElgamalCiphertext;
     readonly optionResults?: readonly OptionVotingArtifacts[];
     readonly participantAuthKeys: readonly {
         readonly index: number;
@@ -146,7 +142,7 @@ type CommonScenarioResult = {
     readonly thresholdShareArtifacts?: readonly ThresholdShareArtifact[];
     readonly transcriptDerivedVerificationKeys?: readonly {
         readonly index: number;
-        readonly value: bigint;
+        readonly value: EncodedPoint;
     }[];
 };
 

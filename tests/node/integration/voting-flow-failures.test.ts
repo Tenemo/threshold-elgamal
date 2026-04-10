@@ -14,7 +14,6 @@ const abortingScenarios: readonly (VotingFlowScenario & {
     {
         name: 'aborts a 2-of-3 ceremony after two dealer complaints',
         participantCount: 3,
-        scoreDomainMax: 3,
         votes: [3n, 1n, 1n],
         complaints: [
             {
@@ -33,7 +32,6 @@ const abortingScenarios: readonly (VotingFlowScenario & {
     {
         name: 'aborts a 3-of-4 ceremony after three dealer complaints',
         participantCount: 4,
-        scoreDomainMax: 3,
         votes: [3n, 3n, 3n, 3n],
         complaints: [
             {
@@ -88,7 +86,6 @@ describe('parameterized aborting voting flows', () => {
         await expect(
             runVotingFlowScenario({
                 participantCount: 3,
-                scoreDomainMax: 3,
                 votes: [3n, 2n, 1n],
                 votesByOption: [],
             }),

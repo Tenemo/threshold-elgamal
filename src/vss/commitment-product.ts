@@ -1,21 +1,28 @@
-import { multiExponentiate, type CryptoGroup } from '../core/index.js';
+import { modQ, type CryptoGroup } from '../core/index.js';
+import {
+    decodePoint,
+    encodePoint,
+    pointAdd,
+    pointMultiply,
+    RISTRETTO_ZERO,
+} from '../core/ristretto.js';
 
 export const evaluateCommitmentProduct = (
-    commitments: readonly bigint[],
+    commitments: readonly string[],
     index: number,
     group: CryptoGroup,
-): bigint => {
-    const terms: { base: bigint; exponent: bigint }[] = [];
+): string => {
+    let result = RISTRETTO_ZERO;
     let exponent = 1n;
     const point = BigInt(index);
 
     for (const commitment of commitments) {
-        terms.push({
-            base: commitment,
-            exponent,
-        });
-        exponent = (exponent * point) % group.q;
+        result = pointAdd(
+            result,
+            pointMultiply(decodePoint(commitment), exponent),
+        );
+        exponent = modQ(exponent * point, group.q);
     }
 
-    return multiExponentiate(terms, group.p);
+    return encodePoint(result);
 };

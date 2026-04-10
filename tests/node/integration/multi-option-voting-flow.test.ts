@@ -29,7 +29,6 @@ describe('multi-option voting flows', () => {
             const result = expectCompleted(
                 await runVotingFlowScenario({
                     participantCount: 5,
-                    scoreDomainMax: 3,
                     optionList: ['Alpha', 'Beta', 'Gamma'],
                     votes: [3n, 2n, 1n, 3n, 2n],
                     votesByOption: [

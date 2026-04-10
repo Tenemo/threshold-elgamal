@@ -1,13 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../dev-support/deterministic.js';
+import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
 
-import {
-    InvalidProofError,
-    InvalidScalarError,
-    getGroup,
-    modPowP,
-} from '#core';
+import { InvalidProofError, InvalidScalarError, getGroup } from '#core';
 import {
     createSchnorrProof,
     verifySchnorrProof,
@@ -15,9 +11,9 @@ import {
 } from '#proofs';
 
 describe('Schnorr proofs', () => {
-    const group = getGroup(2048);
+    const group = getGroup('ristretto255');
     const secret = 12345n;
-    const statement = modPowP(group.g, secret, group.p);
+    const statement = encodePoint(multiplyBase(secret));
     const context: ProofContext = {
         protocolVersion: 'v1',
         suiteId: group.name,
@@ -64,7 +60,7 @@ describe('Schnorr proofs', () => {
         await expect(
             verifySchnorrProof(
                 honestProof,
-                modPowP(group.g, secret + 1n, group.p),
+                encodePoint(multiplyBase(secret + 1n)),
                 group,
                 context,
             ),

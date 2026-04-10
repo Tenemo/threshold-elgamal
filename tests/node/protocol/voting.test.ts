@@ -61,7 +61,6 @@ describe('published voting verification', () => {
         completed = expectCompleted(
             await runVotingFlowScenario({
                 participantCount: 3,
-                scoreDomainMax: 3,
                 votes: [3n, 2n, 1n],
                 decryptionParticipantIndices: [1, 3],
             }),
@@ -70,7 +69,6 @@ describe('published voting verification', () => {
         withDealerFaultComplaint = expectCompleted(
             await runVotingFlowScenario({
                 participantCount: 3,
-                scoreDomainMax: 3,
                 votes: [3n, 1n, 2n],
                 complaints: [
                     {
@@ -86,7 +84,6 @@ describe('published voting verification', () => {
         multiOption = expectCompleted(
             await runVotingFlowScenario({
                 participantCount: 5,
-                scoreDomainMax: 3,
                 optionList: ['Alpha', 'Beta', 'Gamma'],
                 votes: [3n, 2n, 1n, 3n, 2n],
                 votesByOption: [
@@ -146,7 +143,7 @@ describe('published voting verification', () => {
     );
 
     it(
-        'rejects duplicate ballot slots in the typed ballot transcript',
+        'accepts idempotent retransmissions of ballot payloads',
         {
             timeout: publishedVotingTestTimeoutMs,
         },
@@ -164,7 +161,9 @@ describe('published voting verification', () => {
                     decryptionSharePayloads: completed.decryptionSharePayloads!,
                     tallyPublication: completed.tallyPublication,
                 }),
-            ).rejects.toThrow('Duplicate ballot slot 1:1 is not allowed');
+            ).resolves.toMatchObject({
+                tally: 6n,
+            });
         },
     );
 
@@ -290,9 +289,24 @@ describe('published voting verification', () => {
             timeout: longPublishedVotingTestTimeoutMs,
         },
         async () => {
+            const optionOnePayload = multiOption.ballotPayloads!.find(
+                (entry) =>
+                    entry.payload.participantIndex === 1 &&
+                    entry.payload.optionIndex === 1,
+            );
+            const optionTwoPayload = multiOption.ballotPayloads!.find(
+                (entry) =>
+                    entry.payload.participantIndex === 1 &&
+                    entry.payload.optionIndex === 2,
+            );
+
+            expect(optionOnePayload).toBeDefined();
+            expect(optionTwoPayload).toBeDefined();
+
             const wrongBinding = await resignPayload(multiOption, {
-                ...multiOption.ballotPayloads![0].payload,
-                optionIndex: 2,
+                ...optionTwoPayload!.payload,
+                ciphertext: optionOnePayload!.payload.ciphertext,
+                proof: optionOnePayload!.payload.proof,
             });
 
             await expect(
@@ -301,10 +315,9 @@ describe('published voting verification', () => {
                     manifest: multiOption.manifest,
                     sessionId: multiOption.sessionId,
                     dkgTranscript: multiOption.dkgTranscript,
-                    ballotPayloads: [
-                        wrongBinding,
-                        ...multiOption.ballotPayloads!.slice(1),
-                    ],
+                    ballotPayloads: multiOption.ballotPayloads!.map((entry) =>
+                        entry === optionTwoPayload ? wrongBinding : entry,
+                    ),
                     decryptionSharePayloads:
                         multiOption.decryptionSharePayloads!,
                     tallyPublications: multiOption.tallyPublications,
@@ -321,15 +334,18 @@ describe('published voting verification', () => {
                     dkgTranscript: multiOption.dkgTranscript,
                     ballotPayloads: [
                         ...multiOption.ballotPayloads!,
-                        multiOption.ballotPayloads![0],
+                        await resignPayload(multiOption, {
+                            ...multiOption.ballotPayloads![0].payload,
+                            ciphertext:
+                                multiOption.ballotPayloads![1].payload
+                                    .ciphertext,
+                        }),
                     ],
                     decryptionSharePayloads:
                         multiOption.decryptionSharePayloads!,
                     tallyPublications: multiOption.tallyPublications,
                 }),
-            ).rejects.toThrow(
-                'Option 1 ballot verification failed: Duplicate ballot slot 1:1 is not allowed',
-            );
+            ).rejects.toThrow('Detected equivocation for canonical slot');
         },
     );
 
@@ -384,7 +400,7 @@ describe('published voting verification', () => {
                     tallyPublications: multiOption.tallyPublications,
                 }),
             ).rejects.toThrow(
-                'Option 3 ballot verification failed: Accepted ballot count 0 is below the minimum publication threshold 4',
+                'Accepted voter 1 must submit exactly one ballot for every option slot',
             );
         },
     );

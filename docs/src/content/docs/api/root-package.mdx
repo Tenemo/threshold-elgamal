@@ -9,12 +9,12 @@ Use the root package when you want the narrowest supported surface. It is the de
 
 ## What lives here
 
-- validated RFC 7919 FFDHE groups
+- the shipped `ristretto255` group definition
 - additive ElGamal encryption and decryption
 - additive ciphertext combination
 - key generation
 - validation helpers for additive keys and ciphertexts
-- fixed-width bigint encoding helpers used by the shipped surface
+- fixed-width encoding helpers used by the shipped surface
 
 ## Typical import style
 
@@ -30,13 +30,13 @@ import {
 
 ## Stay on the root package when
 
-- you want the safe additive workflow
+- you want the safe additive `ristretto255` workflow
 - you do not need raw proof, transport, VSS, or DKG building blocks
 - you want the most conservative supported import surface
 
 ## Go deeper when
 
 - you need threshold sharing or aggregate decryption helpers under `/api/reference/threshold/`
-- you need protocol payload verification under `/api/reference/protocol/`
+- you need protocol payload verification, board auditing, or full ceremony verification under `/api/reference/protocol/`
 - you need transport envelopes or key agreement helpers under `/api/reference/transport/`
 - you need proofs, VSS, or log-driven DKG reducers

@@ -19,7 +19,7 @@ import type {
     RegistrationPayload,
     SignedPayload,
 } from './types.js';
-import { manifestScoreDomain } from './voting-codecs.js';
+import { scoreVotingDomain } from './voting-codecs.js';
 import type { OptionAggregateInput } from './voting-types.js';
 
 export const BALLOT_SUBMISSION_PHASE = 5;
@@ -31,7 +31,7 @@ export type VotingManifestContext = {
     readonly manifestHash: string;
     readonly group: CryptoGroup;
     readonly optionCount: number;
-    readonly scoreDomain: readonly bigint[];
+    readonly scoreDomainValues: readonly bigint[];
     readonly sessionId: string;
 };
 
@@ -115,7 +115,7 @@ export const buildVotingManifestContext = async (
         manifestHash: await hashElectionManifest(validatedManifest),
         group: getGroup(validatedManifest.suiteId),
         optionCount: validatedManifest.optionList.length,
-        scoreDomain: manifestScoreDomain(validatedManifest),
+        scoreDomainValues: scoreVotingDomain(),
         sessionId,
     };
 };
@@ -183,9 +183,10 @@ export const buildOptionAggregateMap = (
 
 export const decryptionProofContext = (
     payload: DecryptionSharePayload,
+    protocolVersion: string,
     group: CryptoGroup,
 ): ProofContext => ({
-    protocolVersion: 'v1',
+    protocolVersion,
     suiteId: group.name,
     manifestHash: payload.manifestHash,
     sessionId: payload.sessionId,

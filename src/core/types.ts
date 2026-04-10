@@ -6,36 +6,31 @@ export type Brand<T, TBrand extends string> = T & {
     readonly __brand: TBrand;
 };
 
-/** Bit-size identifiers for the built-in RFC 7919 FFDHE suites. */
-export type PrimeBits = 2048 | 3072 | 4096;
-/** Canonical names for the built-in RFC 7919 FFDHE suites. */
-export type GroupName = 'ffdhe2048' | 'ffdhe3072' | 'ffdhe4096';
+/** Canonical name for the shipped Ristretto255 suite. */
+export type GroupName = 'ristretto255';
+/** Accepted helper input identifiers for the shipped Ristretto suite. */
+export type GroupIdentifier = GroupName;
+
+/** Canonical 32-byte Ristretto point encoding exposed at the public boundary. */
+export type EncodedPoint = Brand<string, 'EncodedPoint'>;
 
 /** Scalar value intended to live in the prime-order field `Z_q`. */
 export type ScalarQ = Brand<bigint, 'ScalarQ'>;
-/** Generic finite-field group element marker. */
-export type GroupElement = Brand<bigint, 'GroupElement'>;
-/** Element known to lie in the selected suite's prime-order subgroup. */
-export type SubgroupElement = Brand<bigint, 'SubgroupElement'>;
-/** Public key element that has already passed subgroup validation. */
-export type ValidatedPublicKey = Brand<SubgroupElement, 'ValidatedPublicKey'>;
 
 /** Immutable built-in group definition exposed by `getGroup()` and keygen APIs. */
 export type CryptoGroup = {
-    /** Canonical RFC 7919 suite name. */
+    /** Canonical suite name. */
     readonly name: GroupName;
-    /** Prime modulus size in bits. */
-    readonly bits: PrimeBits;
-    /** Modulus size in bytes, used by fixed-width encodings. */
+    /** Canonical point encoding width in bytes. */
     readonly byteLength: number;
-    /** Safe-prime modulus. */
-    readonly p: bigint;
+    /** Canonical scalar encoding width in bytes. */
+    readonly scalarByteLength: number;
     /** Prime-order subgroup order. */
     readonly q: bigint;
-    /** Primary subgroup generator used for ElGamal keys. */
-    readonly g: bigint;
-    /** Deterministically derived secondary subgroup generator. */
-    readonly h: bigint;
+    /** Primary generator encoded as a canonical Ristretto point. */
+    readonly g: EncodedPoint;
+    /** Deterministically derived secondary generator encoded as a canonical Ristretto point. */
+    readonly h: EncodedPoint;
     /** Rough classical security estimate in bits. */
     readonly securityEstimate: number;
 };

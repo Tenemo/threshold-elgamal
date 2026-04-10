@@ -10,7 +10,7 @@ or the protocol spec.
 ## Public module map
 
 - `threshold-elgamal`: safe root package for groups, additive ElGamal, validation helpers, and encoding helpers
-- `core`: finite-field arithmetic, group definitions, randomness, validation, and exported error classes
+- `core`: Ristretto255 group definitions, bigint helpers, randomness, validation, and exported error classes
 - `threshold`, `vss`, `proofs`, `protocol`, `transport`, and `dkg`: supporting cryptographic and protocol helpers
 - `elgamal`: additive ElGamal helpers, bounded discrete-log recovery helpers, and key generation
 - `serialize` and `runtime`: encoding and runtime support helpers

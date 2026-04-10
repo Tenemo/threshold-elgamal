@@ -3,12 +3,18 @@ import {
     assertScalarInZq,
     IndexOutOfRangeError,
     InvalidShareError,
-    modInvP,
-    modP,
-    modPowP,
     PlaintextDomainError,
+    modQ,
     type CryptoGroup,
 } from '../core/index.js';
+import {
+    decodePoint,
+    encodePoint,
+    pointAdd,
+    pointMultiply,
+    pointSubtract,
+    RISTRETTO_ZERO,
+} from '../core/ristretto.js';
 import { babyStepGiantStep } from '../elgamal/bsgs.js';
 import type { ElgamalCiphertext } from '../elgamal/types.js';
 
@@ -42,15 +48,7 @@ const assertUniqueIndices = (
 };
 
 /**
- * Creates a partial decryption share `d_i = c1^{x_i} mod p`.
- *
- * Aggregate additive ciphertexts may legally have `c1 = 1`, so the first
- * component is validated against the subgroup-or-identity domain.
- *
- * @param ciphertext Ciphertext whose first component will be exponentiated.
- * @param share Indexed Shamir share.
- * @param group Resolved group definition.
- * @returns Partial decryption share tied to `share.index`.
+ * Creates a partial decryption share `d_i = x_i C_1`.
  */
 export const createDecryptionShare = (
     ciphertext: ElgamalCiphertext,
@@ -59,26 +57,18 @@ export const createDecryptionShare = (
 ): DecryptionShare => {
     assertPositiveIndex(share.index, 'Share');
     assertScalarInZq(share.value, group.q);
-    assertInSubgroupOrIdentity(ciphertext.c1, group.p, group.q);
+    assertInSubgroupOrIdentity(ciphertext.c1);
 
     return {
         index: share.index,
-        value: modPowP(ciphertext.c1, share.value, group.p),
+        value: encodePoint(
+            pointMultiply(decodePoint(ciphertext.c1), share.value),
+        ),
     };
 };
 
 /**
  * Combines indexed decryption shares via Lagrange interpolation at `x = 0`.
- *
- * @param ciphertext Ciphertext being decrypted.
- * @param decryptionShares Share subset used for reconstruction.
- * @param group Resolved group definition.
- * @param bound Maximum plaintext to search during additive discrete-log recovery.
- * @returns Recovered additive plaintext.
- *
- * @throws When the share set is empty or contains duplicate participant
- * indices.
- * @throws When the recovered plaintext exceeds the supplied bound.
  */
 export const combineDecryptionShares = (
     ciphertext: ElgamalCiphertext,
@@ -92,19 +82,19 @@ export const combineDecryptionShares = (
         );
     }
 
-    assertInSubgroupOrIdentity(ciphertext.c1, group.p, group.q);
-    assertInSubgroupOrIdentity(ciphertext.c2, group.p, group.q);
+    assertInSubgroupOrIdentity(ciphertext.c1);
+    assertInSubgroupOrIdentity(ciphertext.c2);
 
     const indices = decryptionShares.map((share) => {
         assertPositiveIndex(share.index, 'Decryption share');
-        assertInSubgroupOrIdentity(share.value, group.p, group.q);
+        assertInSubgroupOrIdentity(share.value);
         return share.index;
     });
 
     assertUniqueIndices(indices, 'Decryption share');
 
     const bigintIndices = indices.map((index) => BigInt(index));
-    let combinedFactor = 1n;
+    let combinedFactor = RISTRETTO_ZERO;
 
     for (const share of decryptionShares) {
         const lambda = lagrangeCoefficient(
@@ -112,17 +102,21 @@ export const combineDecryptionShares = (
             bigintIndices,
             group.q,
         );
-        combinedFactor = modP(
-            combinedFactor * modPowP(share.value, lambda, group.p),
-            group.p,
+        combinedFactor = pointAdd(
+            combinedFactor,
+            pointMultiply(decodePoint(share.value), modQ(lambda, group.q)),
         );
     }
 
-    const encodedMessage = modP(
-        ciphertext.c2 * modInvP(combinedFactor, group.p),
-        group.p,
+    const encodedMessage = pointSubtract(
+        decodePoint(ciphertext.c2),
+        combinedFactor,
     );
-    const message = babyStepGiantStep(encodedMessage, group.g, group.p, bound);
+    const message = babyStepGiantStep(
+        encodePoint(encodedMessage),
+        group.g,
+        bound,
+    );
 
     if (message === null) {
         throw new PlaintextDomainError(
@@ -136,11 +130,6 @@ export const combineDecryptionShares = (
 /**
  * Creates a decryption share only for a locally recomputed aggregate that is
  * anchored to a canonical transcript hash.
- *
- * @param aggregate Verified aggregate ciphertext tied to a transcript hash.
- * @param share Indexed Shamir share.
- * @param group Resolved group definition.
- * @returns Partial decryption share for the verified aggregate.
  */
 export const createVerifiedDecryptionShare = (
     aggregate: VerifiedAggregateCiphertext,

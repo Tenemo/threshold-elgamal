@@ -18,20 +18,21 @@ const assertNonEmptyString = (value: string, label: string): void => {
 };
 
 /**
- * Returns the minimum publication threshold compatible with the shipped
+ * Returns the minimum publication floor compatible with the shipped
  * strict-majority threshold policy.
  *
  * The manifest threshold is the reconstruction threshold `k = t + 1`, so the
  * small-group privacy floor `t + 2` becomes `k + 1`.
  *
- * @param threshold Reconstruction threshold `k`.
+ * @param reconstructionThreshold Reconstruction threshold `k`.
  * @param participantCount Total participant count `n`.
  * @returns Minimum accepted ballot count `k + 1`.
  */
-export const defaultMinimumPublicationThreshold = (
-    threshold: number,
+export const defaultMinimumPublishedVoterCount = (
+    reconstructionThreshold: number,
     participantCount: number,
-): number => assertMajorityThreshold(threshold, participantCount) + 1;
+): number =>
+    assertMajorityThreshold(reconstructionThreshold, participantCount) + 1;
 
 /**
  * Validates the supported election-manifest invariants for the shipped
@@ -42,57 +43,62 @@ export const defaultMinimumPublicationThreshold = (
 export const validateElectionManifest = (
     manifest: ElectionManifest,
 ): ElectionManifest => {
+    const manifestRecord = manifest as Record<string, unknown>;
+
     assertNonEmptyString(manifest.protocolVersion, 'Protocol version');
     assertNonEmptyString(manifest.rosterHash, 'Roster hash');
     getGroup(manifest.suiteId);
-    assertMajorityThreshold(manifest.threshold, manifest.participantCount);
+    assertMajorityThreshold(
+        manifest.reconstructionThreshold,
+        manifest.participantCount,
+    );
 
     if (manifest.ballotFinality !== 'first-valid') {
         throw new InvalidPayloadError(
             'Only "first-valid" ballot finality is supported',
         );
     }
+    if (manifest.ballotCompletenessPolicy !== 'ALL_OPTIONS_REQUIRED') {
+        throw new InvalidPayloadError(
+            'Only "ALL_OPTIONS_REQUIRED" ballot completeness is supported',
+        );
+    }
+    if (manifest.scoreDomain !== '1..10') {
+        throw new InvalidPayloadError(
+            'Only the fixed "1..10" score domain is supported',
+        );
+    }
 
     if (
-        !Number.isInteger(manifest.minimumPublicationThreshold) ||
-        manifest.minimumPublicationThreshold <
-            defaultMinimumPublicationThreshold(
-                manifest.threshold,
+        !Number.isInteger(manifest.minimumPublishedVoterCount) ||
+        manifest.minimumPublishedVoterCount <
+            defaultMinimumPublishedVoterCount(
+                manifest.reconstructionThreshold,
                 manifest.participantCount,
             ) ||
-        manifest.minimumPublicationThreshold > manifest.participantCount
+        manifest.minimumPublishedVoterCount > manifest.participantCount
     ) {
         throw new InvalidPayloadError(
-            `Minimum publication threshold must be an integer in ${defaultMinimumPublicationThreshold(
-                manifest.threshold,
+            `Minimum published voter count must be an integer in ${defaultMinimumPublishedVoterCount(
+                manifest.reconstructionThreshold,
                 manifest.participantCount,
             )}..${manifest.participantCount}`,
         );
     }
 
-    if (
-        !Number.isInteger(manifest.scoreDomainMin) ||
-        !Number.isInteger(manifest.scoreDomainMax)
-    ) {
-        throw new InvalidPayloadError('Score domain bounds must be integers');
-    }
-
-    if (manifest.allowAbstention && manifest.scoreDomainMin !== 0) {
-        throw new InvalidPayloadError(
-            'Allowing abstention requires scoreDomainMin = 0',
-        );
-    }
-
-    if (!manifest.allowAbstention && manifest.scoreDomainMin < 1) {
-        throw new InvalidPayloadError(
-            'Score voting without abstention requires scoreDomainMin >= 1',
-        );
-    }
-
-    if (manifest.scoreDomainMax < manifest.scoreDomainMin) {
-        throw new InvalidPayloadError(
-            'scoreDomainMax must be greater than or equal to scoreDomainMin',
-        );
+    for (const legacyField of [
+        'threshold',
+        'minimumPublicationThreshold',
+        'allowAbstention',
+        'scoreDomainMin',
+        'scoreDomainMax',
+        'requiresAllOptions',
+    ]) {
+        if (legacyField in manifestRecord) {
+            throw new InvalidPayloadError(
+                `Legacy manifest field "${legacyField}" is not supported on the Ristretto beta line`,
+            );
+        }
     }
 
     if (manifest.optionList.length === 0) {

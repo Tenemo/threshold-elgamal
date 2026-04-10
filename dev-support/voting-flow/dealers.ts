@@ -1,3 +1,4 @@
+import { encodeScalar } from '../../src/core/ristretto.js';
 import { encodePedersenShareEnvelope } from '../../src/dkg/pedersen-share-codec.js';
 import { createDeterministicSource } from '../deterministic.js';
 
@@ -25,13 +26,13 @@ import type {
     EncryptedDualSharePayload,
     SignedPayload,
 } from '#protocol';
-import { bigintToFixedHex } from '#serialize';
 import {
     decryptEnvelope,
     encryptEnvelope,
     resolveDealerChallenge,
     verifyComplaintPrecondition,
     type ComplaintResolution,
+    type EncodedTransportPublicKey,
     type EncryptedEnvelope,
 } from '#transport';
 import {
@@ -66,6 +67,7 @@ export const buildDealerMaterial = async (
     participants: readonly ParticipantRuntime[],
     sessionId: string,
     manifestHash: string,
+    protocolVersion: string,
     rosterHash: string,
     group: CryptoGroup,
     threshold: number,
@@ -102,7 +104,7 @@ export const buildDealerMaterial = async (
         secretPolynomial.map(async (coefficient, coefficientIndex) => {
             const proofCoefficientIndex = coefficientIndex + 1;
             const context: ProofContext = {
-                protocolVersion: 'v1',
+                protocolVersion,
                 suiteId: group.name,
                 manifestHash,
                 sessionId,
@@ -175,7 +177,7 @@ export const buildDealerMaterial = async (
                         recipientIndex: recipient.index,
                         envelopeId: `env-${participant.index}-${recipient.index}`,
                         payloadType: 'encrypted-dual-share',
-                        protocolVersion: 'v1',
+                        protocolVersion,
                         suite: recipient.transportSuite,
                     },
                 );
@@ -240,9 +242,7 @@ export const buildDealerMaterial = async (
                 phase: 1,
                 participantIndex: participant.index,
                 messageType: 'pedersen-commitment',
-                commitments: pedersenCommitments.commitments.map((value) =>
-                    bigintToFixedHex(value, group.byteLength),
-                ),
+                commitments: pedersenCommitments.commitments,
             },
         ),
         feldmanCommitments: feldmanCommitments.commitments,
@@ -254,19 +254,11 @@ export const buildDealerMaterial = async (
                 phase: 3,
                 participantIndex: participant.index,
                 messageType: 'feldman-commitment',
-                commitments: feldmanCommitments.commitments.map((value) =>
-                    bigintToFixedHex(value, group.byteLength),
-                ),
+                commitments: feldmanCommitments.commitments,
                 proofs: schnorrProofs.map((proof) => ({
                     coefficientIndex: proof.coefficientIndex,
-                    challenge: bigintToFixedHex(
-                        proof.challenge,
-                        group.byteLength,
-                    ),
-                    response: bigintToFixedHex(
-                        proof.response,
-                        group.byteLength,
-                    ),
+                    challenge: encodeScalar(proof.challenge),
+                    response: encodeScalar(proof.response),
                 })),
             },
         ),
@@ -301,7 +293,9 @@ const tamperEnvelope = (
         case 'ephemeralPublicKey':
             return {
                 ...envelope,
-                ephemeralPublicKey: mutateHexTail(envelope.ephemeralPublicKey),
+                ephemeralPublicKey: mutateHexTail(
+                    envelope.ephemeralPublicKey,
+                ) as EncodedTransportPublicKey,
             };
         default:
             throw new Error('Unsupported envelope tamper mode');

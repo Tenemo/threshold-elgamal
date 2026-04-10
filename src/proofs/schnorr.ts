@@ -1,48 +1,50 @@
 import {
     assertInSubgroup,
     assertScalarInZq,
-    fixedBaseModPow,
-    multiExponentiate,
     modQ,
     type CryptoGroup,
     type RandomBytesSource,
 } from '../core/index.js';
+import {
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointMultiply,
+    pointSubtract,
+} from '../core/ristretto.js';
 import { encodeForChallenge } from '../serialize/index.js';
 
 import {
     assertProofContext,
     contextElements,
-    fixed,
+    fixedPoint,
     hashChallenge,
-    negateExponent,
 } from './helpers.js';
 import { hedgedNonce } from './nonces.js';
 import type { ProofContext, SchnorrProof } from './types.js';
 
 const nonceContext = (
-    statement: bigint,
+    statement: string,
     group: CryptoGroup,
     context: ProofContext,
 ): Uint8Array =>
     encodeForChallenge(
         ...contextElements(context),
-        fixed(group.g, group),
-        fixed(group.q, group),
-        fixed(statement, group),
+        fixedPoint(group.g),
+        fixedPoint(statement),
     );
 
 const challengePayload = (
-    statement: bigint,
-    commitment: bigint,
+    statement: string,
+    commitment: string,
     group: CryptoGroup,
     context: ProofContext,
 ): Uint8Array =>
     encodeForChallenge(
         ...contextElements(context),
-        fixed(group.g, group),
-        fixed(group.q, group),
-        fixed(statement, group),
-        fixed(commitment, group),
+        fixedPoint(group.g),
+        fixedPoint(statement),
+        fixedPoint(commitment),
     );
 
 /**
@@ -57,14 +59,14 @@ const challengePayload = (
  */
 export const createSchnorrProof = async (
     secret: bigint,
-    statement: bigint,
+    statement: string,
     group: CryptoGroup,
     context: ProofContext,
     randomSource?: RandomBytesSource,
 ): Promise<SchnorrProof> => {
     assertProofContext(context, group);
     assertScalarInZq(secret, group.q);
-    assertInSubgroup(statement, group.p, group.q);
+    assertInSubgroup(statement);
 
     const nonce = await hedgedNonce(
         secret,
@@ -72,7 +74,7 @@ export const createSchnorrProof = async (
         group,
         randomSource,
     );
-    const commitment = fixedBaseModPow(group.g, nonce, group.p);
+    const commitment = encodePoint(multiplyBase(nonce));
     const challenge = await hashChallenge(
         challengePayload(statement, commitment, group, context),
         group.q,
@@ -95,24 +97,23 @@ export const createSchnorrProof = async (
  */
 export const verifySchnorrProof = async (
     proof: SchnorrProof,
-    statement: bigint,
+    statement: string,
     group: CryptoGroup,
     context: ProofContext,
 ): Promise<boolean> => {
     assertProofContext(context, group);
     assertScalarInZq(proof.challenge, group.q);
     assertScalarInZq(proof.response, group.q);
-    assertInSubgroup(statement, group.p, group.q);
+    assertInSubgroup(statement);
 
-    const commitment = multiExponentiate(
-        [
-            { base: group.g, exponent: proof.response },
-            {
-                base: statement,
-                exponent: negateExponent(proof.challenge, group.q),
-            },
-        ],
-        group.p,
+    const commitment = encodePoint(
+        pointSubtract(
+            multiplyBase(proof.response),
+            pointMultiply(
+                decodePoint(statement, 'Schnorr statement'),
+                proof.challenge,
+            ),
+        ),
     );
     const expected = await hashChallenge(
         challengePayload(statement, commitment, group, context),

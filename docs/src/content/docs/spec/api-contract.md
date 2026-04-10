@@ -9,25 +9,21 @@ The current package draws a hard boundary between the shipped cryptographic libr
 
 ## Library responsibilities
 
-- Group definitions and scalar arithmetic
+- Ristretto255 group definitions and scalar arithmetic
 - Safe additive ElGamal on the root package
 - Ciphertext combination helpers for the shipped additive workflow
 - Serialization and deterministic encoding helpers
-- Runtime validation for public inputs, plaintext domains, and subgroup membership
+- Runtime validation for public inputs, plaintext domains, and point validity
 - Dealer-based threshold sharing and additive threshold decryption
 - Standalone VSS, proof, protocol, transport, and log-driven DKG helpers
-- Typed manifest, ballot, decryption-share, tally-publication, and restart
-  payload schemas
+- Typed manifest, ballot, decryption-share, tally-publication, and restart payload schemas
 - Transcript-native complaint-resolution verification
-- A high-level published-tally verifier that replays the DKG transcript,
-  recomputes the accepted ballot aggregates locally, verifies decryption-share
-  proofs, and checks one published tally per option
+- Bulletin-board auditing that canonicalizes ordering, classifies duplicate slots, and exposes ceremony digests and fingerprints
+- A high-level full-ceremony verifier that replays the DKG transcript, recomputes the accepted ballot aggregates locally, verifies decryption-share proofs, checks per-option tally publications, and validates board consistency
 
 ## Application responsibilities
 
 - Bulletin-board storage, deployment-specific transport plumbing, and operational policy
-- Tally policy, additive bound selection, arithmetic-mean interpretation, and
-  result presentation
+- Tally policy, additive bound selection, arithmetic-mean interpretation, and result presentation
 - UI, orchestration, retries, and deadline handling
-- Final application decisions about enrollment, trustee workflows, deadlines,
-  retries, and publication timing
+- Final application decisions about enrollment, trustee workflows, deadlines, retries, and publication timing

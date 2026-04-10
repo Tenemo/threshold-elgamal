@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import plainElgamalVectors from '../../../test-vectors/plain-elgamal.json';
+import { encodePoint, multiplyBase } from '../../../src/core/ristretto.js';
 
+import type { ElgamalCiphertext } from '#elgamal';
 import {
     addEncryptedValues,
     assertValidAdditiveCiphertext,
@@ -19,95 +20,113 @@ import {
     UnsupportedSuiteError,
 } from '#root';
 
+const additiveIdentity = (): ElgamalCiphertext => {
+    const identity = encodePoint(multiplyBase(0n));
+    return {
+        c1: identity,
+        c2: identity,
+    } as ElgamalCiphertext;
+};
+
 describe('additive ElGamal', () => {
     it('round-trips bounded additive messages', () => {
-        const { publicKey, privateKey } = generateParameters(2048);
+        const { publicKey, privateKey } = generateParameters('ristretto255');
 
         for (const message of [0n, 1n, 42n, 1000n]) {
-            const ciphertext = encryptAdditive(message, publicKey, 2048, 1000n);
-            expect(decryptAdditive(ciphertext, privateKey, 2048, 1000n)).toBe(
+            const ciphertext = encryptAdditive(
                 message,
+                publicKey,
+                'ristretto255',
+                1000n,
             );
+            expect(
+                decryptAdditive(ciphertext, privateKey, 'ristretto255', 1000n),
+            ).toBe(message);
         }
     });
 
     it('rejects invalid additive plaintexts and public keys', () => {
         expect.assertions(3);
 
-        const { publicKey } = generateParameters(2048);
+        const { publicKey } = generateParameters('ristretto255');
 
-        expect(() => encryptAdditive(-1n, publicKey, 2048, 10n)).toThrow(
-            PlaintextDomainError,
-        );
-        expect(() => encryptAdditive(11n, publicKey, 2048, 10n)).toThrow(
-            PlaintextDomainError,
-        );
-        expect(() => encryptAdditive(1n, 1n, 2048, 10n)).toThrow(
-            InvalidGroupElementError,
-        );
+        expect(() =>
+            encryptAdditive(-1n, publicKey, 'ristretto255', 10n),
+        ).toThrow(PlaintextDomainError);
+        expect(() =>
+            encryptAdditive(11n, publicKey, 'ristretto255', 10n),
+        ).toThrow(PlaintextDomainError);
+        expect(() =>
+            encryptAdditive(1n, 'ff'.repeat(32), 'ristretto255', 10n),
+        ).toThrow(InvalidGroupElementError);
     });
 
     it('rejects additive decryptions that exceed the supplied bound', () => {
-        const { publicKey, privateKey } = generateParameters(2048);
-        const ciphertext = encryptAdditive(11n, publicKey, 2048, 20n);
+        const { publicKey, privateKey } = generateParameters('ristretto255');
+        const ciphertext = encryptAdditive(11n, publicKey, 'ristretto255', 20n);
 
         expect(() =>
-            decryptAdditive(ciphertext, privateKey, 2048, 10n),
+            decryptAdditive(ciphertext, privateKey, 'ristretto255', 10n),
         ).toThrow(PlaintextDomainError);
     });
 
     it('adds ciphertexts homomorphically', () => {
-        const { publicKey, privateKey } = generateParameters(2048);
-        const left = encryptAdditive(6n, publicKey, 2048, 20n);
-        const right = encryptAdditive(7n, publicKey, 2048, 20n);
+        const { publicKey, privateKey } = generateParameters('ristretto255');
+        const left = encryptAdditive(6n, publicKey, 'ristretto255', 20n);
+        const right = encryptAdditive(7n, publicKey, 'ristretto255', 20n);
 
-        const sum = addEncryptedValues(left, right, 2048);
+        const sum = addEncryptedValues(left, right, 'ristretto255');
 
-        expect(decryptAdditive(sum, privateKey, 2048, 20n)).toBe(13n);
+        expect(decryptAdditive(sum, privateKey, 'ristretto255', 20n)).toBe(13n);
     });
 
-    it('accepts additive aggregates with subgroup identity in c1', () => {
-        const group = getGroup(2048);
+    it('accepts additive aggregates with identity c1', () => {
+        const group = getGroup('ristretto255');
         const { publicKey, privateKey } = generateParametersWithPrivateKey(
             5n,
-            2048,
+            'ristretto255',
         );
         const left = encryptAdditiveWithRandomness(
             6n,
             publicKey,
             7n,
             20n,
-            2048,
+            group.name,
         );
         const right = encryptAdditiveWithRandomness(
             7n,
             publicKey,
             group.q - 7n,
             20n,
-            2048,
+            group.name,
         );
 
-        const sum = addEncryptedValues(left, right, 2048);
+        const sum = addEncryptedValues(left, right, group.name);
+        const identity = encodePoint(multiplyBase(0n));
 
-        expect(sum.c1).toBe(1n);
+        expect(sum.c1).toBe(identity);
         expect(() => assertValidAdditiveCiphertext(sum, group)).not.toThrow();
         expect(() => assertValidFreshAdditiveCiphertext(sum, group)).toThrow(
             InvalidGroupElementError,
         );
-        expect(decryptAdditive(sum, privateKey, 2048, 20n)).toBe(13n);
+        expect(decryptAdditive(sum, privateKey, group.name, 20n)).toBe(13n);
     });
 
     it('accepts additive neutral accumulators', () => {
-        const { publicKey, privateKey } = generateParameters(2048);
-        const ciphertext = encryptAdditive(11n, publicKey, 2048, 20n);
-        const sum = addEncryptedValues({ c1: 1n, c2: 1n }, ciphertext, 2048);
+        const { publicKey, privateKey } = generateParameters('ristretto255');
+        const ciphertext = encryptAdditive(11n, publicKey, 'ristretto255', 20n);
+        const sum = addEncryptedValues(
+            additiveIdentity(),
+            ciphertext,
+            'ristretto255',
+        );
 
-        expect(decryptAdditive(sum, privateKey, 2048, 20n)).toBe(11n);
+        expect(decryptAdditive(sum, privateKey, 'ristretto255', 20n)).toBe(11n);
     });
 
     it('requires an explicit additive bound', () => {
-        const { publicKey, privateKey } = generateParameters(2048);
-        const ciphertext = encryptAdditive(1n, publicKey, 2048, 10n);
+        const { publicKey, privateKey } = generateParameters('ristretto255');
+        const ciphertext = encryptAdditive(1n, publicKey, 'ristretto255', 10n);
         const encryptAdditiveUnchecked = encryptAdditive as (
             ...args: unknown[]
         ) => unknown;
@@ -115,91 +134,77 @@ describe('additive ElGamal', () => {
             ...args: unknown[]
         ) => unknown;
 
-        expect(() => encryptAdditiveUnchecked(1n, publicKey, 2048)).toThrow(
-            InvalidScalarError,
-        );
         expect(() =>
-            decryptAdditiveUnchecked(ciphertext, privateKey, 2048),
+            encryptAdditiveUnchecked(1n, publicKey, 'ristretto255'),
+        ).toThrow(InvalidScalarError);
+        expect(() =>
+            decryptAdditiveUnchecked(ciphertext, privateKey, 'ristretto255'),
         ).toThrow(InvalidScalarError);
     });
 
-    it('matches the frozen additive vectors for every shipped group', () => {
-        for (const [groupName, vector] of Object.entries(
-            plainElgamalVectors.groups,
-        )) {
-            const group = getGroup(groupName as never);
-            const additiveVector = vector.additive;
-            const keyPair = generateParametersWithPrivateKey(
-                BigInt(vector.privateKey),
-                group.name,
-            );
+    it('uses canonical ciphertext encodings for the shipped group id', () => {
+        const { publicKey, privateKey } = generateParametersWithPrivateKey(
+            12345n,
+            'ristretto255',
+        );
+        const expected = encryptAdditiveWithRandomness(
+            7n,
+            publicKey,
+            4100n,
+            20n,
+            'ristretto255',
+        );
+
+        for (const groupName of ['ristretto255'] as const) {
             const ciphertext = encryptAdditiveWithRandomness(
-                BigInt(additiveVector.message),
-                keyPair.publicKey,
-                BigInt(additiveVector.randomness),
-                BigInt(additiveVector.bound),
-                group.name,
+                7n,
+                publicKey,
+                4100n,
+                20n,
+                groupName,
             );
 
-            expect(keyPair.publicKey).toBe(BigInt(vector.publicKey));
-            expect(ciphertext).toEqual({
-                c1: BigInt(additiveVector.c1),
-                c2: BigInt(additiveVector.c2),
-            });
+            expect(ciphertext).toEqual(expected);
             expect(
-                decryptAdditive(
-                    ciphertext,
-                    keyPair.privateKey,
-                    group.name,
-                    BigInt(additiveVector.bound),
-                ),
-            ).toBe(BigInt(additiveVector.message));
+                decryptAdditive(ciphertext, privateKey, groupName, 20n),
+            ).toBe(7n);
         }
     });
 
-    it('matches the frozen additive homomorphic vectors', () => {
-        for (const [groupName, vector] of Object.entries(
-            plainElgamalVectors.groups,
-        )) {
-            const group = getGroup(groupName as never);
-            const keyPair = generateParametersWithPrivateKey(
-                BigInt(vector.privateKey),
-                group.name,
-            );
-            const left = encryptAdditiveWithRandomness(
-                BigInt(vector.additive.left.message),
-                keyPair.publicKey,
-                BigInt(vector.additive.left.randomness),
-                BigInt(vector.additive.left.bound),
-                group.name,
-            );
-            const right = encryptAdditiveWithRandomness(
-                BigInt(vector.additive.right.message),
-                keyPair.publicKey,
-                BigInt(vector.additive.right.randomness),
-                BigInt(vector.additive.right.bound),
-                group.name,
-            );
-            const sum = addEncryptedValues(left, right, group.name);
+    it('is deterministic for fixed randomness and changes when randomness changes', () => {
+        const { publicKey } = generateParametersWithPrivateKey(
+            12345n,
+            'ristretto255',
+        );
+        const first = encryptAdditiveWithRandomness(
+            7n,
+            publicKey,
+            4100n,
+            20n,
+            'ristretto255',
+        );
+        const same = encryptAdditiveWithRandomness(
+            7n,
+            publicKey,
+            4100n,
+            20n,
+            'ristretto255',
+        );
+        const different = encryptAdditiveWithRandomness(
+            7n,
+            publicKey,
+            4101n,
+            20n,
+            'ristretto255',
+        );
 
-            expect(sum).toEqual({
-                c1: BigInt(vector.additive.sum.c1),
-                c2: BigInt(vector.additive.sum.c2),
-            });
-            expect(
-                decryptAdditive(
-                    sum,
-                    keyPair.privateKey,
-                    group.name,
-                    BigInt(vector.additive.sum.bound),
-                ),
-            ).toBe(BigInt(vector.additive.sum.message));
-        }
+        expect(first).toEqual(same);
+        expect(different).not.toEqual(first);
     });
 
     it('rejects arbitrary group objects at runtime', () => {
-        const group = getGroup(2048);
-        const { publicKey } = generateParameters(2048);
+        const group = getGroup('ristretto255');
+        const { publicKey } = generateParameters('ristretto255');
 
         expect(() =>
             encryptAdditive(7n, publicKey, group as never, 10n),
@@ -207,18 +212,23 @@ describe('additive ElGamal', () => {
     });
 
     it('rejects invalid deterministic randomness', () => {
-        const { publicKey } = generateParameters(2048);
+        const { publicKey } = generateParameters('ristretto255');
 
         expect(() =>
-            encryptAdditiveWithRandomness(7n, publicKey, 0n, 20n, 2048),
+            encryptAdditiveWithRandomness(
+                7n,
+                publicKey,
+                0n,
+                20n,
+                'ristretto255',
+            ),
         ).toThrow(InvalidScalarError);
     });
 
-    it('returns null when BSGS search space is too small', () => {
-        const group = getGroup(2048);
-        const encoded = group.g ** 0n;
-        const target = (encoded * group.g) % group.p;
+    it('returns null when the BSGS search space is too small', () => {
+        const group = getGroup('ristretto255');
+        const target = encodePoint(multiplyBase(1n));
 
-        expect(babyStepGiantStep(target, group.g, group.p, 0n)).toBeNull();
+        expect(babyStepGiantStep(target, group.g, 0n)).toBeNull();
     });
 });

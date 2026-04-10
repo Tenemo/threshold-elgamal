@@ -1,4 +1,6 @@
 import { InvalidPayloadError, type CryptoGroup } from '../core/index.js';
+import { decodeScalar } from '../core/ristretto.js';
+import type { EncodedPoint } from '../core/types.js';
 import { verifySchnorrProof } from '../proofs/index.js';
 import { hashProtocolTranscript } from '../protocol/transcript.js';
 import type {
@@ -6,7 +8,6 @@ import type {
     KeyDerivationConfirmation,
     SignedPayload,
 } from '../protocol/types.js';
-import { bigintToFixedHex, fixedHexToBigint } from '../serialize/index.js';
 
 import {
     buildSchnorrContext,
@@ -75,6 +76,7 @@ export const parseQualifiedFeldmanCommitments = (
 
 export const verifyFeldmanProofs = async (
     feldmanCommitments: readonly ParsedFeldmanCommitment[],
+    protocolVersion: string,
     group: CryptoGroup,
 ): Promise<void> => {
     for (const entry of feldmanCommitments) {
@@ -82,12 +84,20 @@ export const verifyFeldmanProofs = async (
             const proof = entry.payload.proofs[offset];
             const valid = await verifySchnorrProof(
                 {
-                    challenge: fixedHexToBigint(proof.challenge),
-                    response: fixedHexToBigint(proof.response),
+                    challenge: decodeScalar(
+                        proof.challenge,
+                        'Schnorr challenge',
+                    ),
+                    response: decodeScalar(proof.response, 'Schnorr response'),
                 },
                 commitment,
                 group,
-                buildSchnorrContext(entry.payload, offset + 1, group),
+                buildSchnorrContext(
+                    entry.payload,
+                    protocolVersion,
+                    offset + 1,
+                    group,
+                ),
             );
             if (!valid) {
                 throw new InvalidPayloadError(
@@ -101,7 +111,7 @@ export const verifyFeldmanProofs = async (
 export const verifyKeyDerivationConfirmations = async (
     transcript: readonly SignedPayload[],
     qual: readonly number[],
-    derivedPublicKey: bigint,
+    derivedPublicKey: EncodedPoint,
     group: CryptoGroup,
     minimumConfirmations = qual.length,
 ): Promise<string> => {
@@ -112,10 +122,6 @@ export const verifyKeyDerivationConfirmations = async (
     );
     const qualHash = await hashProtocolTranscript(
         preConfirmationTranscript.map((payload) => payload.payload),
-        group.byteLength,
-    );
-    const expectedPublicKeyHex = bigintToFixedHex(
-        derivedPublicKey,
         group.byteLength,
     );
     const confirmations = transcript.filter(
@@ -148,7 +154,7 @@ export const verifyKeyDerivationConfirmations = async (
                 `qualHash mismatch in confirmation from participant ${confirmation.payload.participantIndex}`,
             );
         }
-        if (confirmation.payload.publicKey !== expectedPublicKeyHex) {
+        if (confirmation.payload.publicKey !== derivedPublicKey) {
             throw new InvalidPayloadError(
                 `Joint public key mismatch in confirmation from participant ${confirmation.payload.participantIndex}`,
             );

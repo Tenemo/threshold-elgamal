@@ -31,7 +31,7 @@ const buildBrowserBallot = async (
     vote: bigint,
     randomness: bigint,
 ): Promise<BallotTranscriptEntry> => {
-    const group = getGroup('ffdhe2048');
+    const group = getGroup('ristretto255');
     const { publicKey } = generateParametersWithPrivateKey(123n, group.name);
     const ciphertext = encryptAdditiveWithRandomness(
         vote,
@@ -128,7 +128,7 @@ describe('browser runtime coverage', () => {
             rosterHash,
         });
 
-        const group = getGroup('ffdhe2048');
+        const group = getGroup('ristretto255');
         const { publicKey } = generateParametersWithPrivateKey(
             123n,
             group.name,
@@ -150,6 +150,7 @@ describe('browser runtime coverage', () => {
             publicKey,
             validValues: [1n, 2n, 3n],
             group,
+            protocolVersion: 'v1',
             manifestHash: 'manifest-hash',
             sessionId: 'session-1',
             minimumBallotCount: 2,

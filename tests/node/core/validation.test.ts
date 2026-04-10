@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { encodePoint, RISTRETTO_ZERO } from '../../../src/core/ristretto.js';
+
 import {
     assertMajorityThreshold,
     assertInSubgroup,
@@ -21,19 +23,17 @@ import {
 } from '#core';
 
 describe('core validation', () => {
-    const group = getGroup(2048);
+    const group = getGroup('ristretto255');
+    const identity = encodePoint(RISTRETTO_ZERO);
+    const invalidPoint = 'ff'.repeat(32);
 
-    it('accepts subgroup elements and rejects obvious invalid ones', () => {
-        const validElement = 4n;
-
-        expect(isInSubgroup(validElement, group.p, group.q)).toBe(true);
-        expect(isInSubgroupOrIdentity(validElement, group.p, group.q)).toBe(
-            true,
-        );
-        expect(isInSubgroup(0n, group.p, group.q)).toBe(false);
-        expect(isInSubgroup(1n, group.p, group.q)).toBe(false);
-        expect(isInSubgroupOrIdentity(1n, group.p, group.q)).toBe(true);
-        expect(isInSubgroup(group.p - 1n, group.p, group.q)).toBe(false);
+    it('accepts valid point encodings and rejects invalid or identity-only cases', () => {
+        expect(isInSubgroup(group.g)).toBe(true);
+        expect(isInSubgroupOrIdentity(group.g)).toBe(true);
+        expect(isInSubgroup(identity)).toBe(false);
+        expect(isInSubgroupOrIdentity(identity)).toBe(true);
+        expect(isInSubgroup(invalidPoint)).toBe(false);
+        expect(isInSubgroupOrIdentity(invalidPoint)).toBe(false);
     });
 
     it('validates scalar ranges and plaintext domains', () => {
@@ -56,17 +56,15 @@ describe('core validation', () => {
         );
     });
 
-    it('throws typed errors for invalid public subgroup elements', () => {
-        expect(() => assertInSubgroup(1n, group.p, group.q)).toThrow(
+    it('throws typed errors for invalid public points', () => {
+        expect(() => assertInSubgroup(identity)).toThrow(
             InvalidGroupElementError,
         );
-        expect(() =>
-            assertInSubgroupOrIdentity(1n, group.p, group.q),
-        ).not.toThrow();
-        expect(() =>
-            assertValidPublicKey(group.p - 1n, group.p, group.q),
-        ).toThrow(InvalidGroupElementError);
-        expect(() => assertValidPublicKey(4n, group.p, group.q)).not.toThrow();
+        expect(() => assertInSubgroupOrIdentity(identity)).not.toThrow();
+        expect(() => assertValidPublicKey(invalidPoint)).toThrow(
+            InvalidGroupElementError,
+        );
+        expect(() => assertValidPublicKey(group.g)).not.toThrow();
     });
 
     it('validates threshold and participant index domains', () => {
