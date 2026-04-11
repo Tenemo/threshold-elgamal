@@ -1,38 +1,11 @@
-run_step() {
-    echo "$1"
-    shift
-    "$@" || exit 1
-}
-
-run_captured_step() {
-    label="$1"
-    success_lines="$2"
-    shift 2
-
-    echo "$label"
-
-    step_log="$(mktemp)"
-    if ! "$@" >"$step_log" 2>&1; then
-        cat "$step_log"
-        rm -f "$step_log"
-        exit 1
-    fi
-
-    if [ "$success_lines" -gt 0 ]; then
-        tail -n "$success_lines" "$step_log"
-    fi
-
-    rm -f "$step_log"
-}
-
-run_step "lint" pnpm --silent run lint
-run_step "typecheck" pnpm --silent run typecheck
-run_step "Math.random guard" pnpm --silent run guard:no-math-random
-run_step "generator H verification" pnpm --silent run verify:h-derivation
-run_step "production build" pnpm --silent run build:skip
-run_step "node tests" pnpm --silent exec vitest --project node --run --reporter=dot
-run_step "browser tests" pnpm --silent exec vitest --project browser --run --reporter=dot
-run_captured_step "API docs verification" 1 pnpm --silent run verify:docs
-run_captured_step "docs site build" 2 pnpm --silent run docs:build:site
-run_step "vector verification" pnpm --silent run verify:vectors
-run_step "packed package smoke test" pnpm --silent run smoke:pack
+pnpm run lint || exit 1
+pnpm run typecheck || exit 1
+pnpm run guard:no-math-random || exit 1
+pnpm run verify:h-derivation || exit 1
+pnpm run build:skip || exit 1
+pnpm exec vitest --project node --run || exit 1
+pnpm exec vitest --project browser --run || exit 1
+pnpm run verify:docs || exit 1
+pnpm run docs:build:site || exit 1
+pnpm run verify:vectors || exit 1
+pnpm run smoke:pack || exit 1

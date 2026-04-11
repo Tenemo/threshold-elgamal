@@ -174,11 +174,11 @@ What it does not claim:
 ## Development
 
 ```bash
-pnpm install
-pnpm run lint
-pnpm run tsc
-pnpm run test
-pnpm run build:skip
+npm install
+npm run lint
+npm run tsc
+npm run test
+npm run build:skip
 ```
 
 ## License
