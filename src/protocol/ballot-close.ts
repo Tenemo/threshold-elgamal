@@ -13,7 +13,7 @@ import {
 } from './voting-shared.js';
 
 /** Verified organizer-selected ballot cutoff and the counted ballot subset. */
-export type VerifiedBallotClose = {
+type VerifiedBallotClose = {
     readonly countedBallotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly countedParticipantIndices: readonly number[];
     readonly excludedParticipantIndices: readonly number[];

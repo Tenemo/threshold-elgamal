@@ -104,26 +104,9 @@ describe('additive ElGamal', () => {
             InvalidScalarError,
         );
     });
-    it('uses canonical ciphertext encodings for the shipped group id', () => {
+    it('uses deterministic canonical ciphertext encodings for fixed randomness', () => {
         const { publicKey, privateKey } =
             generateParametersWithPrivateKey(12345n);
-        const expected = encryptAdditiveWithRandomness(
-            7n,
-            publicKey,
-            4100n,
-            20n,
-        );
-        const ciphertext = encryptAdditiveWithRandomness(
-            7n,
-            publicKey,
-            4100n,
-            20n,
-        );
-        expect(ciphertext).toEqual(expected);
-        expect(decryptAdditive(ciphertext, privateKey, 20n)).toBe(7n);
-    });
-    it('is deterministic for fixed randomness and changes when randomness changes', () => {
-        const { publicKey } = generateParametersWithPrivateKey(12345n);
         const first = encryptAdditiveWithRandomness(7n, publicKey, 4100n, 20n);
         const same = encryptAdditiveWithRandomness(7n, publicKey, 4100n, 20n);
         const different = encryptAdditiveWithRandomness(
@@ -134,6 +117,7 @@ describe('additive ElGamal', () => {
         );
         expect(first).toEqual(same);
         expect(different).not.toEqual(first);
+        expect(decryptAdditive(first, privateKey, 20n)).toBe(7n);
     });
     it('rejects invalid deterministic randomness', () => {
         const { publicKey } = generateParameters();

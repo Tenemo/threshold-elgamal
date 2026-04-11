@@ -55,13 +55,13 @@ export type VerifiedOptionBallotAggregation = VerifiedBallotAggregation & {
 };
 
 /** Grouped view of one accepted voter's ballot across all option slots. */
-export type VoterBallot = {
+type VoterBallot = {
     readonly voterIndex: number;
     readonly ballots: readonly BallotTranscriptEntry[];
 };
 
 /** Input bundle for ballot verification and aggregation. */
-export type VerifyAndAggregateBallotsInput = {
+type VerifyAndAggregateBallotsInput = {
     readonly ballots: readonly BallotTranscriptEntry[];
     readonly publicKey: EncodedPoint;
     readonly validValues: readonly bigint[];
@@ -72,10 +72,9 @@ export type VerifyAndAggregateBallotsInput = {
 };
 
 /** Input bundle for per-option ballot verification and aggregation. */
-export type VerifyAndAggregateBallotsByOptionInput =
-    VerifyAndAggregateBallotsInput & {
-        readonly optionCount: number;
-    };
+type VerifyAndAggregateBallotsByOptionInput = VerifyAndAggregateBallotsInput & {
+    readonly optionCount: number;
+};
 
 const canonicalBallotJson = (
     ballots: readonly BallotTranscriptEntry[],
@@ -170,7 +169,7 @@ const groupBallotsByVoter = (
  * @param ballots Verified ballot records.
  * @returns Lowercase hexadecimal transcript hash.
  */
-export const hashAcceptedBallots = async (
+const hashAcceptedBallots = async (
     ballots: readonly BallotTranscriptEntry[],
 ): Promise<string> =>
     bytesToHex(await sha256(utf8ToBytes(canonicalBallotJson(ballots))));

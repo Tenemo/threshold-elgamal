@@ -1,11 +1,7 @@
 import { InvalidPayloadError } from '../core/index.js';
 
 import { compareProtocolPayloads } from './ordering.js';
-import {
-    canonicalUnsignedPayloadBytes,
-    classifySlotConflict,
-    payloadSlotKey,
-} from './payloads.js';
+import { classifySlotConflict, payloadSlotKey } from './payloads.js';
 import {
     formatSessionFingerprint,
     hashProtocolTranscript,
@@ -13,17 +9,17 @@ import {
 import type { ProtocolPayload, SignedPayload } from './types.js';
 
 /** Classification for one canonical bulletin-board slot. */
-export type BoardSlotStatus = 'unique' | 'idempotent-retransmission';
+type BoardSlotStatus = 'unique' | 'idempotent-retransmission';
 
 /** Audit result for one canonical bulletin-board slot. */
-export type BoardSlotAudit = {
+type BoardSlotAudit = {
     readonly slotKey: string;
     readonly occurrences: number;
     readonly status: BoardSlotStatus;
 };
 
 /** Canonical digest summary for one protocol phase. */
-export type PhaseDigest = {
+type PhaseDigest = {
     readonly phase: number;
     readonly digest: string;
     readonly payloadCount: number;
@@ -144,48 +140,4 @@ export const auditSignedPayloads = async <TPayload extends ProtocolPayload>(
         phaseDigests,
         slotAudit,
     };
-};
-
-/**
- * Verifies that each supplied payload is present in the accepted audited board
- * under its canonical slot key.
- *
- * @param payloads Payloads expected to be included.
- * @param audit Board audit to check against.
- */
-export const assertPayloadsIncludedInAudit = <TPayload extends ProtocolPayload>(
-    payloads: readonly SignedPayload<TPayload>[],
-    audit: BoardAudit<TPayload>,
-): void => {
-    const acceptedBySlot = new Map(
-        audit.acceptedPayloads.map((payload) => [
-            payloadSlotKey(payload.payload),
-            canonicalUnsignedPayloadBytes(payload.payload),
-        ]),
-    );
-
-    for (const payload of payloads) {
-        const slotKey = payloadSlotKey(payload.payload);
-        const acceptedBytes = acceptedBySlot.get(slotKey);
-
-        if (acceptedBytes === undefined) {
-            throw new InvalidPayloadError(
-                `Payload for canonical slot ${slotKey} is missing from the audited board`,
-            );
-        }
-
-        const candidateBytes = canonicalUnsignedPayloadBytes(payload.payload);
-        if (candidateBytes.length !== acceptedBytes.length) {
-            throw new InvalidPayloadError(
-                `Payload inclusion mismatch for canonical slot ${slotKey}`,
-            );
-        }
-        for (let index = 0; index < candidateBytes.length; index += 1) {
-            if (candidateBytes[index] !== acceptedBytes[index]) {
-                throw new InvalidPayloadError(
-                    `Payload inclusion mismatch for canonical slot ${slotKey}`,
-                );
-            }
-        }
-    }
 };

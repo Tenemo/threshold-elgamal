@@ -31,7 +31,7 @@ export const BALLOT_CLOSE_PHASE = 6;
 export const DECRYPTION_SHARE_PHASE = 7;
 export const TALLY_PUBLICATION_PHASE = 8;
 
-export type VotingManifestContext = {
+type VotingManifestContext = {
     readonly manifest: ElectionManifest;
     readonly manifestHash: string;
     readonly group: CryptoGroup;
@@ -95,17 +95,6 @@ export const assertValidOptionIndex = (
     if (optionIndex > optionCount) {
         throw new InvalidPayloadError(
             `${label} option index ${optionIndex} exceeds the manifest option count ${optionCount}`,
-        );
-    }
-};
-
-export const assertSingleOptionManifest = (
-    manifest: ElectionManifest,
-    label: string,
-): void => {
-    if (manifest.optionList.length !== 1) {
-        throw new InvalidPayloadError(
-            `${label} requires a single-option manifest; use the per-option verification helpers instead`,
         );
     }
 };

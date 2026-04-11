@@ -18,7 +18,7 @@ import type {
 /**
  * Input bundle for verifying typed ballot payloads.
  */
-export type VerifyBallotSubmissionPayloadsInput = {
+type VerifyBallotSubmissionPayloadsInput = {
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly publicKey: EncodedPoint;
     readonly manifest: ElectionManifest;

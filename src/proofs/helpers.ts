@@ -90,9 +90,6 @@ export const fixedScalar = (value: bigint, group: CryptoGroup): Uint8Array => {
     return hexToBytes(encodeScalar(value));
 };
 
-export const negateExponent = (value: bigint, q: bigint): bigint =>
-    modQ(q - value, q);
-
 export const hashChallenge = (
     payload: Uint8Array,
     q: bigint,

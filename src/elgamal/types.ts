@@ -1,4 +1,4 @@
-import type { CryptoGroup, EncodedPoint } from '../core/types.js';
+import type { EncodedPoint } from '../core/types.js';
 
 /** Public and private key pair for the shipped Ristretto255 suite. */
 export type ElgamalKeyPair = {
@@ -6,11 +6,6 @@ export type ElgamalKeyPair = {
     readonly publicKey: EncodedPoint;
     /** Private scalar `x` in the range `1..q-1`. */
     readonly privateKey: bigint;
-};
-
-/** @internal Key material plus the resolved immutable group definition. */
-export type ElgamalParameters = ElgamalKeyPair & {
-    readonly group: CryptoGroup;
 };
 
 /** Standard additive ElGamal ciphertext pair `(c1, c2)` encoded as points. */

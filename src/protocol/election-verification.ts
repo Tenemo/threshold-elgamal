@@ -63,7 +63,7 @@ export type ElectionVerificationFailure = {
 };
 
 /** Error raised when full ceremony verification fails at a named stage. */
-export class ElectionVerificationError extends InvalidPayloadError {
+class ElectionVerificationError extends InvalidPayloadError {
     public readonly code: ElectionVerificationErrorCode;
     public readonly stage: ElectionVerificationStage;
     public readonly reason: string;

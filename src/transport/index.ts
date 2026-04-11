@@ -10,7 +10,6 @@ export {
     generateTransportKeyPair,
     type GenerateTransportKeyPairOptions,
     importTransportPublicKey,
-    isX25519Supported,
     verifyLocalTransportKey,
 } from './key-agreement.js';
 export * from './types.js';

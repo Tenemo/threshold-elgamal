@@ -58,30 +58,6 @@ export const assertNonZeroSharedSecret = (sharedSecret: Uint8Array): void => {
 };
 
 /**
- * Returns whether the current runtime supports X25519 via Web Crypto.
- *
- * @returns `true` when X25519 key generation is available.
- */
-export const isX25519Supported = async (): Promise<boolean> => {
-    try {
-        const pair = await getWebCrypto().subtle.generateKey(
-            x25519Algorithm,
-            true,
-            ['deriveBits'],
-        );
-
-        await Promise.all([
-            getWebCrypto().subtle.exportKey('raw', pair.publicKey),
-            getWebCrypto().subtle.exportKey('pkcs8', pair.privateKey),
-        ]);
-
-        return true;
-    } catch {
-        return false;
-    }
-};
-
-/**
  * Generates an X25519 transport key pair.
  *
  * @param options Generation options.

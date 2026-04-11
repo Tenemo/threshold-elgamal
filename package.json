@@ -86,7 +86,6 @@
     "imports": {
         "#root": "./src/index.ts",
         "#core": "./src/core/index.ts",
-        "#dkg": "./src/dkg/index.ts",
         "#elgamal": "./src/elgamal/index.ts",
         "#proofs": "./src/proofs/index.ts",
         "#protocol": "./src/protocol/index.ts",

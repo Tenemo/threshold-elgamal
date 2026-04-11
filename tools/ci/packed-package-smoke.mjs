@@ -1,4 +1,6 @@
-import { runVotingFlowScenario } from './voting-flow-harness.mjs';
+const { runVotingFlowScenario } = await import(
+    new URL('./voting-flow-harness.mjs', import.meta.url).href
+);
 
 const assert = (condition, message) => {
     if (!condition) {

@@ -60,12 +60,6 @@ export type EncodedDisjunctiveProof = {
     readonly branches: readonly EncodedDisjunctiveBranch[];
 };
 
-/** Supported completeness policy for grouped per-option voter ballots. */
-export type BallotCompletenessPolicy = 'ALL_OPTIONS_REQUIRED';
-
-/** Supported score domain policy for the shipped score-voting workflow. */
-export type ScoreDomainPolicy = '1..10';
-
 /** Registration payload carrying ceremony auth and transport keys. */
 export type RegistrationPayload = BaseProtocolPayload & {
     readonly messageType: 'registration';

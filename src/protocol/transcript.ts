@@ -15,7 +15,7 @@ const isProtocolPhasePayload = (payload: ProtocolPayload): boolean =>
  * @param bigintByteLength Fixed byte width used for any bigint fields.
  * @returns Canonical transcript bytes.
  */
-export const canonicalTranscriptBytes = (
+const canonicalTranscriptBytes = (
     payloads: readonly ProtocolPayload[],
     bigintByteLength?: number,
 ): Uint8Array =>
@@ -50,7 +50,7 @@ export const hashProtocolTranscript = async (
  * @param phase Highest DKG phase included in the snapshot.
  * @returns Sorted unsigned payloads up to `phase`.
  */
-export const protocolPhaseSnapshotPayloads = (
+const protocolPhaseSnapshotPayloads = (
     payloads: readonly ProtocolPayload[],
     phase: number,
 ): readonly ProtocolPayload[] =>

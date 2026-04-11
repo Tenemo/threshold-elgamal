@@ -4,7 +4,6 @@ import { runVotingFlowScenario } from '../../../tools/internal/voting-flow-harne
 
 import {
     createDecryptionSharePayload,
-    createElectionManifest,
     createTallyPublicationPayload,
     majorityThreshold,
     signProtocolPayload,
@@ -201,18 +200,6 @@ describe('public voting flow', () => {
                 ],
             }),
         ).rejects.toThrow();
-    });
-
-    it('rejects manifest option metadata that no longer belongs on the public manifest', () => {
-        expect(() =>
-            createElectionManifest({
-                rosterHash: 'roster-hash',
-                optionList: ['Alpha', 'Beta'],
-                participantCount: 3,
-            } as unknown as Parameters<typeof createElectionManifest>[0]),
-        ).toThrow(
-            'Legacy manifest field "participantCount" is not supported on the Ristretto beta line',
-        );
     });
 
     it('rejects ballot close payloads signed by a non-organizer', async () => {

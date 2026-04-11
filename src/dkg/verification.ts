@@ -15,13 +15,11 @@ import type { ComplaintPayload } from '../protocol/types.js';
 import type { VerifiedProtocolSignatures } from '../protocol/verification.js';
 
 import {
+    assertSupportedCheckpointPayloads,
     isPhaseCheckpointPayload,
+    resolveVerifiedPhaseCheckpoint,
     type FinalizedPhaseCheckpoint,
 } from './checkpoints.js';
-import {
-    assertSupportedCheckpointPayloads,
-    resolveVerifiedPhaseCheckpoint,
-} from './verification-checkpoints.js';
 import {
     assertEncryptedShareCoverage,
     assertPedersenCommitmentCoverage,
