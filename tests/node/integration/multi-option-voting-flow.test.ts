@@ -4,7 +4,7 @@ import {
     runVotingFlowScenario,
     type CompletedVotingFlowResult,
     type VotingFlowResult,
-} from './voting-flow-harness.js';
+} from '../../../dev-support/voting-flow-harness.js';
 
 const scenarioTimeoutMs = 180_000;
 

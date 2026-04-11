@@ -1,3 +1,4 @@
+import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
 import {
     assertInSubgroup,
     assertPositiveParticipantIndex,
@@ -28,6 +29,8 @@ export const generatePedersenCommitments = (
     blindingPolynomial: readonly bigint[],
     group: CryptoGroup,
 ): PedersenCommitments => {
+    assertCanonicalRistrettoGroup(group, 'Pedersen commitment group');
+
     if (secretPolynomial.length !== blindingPolynomial.length) {
         throw new Error(
             'Secret and blinding polynomials must have the same degree',
@@ -97,6 +100,7 @@ export const verifyPedersenShare = (
     commitments: PedersenCommitments,
     group: CryptoGroup,
 ): boolean => {
+    assertCanonicalRistrettoGroup(group, 'Pedersen verification group');
     assertPositiveParticipantIndex(share.index);
     assertScalarInZq(share.secretValue, group.q);
     assertScalarInZq(share.blindingValue, group.q);

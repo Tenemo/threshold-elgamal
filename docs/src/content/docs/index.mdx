@@ -5,7 +5,7 @@ template: splash
 editUrl: false
 hero:
   title: Threshold ElGamal
-  tagline: Browser-native threshold ElGamal, proofs, and transcript-driven voting workflows for verifiable research prototypes.
+  tagline: Browser-native threshold ElGamal and transcript-driven voting workflows for verifiable research prototypes.
   actions:
     - text: Get started
       link: ./guides/getting-started/
@@ -48,7 +48,7 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 ## What this library is for
 
-`threshold-elgamal` is a browser-native TypeScript library for Ristretto255-based voting research prototypes. It ships additive ElGamal on the safe root package, dealer threshold sharing and decryption, VSS, proofs, typed protocol payloads, board-audit helpers, transport helpers, and log-driven DKG reducers.
+`threshold-elgamal` is a browser-native TypeScript library for Ristretto255-based voting research prototypes. It ships additive ElGamal on the safe root package, dealer threshold sharing and decryption, typed protocol payloads, board-audit helpers, transport helpers, and log-driven DKG reducers. Internal proof and VSS components support the shipped protocol and DKG workflows, but they are not separate supported import surfaces.
 
 ## What it does not try to do
 

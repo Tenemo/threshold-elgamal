@@ -4,23 +4,28 @@ import {
     runVotingFlowScenario,
     type CompletedVotingFlowResult,
     type VotingFlowResult,
-} from '../integration/voting-flow-harness.js';
+} from '../../../dev-support/voting-flow-harness.js';
 
+import { modQ } from '#core';
 import {
     deriveQualifiedParticipantIndices,
     deriveTranscriptVerificationKey,
     verifyDKGTranscript,
 } from '#dkg';
+import { createSchnorrProof, type ProofContext } from '#proofs';
 import {
     canonicalUnsignedPayloadBytes,
     type ComplaintResolutionPayload,
+    hashProtocolPhaseSnapshot,
     hashProtocolTranscript,
     type KeyDerivationConfirmation,
     type ProtocolPayload,
+    type RegistrationPayload,
     type SignedPayload,
 } from '#protocol';
+import { encodePoint, encodeScalar, multiplyBase } from '#src/core/ristretto';
+import { exportTransportPrivateKey } from '#src/transport/key-agreement';
 import { generateTransportKeyPair, signPayloadBytes } from '#transport';
-import { exportTransportPrivateKey } from '#transport-advanced';
 const expectCompleted = (
     result: VotingFlowResult,
     label: string,
@@ -50,13 +55,26 @@ const resignPayload = async (
         ),
     };
 };
+const deterministicDealerCoefficient = (
+    dealerIndex: number,
+    coefficientIndex: number,
+    q: bigint,
+): bigint =>
+    modQ(BigInt(dealerIndex * 97 + coefficientIndex * 31 + 7), q - 1n) + 1n;
 describe('DKG transcript verification', () => {
+    let allRequiredWithoutConfirmations: CompletedVotingFlowResult;
     let completed: CompletedVotingFlowResult;
     let completedWithoutConfirmations: CompletedVotingFlowResult;
     let withDealerFaultComplaint: CompletedVotingFlowResult;
     let withResolvedComplaint: CompletedVotingFlowResult;
     let withResolvedComplaintAndConfirmations: CompletedVotingFlowResult;
     beforeAll(async () => {
+        const allRequiredWithoutConfirmationsResult =
+            await runVotingFlowScenario({
+                participantCount: 3,
+                threshold: 3,
+                votes: [1n, 2n, 3n],
+            });
         const completedResult = await runVotingFlowScenario({
             participantCount: 3,
             votes: [1n, 2n, 3n],
@@ -103,6 +121,10 @@ describe('DKG transcript verification', () => {
                     },
                 ],
             });
+        allRequiredWithoutConfirmations = expectCompleted(
+            allRequiredWithoutConfirmationsResult,
+            'Expected the all-required fixture scenario to finish',
+        );
         completed = expectCompleted(
             completedResult,
             'Expected the completed fixture scenario to finish',
@@ -124,6 +146,17 @@ describe('DKG transcript verification', () => {
             'Expected the resolved complaint fixture scenario with confirmations to finish',
         );
     }, 180000);
+    it('verifies completed n-of-n transcripts', async () => {
+        const verified = await verifyDKGTranscript({
+            transcript: allRequiredWithoutConfirmations.dkgTranscript,
+            manifest: allRequiredWithoutConfirmations.manifest,
+            sessionId: allRequiredWithoutConfirmations.sessionId,
+        });
+        expect(verified.qual).toEqual([1, 2, 3]);
+        expect(verified.derivedPublicKey).toBe(
+            allRequiredWithoutConfirmations.jointPublicKey,
+        );
+    });
     it('verifies completed transcripts and derives the same ceremony material', async () => {
         const verified = await verifyDKGTranscript({
             transcript: completed.dkgTranscript,
@@ -253,6 +286,94 @@ describe('DKG transcript verification', () => {
             expect(verified.qual).toEqual([2, 3]);
         }
     });
+    it('rejects transcripts whose qualified Feldman commitments collapse below the claimed threshold', async () => {
+        const group = completedWithoutConfirmations.group;
+        const coefficientIndex =
+            completedWithoutConfirmations.manifest.reconstructionThreshold;
+        const collapsedScalar = modQ(
+            -(
+                deterministicDealerCoefficient(
+                    1,
+                    coefficientIndex - 1,
+                    group.q,
+                ) +
+                deterministicDealerCoefficient(2, coefficientIndex - 1, group.q)
+            ),
+            group.q,
+        );
+        const participantIndex = 3;
+        const context: ProofContext = {
+            protocolVersion:
+                completedWithoutConfirmations.manifest.protocolVersion,
+            suiteId: group.name,
+            manifestHash: completedWithoutConfirmations.manifestHash,
+            sessionId: completedWithoutConfirmations.sessionId,
+            label: 'feldman-coefficient-proof',
+            participantIndex,
+            coefficientIndex,
+        };
+        const proof = await createSchnorrProof(
+            collapsedScalar,
+            encodePoint(multiplyBase(collapsedScalar)),
+            group,
+            context,
+        );
+        const transcriptWithCollapsedDegree = await Promise.all(
+            completedWithoutConfirmations.dkgTranscript.map(async (entry) => {
+                if (
+                    entry.payload.messageType !== 'feldman-commitment' ||
+                    entry.payload.participantIndex !== participantIndex
+                ) {
+                    return entry;
+                }
+
+                const payload = entry.payload;
+
+                return resignPayload(completedWithoutConfirmations, {
+                    ...payload,
+                    commitments: payload.commitments.map((commitment, index) =>
+                        index === coefficientIndex - 1
+                            ? encodePoint(multiplyBase(collapsedScalar))
+                            : commitment,
+                    ),
+                    proofs: payload.proofs.map((proofRecord, index) =>
+                        index === coefficientIndex - 1
+                            ? {
+                                  coefficientIndex,
+                                  challenge: encodeScalar(proof.challenge),
+                                  response: encodeScalar(proof.response),
+                              }
+                            : proofRecord,
+                    ),
+                } as ProtocolPayload);
+            }),
+        );
+        const updatedPhase3Hash = await hashProtocolPhaseSnapshot(
+            transcriptWithCollapsedDegree.map((entry) => entry.payload),
+            3,
+        );
+        const adjustedTranscript = await Promise.all(
+            transcriptWithCollapsedDegree.map((entry) =>
+                entry.payload.messageType === 'phase-checkpoint' &&
+                entry.payload.checkpointPhase === 3
+                    ? resignPayload(completedWithoutConfirmations, {
+                          ...entry.payload,
+                          checkpointTranscriptHash: updatedPhase3Hash,
+                      } as ProtocolPayload)
+                    : Promise.resolve(entry),
+            ),
+        );
+
+        await expect(
+            verifyDKGTranscript({
+                transcript: adjustedTranscript,
+                manifest: completedWithoutConfirmations.manifest,
+                sessionId: completedWithoutConfirmations.sessionId,
+            }),
+        ).rejects.toThrow(
+            'Qualified Feldman commitments collapse below the claimed reconstruction threshold',
+        );
+    });
     it('rejects missing encrypted shares and missing Feldman commitments', async () => {
         const missingEnvelope = completed.dkgTranscript.filter(
             (entry, index) =>
@@ -380,6 +501,50 @@ describe('DKG transcript verification', () => {
         ).rejects.toThrow(
             'Payload session does not match the verification input',
         );
+    });
+    it('rejects malformed registered transport keys at the roster boundary', async () => {
+        const registrationIndex = completed.dkgTranscript.findIndex(
+            (entry) => entry.payload.messageType === 'registration',
+        );
+        if (registrationIndex < 0) {
+            throw new Error(
+                'Expected a registration payload in the transcript',
+            );
+        }
+
+        const cases = [
+            {
+                transportPublicKey: '00'.repeat(
+                    31,
+                ) as RegistrationPayload['transportPublicKey'],
+                error: 'Registration transport public key must be a supported raw X25519 or uncompressed P-256 public key',
+            },
+            {
+                transportPublicKey: '00'.repeat(
+                    32,
+                ) as RegistrationPayload['transportPublicKey'],
+                error: 'Registration transport public key must not be the all-zero X25519 public key',
+            },
+        ] as const;
+
+        for (const testCase of cases) {
+            const malformedRegistration = await resignPayload(completed, {
+                ...completed.dkgTranscript[registrationIndex].payload,
+                transportPublicKey: testCase.transportPublicKey,
+            } as ProtocolPayload);
+
+            await expect(
+                verifyDKGTranscript({
+                    transcript: completed.dkgTranscript.map((entry, index) =>
+                        index === registrationIndex
+                            ? malformedRegistration
+                            : entry,
+                    ),
+                    manifest: completed.manifest,
+                    sessionId: completed.sessionId,
+                }),
+            ).rejects.toThrow(testCase.error);
+        }
     });
     it('rejects forged complaint evidence and unmatched complaint resolutions', async () => {
         const complaintIndex = withResolvedComplaint.dkgTranscript.findIndex(

@@ -1,3 +1,5 @@
+import { p256 } from '@noble/curves/nist.js';
+
 import { toBufferSource } from '../core/bytes.js';
 import { InvalidPayloadError, getWebCrypto } from '../core/index.js';
 import { bytesToHex, hexToBytes } from '../serialize/index.js';
@@ -14,6 +16,11 @@ const X25519_BASE_POINT = (() => {
     bytes[0] = 9;
     return bytes;
 })();
+const X25519_PUBLIC_KEY_LENGTH = 32;
+const P256_PUBLIC_KEY_LENGTH = 65;
+
+const isAllZeroBytes = (bytes: Uint8Array): boolean =>
+    bytes.every((value) => value === 0);
 
 const base64UrlToBytes = (value: string): Uint8Array => {
     const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
@@ -44,6 +51,76 @@ const buildP256RawPublicKey = (jwk: JsonWebKey): Uint8Array => {
         ...base64UrlToBytes(jwk.x),
         ...base64UrlToBytes(jwk.y),
     ]);
+};
+
+const assertValidX25519PublicKeyBytes = (
+    publicKeyBytes: Uint8Array,
+    label: string,
+): void => {
+    if (publicKeyBytes.length !== X25519_PUBLIC_KEY_LENGTH) {
+        throw new InvalidPayloadError(
+            `${label} must be a supported raw X25519 public key`,
+        );
+    }
+
+    if (isAllZeroBytes(publicKeyBytes)) {
+        throw new InvalidPayloadError(
+            `${label} must not be the all-zero X25519 public key`,
+        );
+    }
+};
+
+const assertValidP256PublicKeyBytes = (
+    publicKeyBytes: Uint8Array,
+    label: string,
+): void => {
+    if (publicKeyBytes.length !== P256_PUBLIC_KEY_LENGTH) {
+        throw new InvalidPayloadError(
+            `${label} must be a supported uncompressed P-256 public key`,
+        );
+    }
+
+    if (publicKeyBytes[0] !== 0x04) {
+        throw new InvalidPayloadError(
+            `${label} must use the uncompressed P-256 point format`,
+        );
+    }
+
+    if (!p256.utils.isValidPublicKey(publicKeyBytes, false)) {
+        throw new InvalidPayloadError(`${label} is not a valid P-256 point`);
+    }
+};
+
+const assertSupportedRawTransportPublicKeyBytes = (
+    publicKeyBytes: Uint8Array,
+    label: string,
+): void => {
+    if (publicKeyBytes.length === X25519_PUBLIC_KEY_LENGTH) {
+        assertValidX25519PublicKeyBytes(publicKeyBytes, label);
+        return;
+    }
+
+    if (publicKeyBytes.length === P256_PUBLIC_KEY_LENGTH) {
+        assertValidP256PublicKeyBytes(publicKeyBytes, label);
+        return;
+    }
+
+    throw new InvalidPayloadError(
+        `${label} must be a supported raw X25519 or uncompressed P-256 public key`,
+    );
+};
+
+const assertTransportPublicKeyBytesForSuite = (
+    publicKeyBytes: Uint8Array,
+    suite: KeyAgreementSuite,
+    label: string,
+): void => {
+    if (suite === 'X25519') {
+        assertValidX25519PublicKeyBytes(publicKeyBytes, label);
+        return;
+    }
+
+    assertValidP256PublicKeyBytes(publicKeyBytes, label);
 };
 
 const algorithmForSuite = (
@@ -183,14 +260,39 @@ export const exportTransportPrivateKey = async (
 export const importTransportPublicKey = async (
     publicKeyHex: EncodedTransportPublicKey,
     suite: KeyAgreementSuite,
-): Promise<CryptoKey> =>
-    getWebCrypto().subtle.importKey(
+): Promise<CryptoKey> => {
+    const publicKeyBytes = hexToBytes(publicKeyHex);
+    assertTransportPublicKeyBytesForSuite(
+        publicKeyBytes,
+        suite,
+        'Transport public key',
+    );
+
+    return getWebCrypto().subtle.importKey(
         'raw',
-        toBufferSource(hexToBytes(publicKeyHex)),
+        toBufferSource(publicKeyBytes),
         algorithmForSuite(suite),
         true,
         [],
     );
+};
+
+export const assertSupportedTransportPublicKeyEncoding = (
+    publicKeyHex: EncodedTransportPublicKey,
+    label = 'Transport public key',
+): void => {
+    let publicKeyBytes: Uint8Array;
+
+    try {
+        publicKeyBytes = hexToBytes(publicKeyHex);
+    } catch {
+        throw new InvalidPayloadError(
+            `${label} must be a non-empty even-length hexadecimal string`,
+        );
+    }
+
+    assertSupportedRawTransportPublicKeyBytes(publicKeyBytes, label);
+};
 
 /**
  * Imports a transport private key from PKCS#8 hexadecimal bytes.

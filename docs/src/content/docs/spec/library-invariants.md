@@ -25,8 +25,9 @@ This page records the stable invariants of the current `1.0.0-beta` surface.
 ## Threshold and protocol rules
 
 - Dealer threshold helpers operate on indexed Shamir shares with 1-based participant indices.
-- Distributed DKG manifests enforce a strict-majority threshold range `floor(n / 2) + 1 <= k <= n - 1`.
+- Distributed DKG manifests accept any reconstruction threshold `1 <= k <= n` for ceremonies with `n >= 3`.
 - `minimumPublishedVoterCount` is a ballot-publication privacy floor and is separate from the DKG reconstruction threshold.
+- DKG transcript verification rejects qualified Feldman commitment aggregates whose highest-degree coefficient is the identity, so accepted transcripts preserve the claimed exact threshold.
 - The public threshold surface combines only additive ElGamal ciphertexts.
 - Safe aggregate decryption helpers require a verified aggregate context with a non-empty transcript hash.
 - Published tally verification recomputes one additive aggregate and one tally per option slot.

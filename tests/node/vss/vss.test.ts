@@ -6,6 +6,7 @@ import {
     InvalidGroupElementError,
     InvalidScalarError,
     ThresholdViolationError,
+    UnsupportedSuiteError,
     getGroup,
 } from '#core';
 import { deriveSharesFromPolynomial } from '#threshold';
@@ -145,5 +146,24 @@ describe('verifiable secret sharing', () => {
         expect(() =>
             deriveSharesFromPolynomial(secretPolynomial, 2.5, group.q),
         ).toThrow(InvalidScalarError);
+    });
+
+    it('rejects altered group definitions in low-level VSS helpers', () => {
+        const group = getGroup('ristretto255');
+        const alteredGroup = {
+            ...group,
+            h: group.g,
+        };
+        const polynomial = [12345n, 67890n, 13579n] as const;
+
+        expect(() =>
+            generateFeldmanCommitments(polynomial, {
+                ...group,
+                g: group.h,
+            }),
+        ).toThrow(UnsupportedSuiteError);
+        expect(() =>
+            generatePedersenCommitments(polynomial, polynomial, alteredGroup),
+        ).toThrow(UnsupportedSuiteError);
     });
 });

@@ -9,7 +9,7 @@ export type DKGError = {
     readonly message: string;
 };
 
-/** Supported strict-majority DKG input for a log-driven reducer. */
+/** Supported distributed DKG input for a log-driven reducer. */
 export type DKGConfigInput = {
     readonly sessionId: string;
     readonly manifestHash: string;

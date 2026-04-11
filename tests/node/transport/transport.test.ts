@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { exportTransportPrivateKey } from '#src/transport/key-agreement';
 import {
     assertNonZeroSharedSecret,
     decryptEnvelope,
@@ -8,6 +9,7 @@ import {
     exportTransportPublicKey,
     generateAuthKeyPair,
     generateTransportKeyPair,
+    importTransportPublicKey,
     resolveDealerChallengeFromPublicKey,
     importAuthPublicKey,
     resolveDealerChallenge,
@@ -15,7 +17,6 @@ import {
     verifyComplaintPrecondition,
     verifyPayloadSignature,
 } from '#transport';
-import { exportTransportPrivateKey } from '#transport-advanced';
 
 const corruptHexTailByte = (value: string): string => {
     const lastByte = Number.parseInt(value.slice(-2), 16);
@@ -368,5 +369,18 @@ describe('transport and authentication', () => {
 
     it('rejects all-zero shared secrets', () => {
         expect(() => assertNonZeroSharedSecret(new Uint8Array(32))).toThrow();
+    });
+
+    it('rejects the all-zero X25519 public key before key agreement', async () => {
+        await expect(
+            importTransportPublicKey(
+                '00'.repeat(
+                    32,
+                ) as import('#transport').EncodedTransportPublicKey,
+                'X25519',
+            ),
+        ).rejects.toThrow(
+            'Transport public key must not be the all-zero X25519 public key',
+        );
     });
 });

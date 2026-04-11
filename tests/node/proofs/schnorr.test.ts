@@ -71,6 +71,13 @@ describe('Schnorr proofs', () => {
                 sessionId: 'session-2',
             }),
         ).resolves.toBe(false);
+        await expect(
+            verifySchnorrProof(honestProof, statement, group, {
+                ...context,
+                participantIndex: undefined,
+                coefficientIndex: context.participantIndex,
+            }),
+        ).resolves.toBe(false);
     });
 
     it('is deterministic for a fixed injected nonce source', async () => {
@@ -123,6 +130,23 @@ describe('Schnorr proofs', () => {
                 statement,
                 group,
                 { ...context, coefficientIndex: 0 },
+                createDeterministicSource(),
+            ),
+        ).rejects.toBeInstanceOf(InvalidProofError);
+    });
+
+    it('rejects altered group definitions instead of silently accepting them', async () => {
+        const alteredGroup = {
+            ...group,
+            g: group.h,
+        };
+
+        await expect(
+            createSchnorrProof(
+                secret,
+                statement,
+                alteredGroup,
+                context,
                 createDeterministicSource(),
             ),
         ).rejects.toBeInstanceOf(InvalidProofError);

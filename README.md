@@ -29,7 +29,7 @@ The current beta line supports:
 - additive-only tallying
 - fixed score voting in `1..10`
 - per-option ballot slots with grouped voter-ballot verification
-- strict-majority threshold policies `floor(n / 2) + 1 <= k <= n - 1`
+- distributed reconstruction thresholds `1 <= k <= n` for ceremonies with `n >= 3`, including `n of n`
 - manifest acceptance, checkpoints, complaint handling, and `QUAL` reduction
 - mandatory local aggregate recomputation before decryption and tally acceptance
 - full board-audit and end-to-end ceremony verification helpers
@@ -104,7 +104,9 @@ For the shipped voting path, each score is in `1..10`. If you tally `50` ballots
 ## Protocol defaults
 
 - `reconstructionThreshold` is the real cryptographic threshold `k`.
+- Distributed manifests and GJKR transcripts accept any `1 <= k <= n` for `n >= 3`.
 - `minimumPublishedVoterCount` is the publication floor counted over distinct accepted voters.
+- `defaultMinimumPublishedVoterCount(k, n)` returns `min(k + 1, n)`.
 - `ballotCompletenessPolicy` is fixed to `ALL_OPTIONS_REQUIRED`.
 - `ballotFinality` is fixed to `first-valid`.
 - `scoreDomain` is fixed to `1..10`.
