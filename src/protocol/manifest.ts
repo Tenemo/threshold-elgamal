@@ -1,7 +1,8 @@
 import { bytesToHex } from '../core/bytes.js';
 import {
     InvalidPayloadError,
-    assertMajorityThreshold,
+    ThresholdViolationError,
+    assertThreshold,
     sha256,
     utf8ToBytes,
 } from '../core/index.js';
@@ -16,22 +17,40 @@ const assertNonEmptyString = (value: string, label: string): void => {
     }
 };
 
+const assertDistributedManifestThreshold = (
+    reconstructionThreshold: number,
+    participantCount: number,
+): number => {
+    assertThreshold(reconstructionThreshold, participantCount);
+
+    if (participantCount < 3) {
+        throw new ThresholdViolationError(
+            'Distributed threshold workflows require at least three participants',
+        );
+    }
+
+    return reconstructionThreshold;
+};
+
 /**
- * Returns the minimum publication floor compatible with the shipped
- * strict-majority threshold policy.
- *
- * The manifest threshold is the reconstruction threshold `k = t + 1`, so the
- * small-group privacy floor `t + 2` becomes `k + 1`.
+ * Returns the default publication floor compatible with the shipped
+ * distributed voting workflow.
  *
  * @param reconstructionThreshold Reconstruction threshold `k`.
  * @param participantCount Total participant count `n`.
- * @returns Minimum accepted ballot count `k + 1`.
+ * @returns Minimum accepted ballot count `min(k + 1, n)`.
  */
 export const defaultMinimumPublishedVoterCount = (
     reconstructionThreshold: number,
     participantCount: number,
 ): number =>
-    assertMajorityThreshold(reconstructionThreshold, participantCount) + 1;
+    Math.min(
+        assertDistributedManifestThreshold(
+            reconstructionThreshold,
+            participantCount,
+        ) + 1,
+        participantCount,
+    );
 
 /**
  * Validates the supported election-manifest invariants for the shipped
@@ -46,7 +65,7 @@ export const validateElectionManifest = (
 
     assertNonEmptyString(manifest.protocolVersion, 'Protocol version');
     assertNonEmptyString(manifest.rosterHash, 'Roster hash');
-    assertMajorityThreshold(
+    assertDistributedManifestThreshold(
         manifest.reconstructionThreshold,
         manifest.participantCount,
     );

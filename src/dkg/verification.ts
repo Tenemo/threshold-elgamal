@@ -1,6 +1,7 @@
 import {
     InvalidPayloadError,
-    assertMajorityThreshold,
+    ThresholdViolationError,
+    assertThreshold,
     getGroup,
     type CryptoGroup,
 } from '../core/index.js';
@@ -30,6 +31,7 @@ import {
     deriveQualifiedParticipantIndices,
 } from './verification-derivation.js';
 import {
+    assertAggregateFeldmanDegree,
     parseQualifiedFeldmanCommitments,
     verifyFeldmanProofs,
     verifyKeyDerivationConfirmations,
@@ -48,6 +50,21 @@ import type {
     VerifyDKGTranscriptInput,
     VerifiedDKGTranscript,
 } from './verification-types.js';
+
+const assertDistributedDkgThreshold = (
+    threshold: number,
+    participantCount: number,
+): number => {
+    assertThreshold(threshold, participantCount);
+
+    if (participantCount < 3) {
+        throw new ThresholdViolationError(
+            'Distributed threshold workflows require at least three participants',
+        );
+    }
+
+    return threshold;
+};
 
 export type {
     AcceptedShareContribution,
@@ -121,6 +138,7 @@ const finalizeVerifiedTranscript = async (
         input.manifest.protocolVersion,
         group,
     );
+    assertAggregateFeldmanDegree(feldmanCommitments);
 
     const normalizedFeldmanCommitments =
         normalizeFeldmanCommitments(feldmanCommitments);
@@ -322,7 +340,8 @@ const verifyCheckpointedDKGTranscript = async (
 
 /**
  * Verifies a DKG transcript, its signatures, Feldman extraction proofs,
- * accepted complaint outcomes, `qualHash`, and the announced joint public key.
+ * the exact claimed threshold degree, accepted complaint outcomes, `qualHash`,
+ * and the announced joint public key.
  *
  * @param input Transcript verification input.
  * @returns Verified transcript metadata and derived ceremony material.
@@ -337,7 +356,7 @@ export const verifyDKGTranscript = async (
         transcript: auditedTranscript.acceptedPayloads,
     };
     const group = getGroup('ristretto255');
-    const threshold = assertMajorityThreshold(
+    const threshold = assertDistributedDkgThreshold(
         normalizedInput.manifest.reconstructionThreshold,
         normalizedInput.manifest.participantCount,
     );

@@ -189,6 +189,21 @@ describe('dealer-based threshold decryption', () => {
             combineDecryptionShares(zeroCiphertext, [singleShare], 10n),
         ).toBe(0n);
     });
+    it('does not recover the correct plaintext for n-of-n with one share missing', () => {
+        const keySet = dealerKeyGen(4, 4);
+        const ciphertext = encryptAdditive(7n, keySet.publicKey, 7n);
+        const partialShares = keySet.shares
+            .slice(0, 3)
+            .map((share) => createDecryptionShare(ciphertext, share));
+
+        try {
+            expect(
+                combineDecryptionShares(ciphertext, partialShares, 7n),
+            ).not.toBe(7n);
+        } catch (error) {
+            expect(error).toBeInstanceOf(PlaintextDomainError);
+        }
+    });
     it('rejects duplicate decryption-share indices and blank verified aggregates', () => {
         const keySet = dealerKeyGen(2, 3);
         const ciphertext = encryptAdditive(5n, keySet.publicKey, 10n);

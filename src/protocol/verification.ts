@@ -9,6 +9,7 @@ import {
     importAuthPublicKey,
     verifyPayloadSignature,
 } from '../transport/auth.js';
+import { assertSupportedTransportPublicKeyEncoding } from '../transport/key-agreement.js';
 import type {
     EncodedAuthPublicKey,
     EncodedTransportPublicKey,
@@ -61,14 +62,23 @@ const assertNonEmptyHex = (value: string, label: string): void => {
  */
 export const canonicalizeRosterEntries = (
     rosterEntries: readonly RosterEntry[],
-): string =>
-    canonicalizeJson(
+): string => {
+    for (const entry of rosterEntries) {
+        assertNonEmptyHex(entry.authPublicKey, 'Roster auth public key');
+        assertSupportedTransportPublicKeyEncoding(
+            entry.transportPublicKey,
+            'Roster transport public key',
+        );
+    }
+
+    return canonicalizeJson(
         [...rosterEntries].sort(compareRosterEntries).map((entry) => ({
             participantIndex: entry.participantIndex,
             authPublicKey: entry.authPublicKey,
             transportPublicKey: entry.transportPublicKey,
         })),
     );
+};
 
 /**
  * Hashes a deterministic roster view with SHA-256.
@@ -154,6 +164,10 @@ export const verifySignedProtocolPayloads = async (
             'Registration auth public key',
         );
         assertNonEmptyHex(
+            registration.payload.transportPublicKey,
+            'Registration transport public key',
+        );
+        assertSupportedTransportPublicKeyEncoding(
             registration.payload.transportPublicKey,
             'Registration transport public key',
         );

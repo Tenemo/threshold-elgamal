@@ -87,6 +87,13 @@ describe('DLEQ proofs', () => {
                 context,
             ),
         ).resolves.toBe(false);
+        await expect(
+            verifyDLEQProof(proof, statement, group, {
+                ...context,
+                participantIndex: undefined,
+                coefficientIndex: context.participantIndex,
+            }),
+        ).resolves.toBe(false);
     });
     it('rejects malformed proof scalars and invalid contexts', async () => {
         const proof = await createDLEQProof(

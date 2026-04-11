@@ -1,3 +1,4 @@
+import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
 import {
     InvalidPayloadError,
     assertPositiveParticipantIndex,
@@ -21,6 +22,10 @@ const deriveTranscriptVerificationKeyInternal = (
     participantIndex: number,
     group: CryptoGroup,
 ): EncodedPoint => {
+    assertCanonicalRistrettoGroup(
+        group,
+        'Transcript verification-key derivation group',
+    );
     assertPositiveParticipantIndex(participantIndex);
     const point = BigInt(participantIndex);
 
@@ -107,9 +112,10 @@ export const deriveJointPublicKey = (
         readonly commitments: readonly EncodedPoint[];
     }[],
     group: CryptoGroup,
-): EncodedPoint => (
-    void group,
-    encodePoint(
+): EncodedPoint => {
+    assertCanonicalRistrettoGroup(group, 'Joint public-key derivation group');
+
+    return encodePoint(
         feldmanCommitments.reduce(
             (sum, entry) =>
                 pointAdd(
@@ -118,8 +124,8 @@ export const deriveJointPublicKey = (
                 ),
             RISTRETTO_ZERO,
         ),
-    )
-);
+    );
+};
 
 /**
  * Derives one participant's final share by summing accepted share

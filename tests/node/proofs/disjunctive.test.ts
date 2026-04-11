@@ -97,6 +97,20 @@ describe('disjunctive proofs', () => {
                 { ...context, voterIndex: 5 },
             ),
         ).resolves.toBe(false);
+        await expect(
+            verifyDisjunctiveProof(
+                proof,
+                ciphertext,
+                publicKey,
+                validValues,
+                group,
+                {
+                    ...context,
+                    voterIndex: undefined,
+                    optionIndex: context.voterIndex,
+                },
+            ),
+        ).resolves.toBe(false);
     });
     it('rejects garbled branch data and malformed proof contexts', async () => {
         const proof = await createDisjunctiveProof(

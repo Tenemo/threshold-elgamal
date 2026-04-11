@@ -18,19 +18,7 @@ type NavigationItem = {
 };
 
 const moduleOrder = new Map(
-    [
-        'threshold-elgamal',
-        'core',
-        'threshold',
-        'vss',
-        'proofs',
-        'protocol',
-        'transport',
-        'dkg',
-        'elgamal',
-        'serialize',
-        'runtime',
-    ].map((moduleName, index) => [moduleName, index + 1]),
+    publicApiDocs.map((entry, index) => [entry.moduleName, index + 1]),
 );
 
 const internalLinkPattern = /(!?\[[^\]]*])\(([^)#\s]+)(#[^)]+)?\)/g;

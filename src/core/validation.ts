@@ -1,11 +1,8 @@
 import {
-    assertAdditiveBound as assertSharedAdditiveBound,
-    assertAdditivePlaintext,
-} from './additive-validation.js';
-import {
     IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidScalarError,
+    PlaintextDomainError,
     ThresholdViolationError,
 } from './errors.js';
 import { decodePoint, RISTRETTO_ORDER } from './ristretto.js';
@@ -50,8 +47,13 @@ export const assertScalarInZq = (
  *
  * @throws {@link InvalidScalarError} When `bound` is outside `0..q-1`.
  */
-export const assertAdditiveBound = (bound: bigint, q: bigint): void =>
-    assertSharedAdditiveBound(bound, q);
+export const assertAdditiveBound = (bound: bigint, q: bigint): void => {
+    if (bound < 0n || bound >= q) {
+        throw new InvalidScalarError(
+            'Additive plaintext bound must be in the range 0..q-1',
+        );
+    }
+};
 
 /**
  * Validates the plaintext domain and caller-supplied bound for additive
@@ -64,7 +66,15 @@ export const assertPlaintextAdditive = (
     value: bigint,
     bound: bigint,
     q: bigint,
-): void => assertAdditivePlaintext(value, bound, q);
+): void => {
+    assertAdditiveBound(bound, q);
+
+    if (value < 0n || value > bound) {
+        throw new PlaintextDomainError(
+            `Additive mode requires plaintext values in the range 0..${bound}`,
+        );
+    }
+};
 
 /**
  * Validates threshold parameters for `k`-of-`n` protocols.
@@ -97,6 +107,10 @@ export const assertThreshold = (
 
 /**
  * Derives the minimum strict-majority threshold `floor(n / 2) + 1`.
+ *
+ * This helper remains available for callers that intentionally want a
+ * strict-majority policy. It is not the only distributed threshold policy
+ * supported by the shipped manifest and DKG workflows.
  */
 export const majorityThreshold = (participantCount: number): number => {
     if (!Number.isInteger(participantCount) || participantCount < 1) {
@@ -109,8 +123,11 @@ export const majorityThreshold = (participantCount: number): number => {
 };
 
 /**
- * Validates that the supplied threshold satisfies the shipped strict-majority
- * policy.
+ * Validates that the supplied threshold satisfies a strict-majority policy.
+ *
+ * This helper remains available for callers that intentionally want the older
+ * strict-majority range. The shipped manifest and DKG workflows now accept the
+ * broader distributed range `1 <= k <= n` for `n >= 3`.
  */
 export const assertMajorityThreshold = (
     threshold: number,

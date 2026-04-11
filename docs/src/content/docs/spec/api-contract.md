@@ -15,7 +15,8 @@ The current package draws a hard boundary between the shipped cryptographic libr
 - Serialization and deterministic encoding helpers
 - Runtime validation for public inputs, plaintext domains, and point validity
 - Dealer-based threshold sharing and additive threshold decryption
-- Standalone VSS, proof, protocol, transport, and log-driven DKG helpers
+- Protocol, transport, and log-driven DKG helpers on the supported root package
+- Internal VSS and proof components used by the shipped protocol and DKG workflows
 - Typed manifest, ballot, decryption-share, tally-publication, and restart payload schemas
 - Transcript-native complaint-resolution verification
 - Bulletin-board auditing that canonicalizes ordering, classifies duplicate slots, and exposes ceremony digests and fingerprints

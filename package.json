@@ -1,7 +1,7 @@
 {
     "name": "threshold-elgamal",
     "version": "1.0.0-beta.5",
-    "description": "A browser-native TypeScript ElGamal library for Ristretto255-based research prototypes, shipping additive ElGamal, threshold decryption, VSS, proofs, protocol helpers, board auditing, transport primitives, and log-driven DKG state machines.",
+    "description": "A browser-native TypeScript ElGamal library for Ristretto255-based research prototypes, shipping additive ElGamal, threshold decryption, protocol helpers, board auditing, transport primitives, and log-driven DKG state machines.",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MPL-2.0",
     "repository": {
@@ -15,7 +15,6 @@
     "packageManager": "pnpm@10.33.0",
     "scripts": {
         "lint": "eslint . -c eslint.config.js",
-        "eslint": "pnpm run lint",
         "eslint:fix": "eslint . --fix -c eslint.config.js",
         "typecheck": "tsc",
         "tsc": "pnpm run typecheck",
@@ -44,7 +43,6 @@
         "ci:release-smoke": "pnpm run ci && pnpm run verify:vectors && pnpm run verify:release-artifacts",
         "docs:api": "pnpm exec del-cli docs/src/content/docs/api/reference && tsx ./node_modules/typedoc/bin/typedoc --options typedoc.config.mjs && tsx ./typedoc/postprocess-site-docs.ts",
         "docs:dev": "pnpm run docs:api && astro dev --root docs",
-        "docs:build": "pnpm run docs:api && pnpm run docs:build:site",
         "docs:build:site": "pnpm exec del-cli docs/dist && astro build --root docs",
         "docs:preview": "astro preview --root docs",
         "verify:docs": "pnpm run docs:api && pnpm run verify:docs:generated",
@@ -101,7 +99,6 @@
         "#src/*": "./src/*.ts",
         "#threshold": "./src/threshold/index.ts",
         "#transport": "./src/transport/index.ts",
-        "#transport-advanced": "./src/transport/advanced.ts",
         "#vss": "./src/vss/index.ts",
         "#serialize": "./src/serialize/index.ts"
     },
