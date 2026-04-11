@@ -67,13 +67,13 @@ const sessionId = await deriveSessionId(
 
 The manifest no longer carries `suiteId`. The shipped suite is implicit and fixed to `ristretto255`.
 
-For three participants, both `2 of 3` and `3 of 3` are supported. Choosing `3 of 3` removes dropout tolerance entirely, so any unresolved complaint, missing checkpoint signer, or missing decryption share prevents completion.
+For three participants, both `2 of 3` and `3 of 3` are supported. Choosing `3 of 3` removes dropout tolerance entirely, so any unresolved complaint, missing checkpoint signer, or missing decryption share prevents completion. The verifier also rejects accepted transcripts whose qualified Feldman commitments collapse below the claimed threshold, but that hardening does not expand the classical GJKR proof boundary.
 
 ## Supported public workflow
 
 1. Freeze the participant roster and publish the manifest.
 2. Collect signed setup payloads for registrations, manifest acceptances, commitments, encrypted shares, complaints, resolutions, optional checkpoints, and key-derivation confirmations.
-3. Accept ballots only after verifying signatures and score proofs against the manifest and session context.
+3. Accept ballots only after verifying signatures and statement-bound score proofs against the manifest, session, voter slot, and option slot context.
 4. Recompute every published aggregate locally from the accepted ballots.
 5. Verify decryption shares and tally publications against the recomputed aggregates.
 6. Accept the result only if the DKG transcript, ballots, decryption shares, tallies, and board consistency all verify together.

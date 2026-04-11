@@ -16,9 +16,9 @@ export type ProofContext = {
     readonly participantIndex?: number;
     /** Optional coefficient index for Feldman coefficient proofs. */
     readonly coefficientIndex?: number;
-    /** Optional voter index for ballot proofs. */
+    /** Optional voter index for ballot proofs alongside the shared manifest/session binding. */
     readonly voterIndex?: number;
-    /** Optional ballot option index for ballot proofs. */
+    /** Optional ballot option index so ballot proofs stay bound to one option slot. */
     readonly optionIndex?: number;
 };
 

@@ -29,7 +29,7 @@ The current beta line supports:
 - additive-only tallying
 - fixed score voting in `1..10`
 - per-option ballot slots with grouped voter-ballot verification
-- distributed reconstruction thresholds `1 <= k <= n` for ceremonies with `n >= 3`, including `n of n`
+- distributed reconstruction thresholds `1 <= k <= n` for ceremonies with `n >= 3`, including `n of n`, with verifier-side checks that preserve the claimed exact threshold
 - manifest acceptance, checkpoints, complaint handling, and `QUAL` reduction
 - mandatory local aggregate recomputation before decryption and tally acceptance
 - full board-audit and end-to-end ceremony verification helpers
@@ -104,13 +104,15 @@ For the shipped voting path, each score is in `1..10`. If you tally `50` ballots
 ## Protocol defaults
 
 - `reconstructionThreshold` is the real cryptographic threshold `k`.
-- Distributed manifests and GJKR transcripts accept any `1 <= k <= n` for `n >= 3`.
+- Distributed manifests and GJKR transcripts accept any `1 <= k <= n` for `n >= 3`, including `n of n`.
+- Accepted DKG transcripts reject qualified Feldman commitment aggregates whose highest-degree term collapses to the identity, so the verifier preserves the claimed exact threshold.
 - `minimumPublishedVoterCount` is the publication floor counted over distinct accepted voters.
 - `defaultMinimumPublishedVoterCount(k, n)` returns `min(k + 1, n)`.
 - `ballotCompletenessPolicy` is fixed to `ALL_OPTIONS_REQUIRED`.
-- `ballotFinality` is fixed to `first-valid`.
+- `ballotFinality` is fixed to `first-valid`, so re-voting and hash-chained ballot replacement are outside the shipped workflow.
 - `scoreDomain` is fixed to `1..10`.
 - Accepted voters must submit exactly one ballot per option slot.
+- Ballot proofs use a statement-bound Fiat-Shamir transcript over the manifest/session context, voter slot, option slot, public key, ciphertext, and allowed plaintext set.
 - `protocolVersion` is application-supplied manifest data and is transcript-bound by the verifier and proof contexts.
 
 For end-to-end verification, the root package exposes `verifyElectionCeremonyDetailed(...)`. It verifies the manifest, registrations, acceptances, DKG transcript, local joint-key derivation, ballot proofs, locally recomputed per-option aggregates, decryption shares, tally publications, and board-consistency digests in one pass.

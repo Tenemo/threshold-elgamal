@@ -7,14 +7,14 @@ sidebar:
 
 `threshold-elgamal` is a hardened research prototype for browser-native Ristretto255 ElGamal workflows. It ships careful validation, additive-only root exports, threshold helpers, transport primitives, board-audit helpers, and log-driven DKG reducers. Internal proof and VSS components support those workflows, but they are not separate supported import surfaces. It is not audited production voting software.
 
-Its intended security boundary is still an honest-origin, honest-client, static-adversary model. The shipped distributed workflow now functionally accepts any reconstruction threshold `1 <= k <= n` for ceremonies with `n >= 3`, including `n of n`, but the library does not claim a new malicious-security proof beyond the classical GJKR literature for `t < n / 2`.
+Its intended security boundary is still an honest-origin, honest-client, static-adversary model. The shipped distributed workflow now functionally accepts any reconstruction threshold `1 <= k <= n` for ceremonies with `n >= 3`, including `n of n`. Transcript verification also rejects qualified Feldman commitment aggregates whose highest-degree term collapses to the identity, so accepted transcripts preserve the claimed exact threshold. The library still does not claim a new malicious-security proof beyond the classical GJKR literature for `t < n / 2`.
 
 ## What the library tries to guarantee
 
 - Group and scalar inputs are validated before secret-dependent operations.
 - The root package exposes additive ElGamal only.
 - Threshold decryption helpers carry participant indices explicitly and reject malformed or duplicate share sets.
-- Internal proof components bind protocol version, suite, manifest hash, session id, and any participant- or ballot-specific context you supply.
+- Internal proof components bind protocol version, suite, manifest hash, session id, domain-separation labels, participant or ballot slot indices, and the verified statement itself.
 - Transport envelopes authenticate context through HKDF info and AES-GCM additional data.
 - Checkpointed DKG transcripts close each setup phase on a threshold-supported snapshot hash, so clients can compare the same board view before progressing.
 - DKG transcript verification rejects qualified Feldman commitment sets whose aggregate highest-degree coefficient collapses to the identity, so the accepted transcript preserves the claimed exact reconstruction threshold.
@@ -28,6 +28,7 @@ Its intended security boundary is still an honest-origin, honest-client, static-
 - It does not prevent a modified client from misusing locally held threshold shares outside the supported workflow.
 - It does not provide coercion resistance, receipt-freeness, or cast-as-intended guarantees.
 - It does not replace application-level identity binding, bulletin-board storage, or deployment hardening.
+- It does not implement re-voting or hash-chained ballot replacement defenses because the shipped ballot workflow is fixed to `first-valid`.
 
 ## What callers still need to do
 

@@ -1,11 +1,6 @@
 import { bytesToHex } from '../core/bytes.js';
-import {
-    InvalidPayloadError,
-    ThresholdViolationError,
-    assertThreshold,
-    sha256,
-    utf8ToBytes,
-} from '../core/index.js';
+import { assertDistributedThreshold } from '../core/distributed-threshold.js';
+import { InvalidPayloadError, sha256, utf8ToBytes } from '../core/index.js';
 import { encodeForChallenge } from '../serialize/index.js';
 
 import { canonicalizeJson } from './canonical-json.js';
@@ -15,21 +10,6 @@ const assertNonEmptyString = (value: string, label: string): void => {
     if (value.trim() === '') {
         throw new InvalidPayloadError(`${label} must be a non-empty string`);
     }
-};
-
-const assertDistributedManifestThreshold = (
-    reconstructionThreshold: number,
-    participantCount: number,
-): number => {
-    assertThreshold(reconstructionThreshold, participantCount);
-
-    if (participantCount < 3) {
-        throw new ThresholdViolationError(
-            'Distributed threshold workflows require at least three participants',
-        );
-    }
-
-    return reconstructionThreshold;
 };
 
 /**
@@ -45,10 +25,8 @@ export const defaultMinimumPublishedVoterCount = (
     participantCount: number,
 ): number =>
     Math.min(
-        assertDistributedManifestThreshold(
-            reconstructionThreshold,
-            participantCount,
-        ) + 1,
+        assertDistributedThreshold(reconstructionThreshold, participantCount) +
+            1,
         participantCount,
     );
 
@@ -65,7 +43,7 @@ export const validateElectionManifest = (
 
     assertNonEmptyString(manifest.protocolVersion, 'Protocol version');
     assertNonEmptyString(manifest.rosterHash, 'Roster hash');
-    assertDistributedManifestThreshold(
+    assertDistributedThreshold(
         manifest.reconstructionThreshold,
         manifest.participantCount,
     );

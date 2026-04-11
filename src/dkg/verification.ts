@@ -1,7 +1,6 @@
+import { assertDistributedThreshold } from '../core/distributed-threshold.js';
 import {
     InvalidPayloadError,
-    ThresholdViolationError,
-    assertThreshold,
     getGroup,
     type CryptoGroup,
 } from '../core/index.js';
@@ -50,21 +49,6 @@ import type {
     VerifyDKGTranscriptInput,
     VerifiedDKGTranscript,
 } from './verification-types.js';
-
-const assertDistributedDkgThreshold = (
-    threshold: number,
-    participantCount: number,
-): number => {
-    assertThreshold(threshold, participantCount);
-
-    if (participantCount < 3) {
-        throw new ThresholdViolationError(
-            'Distributed threshold workflows require at least three participants',
-        );
-    }
-
-    return threshold;
-};
 
 export type {
     AcceptedShareContribution,
@@ -356,7 +340,7 @@ export const verifyDKGTranscript = async (
         transcript: auditedTranscript.acceptedPayloads,
     };
     const group = getGroup('ristretto255');
-    const threshold = assertDistributedDkgThreshold(
+    const threshold = assertDistributedThreshold(
         normalizedInput.manifest.reconstructionThreshold,
         normalizedInput.manifest.participantCount,
     );
