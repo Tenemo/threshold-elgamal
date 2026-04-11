@@ -61,7 +61,7 @@ const assertNonEmptyHex = (value: string, label: string): void => {
  * @param rosterEntries Deterministic roster entries.
  * @returns Canonical JSON roster string.
  */
-export const canonicalizeRosterEntries = (
+const canonicalizeRosterEntries = (
     rosterEntries: readonly RosterEntry[],
 ): string => {
     for (const entry of rosterEntries) {

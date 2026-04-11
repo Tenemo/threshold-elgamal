@@ -3,7 +3,6 @@ import { InvalidPayloadError } from '../core/index.js';
 import {
     verifyAndAggregateBallotsByOption,
     type BallotTranscriptEntry,
-    type VerifiedBallotAggregation,
     type VerifiedOptionBallotAggregation,
 } from './ballots.js';
 import { auditSignedPayloads } from './board-audit.js';
@@ -11,15 +10,11 @@ import type { BallotSubmissionPayload } from './types.js';
 import { decodeCiphertext, decodeDisjunctiveProof } from './voting-codecs.js';
 import {
     assertPhase,
-    assertSingleOptionManifest,
     assertValidOptionIndex,
     buildVotingManifestContext,
     BALLOT_SUBMISSION_PHASE,
 } from './voting-shared.js';
-import type {
-    VerifyBallotSubmissionPayloadsByOptionInput,
-    VerifyBallotSubmissionPayloadsInput,
-} from './voting-types.js';
+import type { VerifyBallotSubmissionPayloadsByOptionInput } from './voting-types.js';
 
 const decodeBallotPayload = (
     payload: BallotSubmissionPayload,
@@ -82,31 +77,4 @@ export const verifyBallotSubmissionPayloadsByOption = async (
         sessionId: context.sessionId,
         optionCount: context.optionCount,
     });
-};
-
-/**
- * Verifies typed ballot-submission payloads and recomputes the aggregate tally
- * ciphertext for a single-option manifest.
- *
- * @param input Typed ballot verification input.
- * @returns Verified additive ballot aggregation.
- */
-export const verifyBallotSubmissionPayloads = async (
-    input: VerifyBallotSubmissionPayloadsInput,
-): Promise<VerifiedBallotAggregation> => {
-    const context = await buildVotingManifestContext(
-        input.manifest,
-        input.sessionId,
-    );
-    assertSingleOptionManifest(
-        context.manifest,
-        'verifyBallotSubmissionPayloads',
-    );
-
-    const aggregations = await verifyBallotSubmissionPayloadsByOption({
-        ...input,
-        manifest: context.manifest,
-    });
-
-    return aggregations[0];
 };

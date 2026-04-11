@@ -19,7 +19,6 @@ import {
     PlaintextDomainError,
     ThresholdViolationError,
 } from '#core';
-import { assertDistributedThreshold } from '#src/core/distributed-threshold';
 import { encodePoint, RISTRETTO_ZERO } from '#src/core/ristretto';
 
 describe('core validation', () => {
@@ -112,12 +111,12 @@ describe('core validation', () => {
     });
 
     it('accepts the shipped distributed threshold range and centralizes the ceremony-size guard', () => {
-        expect(() => assertDistributedThreshold(2, 3)).not.toThrow();
-        expect(() => assertDistributedThreshold(3, 5)).not.toThrow();
-        expect(() => assertDistributedThreshold(0, 5)).toThrow(
+        expect(() => assertMajorityThreshold(2, 3)).not.toThrow();
+        expect(() => assertMajorityThreshold(3, 5)).not.toThrow();
+        expect(() => assertMajorityThreshold(0, 5)).toThrow(
             'Threshold 0 must satisfy 1 <= k <= n (n = 5)',
         );
-        expect(() => assertDistributedThreshold(2, 2)).toThrow(
+        expect(() => assertMajorityThreshold(2, 2)).toThrow(
             'Distributed threshold workflows require at least three participants',
         );
     });

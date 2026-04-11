@@ -1,5 +1,7 @@
-import { assertDistributedThreshold } from '../core/distributed-threshold.js';
-import { assertValidParticipantIndex } from '../core/index.js';
+import {
+    assertMajorityThreshold,
+    assertValidParticipantIndex,
+} from '../core/index.js';
 import type {
     ComplaintPayload,
     ComplaintResolutionPayload,
@@ -98,7 +100,7 @@ const complaintResolutionsFromTranscript = (
         .map((item) => item.payload);
 
 export const createMajorityDkgState = (config: DKGConfigInput): DKGState => {
-    assertDistributedThreshold(config.threshold, config.participantCount);
+    assertMajorityThreshold(config.threshold, config.participantCount);
 
     return createBaseState(config);
 };

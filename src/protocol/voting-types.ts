@@ -65,17 +65,6 @@ export type VerifyDecryptionSharePayloadsByOptionInput = {
     readonly sessionId: string;
 };
 
-/** Input bundle for verifying one published tally. */
-export type VerifyPublishedVotingResultInput = {
-    readonly manifest: ElectionManifest;
-    readonly sessionId: string;
-    readonly dkgTranscript: readonly SignedPayload[];
-    readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
-    readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
-    readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
-    readonly tallyPublication?: SignedPayload<TallyPublicationPayload>;
-};
-
 /** Input bundle for verifying one full published tally set across all options. */
 export type VerifyPublishedVotingResultsInput = {
     readonly manifest: ElectionManifest;
@@ -92,23 +81,5 @@ export type VerifiedPublishedOptionVotingResult = {
     readonly optionIndex: number;
     readonly ballots: VerifiedOptionBallotAggregation;
     readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
-    readonly tally: bigint;
-};
-
-/** Verified published tallies and reusable transcript sub-results. */
-export type VerifiedPublishedVotingResults = {
-    readonly countedParticipantIndices: readonly number[];
-    readonly dkg: VerifiedDKGTranscript;
-    readonly excludedParticipantIndices: readonly number[];
-    readonly options: readonly VerifiedPublishedOptionVotingResult[];
-};
-
-/** Verified published tally and all of its reusable sub-results. */
-export type VerifiedPublishedVotingResult = {
-    readonly countedParticipantIndices: readonly number[];
-    readonly dkg: VerifiedDKGTranscript;
-    readonly ballots: VerifiedBallotAggregation;
-    readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
-    readonly excludedParticipantIndices: readonly number[];
     readonly tally: bigint;
 };

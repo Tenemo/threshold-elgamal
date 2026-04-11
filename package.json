@@ -95,7 +95,6 @@
         "#elgamal": "./src/elgamal/index.ts",
         "#proofs": "./src/proofs/index.ts",
         "#protocol": "./src/protocol/index.ts",
-        "#runtime": "./src/runtime/index.ts",
         "#src/*": "./src/*.ts",
         "#threshold": "./src/threshold/index.ts",
         "#transport": "./src/transport/index.ts",

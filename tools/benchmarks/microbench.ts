@@ -1,6 +1,6 @@
 import { performance } from 'node:perf_hooks';
 
-import { fixedBaseModPow, getGroup, utf8ToBytes } from '#core';
+import { getGroup, utf8ToBytes } from '#core';
 import {
     generateParametersWithPrivateKey,
     encryptAdditiveWithRandomness,
@@ -96,9 +96,6 @@ const main = async (): Promise<void> => {
         envelopeContext,
     );
     const rows = await Promise.all([
-        measure('fixedBaseModPow', 250, () => {
-            fixedBaseModPow(5n, 123456n, 97n);
-        }),
         measure('createSchnorrProof', 40, async () => {
             await createSchnorrProof(
                 77n,
