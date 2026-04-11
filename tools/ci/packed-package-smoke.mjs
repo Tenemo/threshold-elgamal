@@ -1,4 +1,4 @@
-import { runVotingFlowScenario } from './support/voting-flow-harness.mjs';
+import { runVotingFlowScenario } from './voting-flow-harness.mjs';
 
 const assert = (condition, message) => {
     if (!condition) {

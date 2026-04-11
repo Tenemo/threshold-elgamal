@@ -56,8 +56,7 @@ const runPackageManager = (args: readonly string[], cwd: string): void => {
 const transpileVotingFlowHarness = async (
     consumerDirectory: string,
 ): Promise<void> => {
-    const sourcePath = join(repoRoot, 'dev-support/voting-flow-harness.ts');
-    const supportDirectory = join(consumerDirectory, 'support');
+    const sourcePath = join(repoRoot, 'tools/internal/voting-flow-harness.ts');
     const source = await readFile(sourcePath, 'utf8');
     const transpiled = ts.transpileModule(source, {
         compilerOptions: {
@@ -67,9 +66,8 @@ const transpileVotingFlowHarness = async (
         fileName: sourcePath,
     });
 
-    await mkdir(supportDirectory, { recursive: true });
     await writeFile(
-        join(supportDirectory, 'voting-flow-harness.mjs'),
+        join(consumerDirectory, 'voting-flow-harness.mjs'),
         transpiled.outputText,
         'utf8',
     );

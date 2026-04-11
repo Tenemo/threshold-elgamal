@@ -36,7 +36,7 @@ const sentenceCaseReplacements: readonly (readonly [RegExp, string])[] = [
     [/\bIndex Signatures\b/g, 'Index signatures'],
     [/\bIndex Signature\b/g, 'Index signature'],
     [/\bDefault Value\b/g, 'Default value'],
-    [/\bDefined In:\b/g, 'Defined in:'],
+    [/\bDefined In:(?=\s|$)/g, 'Defined in:'],
     [/\bImplementation Of\b/g, 'Implementation of'],
     [/\bImplemented By\b/g, 'Implemented by'],
     [/\bInherited From\b/g, 'Inherited from'],

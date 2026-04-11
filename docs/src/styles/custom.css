@@ -170,18 +170,16 @@
     }
 
     @media (min-width: 72rem) {
-        :global([data-has-sidebar][data-has-toc]) .right-sidebar-container {
+        [data-has-sidebar][data-has-toc] .right-sidebar-container {
             width: var(--sl-sidebar-width);
             flex: 0 0 var(--sl-sidebar-width);
         }
 
-        :global([data-has-sidebar][data-has-toc]) .main-pane {
+        [data-has-sidebar][data-has-toc] .main-pane {
             width: calc(100% - var(--sl-sidebar-width));
         }
 
-        :global([data-has-sidebar][data-has-toc])
-            .content-panel
-            .sl-container {
+        [data-has-sidebar][data-has-toc] .content-panel .sl-container {
             margin-inline: auto;
         }
     }

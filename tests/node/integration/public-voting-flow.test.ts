@@ -9,7 +9,7 @@ import {
 
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { runVotingFlowScenario } from '../../../dev-support/voting-flow-harness.js';
+import { runVotingFlowScenario } from '../../../tools/internal/voting-flow-harness.js';
 
 const fixtureTimeoutMs = 240_000;
 
