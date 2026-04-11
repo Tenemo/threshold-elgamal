@@ -7,12 +7,6 @@ import type { ElectionManifest } from './types.js';
 
 /** Fixed transcript version string for the shipped beta protocol. */
 export const SHIPPED_PROTOCOL_VERSION = 'v1';
-/** Fixed score domain identifier for the shipped score-voting workflow. */
-export const SHIPPED_SCORE_DOMAIN = '1..10';
-/** Fixed ballot-completeness policy for the shipped workflow. */
-export const SHIPPED_BALLOT_COMPLETENESS = 'ALL_OPTIONS_REQUIRED';
-/** Fixed ballot-finality policy for the shipped workflow. */
-export const SHIPPED_BALLOT_FINALITY = 'first-valid';
 
 const assertNonEmptyString = (value: string, label: string): void => {
     if (value.trim() === '') {

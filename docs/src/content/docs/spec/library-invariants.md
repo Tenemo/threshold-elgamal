@@ -13,7 +13,7 @@ This page records the stable invariants of the current `1.0.0-beta` surface.
 - The built-in tally group is `ristretto255`.
 - The score domain is fixed to `1..10`.
 - The grouped ballot rule is fixed to complete ballots only.
-- The ballot finality rule is fixed to `first-valid`.
+- Conflicting same-slot ballots are treated as equivocation, while byte-identical replays stay idempotent.
 
 ## Manifest and threshold rules
 

@@ -224,7 +224,7 @@ export const createFeldmanCommitmentPayload = async (
                       challenge: proof.challenge,
                       response: proof.response,
                   }
-                : encodeCompactProof(proof, 32)),
+                : encodeCompactProof(proof)),
         })),
     };
 
@@ -259,10 +259,10 @@ export const createBallotSubmissionPayload = async (
         ...input,
         phase: BALLOT_SUBMISSION_PHASE,
         messageType: 'ballot-submission',
-        ciphertext: encodeCiphertext(input.ciphertext as ElgamalCiphertext, 32),
+        ciphertext: encodeCiphertext(input.ciphertext as ElgamalCiphertext),
         proof: isEncodedDisjunctiveProof(input.proof)
             ? input.proof
-            : encodeDisjunctiveProof(input.proof, 32),
+            : encodeDisjunctiveProof(input.proof),
     };
 
     return signProtocolPayload(privateKey, payload);
@@ -302,7 +302,7 @@ export const createDecryptionSharePayload = async (
         messageType: 'decryption-share',
         proof: isEncodedCompactProof(input.proof)
             ? input.proof
-            : encodeCompactProof(input.proof, 32),
+            : encodeCompactProof(input.proof),
     };
 
     return signProtocolPayload(privateKey, payload);

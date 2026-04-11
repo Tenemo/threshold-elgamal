@@ -47,15 +47,6 @@ export type VerifiedOptionDecryptionShares = {
     readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
 };
 
-/** Input bundle for verifying typed decryption-share payloads. */
-export type VerifyDecryptionSharePayloadsInput = {
-    readonly aggregate: VerifiedBallotAggregation['aggregate'];
-    readonly dkg: VerifiedDKGTranscript;
-    readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
-    readonly manifest: ElectionManifest;
-    readonly sessionId: string;
-};
-
 /** Input bundle for verifying typed decryption-share payloads by option. */
 export type VerifyDecryptionSharePayloadsByOptionInput = {
     readonly aggregates: readonly OptionAggregateInput[];

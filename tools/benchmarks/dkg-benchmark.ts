@@ -1,7 +1,8 @@
 import { performance } from 'node:perf_hooks';
-import { verifyDKGTranscript } from 'threshold-elgamal';
 
 import { runVotingFlowScenario } from '../internal/voting-flow-harness.js';
+
+import { verifyDKGTranscript } from '#root';
 
 type BenchmarkRow = {
     readonly optionCount: number;

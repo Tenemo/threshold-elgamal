@@ -1,0 +1,70 @@
+---
+title: Production voting safety review
+description: A production-threat-model verdict for the shipped verifier, tests, and documented security boundary.
+sidebar:
+  order: 7
+---
+
+This review was verified against the repository state on `2026-04-11`.
+
+Short verdict:
+
+- The current integration flow verifies transcript-level correctness strongly.
+- It does not verify everything a production voting system needs from each voter’s perspective.
+- Following this implementation `1:1` is not enough to claim production-grade cryptographic safety.
+
+## Coverage matrix
+
+| Property | Status | Repo evidence | Why |
+| --- | --- | --- | --- |
+| DKG correctness | `covered` | `src/protocol/election-verification.ts`, `src/dkg/verification.ts`, `tests/node/integration/public-dkg-checkpoints.test.ts`, `tests/node/integration/public-voting-flow-adversarial.test.ts` | The verifier replays registrations, manifest publication and acceptance, Pedersen commitments, encrypted shares, complaints, QUAL reduction, Feldman proofs, key derivation, and checkpoint snapshots before trusting the joint key. This is aligned with the shipped GJKR transcript-verification goal. |
+| Ballot well-formedness | `covered` | `src/protocol/ballots.ts`, `src/protocol/voting-ballots.ts`, `tests/node/integration/public-voting-flow.test.ts`, `tests/node/integration/public-voting-flow-adversarial.test.ts` | Each counted slot must be unique, complete across all options, inside the fixed `1..10` score domain, and bound by a disjunctive proof to manifest, session, voter, and option context. |
+| Tally correctness | `covered` | `src/protocol/election-verification.ts`, `src/protocol/voting-decryption.ts`, `tests/node/integration/public-voting-flow.test.ts`, `tests/node/integration/public-voting-flow-adversarial.test.ts` | The verifier recomputes accepted ballot aggregates, verifies threshold decryption shares, recombines them locally, and rejects mismatched tally publications or mismatched decryption-share sets. |
+| Recorded as published | `partially covered` | `src/protocol/board-audit.ts`, `src/protocol/election-verification.ts`, `tests/node/integration/public-voting-flow-adversarial.test.ts` | Independent verifiers can detect equivocation and can replay the public board deterministically, but this still assumes the voter can retrieve the same public board and that the board is durably published. |
+| Counted as recorded | `covered` | `src/protocol/ballot-close.ts`, `src/protocol/election-verification.ts`, `tests/node/integration/public-voting-flow.test.ts` | The verifier proves which complete ballots were counted after `ballot-close` and recomputes the exact tallies from that counted subset. |
+| Cast as intended | `not covered` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly does not claim cast-as-intended against a compromised client, and the shipped tests do not provide a voter challenge or independent ballot-construction check. |
+| Ballot privacy under an active server | `partially covered` | `src/protocol/ballots.ts`, `src/protocol/election-verification.ts`, `docs/src/content/docs/guides/security-and-non-goals.md` | The public verifier checks zero-knowledge proofs and tally recomputation, but privacy still depends on honest client delivery, bulletin-board behavior, and operational controls outside the library. |
+| Coercion resistance | `explicitly out of scope` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly says it does not provide coercion resistance. |
+| Receipt-freeness | `explicitly out of scope` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly says it does not provide receipt-freeness. |
+| Identity binding | `not covered` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The library signs protocol payloads and freezes the registration roster, but binding real humans to that roster is delegated to the application. |
+| Bulletin-board integrity and availability | `not covered` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The verifier assumes access to the public transcript. It does not provide storage integrity, censorship resistance, ordering fairness, availability, or independent publication guarantees. |
+| RNG and nonce safety | `partially covered` | `src/proofs/disjunctive.ts`, `src/proofs/dleq.ts`, `src/proofs/nonces.ts`, `tests/node/proofs/disjunctive.test.ts`, `tests/node/proofs/dleq.test.ts`, `tests/guards/check-no-math-random.ts` | The repo uses hedged Fiat-Shamir nonce construction and guards against `Math.random`, but there is still no external audit of implementation quality or runtime entropy quality. |
+| Side-channel resistance | `explicitly out of scope` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly says JavaScript `bigint` execution is not made constant-time. |
+| Adaptive-adversary resilience | `not covered` | `docs/src/content/docs/guides/security-and-non-goals.md`, `src/dkg/verification.ts` | The shipped model is static-adversary only. The verifier does not claim the adaptive-security upgrades discussed in later threshold-crypto literature. |
+| CCA resistance | `explicitly out of scope` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly says it does not make ElGamal IND-CCA secure. |
+
+## Hard blockers
+
+- No voter-side cast-as-intended mechanism is shipped or tested. A verifier can prove that published ciphertexts and tallies are internally consistent, but it cannot prove that the browser encrypted the voter’s intended selections.
+- The documented threat model is `honest-origin, honest-client, static adversary`, which is materially weaker than a production Internet voting threat model.
+- The library does not solve identity binding, bulletin-board integrity, availability, or delivery hardening. Those are application and deployment requirements, not verifier details.
+- Remote voting coercion and receipt-freeness are explicitly outside scope.
+- The cryptographic core has not been presented here as an audited, formally composed production system. Passing tests is not a substitute for that.
+
+## Narrower claims that are defensible
+
+- Inside the shipped threat model, the verifier provides strong public evidence that the accepted transcript, counted ballot set, threshold decryption shares, and final tallies are mutually consistent.
+- Any voter or observer who obtains the same public transcript can rerun `verifyElectionCeremonyDetailed(...)` and check the same derived `qual`, counted voter set, transcript hashes, decryption participants, and tallies.
+- The current suite now exercises happy paths, checkpointed DKG, complaint-based dealer exclusion, replay-bound ballot proofs, replay-bound decryption-share proofs, tally-subset mismatches, and deterministic multi-verifier replays.
+
+## Why the production answer is still no
+
+The verifier gives universal transcript auditing, not a complete production voting system.
+
+That distinction matters because modern voting literature separates:
+
+- universal verifiability and tally correctness
+- ballot casting assurance or cast-as-intended
+- privacy and coercion properties under realistic deployment adversaries
+
+This repository covers the first category much better than the second and third.
+
+## Primary references
+
+- Gennaro, Jarecki, Krawczyk, and Rabin, [Secure distributed key generation for discrete-log based cryptosystems](https://research.ibm.com/publications/secure-distributed-key-generation-for-discrete-log-based-cryptosystems)
+- Cramer, Damgård, and Schoenmakers, [Proofs of partial knowledge and simplified design of witness hiding protocols](https://ir.cwi.nl/pub/5182/05182D.pdf)
+- Chaum and Pedersen, [Wallet databases with observers](https://chaum.com/wp-content/uploads/2021/12/Wallet_Databases.pdf)
+- Cramer and Shoup, [A practical public key cryptosystem provably secure against adaptive chosen ciphertext attack](https://public.dhe.ibm.com/software/security/keyworks/library/whitepapers/cs.pdf)
+- Bernhard, Cortier, Pereira, and others, [Adapting Helios for provable ballot privacy](https://link.springer.com/chapter/10.1007/978-3-642-23822-2_19)
+- Adida, de Marneffe, Pereira, and Quisquater, [Electing a university president using open-audit voting: analysis of real-world use of Helios](https://usenix.org/legacy/events/evtwote09/tech/full_papers/adida-helios.pdf)
+- Sandler, Derr, and Wallach, [VoteBox: a tamper-evident, verifiable electronic voting system](https://www.usenix.org/legacy/event/sec08/tech/full_papers/sandler/sandler_html/)

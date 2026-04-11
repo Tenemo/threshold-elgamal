@@ -1,9 +1,6 @@
-import {
-    type ProtocolMessageType,
-    type ProtocolPayload,
-} from 'threshold-elgamal';
-
 import { describe, expect, it } from 'vitest';
+
+import { type ProtocolMessageType, type ProtocolPayload } from '#root';
 
 type MessageTypeIsPublic<TMessageType extends string> =
     Extract<ProtocolMessageType, TMessageType> extends never ? false : true;

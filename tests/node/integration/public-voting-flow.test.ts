@@ -1,3 +1,7 @@
+import { beforeAll, describe, expect, it } from 'vitest';
+
+import { runVotingFlowScenario } from '../../../tools/internal/voting-flow-harness.js';
+
 import {
     createDecryptionSharePayload,
     createElectionManifest,
@@ -5,11 +9,7 @@ import {
     majorityThreshold,
     signProtocolPayload,
     verifyElectionCeremonyDetailed,
-} from 'threshold-elgamal';
-
-import { beforeAll, describe, expect, it } from 'vitest';
-
-import { runVotingFlowScenario } from '../../../tools/internal/voting-flow-harness.js';
+} from '#root';
 
 const fixtureTimeoutMs = 240_000;
 

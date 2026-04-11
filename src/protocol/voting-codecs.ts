@@ -1,4 +1,3 @@
-import { InvalidPayloadError } from '../core/errors.js';
 import { decodePoint, decodeScalar, encodeScalar } from '../core/ristretto.js';
 import type { ElgamalCiphertext } from '../elgamal/types.js';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types.js';
@@ -9,34 +8,18 @@ import type {
     EncodedDisjunctiveProof,
 } from './types.js';
 
-const PROTOCOL_BYTE_LENGTH = 32;
-
-const assertProtocolByteLength = (byteLength: number): void => {
-    if (!Number.isInteger(byteLength) || byteLength !== PROTOCOL_BYTE_LENGTH) {
-        throw new InvalidPayloadError(
-            `Voting codecs require a ${PROTOCOL_BYTE_LENGTH}-byte Ristretto encoding width`,
-        );
-    }
-};
-
 /**
  * Encodes an additive ciphertext into fixed-width protocol hex.
  *
  * @param ciphertext Ciphertext to encode.
- * @param byteLength Fixed group byte width.
  * @returns Protocol ciphertext encoding.
  */
 export const encodeCiphertext = (
     ciphertext: ElgamalCiphertext,
-    byteLength: number,
-): EncodedCiphertext => {
-    assertProtocolByteLength(byteLength);
-
-    return {
-        c1: ciphertext.c1,
-        c2: ciphertext.c2,
-    };
-};
+): EncodedCiphertext => ({
+    c1: ciphertext.c1,
+    c2: ciphertext.c2,
+});
 
 /**
  * Decodes a protocol ciphertext into bigint components.
@@ -60,20 +43,15 @@ export const decodeCiphertext = (
  * Encodes a compact challenge-response proof into fixed-width protocol hex.
  *
  * @param proof Compact proof to encode.
- * @param byteLength Fixed group byte width.
  * @returns Protocol proof encoding.
  */
-export const encodeCompactProof = (
-    proof: { readonly challenge: bigint; readonly response: bigint },
-    byteLength: number,
-): EncodedCompactProof => {
-    assertProtocolByteLength(byteLength);
-
-    return {
-        challenge: encodeScalar(proof.challenge),
-        response: encodeScalar(proof.response),
-    };
-};
+export const encodeCompactProof = (proof: {
+    readonly challenge: bigint;
+    readonly response: bigint;
+}): EncodedCompactProof => ({
+    challenge: encodeScalar(proof.challenge),
+    response: encodeScalar(proof.response),
+});
 
 /**
  * Decodes a protocol compact proof into bigint fields.
@@ -90,21 +68,13 @@ export const decodeCompactProof = (proof: EncodedCompactProof): DLEQProof => ({
  * Encodes a disjunctive proof into fixed-width protocol hex.
  *
  * @param proof Disjunctive proof to encode.
- * @param byteLength Fixed group byte width.
  * @returns Protocol proof encoding.
  */
 export const encodeDisjunctiveProof = (
     proof: DisjunctiveProof,
-    byteLength: number,
-): EncodedDisjunctiveProof => {
-    assertProtocolByteLength(byteLength);
-
-    return {
-        branches: proof.branches.map((branch) =>
-            encodeCompactProof(branch, byteLength),
-        ),
-    };
-};
+): EncodedDisjunctiveProof => ({
+    branches: proof.branches.map((branch) => encodeCompactProof(branch)),
+});
 
 /**
  * Decodes a protocol disjunctive proof into bigint fields.

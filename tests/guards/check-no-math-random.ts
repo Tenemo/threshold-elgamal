@@ -8,7 +8,7 @@ const rootDir = path.resolve(
     '..',
     '..',
 );
-const sourceDirectories = ['src/core', 'src/elgamal', 'src/serialize'];
+const sourceDirectories = ['src', 'tools/internal'];
 const offenders: string[] = [];
 
 const walk = async (directory: string): Promise<void> => {
@@ -44,11 +44,11 @@ for (const relativeDirectory of sourceDirectories) {
 }
 
 if (offenders.length > 0) {
-    console.error('Math.random() is forbidden in source directories:');
+    console.error('Math.random() is forbidden in checked source directories:');
     for (const offender of offenders) {
         console.error(`- ${offender}`);
     }
     exit(1);
 }
 
-console.log('No Math.random() usage found in source directories.');
+console.log('No Math.random() usage found in checked source directories.');

@@ -79,6 +79,22 @@ const encryptAdditiveWithValidatedInputs = (
 };
 
 /**
+ * Adds two additive-mode ciphertexts component-wise.
+ */
+export const addEncryptedValues = (
+    left: ElgamalCiphertext,
+    right: ElgamalCiphertext,
+): ElgamalCiphertext => {
+    assertValidAdditiveCiphertext(left);
+    assertValidAdditiveCiphertext(right);
+
+    return {
+        c1: encodePoint(pointAdd(decodePoint(left.c1), decodePoint(right.c1))),
+        c2: encodePoint(pointAdd(decodePoint(left.c2), decodePoint(right.c2))),
+    };
+};
+
+/**
  * Encrypts an additive plaintext with caller-supplied randomness.
  */
 export const encryptAdditiveWithRandomness = (

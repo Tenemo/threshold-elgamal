@@ -65,10 +65,16 @@ const transpileVotingFlowHarness = async (
         },
         fileName: sourcePath,
     });
+    const transpiledOutput = String(transpiled.outputText);
+    const packagedHarness = transpiledOutput
+        .split("from '#root'")
+        .join("from 'threshold-elgamal'")
+        .split('from "#root"')
+        .join('from "threshold-elgamal"');
 
     await writeFile(
         join(consumerDirectory, 'voting-flow-harness.mjs'),
-        transpiled.outputText,
+        packagedHarness,
         'utf8',
     );
 };

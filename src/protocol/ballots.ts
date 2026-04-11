@@ -7,15 +7,13 @@ import {
     type EncodedPoint,
 } from '../core/index.js';
 import { encodePoint, RISTRETTO_ZERO } from '../core/ristretto.js';
-import { addEncryptedValues } from '../elgamal/ciphertext.js';
+import { addEncryptedValues } from '../elgamal/additive.js';
 import type { ElgamalCiphertext } from '../elgamal/types.js';
 import { verifyDisjunctiveProof } from '../proofs/disjunctive.js';
 import type { DisjunctiveProof, ProofContext } from '../proofs/types.js';
 import { bytesToHex } from '../serialize/index.js';
-import {
-    createVerifiedAggregateCiphertext,
-    type VerifiedAggregateCiphertext,
-} from '../threshold/types.js';
+import { createVerifiedAggregateCiphertext } from '../threshold/types.js';
+import type { VerifiedAggregateCiphertext } from '../threshold/types.js';
 
 import { canonicalizeJson } from './canonical-json.js';
 

@@ -1,11 +1,11 @@
+import { describe, expect, it } from 'vitest';
+
 import {
     canonicalizeElectionManifest,
     createElectionManifest,
     majorityThreshold,
     type ElectionManifest,
-} from 'threshold-elgamal';
-
-import { describe, expect, it } from 'vitest';
+} from '#root';
 
 describe('public manifest', () => {
     it('creates the minimal shipped manifest shape', () => {

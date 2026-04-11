@@ -1,4 +1,5 @@
 import { TextEncoder } from 'node:util';
+
 import {
     combineDecryptionShares,
     createBallotClosePayload,
@@ -12,9 +13,11 @@ import {
     createKeyDerivationConfirmationPayload,
     createManifestAcceptancePayload,
     createManifestPublicationPayload,
+    createPhaseCheckpointPayload,
     createPedersenCommitmentPayload,
     createRegistrationPayload,
     createSchnorrProof,
+    signProtocolPayload,
     createTallyPublicationPayload,
     createVerifiedDecryptionShare,
     deriveJointPublicKey,
@@ -47,13 +50,15 @@ import {
     type EncodedAuthPublicKey,
     type EncodedPoint,
     type EncodedTransportPublicKey,
+    type EncryptedDualSharePayload,
     type KeyDerivationConfirmation,
     type ProofContext,
     type SignedPayload,
     type TallyPublicationPayload,
     type TransportKeyPair,
     generateTransportKeyPair,
-} from 'threshold-elgamal';
+} from '#root';
+import type { EncodedTransportPrivateKey } from '#src/transport/types';
 
 export type VotingFlowParticipant = {
     readonly auth: CryptoKeyPair;
@@ -63,7 +68,24 @@ export type VotingFlowParticipant = {
     readonly transportPublicKey: EncodedTransportPublicKey;
 };
 
+type DkgComplaintScenario = {
+    readonly complainantIndex: number;
+    readonly dealerIndex: number;
+    readonly outcome?: 'accepted' | 'rejected';
+    readonly reason?:
+        | 'aes-gcm-failure'
+        | 'malformed-plaintext'
+        | 'pedersen-failure';
+};
+
+type DealerEncryptedShareEntry = {
+    readonly ephemeralPrivateKey: EncodedTransportPrivateKey;
+    readonly payload: SignedPayload<EncryptedDualSharePayload>;
+    readonly recipientIndex: number;
+};
+
 type DealerArtifacts = {
+    readonly encryptedShareEntries: readonly DealerEncryptedShareEntry[];
     readonly encryptedSharePayloads: readonly SignedPayload[];
     readonly feldmanCommitments: readonly EncodedPoint[];
     readonly feldmanPayload: SignedPayload;
@@ -73,6 +95,8 @@ type DealerArtifacts = {
 
 export type VotingFlowScenario = {
     readonly closeParticipantIndices?: readonly number[];
+    readonly dkgComplaint?: DkgComplaintScenario;
+    readonly includePhaseCheckpoints?: boolean;
     readonly optionCount?: number;
     readonly optionList?: readonly string[];
     readonly participantCount: number;
@@ -97,6 +121,7 @@ export type CompletedVotingFlowResult = {
     readonly manifestHash: string;
     readonly participants: readonly VotingFlowParticipant[];
     readonly participantVotes: readonly (readonly bigint[])[];
+    readonly qualifiedParticipantIndices: readonly number[];
     readonly rosterHash: string;
     readonly sessionId: string;
     readonly tallyPublications: readonly SignedPayload<TallyPublicationPayload>[];
@@ -111,6 +136,13 @@ const assert = (condition: boolean, message: string): void => {
     if (!condition) {
         throw new Error(message);
     }
+};
+
+const corruptHexTailByte = (value: string): string => {
+    const lastByte = Number.parseInt(value.slice(-2), 16);
+    const corruptedByte = (lastByte ^ 0x01).toString(16).padStart(2, '0');
+
+    return `${value.slice(0, -2)}${corruptedByte}`;
 };
 
 const coefficientValue = (
@@ -257,6 +289,7 @@ const buildDealerArtifacts = async (
     manifestHash: string,
     rosterHash: string,
     threshold: number,
+    complaintScenario?: DkgComplaintScenario,
 ): Promise<DealerArtifacts> => {
     const secretPolynomial = buildPolynomial(
         participant.index,
@@ -330,7 +363,7 @@ const buildDealerArtifacts = async (
             proofs,
         },
     );
-    const encryptedSharePayloads = await Promise.all(
+    const encryptedShareEntries = await Promise.all(
         participants
             .filter((recipient) => recipient.index !== participant.index)
             .map(async (recipient) => {
@@ -341,7 +374,7 @@ const buildDealerArtifacts = async (
                         RISTRETTO_GROUP.byteLength,
                     ),
                 );
-                const { envelope } = await encryptEnvelope(
+                const { envelope, ephemeralPrivateKey } = await encryptEnvelope(
                     plaintext,
                     recipient.transportPublicKey,
                     {
@@ -356,31 +389,104 @@ const buildDealerArtifacts = async (
                         suite: recipient.transport.suite,
                     },
                 );
+                const publishedEnvelope =
+                    complaintScenario?.outcome === 'accepted' &&
+                    complaintScenario.dealerIndex === participant.index &&
+                    complaintScenario.complainantIndex === recipient.index
+                        ? {
+                              ...envelope,
+                              ciphertext: corruptHexTailByte(
+                                  envelope.ciphertext,
+                              ),
+                          }
+                        : envelope;
 
-                return createEncryptedDualSharePayload(
-                    participant.auth.privateKey,
-                    {
-                        sessionId,
-                        manifestHash,
-                        participantIndex: participant.index,
-                        recipientIndex: recipient.index,
-                        envelopeId: envelope.envelopeId,
-                        suite: envelope.suite,
-                        ephemeralPublicKey: envelope.ephemeralPublicKey,
-                        iv: envelope.iv,
-                        ciphertext: envelope.ciphertext,
-                    },
-                );
+                return {
+                    ephemeralPrivateKey,
+                    payload: await createEncryptedDualSharePayload(
+                        participant.auth.privateKey,
+                        {
+                            sessionId,
+                            manifestHash,
+                            participantIndex: participant.index,
+                            recipientIndex: recipient.index,
+                            envelopeId: publishedEnvelope.envelopeId,
+                            suite: publishedEnvelope.suite,
+                            ephemeralPublicKey:
+                                publishedEnvelope.ephemeralPublicKey,
+                            iv: publishedEnvelope.iv,
+                            ciphertext: publishedEnvelope.ciphertext,
+                        },
+                    ),
+                    recipientIndex: recipient.index,
+                } satisfies DealerEncryptedShareEntry;
             }),
     );
 
     return {
-        encryptedSharePayloads,
+        encryptedShareEntries,
+        encryptedSharePayloads: encryptedShareEntries.map(
+            (entry) => entry.payload,
+        ),
         feldmanCommitments: feldmanCommitments.commitments,
         feldmanPayload,
         pedersenPayload,
         shares,
     };
+};
+
+const createComplaintPayloads = async (input: {
+    readonly complaintScenario: DkgComplaintScenario;
+    readonly dealerArtifacts: readonly DealerArtifacts[];
+    readonly manifestHash: string;
+    readonly participants: readonly VotingFlowParticipant[];
+    readonly sessionId: string;
+}): Promise<readonly SignedPayload[]> => {
+    const targetDealerArtifacts =
+        input.dealerArtifacts[input.complaintScenario.dealerIndex - 1];
+    const targetedShare = targetDealerArtifacts.encryptedShareEntries.find(
+        (entry) =>
+            entry.recipientIndex === input.complaintScenario.complainantIndex,
+    );
+
+    if (targetedShare === undefined) {
+        throw new Error(
+            `Missing targeted encrypted share for dealer ${input.complaintScenario.dealerIndex} and complainant ${input.complaintScenario.complainantIndex}`,
+        );
+    }
+
+    const complaintPayload = await signProtocolPayload(
+        input.participants[input.complaintScenario.complainantIndex - 1].auth
+            .privateKey,
+        {
+            sessionId: input.sessionId,
+            manifestHash: input.manifestHash,
+            phase: 2,
+            participantIndex: input.complaintScenario.complainantIndex,
+            messageType: 'complaint',
+            dealerIndex: input.complaintScenario.dealerIndex,
+            envelopeId: targetedShare.payload.payload.envelopeId,
+            reason: input.complaintScenario.reason ?? 'aes-gcm-failure',
+        },
+    );
+    const resolutionPayload = await signProtocolPayload(
+        input.participants[input.complaintScenario.dealerIndex - 1].auth
+            .privateKey,
+        {
+            sessionId: input.sessionId,
+            manifestHash: input.manifestHash,
+            phase: 2,
+            participantIndex: input.complaintScenario.dealerIndex,
+            messageType: 'complaint-resolution',
+            dealerIndex: input.complaintScenario.dealerIndex,
+            complainantIndex: input.complaintScenario.complainantIndex,
+            envelopeId: targetedShare.payload.payload.envelopeId,
+            suite: targetedShare.payload.payload.suite,
+            revealedEphemeralPrivateKey: targetedShare.ephemeralPrivateKey,
+        },
+    );
+
+    return [complaintPayload, resolutionPayload];
 };
 
 const createKeyDerivationConfirmations = async (
@@ -410,6 +516,30 @@ const createKeyDerivationConfirmations = async (
         ),
     );
 };
+
+const createPhaseCheckpointPayloads = async (input: {
+    readonly checkpointPhase: 0 | 1 | 2 | 3;
+    readonly manifestHash: string;
+    readonly participants: readonly VotingFlowParticipant[];
+    readonly qualParticipantIndices: readonly number[];
+    readonly sessionId: string;
+    readonly transcript: readonly SignedPayload[];
+}): Promise<readonly SignedPayload[]> =>
+    Promise.all(
+        input.qualParticipantIndices.map((participantIndex) =>
+            createPhaseCheckpointPayload(
+                input.participants[participantIndex - 1].auth.privateKey,
+                {
+                    checkpointPhase: input.checkpointPhase,
+                    manifestHash: input.manifestHash,
+                    participantIndex,
+                    qualParticipantIndices: input.qualParticipantIndices,
+                    sessionId: input.sessionId,
+                    transcript: input.transcript,
+                },
+            ),
+        ),
+    );
 
 const transposeParticipantVotes = (
     participantVotes: readonly (readonly bigint[])[],
@@ -575,26 +705,118 @@ export const runVotingFlowScenario = async (
                 manifestHash,
                 rosterHash,
                 threshold,
+                scenario.dkgComplaint,
             ),
         ),
     );
+    const complaintScenario = scenario.dkgComplaint;
+    const qualifiedParticipantIndices =
+        complaintScenario?.outcome === 'accepted'
+            ? participants
+                  .map((participant) => participant.index)
+                  .filter(
+                      (participantIndex) =>
+                          participantIndex !== complaintScenario.dealerIndex,
+                  )
+            : participants.map((participant) => participant.index);
     const derivedPublicKey = deriveJointPublicKey(
-        dealerArtifacts.map((dealer, offset) => ({
-            dealerIndex: offset + 1,
-            commitments: dealer.feldmanCommitments,
-        })),
+        dealerArtifacts
+            .map((dealer, offset) => ({
+                dealerIndex: offset + 1,
+                commitments: dealer.feldmanCommitments,
+            }))
+            .filter((dealer) =>
+                qualifiedParticipantIndices.includes(dealer.dealerIndex),
+            ),
         RISTRETTO_GROUP,
     );
-    const dkgTranscriptWithoutConfirmations = [
+    const dkgTranscriptWithoutConfirmations: SignedPayload[] = [
         manifestPublication,
         ...registrations,
         ...acceptances,
+    ];
+
+    if (scenario.includePhaseCheckpoints === true) {
+        dkgTranscriptWithoutConfirmations.push(
+            ...(await createPhaseCheckpointPayloads({
+                checkpointPhase: 0,
+                manifestHash,
+                participants,
+                qualParticipantIndices: participants.map(
+                    (participant) => participant.index,
+                ),
+                sessionId,
+                transcript: dkgTranscriptWithoutConfirmations,
+            })),
+        );
+    }
+
+    dkgTranscriptWithoutConfirmations.push(
         ...dealerArtifacts.map((dealer) => dealer.pedersenPayload),
         ...dealerArtifacts.flatMap((dealer) => dealer.encryptedSharePayloads),
+    );
+
+    if (scenario.includePhaseCheckpoints === true) {
+        dkgTranscriptWithoutConfirmations.push(
+            ...(await createPhaseCheckpointPayloads({
+                checkpointPhase: 1,
+                manifestHash,
+                participants,
+                qualParticipantIndices: participants.map(
+                    (participant) => participant.index,
+                ),
+                sessionId,
+                transcript: dkgTranscriptWithoutConfirmations,
+            })),
+        );
+    }
+
+    if (scenario.dkgComplaint !== undefined) {
+        dkgTranscriptWithoutConfirmations.push(
+            ...(await createComplaintPayloads({
+                complaintScenario: scenario.dkgComplaint,
+                dealerArtifacts,
+                manifestHash,
+                participants,
+                sessionId,
+            })),
+        );
+    }
+
+    if (scenario.includePhaseCheckpoints === true) {
+        dkgTranscriptWithoutConfirmations.push(
+            ...(await createPhaseCheckpointPayloads({
+                checkpointPhase: 2,
+                manifestHash,
+                participants,
+                qualParticipantIndices: qualifiedParticipantIndices,
+                sessionId,
+                transcript: dkgTranscriptWithoutConfirmations,
+            })),
+        );
+    }
+
+    dkgTranscriptWithoutConfirmations.push(
         ...dealerArtifacts.map((dealer) => dealer.feldmanPayload),
-    ] as const;
+    );
+
+    if (scenario.includePhaseCheckpoints === true) {
+        dkgTranscriptWithoutConfirmations.push(
+            ...(await createPhaseCheckpointPayloads({
+                checkpointPhase: 3,
+                manifestHash,
+                participants,
+                qualParticipantIndices: qualifiedParticipantIndices,
+                sessionId,
+                transcript: dkgTranscriptWithoutConfirmations,
+            })),
+        );
+    }
+
     const confirmations = await createKeyDerivationConfirmations(
-        participants,
+        participants.filter((participant) =>
+            qualifiedParticipantIndices.includes(participant.index),
+        ),
         dkgTranscriptWithoutConfirmations,
         derivedPublicKey,
         manifestHash,
@@ -608,8 +830,10 @@ export const runVotingFlowScenario = async (
         index: participant.index,
         value: modQ(
             dealerArtifacts.reduce(
-                (sum, dealer) =>
-                    sum + dealer.shares[participant.index - 1].secretValue,
+                (sum, dealer, dealerOffset) =>
+                    qualifiedParticipantIndices.includes(dealerOffset + 1)
+                        ? sum + dealer.shares[participant.index - 1].secretValue
+                        : sum,
                 0n,
             ),
             RISTRETTO_GROUP.q,
@@ -641,7 +865,15 @@ export const runVotingFlowScenario = async (
         manifest,
         sessionId,
     });
-    const selectedParticipants = closeParticipantIndices.slice(0, threshold);
+    const preferredDecryptionParticipants = closeParticipantIndices.filter(
+        (participantIndex) =>
+            qualifiedParticipantIndices.includes(participantIndex),
+    );
+    const selectedParticipants = (
+        preferredDecryptionParticipants.length >= threshold
+            ? preferredDecryptionParticipants
+            : qualifiedParticipantIndices
+    ).slice(0, threshold);
     const decryptionSharePayloads: SignedPayload<DecryptionSharePayload>[] = [];
     const tallyPublications: SignedPayload<TallyPublicationPayload>[] = [];
 
@@ -655,10 +887,16 @@ export const runVotingFlowScenario = async (
                 );
                 const statement: DLEQStatement = {
                     publicKey: deriveTranscriptVerificationKey(
-                        dealerArtifacts.map((dealer, offset) => ({
-                            dealerIndex: offset + 1,
-                            commitments: dealer.feldmanCommitments,
-                        })),
+                        dealerArtifacts
+                            .map((dealer, offset) => ({
+                                dealerIndex: offset + 1,
+                                commitments: dealer.feldmanCommitments,
+                            }))
+                            .filter((dealer) =>
+                                qualifiedParticipantIndices.includes(
+                                    dealer.dealerIndex,
+                                ),
+                            ),
                         participantIndex,
                         RISTRETTO_GROUP,
                     ),
@@ -755,6 +993,7 @@ export const runVotingFlowScenario = async (
         manifestHash,
         participants,
         participantVotes,
+        qualifiedParticipantIndices,
         rosterHash,
         sessionId,
         tallyPublications,

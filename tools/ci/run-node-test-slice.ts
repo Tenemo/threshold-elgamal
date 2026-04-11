@@ -14,11 +14,6 @@ if (packageManagerEntrypoint === undefined) {
 
 type SliceName = 'fast' | 'heavy';
 
-const heavyTestFiles = new Set<string>([
-    'tests/node/dkg/verification.test.ts',
-    'tests/node/protocol/voting.test.ts',
-]);
-
 const toPosixPath = (value: string): string => value.replace(/\\/g, '/');
 
 const collectTestFiles = async (directoryUrl: URL): Promise<string[]> => {
@@ -41,9 +36,7 @@ const collectTestFiles = async (directoryUrl: URL): Promise<string[]> => {
 };
 
 const matchesSlice = (relativePath: string, slice: SliceName): boolean => {
-    const isHeavy =
-        heavyTestFiles.has(relativePath) ||
-        relativePath.startsWith('tests/node/integration/');
+    const isHeavy = relativePath.startsWith('tests/node/integration/');
 
     return slice === 'heavy' ? isHeavy : !isHeavy;
 };

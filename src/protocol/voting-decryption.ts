@@ -13,7 +13,6 @@ import { decodeCompactProof } from './voting-codecs.js';
 import {
     assertNonEmptyString,
     assertPhase,
-    assertSingleOptionManifest,
     assertValidOptionIndex,
     buildOptionAggregateMap,
     buildVotingManifestContext,
@@ -21,11 +20,9 @@ import {
     DECRYPTION_SHARE_PHASE,
 } from './voting-shared.js';
 import type {
-    OptionAggregateInput,
     VerifiedDecryptionSharePayload,
     VerifiedOptionDecryptionShares,
     VerifyDecryptionSharePayloadsByOptionInput,
-    VerifyDecryptionSharePayloadsInput,
 } from './voting-types.js';
 
 /**
@@ -186,40 +183,4 @@ export const verifyDecryptionSharePayloadsByOption = async (
     }
 
     return verifiedShares;
-};
-
-/**
- * Verifies typed decryption-share payloads against the DKG transcript-derived
- * trustee keys and one locally recomputed aggregate ciphertext for a
- * single-option manifest.
- *
- * @param input Typed decryption-share verification input.
- * @returns Verified decryption shares ready for threshold recombination.
- */
-export const verifyDecryptionSharePayloads = async (
-    input: VerifyDecryptionSharePayloadsInput,
-): Promise<readonly VerifiedDecryptionSharePayload[]> => {
-    const context = await buildVotingManifestContext(
-        input.manifest,
-        input.sessionId,
-    );
-    assertSingleOptionManifest(
-        context.manifest,
-        'verifyDecryptionSharePayloads',
-    );
-
-    const verifiedShares = await verifyDecryptionSharePayloadsByOption({
-        aggregates: [
-            {
-                optionIndex: 1,
-                aggregate: input.aggregate,
-            },
-        ] satisfies readonly OptionAggregateInput[],
-        dkg: input.dkg,
-        decryptionSharePayloads: input.decryptionSharePayloads,
-        manifest: context.manifest,
-        sessionId: context.sessionId,
-    });
-
-    return verifiedShares[0].decryptionShares;
 };
