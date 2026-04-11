@@ -392,24 +392,39 @@ describe('DKG transcript verification', () => {
             );
         }
 
-        const malformedRegistration = await resignPayload(completed, {
-            ...completed.dkgTranscript[registrationIndex].payload,
-            transportPublicKey: '00'.repeat(
-                31,
-            ) as RegistrationPayload['transportPublicKey'],
-        } as ProtocolPayload);
+        const cases = [
+            {
+                transportPublicKey: '00'.repeat(
+                    31,
+                ) as RegistrationPayload['transportPublicKey'],
+                error: 'Registration transport public key must be a supported raw X25519 or uncompressed P-256 public key',
+            },
+            {
+                transportPublicKey: '00'.repeat(
+                    32,
+                ) as RegistrationPayload['transportPublicKey'],
+                error: 'Registration transport public key must not be the all-zero X25519 public key',
+            },
+        ] as const;
 
-        await expect(
-            verifyDKGTranscript({
-                transcript: completed.dkgTranscript.map((entry, index) =>
-                    index === registrationIndex ? malformedRegistration : entry,
-                ),
-                manifest: completed.manifest,
-                sessionId: completed.sessionId,
-            }),
-        ).rejects.toThrow(
-            'Registration transport public key must be a supported raw X25519 or uncompressed P-256 public key',
-        );
+        for (const testCase of cases) {
+            const malformedRegistration = await resignPayload(completed, {
+                ...completed.dkgTranscript[registrationIndex].payload,
+                transportPublicKey: testCase.transportPublicKey,
+            } as ProtocolPayload);
+
+            await expect(
+                verifyDKGTranscript({
+                    transcript: completed.dkgTranscript.map((entry, index) =>
+                        index === registrationIndex
+                            ? malformedRegistration
+                            : entry,
+                    ),
+                    manifest: completed.manifest,
+                    sessionId: completed.sessionId,
+                }),
+            ).rejects.toThrow(testCase.error);
+        }
     });
     it('rejects forged complaint evidence and unmatched complaint resolutions', async () => {
         const complaintIndex = withResolvedComplaint.dkgTranscript.findIndex(

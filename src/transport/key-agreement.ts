@@ -19,6 +19,9 @@ const X25519_BASE_POINT = (() => {
 const X25519_PUBLIC_KEY_LENGTH = 32;
 const P256_PUBLIC_KEY_LENGTH = 65;
 
+const isAllZeroBytes = (bytes: Uint8Array): boolean =>
+    bytes.every((value) => value === 0);
+
 const base64UrlToBytes = (value: string): Uint8Array => {
     const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
     const padded = normalized.padEnd(
@@ -50,17 +53,30 @@ const buildP256RawPublicKey = (jwk: JsonWebKey): Uint8Array => {
     ]);
 };
 
-const assertSupportedRawTransportPublicKeyBytes = (
+const assertValidX25519PublicKeyBytes = (
     publicKeyBytes: Uint8Array,
     label: string,
 ): void => {
-    if (publicKeyBytes.length === X25519_PUBLIC_KEY_LENGTH) {
-        return;
+    if (publicKeyBytes.length !== X25519_PUBLIC_KEY_LENGTH) {
+        throw new InvalidPayloadError(
+            `${label} must be a supported raw X25519 public key`,
+        );
     }
 
+    if (isAllZeroBytes(publicKeyBytes)) {
+        throw new InvalidPayloadError(
+            `${label} must not be the all-zero X25519 public key`,
+        );
+    }
+};
+
+const assertValidP256PublicKeyBytes = (
+    publicKeyBytes: Uint8Array,
+    label: string,
+): void => {
     if (publicKeyBytes.length !== P256_PUBLIC_KEY_LENGTH) {
         throw new InvalidPayloadError(
-            `${label} must be a supported raw X25519 or uncompressed P-256 public key`,
+            `${label} must be a supported uncompressed P-256 public key`,
         );
     }
 
@@ -73,6 +89,38 @@ const assertSupportedRawTransportPublicKeyBytes = (
     if (!p256.utils.isValidPublicKey(publicKeyBytes, false)) {
         throw new InvalidPayloadError(`${label} is not a valid P-256 point`);
     }
+};
+
+const assertSupportedRawTransportPublicKeyBytes = (
+    publicKeyBytes: Uint8Array,
+    label: string,
+): void => {
+    if (publicKeyBytes.length === X25519_PUBLIC_KEY_LENGTH) {
+        assertValidX25519PublicKeyBytes(publicKeyBytes, label);
+        return;
+    }
+
+    if (publicKeyBytes.length === P256_PUBLIC_KEY_LENGTH) {
+        assertValidP256PublicKeyBytes(publicKeyBytes, label);
+        return;
+    }
+
+    throw new InvalidPayloadError(
+        `${label} must be a supported raw X25519 or uncompressed P-256 public key`,
+    );
+};
+
+const assertTransportPublicKeyBytesForSuite = (
+    publicKeyBytes: Uint8Array,
+    suite: KeyAgreementSuite,
+    label: string,
+): void => {
+    if (suite === 'X25519') {
+        assertValidX25519PublicKeyBytes(publicKeyBytes, label);
+        return;
+    }
+
+    assertValidP256PublicKeyBytes(publicKeyBytes, label);
 };
 
 const algorithmForSuite = (
@@ -212,14 +260,22 @@ export const exportTransportPrivateKey = async (
 export const importTransportPublicKey = async (
     publicKeyHex: EncodedTransportPublicKey,
     suite: KeyAgreementSuite,
-): Promise<CryptoKey> =>
-    getWebCrypto().subtle.importKey(
+): Promise<CryptoKey> => {
+    const publicKeyBytes = hexToBytes(publicKeyHex);
+    assertTransportPublicKeyBytesForSuite(
+        publicKeyBytes,
+        suite,
+        'Transport public key',
+    );
+
+    return getWebCrypto().subtle.importKey(
         'raw',
-        toBufferSource(hexToBytes(publicKeyHex)),
+        toBufferSource(publicKeyBytes),
         algorithmForSuite(suite),
         true,
         [],
     );
+};
 
 export const assertSupportedTransportPublicKeyEncoding = (
     publicKeyHex: EncodedTransportPublicKey,

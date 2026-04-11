@@ -219,37 +219,52 @@ describe('protocol verification helpers', () => {
     it('rejects malformed transport public keys before accepting the roster', async () => {
         const auth = await generateAuthKeyPair();
         const authPublicKey = await exportAuthPublicKey(auth.publicKey);
-        const registration = await signProtocolPayload(auth.privateKey, {
-            sessionId: 'session-1',
-            manifestHash: 'manifest-1',
-            phase: 0,
-            participantIndex: 1,
-            messageType: 'registration',
-            rosterHash: 'roster-hash',
-            authPublicKey,
-            transportPublicKey: '00'.repeat(
-                31,
-            ) as RegistrationPayload['transportPublicKey'],
-        });
+        const cases = [
+            {
+                transportPublicKey: '00'.repeat(
+                    31,
+                ) as RegistrationPayload['transportPublicKey'],
+                registrationError:
+                    'Registration transport public key must be a supported raw X25519 or uncompressed P-256 public key',
+                rosterError:
+                    'Roster transport public key must be a supported raw X25519 or uncompressed P-256 public key',
+            },
+            {
+                transportPublicKey: '00'.repeat(
+                    32,
+                ) as RegistrationPayload['transportPublicKey'],
+                registrationError:
+                    'Registration transport public key must not be the all-zero X25519 public key',
+                rosterError:
+                    'Roster transport public key must not be the all-zero X25519 public key',
+            },
+        ] as const;
 
-        await expect(
-            verifySignedProtocolPayloads([registration], 1),
-        ).rejects.toThrow(
-            'Registration transport public key must be a supported raw X25519 or uncompressed P-256 public key',
-        );
-        await expect(
-            hashRosterEntries([
-                {
-                    participantIndex: 1,
-                    authPublicKey,
-                    transportPublicKey: '00'.repeat(
-                        31,
-                    ) as RegistrationPayload['transportPublicKey'],
-                },
-            ]),
-        ).rejects.toThrow(
-            'Roster transport public key must be a supported raw X25519 or uncompressed P-256 public key',
-        );
+        for (const testCase of cases) {
+            const registration = await signProtocolPayload(auth.privateKey, {
+                sessionId: 'session-1',
+                manifestHash: 'manifest-1',
+                phase: 0,
+                participantIndex: 1,
+                messageType: 'registration',
+                rosterHash: 'roster-hash',
+                authPublicKey,
+                transportPublicKey: testCase.transportPublicKey,
+            });
+
+            await expect(
+                verifySignedProtocolPayloads([registration], 1),
+            ).rejects.toThrow(testCase.registrationError);
+            await expect(
+                hashRosterEntries([
+                    {
+                        participantIndex: 1,
+                        authPublicKey,
+                        transportPublicKey: testCase.transportPublicKey,
+                    },
+                ]),
+            ).rejects.toThrow(testCase.rosterError);
+        }
     });
     it(
         'recomputes ballot aggregates deterministically and exposes dropped ballots',
