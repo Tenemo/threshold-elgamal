@@ -195,4 +195,11 @@ export default [
             'docs/dist/**',
         ],
     },
+    {
+        files: ['tools/ci/*.mjs'],
+        rules: {
+            '@typescript-eslint/explicit-function-return-type': OFF,
+            '@typescript-eslint/no-unsafe-argument': OFF,
+        },
+    },
 ];

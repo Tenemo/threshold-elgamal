@@ -1,5 +1,4 @@
 import { TextEncoder } from 'node:util';
-
 import {
     combineDecryptionShares,
     createBallotClosePayload,
@@ -50,9 +49,13 @@ import {
 } from 'threshold-elgamal';
 
 const buildPolynomial = (dealerIndex, threshold, q, offset) =>
-    Array.from({ length: threshold }, (_, coefficientIndex) =>
-        modQ(BigInt(dealerIndex * 97 + coefficientIndex * 31 + offset), q - 1n) +
-        1n,
+    Array.from(
+        { length: threshold },
+        (_, coefficientIndex) =>
+            modQ(
+                BigInt(dealerIndex * 97 + coefficientIndex * 31 + offset),
+                q - 1n,
+            ) + 1n,
     );
 
 const buildParticipants = async () =>
@@ -207,20 +210,17 @@ const buildDealerArtifacts = async (
             },
         );
         encryptedSharePayloads.push(
-            await createEncryptedDualSharePayload(
-                participant.auth.privateKey,
-                {
-                    sessionId,
-                    manifestHash,
-                    participantIndex: participant.index,
-                    recipientIndex: recipient.index,
-                    envelopeId: envelope.envelopeId,
-                    suite: envelope.suite,
-                    ephemeralPublicKey: envelope.ephemeralPublicKey,
-                    iv: envelope.iv,
-                    ciphertext: envelope.ciphertext,
-                },
-            ),
+            await createEncryptedDualSharePayload(participant.auth.privateKey, {
+                sessionId,
+                manifestHash,
+                participantIndex: participant.index,
+                recipientIndex: recipient.index,
+                envelopeId: envelope.envelopeId,
+                suite: envelope.suite,
+                ephemeralPublicKey: envelope.ephemeralPublicKey,
+                iv: envelope.iv,
+                ciphertext: envelope.ciphertext,
+            }),
         );
     }
 
@@ -319,22 +319,16 @@ const qualHash = await hashProtocolTranscript(
 );
 const confirmations = await Promise.all(
     participants.map((participant) =>
-        createKeyDerivationConfirmationPayload(
-            participant.auth.privateKey,
-            {
-                sessionId,
-                manifestHash,
-                participantIndex: participant.index,
-                qualHash,
-                publicKey: derivedPublicKey,
-            },
-        ),
+        createKeyDerivationConfirmationPayload(participant.auth.privateKey, {
+            sessionId,
+            manifestHash,
+            participantIndex: participant.index,
+            qualHash,
+            publicKey: derivedPublicKey,
+        }),
     ),
 );
-const dkgTranscript = [
-    ...dkgTranscriptWithoutConfirmations,
-    ...confirmations,
-];
+const dkgTranscript = [...dkgTranscriptWithoutConfirmations, ...confirmations];
 const dkg = await verifyDKGTranscript({
     transcript: dkgTranscript,
     manifest,
@@ -348,9 +342,15 @@ const participantVotes = [
 ];
 const ballotPayloads = [];
 for (const participant of participants) {
-    for (let optionIndex = 1; optionIndex <= participantVotes[0].length; optionIndex += 1) {
+    for (
+        let optionIndex = 1;
+        optionIndex <= participantVotes[0].length;
+        optionIndex += 1
+    ) {
         const vote = participantVotes[participant.index - 1][optionIndex - 1];
-        const randomness = BigInt(1000 + participant.index * 97 + optionIndex * 31);
+        const randomness = BigInt(
+            1000 + participant.index * 97 + optionIndex * 31,
+        );
         const ciphertext = encryptAdditiveWithRandomness(
             vote,
             dkg.derivedPublicKey,
@@ -384,7 +384,9 @@ for (const participant of participants) {
             proofContext,
         );
         if (!valid) {
-            throw new Error('Packed smoke disjunctive proof verification failed');
+            throw new Error(
+                'Packed smoke disjunctive proof verification failed',
+            );
         }
         ballotPayloads.push(
             await createBallotSubmissionPayload(participant.auth.privateKey, {
@@ -432,7 +434,9 @@ const tallyPublications = [];
 for (const optionBallots of verifiedBallots) {
     const verifiedShares = [];
     for (const participantIndex of decryptionParticipantIndices) {
-        const share = finalShares.find((entry) => entry.index === participantIndex);
+        const share = finalShares.find(
+            (entry) => entry.index === participantIndex,
+        );
         const verifiedShare = createVerifiedDecryptionShare(
             optionBallots.aggregate,
             share,
@@ -494,19 +498,16 @@ for (const optionBallots of verifiedBallots) {
         BigInt(optionBallots.aggregate.ballotCount) * 10n,
     );
     tallyPublications.push(
-        await createTallyPublicationPayload(
-            participants[0].auth.privateKey,
-            {
-                sessionId,
-                manifestHash,
-                participantIndex: participants[0].index,
-                optionIndex: optionBallots.optionIndex,
-                transcriptHash: optionBallots.aggregate.transcriptHash,
-                ballotCount: optionBallots.aggregate.ballotCount,
-                tally,
-                decryptionParticipantIndices,
-            },
-        ),
+        await createTallyPublicationPayload(participants[0].auth.privateKey, {
+            sessionId,
+            manifestHash,
+            participantIndex: participants[0].index,
+            optionIndex: optionBallots.optionIndex,
+            transcriptHash: optionBallots.aggregate.transcriptHash,
+            ballotCount: optionBallots.aggregate.ballotCount,
+            tally,
+            decryptionParticipantIndices,
+        }),
     );
 }
 
@@ -521,16 +522,22 @@ const verified = await verifyElectionCeremonyDetailed({
 });
 
 if (verified.dkg.participantCount !== 3) {
-    throw new Error('Packed smoke verifier derived the wrong participant count');
+    throw new Error(
+        'Packed smoke verifier derived the wrong participant count',
+    );
 }
 if (verified.dkg.threshold !== 2) {
     throw new Error('Packed smoke verifier derived the wrong threshold');
 }
 if (verified.perOptionTallies[0]?.tally !== 20n) {
-    throw new Error('Packed smoke verifier derived the wrong tally for option 1');
+    throw new Error(
+        'Packed smoke verifier derived the wrong tally for option 1',
+    );
 }
 if (verified.perOptionTallies[1]?.tally !== 13n) {
-    throw new Error('Packed smoke verifier derived the wrong tally for option 2');
+    throw new Error(
+        'Packed smoke verifier derived the wrong tally for option 2',
+    );
 }
 if (verified.countedParticipantIndices.join(',') !== '1,2,3') {
     throw new Error('Packed smoke verifier counted the wrong participants');

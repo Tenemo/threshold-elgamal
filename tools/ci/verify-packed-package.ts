@@ -91,7 +91,7 @@ const main = async (): Promise<void> => {
             'utf8',
         );
         await copyFile(
-            join(repoRoot, 'tools/ci/packed-package-smoke-template.txt'),
+            join(repoRoot, 'tools/ci/packed-package-smoke.mjs'),
             join(consumerDirectory, 'smoke.mjs'),
         );
 
