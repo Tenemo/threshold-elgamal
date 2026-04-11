@@ -1,6 +1,10 @@
 import { hexToBytes } from '../core/bytes.js';
-import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
-import { InvalidProofError, modQ, type CryptoGroup } from '../core/index.js';
+import {
+    assertCanonicalRistrettoGroup,
+    InvalidProofError,
+    modQ,
+    type CryptoGroup,
+} from '../core/index.js';
 import { encodeScalar, hashChallengeToScalar } from '../core/ristretto.js';
 
 import type { ProofContext } from './types.js';

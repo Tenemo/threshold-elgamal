@@ -1,8 +1,14 @@
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
-const heavyNodeTestTimeoutMs = 60_000;
-const heavyNodeHookTimeoutMs = 240_000;
+const nodeTestTimeoutMs = 60_000;
+const nodeHookTimeoutMs = 240_000;
+
+const nodeProject = {
+    environment: 'node',
+    testTimeout: nodeTestTimeoutMs,
+    hookTimeout: nodeHookTimeoutMs,
+} as const;
 
 export default defineConfig({
     test: {
@@ -18,9 +24,22 @@ export default defineConfig({
                 test: {
                     name: 'node',
                     include: ['tests/node/**/*.test.ts'],
-                    environment: 'node',
-                    testTimeout: heavyNodeTestTimeoutMs,
-                    hookTimeout: heavyNodeHookTimeoutMs,
+                    ...nodeProject,
+                },
+            },
+            {
+                test: {
+                    name: 'node-fast',
+                    include: ['tests/node/**/*.test.ts'],
+                    exclude: ['tests/node/integration/**/*.test.ts'],
+                    ...nodeProject,
+                },
+            },
+            {
+                test: {
+                    name: 'node-heavy',
+                    include: ['tests/node/integration/**/*.test.ts'],
+                    ...nodeProject,
                 },
             },
             {

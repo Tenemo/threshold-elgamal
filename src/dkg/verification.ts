@@ -1,7 +1,7 @@
 import {
     InvalidPayloadError,
+    RISTRETTO_GROUP,
     ThresholdViolationError,
-    getGroup,
     majorityThreshold,
     type CryptoGroup,
 } from '../core/index.js';
@@ -47,18 +47,15 @@ import {
     validateTranscriptShape,
 } from './verification-shared.js';
 import type {
+    KeyDerivationConfirmationPolicy,
     ParsedFeldmanCommitment,
     VerifyDKGTranscriptInput,
     VerifiedDKGTranscript,
 } from './verification-types.js';
 
-export type {
-    VerifyDKGTranscriptInput,
-    VerifiedDKGTranscript,
-} from './verification-types.js';
+export type { VerifiedDKGTranscript } from './verification-types.js';
 export {
     deriveJointPublicKey,
-    deriveQualifiedParticipantIndices,
     deriveTranscriptVerificationKey,
 } from './verification-derivation.js';
 
@@ -71,6 +68,8 @@ type VerifiedDKGSetup = {
     readonly threshold: number;
     readonly verifiedSignatures: VerifiedProtocolSignatures;
 };
+
+const defaultKeyDerivationConfirmationPolicy = 'required' as const;
 
 const reduceQualifiedParticipantIndices = (
     qual: readonly number[],
@@ -106,6 +105,13 @@ const normalizeFeldmanCommitments = (
         dealerIndex: entry.dealerIndex,
         commitments: entry.commitments,
     }));
+
+const minimumKeyDerivationConfirmations = (
+    qual: readonly number[],
+    policy:
+        | KeyDerivationConfirmationPolicy
+        | undefined = defaultKeyDerivationConfirmationPolicy,
+): number => (policy === 'optional' ? 0 : qual.length);
 
 const buildVerifiedDKGSetup = async (
     input: VerifyDKGTranscriptInput,
@@ -155,7 +161,6 @@ const finalizeVerifiedTranscript = async (
     qual: readonly number[],
     group: CryptoGroup,
     threshold: number,
-    minimumConfirmations?: number,
 ): Promise<VerifiedDKGTranscript> => {
     assertQualifiedThreshold(qual, threshold);
 
@@ -163,7 +168,6 @@ const finalizeVerifiedTranscript = async (
         input.transcript,
         qual,
         threshold,
-        group,
     );
     await verifyFeldmanProofs(
         feldmanCommitments,
@@ -183,7 +187,10 @@ const finalizeVerifiedTranscript = async (
         qual,
         derivedPublicKey,
         group,
-        minimumConfirmations,
+        minimumKeyDerivationConfirmations(
+            qual,
+            input.keyDerivationConfirmationPolicy,
+        ),
     );
 
     return {
@@ -219,7 +226,6 @@ const verifyLegacyDKGTranscript = async (
     const pedersenCommitmentMap = parsePedersenCommitmentMap(
         input.transcript,
         setup.threshold,
-        group,
     );
     assertPedersenCommitmentCoverage(
         pedersenCommitmentMap,
@@ -277,7 +283,6 @@ const verifyCheckpointedDKGTranscript = async (
     const pedersenCommitmentMap = parsePedersenCommitmentMap(
         input.transcript,
         setup.threshold,
-        group,
     );
 
     const phase0QualSet = new Set(
@@ -347,8 +352,28 @@ const verifyCheckpointedDKGTranscript = async (
         finalQual,
         group,
         setup.threshold,
-        0,
     );
+};
+
+/**
+ * Verifies a DKG transcript, its signatures, Feldman extraction proofs,
+ * the exact claimed threshold degree, accepted complaint outcomes, `qualHash`,
+ * and the announced joint public key.
+ *
+ * @param input Transcript verification input.
+ * @returns Verified transcript metadata and derived ceremony material.
+ */
+export const verifyDKGTranscriptFromAuditedTranscript = async (
+    input: VerifyDKGTranscriptInput,
+): Promise<VerifiedDKGTranscript> => {
+    const manifestHash = await hashElectionManifest(input.manifest);
+    const group = RISTRETTO_GROUP;
+    validateTranscriptShape(input, manifestHash);
+    const setup = await buildVerifiedDKGSetup(input, manifestHash);
+
+    return input.transcript.some(isPhaseCheckpointPayload)
+        ? verifyCheckpointedDKGTranscript(input, setup, group)
+        : verifyLegacyDKGTranscript(input, setup, group);
 };
 
 /**
@@ -362,17 +387,10 @@ const verifyCheckpointedDKGTranscript = async (
 export const verifyDKGTranscript = async (
     input: VerifyDKGTranscriptInput,
 ): Promise<VerifiedDKGTranscript> => {
-    const manifestHash = await hashElectionManifest(input.manifest);
     const auditedTranscript = await auditSignedPayloads(input.transcript);
-    const normalizedInput: VerifyDKGTranscriptInput = {
+
+    return verifyDKGTranscriptFromAuditedTranscript({
         ...input,
         transcript: auditedTranscript.acceptedPayloads,
-    };
-    const group = getGroup('ristretto255');
-    validateTranscriptShape(normalizedInput, manifestHash);
-    const setup = await buildVerifiedDKGSetup(normalizedInput, manifestHash);
-
-    return normalizedInput.transcript.some(isPhaseCheckpointPayload)
-        ? verifyCheckpointedDKGTranscript(normalizedInput, setup, group)
-        : verifyLegacyDKGTranscript(normalizedInput, setup, group);
+    });
 };

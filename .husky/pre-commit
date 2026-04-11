@@ -1,5 +1,6 @@
 pnpm run lint || exit 1
 pnpm run typecheck || exit 1
+pnpm run verify:unused || exit 1
 pnpm run guard:no-math-random || exit 1
 pnpm run verify:h-derivation || exit 1
 pnpm run build:skip || exit 1

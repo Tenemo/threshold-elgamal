@@ -1,5 +1,5 @@
-import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
 import {
+    assertCanonicalRistrettoGroup,
     assertPositiveParticipantIndex,
     modQ,
     type CryptoGroup,

@@ -10,11 +10,15 @@ import type {
 
 import type { FinalizedPhaseCheckpoint } from './checkpoints.js';
 
+export type KeyDerivationConfirmationPolicy = 'optional' | 'required';
+
 /** Input bundle for verifying a DKG transcript. */
 export type VerifyDKGTranscriptInput = {
     readonly transcript: readonly SignedPayload[];
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
+    /** Defaults to `'required'`; set to `'optional'` only for legacy transcripts that omit phase 4 confirmations. */
+    readonly keyDerivationConfirmationPolicy?: KeyDerivationConfirmationPolicy;
 };
 
 /** Verified DKG transcript result with reusable derived ceremony material. */

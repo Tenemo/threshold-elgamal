@@ -133,7 +133,12 @@ export type FeldmanCommitmentPayload = BaseProtocolPayload & {
     }[];
 };
 
-/** Optional final key-derivation confirmation payload for the derived joint key. */
+/**
+ * Final key-derivation confirmation payload for the derived joint key.
+ *
+ * Transcript verifiers require these confirmations by default and only treat
+ * them as optional when callers explicitly opt into the legacy relaxed policy.
+ */
 export type KeyDerivationConfirmation = BaseProtocolPayload & {
     readonly messageType: 'key-derivation-confirmation';
     readonly qualHash: string;

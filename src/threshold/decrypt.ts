@@ -131,6 +131,10 @@ export const combineDecryptionShares = (
 /**
  * Creates a decryption share only for a locally recomputed aggregate that is
  * anchored to a canonical transcript hash.
+ *
+ * @internal Compatibility helper kept for internal harnesses and advanced
+ * tests. The shipped public workflow prefers decryption-share payload builders
+ * plus ceremony-level verification.
  */
 export const createVerifiedDecryptionShare = (
     aggregate: VerifiedAggregateCiphertext,

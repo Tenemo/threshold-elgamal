@@ -17,6 +17,15 @@ export const RISTRETTO_GROUP: CryptoGroup = Object.freeze({
 
 const GROUPS = Object.freeze([RISTRETTO_GROUP]);
 
+const sameCanonicalRistrettoGroup = (group: CryptoGroup): boolean =>
+    group.name === RISTRETTO_GROUP.name &&
+    group.byteLength === RISTRETTO_GROUP.byteLength &&
+    group.scalarByteLength === RISTRETTO_GROUP.scalarByteLength &&
+    group.q === RISTRETTO_GROUP.q &&
+    group.g === RISTRETTO_GROUP.g &&
+    group.h === RISTRETTO_GROUP.h &&
+    group.securityEstimate === RISTRETTO_GROUP.securityEstimate;
+
 /** @internal Returns the immutable built-in Ristretto255 group definition. */
 export const getGroup = (identifier: GroupIdentifier): CryptoGroup => {
     if (identifier !== RISTRETTO_GROUP.name) {
@@ -33,3 +42,14 @@ export const listGroups = (): readonly CryptoGroup[] => GROUPS;
 
 /** Returns the canonical deterministic secondary generator encoding. */
 export const deriveH = (): string => RISTRETTO_GROUP.h;
+
+export const assertCanonicalRistrettoGroup = (
+    group: CryptoGroup,
+    label = 'Group',
+): void => {
+    if (!sameCanonicalRistrettoGroup(group)) {
+        throw new UnsupportedSuiteError(
+            `${label} must match the shipped canonical ristretto255 group definition`,
+        );
+    }
+};

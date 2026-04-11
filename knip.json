@@ -1,0 +1,26 @@
+{
+    "$schema": "https://unpkg.com/knip@5/schema.json",
+    "entry": [
+        "tests/**/*.ts",
+        "tools/**/*.ts",
+        "typedoc/**/*.ts",
+        "docs/astro.config.mjs",
+        "docs/src/content.config.ts"
+    ],
+    "project": [
+        "src/**/*.ts",
+        "tests/**/*.ts",
+        "tools/**/*.ts",
+        "typedoc/**/*.ts",
+        "docs/src/**/*.ts"
+    ],
+    "ignore": [
+        "docs/src/env.d.ts"
+    ],
+    "ignoreDependencies": [
+        "@fontsource/ibm-plex-sans",
+        "@fontsource/jetbrains-mono",
+        "@typescript-eslint/eslint-plugin",
+        "@typescript-eslint/parser"
+    ]
+}

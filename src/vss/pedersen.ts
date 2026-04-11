@@ -1,5 +1,5 @@
-import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
 import {
+    assertCanonicalRistrettoGroup,
     assertInSubgroup,
     assertPositiveParticipantIndex,
     assertScalarInZq,
@@ -19,7 +19,7 @@ import {
     type Polynomial,
 } from '../threshold/polynomial.js';
 
-import { evaluateCommitmentProduct } from './commitment-product.js';
+import { evaluateCommitmentProduct } from './feldman.js';
 import type { PedersenCommitments, PedersenShare } from './types.js';
 
 const pedersenPolynomialLengthError =
@@ -116,11 +116,7 @@ export const verifyPedersenShare = (
 
     return expected.equals(
         decodePoint(
-            evaluateCommitmentProduct(
-                commitments.commitments,
-                share.index,
-                group,
-            ),
+            evaluateCommitmentProduct(commitments.commitments, share.index),
         ),
     );
 };

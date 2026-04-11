@@ -114,7 +114,6 @@ export const assertEncryptedShareCoverage = (
 export const parsePedersenCommitmentMap = (
     transcript: readonly SignedPayload[],
     threshold: number,
-    group: CryptoGroup,
 ): ReadonlyMap<number, readonly EncodedPoint[]> => {
     const pedersenCommitments = transcript.filter(
         (payload): payload is SignedPayload<PedersenCommitmentPayload> =>
@@ -132,7 +131,6 @@ export const parsePedersenCommitmentMap = (
             parseCommitmentVector(
                 payload.payload.commitments,
                 threshold,
-                group,
                 'Pedersen commitment payload',
             ),
         );

@@ -1,7 +1,7 @@
 import {
     InvalidPayloadError,
+    RISTRETTO_GROUP,
     assertInSubgroupOrIdentity,
-    type CryptoGroup,
 } from '../core/index.js';
 import { decodePoint } from '../core/ristretto.js';
 import type { EncodedPoint } from '../core/types.js';
@@ -9,12 +9,38 @@ import type { ProofContext } from '../proofs/index.js';
 import { classifySlotConflict } from '../protocol/payloads.js';
 import type {
     FeldmanCommitmentPayload,
+    PhaseCheckpointPayload,
+    ProtocolMessageType,
     SignedPayload,
 } from '../protocol/types.js';
 
 import { isPhaseCheckpointPayload } from './checkpoints.js';
-import { expectedDkgPhase } from './phase-plan.js';
 import type { VerifyDKGTranscriptInput } from './verification-types.js';
+
+const GJKR_PHASE_PLAN: Readonly<Record<ProtocolMessageType, number | null>> = {
+    'manifest-publication': 0,
+    registration: 0,
+    'manifest-acceptance': 0,
+    'phase-checkpoint': null,
+    'pedersen-commitment': 1,
+    'encrypted-dual-share': 1,
+    complaint: 2,
+    'complaint-resolution': 2,
+    'feldman-commitment': 3,
+    'key-derivation-confirmation': 4,
+    'ballot-submission': null,
+    'ballot-close': null,
+    'decryption-share': null,
+    'tally-publication': null,
+};
+
+const expectedDkgPhase = (
+    messageType: ProtocolMessageType,
+    payload?: PhaseCheckpointPayload,
+): number | null =>
+    messageType === 'phase-checkpoint'
+        ? (payload?.checkpointPhase ?? null)
+        : GJKR_PHASE_PLAN[messageType];
 
 export const assertUniqueSlots = (
     transcript: readonly SignedPayload[],
@@ -66,7 +92,6 @@ export const requireExactlyOnePayload = <TPayload>(
 export const parseCommitmentVector = (
     commitments: readonly string[],
     expectedLength: number,
-    _group: CryptoGroup,
     label: string,
 ): readonly EncodedPoint[] => {
     if (commitments.length !== expectedLength) {
@@ -94,10 +119,9 @@ export const buildSchnorrContext = (
     payload: FeldmanCommitmentPayload,
     protocolVersion: string,
     coefficientIndex: number,
-    group: CryptoGroup,
 ): ProofContext => ({
     protocolVersion,
-    suiteId: group.name,
+    suiteId: RISTRETTO_GROUP.name,
     manifestHash: payload.manifestHash,
     sessionId: payload.sessionId,
     label: 'feldman-coefficient-proof',

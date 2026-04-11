@@ -25,6 +25,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
       - run: pnpm run typecheck
+      - run: pnpm run verify:unused
       - run: pnpm run guard:no-math-random
       - run: pnpm run verify:h-derivation
       - run: pnpm run verify:vectors

@@ -1,4 +1,5 @@
 import type { EncodedPoint } from '../core/types.js';
+import type { KeyDerivationConfirmationPolicy } from '../dkg/verification-types.js';
 import type { VerifiedDKGTranscript } from '../dkg/verification.js';
 import type { DecryptionShare } from '../threshold/index.js';
 
@@ -61,6 +62,8 @@ export type VerifyPublishedVotingResultsInput = {
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
     readonly dkgTranscript: readonly SignedPayload[];
+    /** Defaults to `'required'`; set to `'optional'` only when replaying a legacy DKG transcript without confirmations. */
+    readonly keyDerivationConfirmationPolicy?: KeyDerivationConfirmationPolicy;
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
     readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];

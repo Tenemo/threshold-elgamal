@@ -24,7 +24,6 @@ export const parseQualifiedFeldmanCommitments = (
     transcript: readonly SignedPayload[],
     qual: readonly number[],
     threshold: number,
-    group: CryptoGroup,
 ): readonly ParsedFeldmanCommitment[] => {
     const feldmanPayloads = transcript.filter(
         (payload): payload is SignedPayload<FeldmanCommitmentPayload> =>
@@ -45,7 +44,6 @@ export const parseQualifiedFeldmanCommitments = (
         const commitments = parseCommitmentVector(
             payload.payload.commitments,
             threshold,
-            group,
             'Feldman commitment payload',
         );
 
@@ -97,12 +95,7 @@ export const verifyFeldmanProofs = async (
                 },
                 commitment,
                 group,
-                buildSchnorrContext(
-                    entry.payload,
-                    protocolVersion,
-                    offset + 1,
-                    group,
-                ),
+                buildSchnorrContext(entry.payload, protocolVersion, offset + 1),
             );
             if (!valid) {
                 throw new InvalidPayloadError(

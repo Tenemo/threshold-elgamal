@@ -17,6 +17,7 @@ import {
     buildOptionAggregateMap,
     buildVotingManifestContext,
     decryptionProofContext,
+    type VotingManifestContext,
     DECRYPTION_SHARE_PHASE,
 } from './voting-shared.js';
 import type {
@@ -25,30 +26,16 @@ import type {
     VerifyDecryptionSharePayloadsByOptionInput,
 } from './voting-types.js';
 
-/**
- * Verifies typed decryption-share payloads against the DKG transcript-derived
- * trustee keys and one locally recomputed aggregate ciphertext per option slot.
- *
- * Signatures are expected to have been checked already against the frozen
- * registration roster.
- *
- * @param input Typed decryption-share verification input.
- * @returns Verified decryption shares grouped by option.
- */
-export const verifyDecryptionSharePayloadsByOption = async (
-    input: VerifyDecryptionSharePayloadsByOptionInput,
-): Promise<readonly VerifiedOptionDecryptionShares[]> => {
-    const context = await buildVotingManifestContext(
-        input.manifest,
-        input.sessionId,
-    );
-    const auditedShares = await auditSignedPayloads(
-        input.decryptionSharePayloads,
-    );
+export async function verifyDecryptionSharePayloadsByOptionFromAuditedPayloads(input: {
+    readonly aggregates: VerifyDecryptionSharePayloadsByOptionInput['aggregates'];
+    readonly context: VotingManifestContext;
+    readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
+    readonly dkg: VerifyDecryptionSharePayloadsByOptionInput['dkg'];
+}): Promise<readonly VerifiedOptionDecryptionShares[]> {
     const qualSet = new Set(input.dkg.qual);
     const aggregateMap = buildOptionAggregateMap(
         input.aggregates,
-        context.optionCount,
+        input.context.optionCount,
     );
     const payloadsByOption = new Map<
         number,
@@ -57,18 +44,18 @@ export const verifyDecryptionSharePayloadsByOption = async (
 
     for (
         let optionIndex = 1;
-        optionIndex <= context.optionCount;
+        optionIndex <= input.context.optionCount;
         optionIndex += 1
     ) {
         payloadsByOption.set(optionIndex, []);
     }
 
-    for (const signedPayload of auditedShares.acceptedPayloads) {
+    for (const signedPayload of input.decryptionSharePayloads) {
         const payload = signedPayload.payload;
         assertPhase(payload, DECRYPTION_SHARE_PHASE, 'Decryption share');
         assertValidOptionIndex(
             payload.optionIndex,
-            context.optionCount,
+            input.context.optionCount,
             'Decryption share',
         );
         payloadsByOption.get(payload.optionIndex)?.push(signedPayload);
@@ -77,7 +64,7 @@ export const verifyDecryptionSharePayloadsByOption = async (
     const verifiedShares: VerifiedOptionDecryptionShares[] = [];
     for (
         let optionIndex = 1;
-        optionIndex <= context.optionCount;
+        optionIndex <= input.context.optionCount;
         optionIndex += 1
     ) {
         const optionAggregate = aggregateMap.get(optionIndex);
@@ -98,12 +85,12 @@ export const verifyDecryptionSharePayloadsByOption = async (
         const optionVerifiedShares: VerifiedDecryptionSharePayload[] = [];
         for (const signedPayload of optionPayloads) {
             const payload = signedPayload.payload;
-            if (payload.sessionId !== context.sessionId) {
+            if (payload.sessionId !== input.context.sessionId) {
                 throw new InvalidPayloadError(
                     'Decryption-share payload session does not match the verification input',
                 );
             }
-            if (payload.manifestHash !== context.manifestHash) {
+            if (payload.manifestHash !== input.context.manifestHash) {
                 throw new InvalidPayloadError(
                     'Decryption-share payload manifest hash does not match the verification input',
                 );
@@ -157,11 +144,7 @@ export const verifyDecryptionSharePayloadsByOption = async (
                 proof,
                 statement,
                 RISTRETTO_GROUP,
-                decryptionProofContext(
-                    payload,
-                    context.protocolVersion,
-                    RISTRETTO_GROUP,
-                ),
+                decryptionProofContext(payload, input.context.protocolVersion),
             );
 
             if (!valid) {
@@ -183,4 +166,33 @@ export const verifyDecryptionSharePayloadsByOption = async (
     }
 
     return verifiedShares;
+}
+
+/**
+ * Verifies typed decryption-share payloads against the DKG transcript-derived
+ * trustee keys and one locally recomputed aggregate ciphertext per option slot.
+ *
+ * Signatures are expected to have been checked already against the frozen
+ * registration roster.
+ *
+ * @param input Typed decryption-share verification input.
+ * @returns Verified decryption shares grouped by option.
+ */
+export const verifyDecryptionSharePayloadsByOption = async (
+    input: VerifyDecryptionSharePayloadsByOptionInput,
+): Promise<readonly VerifiedOptionDecryptionShares[]> => {
+    const context = await buildVotingManifestContext(
+        input.manifest,
+        input.sessionId,
+    );
+    const auditedShares = await auditSignedPayloads(
+        input.decryptionSharePayloads,
+    );
+
+    return verifyDecryptionSharePayloadsByOptionFromAuditedPayloads({
+        aggregates: input.aggregates,
+        context,
+        decryptionSharePayloads: auditedShares.acceptedPayloads,
+        dkg: input.dkg,
+    });
 };

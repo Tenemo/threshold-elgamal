@@ -1,8 +1,7 @@
 import {
     assertPositiveParticipantIndex,
-    getGroup,
     InvalidPayloadError,
-    type CryptoGroup,
+    RISTRETTO_GROUP,
 } from '../core/index.js';
 import type { ProofContext } from '../proofs/types.js';
 import {
@@ -31,10 +30,9 @@ export const BALLOT_CLOSE_PHASE = 6;
 export const DECRYPTION_SHARE_PHASE = 7;
 export const TALLY_PUBLICATION_PHASE = 8;
 
-type VotingManifestContext = {
+export type VotingManifestContext = {
     readonly manifest: ElectionManifest;
     readonly manifestHash: string;
-    readonly group: CryptoGroup;
     readonly optionCount: number;
     readonly protocolVersion: string;
     readonly scoreDomainValues: readonly bigint[];
@@ -108,7 +106,6 @@ export const buildVotingManifestContext = async (
     return {
         manifest: validatedManifest,
         manifestHash: await hashElectionManifest(validatedManifest),
-        group: getGroup('ristretto255'),
         optionCount: validatedManifest.optionList.length,
         protocolVersion: SHIPPED_PROTOCOL_VERSION,
         scoreDomainValues: scoreVotingDomain(),
@@ -180,10 +177,9 @@ export const buildOptionAggregateMap = (
 export const decryptionProofContext = (
     payload: DecryptionSharePayload,
     protocolVersion: string,
-    group: CryptoGroup,
 ): ProofContext => ({
     protocolVersion,
-    suiteId: group.name,
+    suiteId: RISTRETTO_GROUP.name,
     manifestHash: payload.manifestHash,
     sessionId: payload.sessionId,
     label: 'decryption-share-dleq',

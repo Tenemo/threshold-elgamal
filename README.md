@@ -78,6 +78,8 @@ The cryptographic threshold is derived internally from the accepted registration
 
 There is no supported `n-of-n` mode and no supported public `k-of-n` configuration.
 
+Transcript verification requires key-derivation confirmations from every qualified participant by default. If you need to replay an older transcript that omits them, pass `keyDerivationConfirmationPolicy: 'optional'` to `verifyDKGTranscript(...)` or `verifyElectionCeremonyDetailed(...)`.
+
 ## Getting started
 
 ```typescript
