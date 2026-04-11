@@ -280,10 +280,16 @@ export const verifyElectionCeremonyDetailed = async (
         wrapStageError('SIGNATURE_INVALID', 'signatures', error);
     }
 
-    let ballotClose!: Awaited<ReturnType<typeof verifyBallotClosePayload>>;
+    let ballotClose!: ReturnType<typeof verifyBallotClosePayload>;
     try {
-        ballotClose = await verifyBallotClosePayload({
-            ballotClosePayloads: ballotCloseAudit.acceptedPayloads,
+        if (ballotCloseAudit.acceptedPayloads.length !== 1) {
+            throw new InvalidPayloadError(
+                'Ballot close requires exactly one payload',
+            );
+        }
+
+        ballotClose = verifyBallotClosePayload({
+            ballotClosePayload: ballotCloseAudit.acceptedPayloads[0],
             ballotPayloads: ballotAudit.acceptedPayloads,
             manifestHash: context.manifestHash,
             optionCount: context.optionCount,

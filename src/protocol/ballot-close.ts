@@ -1,6 +1,5 @@
 import { InvalidPayloadError } from '../core/index.js';
 
-import { auditSignedPayloads } from './board-audit.js';
 import type {
     BallotClosePayload,
     BallotSubmissionPayload,
@@ -12,17 +11,6 @@ import {
     assertValidOptionIndex,
     BALLOT_CLOSE_PHASE,
 } from './voting-shared.js';
-
-const requireExactlyOnePayload = <TPayload>(
-    payloads: readonly TPayload[],
-    label: string,
-): TPayload => {
-    if (payloads.length !== 1) {
-        throw new InvalidPayloadError(`${label} requires exactly one payload`);
-    }
-
-    return payloads[0];
-};
 
 /** Verified organizer-selected ballot cutoff and the counted ballot subset. */
 export type VerifiedBallotClose = {
@@ -63,8 +51,8 @@ const completeBallotParticipants = (
  * Verifies the organizer-signed ballot cutoff and extracts the counted ballot
  * subset used for all later decryption and tally verification.
  */
-export const verifyBallotClosePayload = async (input: {
-    readonly ballotClosePayloads: readonly SignedPayload<BallotClosePayload>[];
+export const verifyBallotClosePayload = (input: {
+    readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly manifestHash: string;
     readonly optionCount: number;
@@ -72,22 +60,13 @@ export const verifyBallotClosePayload = async (input: {
     readonly participantCount: number;
     readonly sessionId: string;
     readonly threshold: number;
-}): Promise<VerifiedBallotClose> => {
-    for (const signedPayload of input.ballotClosePayloads) {
-        if (signedPayload.payload.messageType !== 'ballot-close') {
-            throw new InvalidPayloadError(
-                'Ballot close verification only accepts ballot-close payloads',
-            );
-        }
+}): VerifiedBallotClose => {
+    const closePayload = input.ballotClosePayload;
+    if (closePayload.payload.messageType !== 'ballot-close') {
+        throw new InvalidPayloadError(
+            'Ballot close verification only accepts ballot-close payloads',
+        );
     }
-
-    const auditedBallotClosePayloads = await auditSignedPayloads(
-        input.ballotClosePayloads,
-    );
-    const closePayload = requireExactlyOnePayload(
-        auditedBallotClosePayloads.acceptedPayloads,
-        'Ballot close',
-    );
     const payload = closePayload.payload;
 
     assertPhase(payload, BALLOT_CLOSE_PHASE, 'Ballot close');
