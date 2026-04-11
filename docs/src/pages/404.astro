@@ -1,0 +1,28 @@
+---
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+
+const baseUrl = import.meta.env.BASE_URL;
+---
+
+<StarlightPage
+    frontmatter={{
+        title: 'Page not found',
+        description: 'The requested documentation page does not exist.',
+        editUrl: false,
+        pagefind: false,
+    }}
+    sidebar={[]}
+>
+    <p>The page you requested does not exist or has moved.</p>
+    <ul>
+        <li>
+            <a href={baseUrl}>Go back to the documentation home</a>
+        </li>
+        <li>
+            <a href={`${baseUrl}guides/getting-started/`}>Start with get started</a>
+        </li>
+        <li>
+            <a href={`${baseUrl}api/`}>Browse the API reference</a>
+        </li>
+    </ul>
+</StarlightPage>

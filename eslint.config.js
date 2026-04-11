@@ -183,11 +183,16 @@ export default [
     }),
     {
         ignores: [
-            'node_modules/*',
-            'dist/*',
-            'coverage/*',
-            'docs/.astro/*',
-            'docs/dist/*',
+            'node_modules',
+            'node_modules/**',
+            'dist',
+            'dist/**',
+            'coverage',
+            'coverage/**',
+            'docs/.astro',
+            'docs/.astro/**',
+            'docs/dist',
+            'docs/dist/**',
         ],
     },
 ];

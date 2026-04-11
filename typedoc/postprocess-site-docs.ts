@@ -24,6 +24,24 @@ const moduleOrder = new Map(
 const internalLinkPattern = /(!?\[[^\]]*])\(([^)#\s]+)(#[^)]+)?\)/g;
 const breadcrumbPattern = /^\*\*.+?\*\*\r?\n\r?\n\*\*\*\r?\n\r?\n/;
 const leadingHeadingPattern = /^# .+\r?\n\r?\n/;
+const sentenceCaseReplacements: readonly (readonly [RegExp, string])[] = [
+    [/\bType Aliases\b/g, 'Type aliases'],
+    [/\bType Alias\b/g, 'Type alias'],
+    [/\bType Declarations\b/g, 'Type declarations'],
+    [/\bType Declaration\b/g, 'Type declaration'],
+    [/\bType Parameters\b/g, 'Type parameters'],
+    [/\bType Parameter\b/g, 'Type parameter'],
+    [/\bCall Signatures\b/g, 'Call signatures'],
+    [/\bCall Signature\b/g, 'Call signature'],
+    [/\bIndex Signatures\b/g, 'Index signatures'],
+    [/\bIndex Signature\b/g, 'Index signature'],
+    [/\bDefault Value\b/g, 'Default value'],
+    [/\bDefined In:\b/g, 'Defined in:'],
+    [/\bImplementation Of\b/g, 'Implementation of'],
+    [/\bImplemented By\b/g, 'Implemented by'],
+    [/\bInherited From\b/g, 'Inherited from'],
+    [/\bExtended By\b/g, 'Extended by'],
+] as const;
 
 const toReferenceRelativePath = (absolutePath: string): string =>
     path.relative(referenceRoot, absolutePath).replace(/\\/g, '/');
@@ -97,6 +115,16 @@ const rewriteMarkdownLinks = (content: string): string =>
         },
     );
 
+const rewriteSentenceCase = (content: string): string => {
+    let rewritten = content;
+
+    for (const [pattern, replacement] of sentenceCaseReplacements) {
+        rewritten = rewritten.replace(pattern, replacement);
+    }
+
+    return rewritten;
+};
+
 const main = async (): Promise<void> => {
     const navigation = JSON.parse(
         await fs.readFile(navigationPath, 'utf8'),
@@ -144,6 +172,7 @@ const main = async (): Promise<void> => {
         content = content.replace(breadcrumbPattern, '');
         content = content.replace(leadingHeadingPattern, '');
         content = rewriteMarkdownLinks(content);
+        content = rewriteSentenceCase(content);
 
         const frontmatterLines = [
             '---',

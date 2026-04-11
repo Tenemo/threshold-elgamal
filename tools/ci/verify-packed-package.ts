@@ -22,8 +22,9 @@ const runPackageManager = (args: readonly string[], cwd: string): void => {
     const commandDescription = [process.execPath, ...commandArgs].join(' ');
     const result = spawnSync(process.execPath, commandArgs, {
         cwd,
-        stdio: 'inherit',
         env: process.env,
+        encoding: 'utf8',
+        maxBuffer: 100 * 1024 * 1024,
     });
 
     if (result.error !== undefined) {
@@ -37,8 +38,14 @@ const runPackageManager = (args: readonly string[], cwd: string): void => {
         );
     }
     if (result.status !== 0) {
+        const stdout = result.stdout?.trim();
+        const stderr = result.stderr?.trim();
+        const formattedOutput =
+            stdout !== '' || stderr !== ''
+                ? `\n${[stdout, stderr].filter(Boolean).join('\n')}`
+                : '';
         throw new Error(
-            `Command exited with status ${result.status ?? 'null'}: ${commandDescription}`,
+            `Command exited with status ${result.status ?? 'null'}: ${commandDescription}${formattedOutput}`,
         );
     }
 };
@@ -88,14 +95,18 @@ const main = async (): Promise<void> => {
             join(consumerDirectory, 'smoke.mjs'),
         );
 
-        runPackageManager(['add', tarballPath], consumerDirectory);
+        runPackageManager(
+            ['add', '--ignore-scripts', '--silent', tarballPath],
+            consumerDirectory,
+        );
 
         const commandArgs = ['smoke.mjs'];
         const commandDescription = [process.execPath, ...commandArgs].join(' ');
         const result = spawnSync(process.execPath, commandArgs, {
             cwd: consumerDirectory,
-            stdio: 'inherit',
             env: process.env,
+            encoding: 'utf8',
+            maxBuffer: 100 * 1024 * 1024,
         });
         if (result.error !== undefined) {
             throw new Error(
@@ -108,10 +119,18 @@ const main = async (): Promise<void> => {
             );
         }
         if (result.status !== 0) {
+            const stdout = result.stdout?.trim();
+            const stderr = result.stderr?.trim();
+            const formattedOutput =
+                stdout !== '' || stderr !== ''
+                    ? `\n${[stdout, stderr].filter(Boolean).join('\n')}`
+                    : '';
             throw new Error(
-                `Smoke entrypoint exited with status ${result.status ?? 'null'}: ${commandDescription}`,
+                `Smoke entrypoint exited with status ${result.status ?? 'null'}: ${commandDescription}${formattedOutput}`,
             );
         }
+
+        console.log('Packed package smoke test passed.');
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }

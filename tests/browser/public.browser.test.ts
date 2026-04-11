@@ -4,6 +4,7 @@ import {
     createManifestAcceptancePayload,
     createManifestPublicationPayload,
     createRegistrationPayload,
+    createTallyPublicationPayload,
     decryptEnvelope,
     deriveSessionId,
     encryptEnvelope,
@@ -98,6 +99,19 @@ describe('browser public surface', () => {
                 includedParticipantIndices: [3, 1, 2],
             },
         );
+        const tallyPublication = await createTallyPublicationPayload(
+            participants[0].auth.privateKey,
+            {
+                sessionId,
+                manifestHash,
+                participantIndex: participants[0].index,
+                optionIndex: 1,
+                transcriptHash: 'aa'.repeat(32),
+                ballotCount: 3,
+                decryptionParticipantIndices: [3, 1, 2],
+                tally: 16n,
+            },
+        );
         const plaintext = new TextEncoder().encode('browser-envelope');
         const encrypted = await encryptEnvelope(
             plaintext,
@@ -127,6 +141,9 @@ describe('browser public surface', () => {
         expect(ballotClose.payload.includedParticipantIndices).toEqual([
             1, 2, 3,
         ]);
+        expect(tallyPublication.payload.decryptionParticipantIndices).toEqual([
+            1, 2, 3,
+        ]);
         expect(new TextDecoder().decode(decrypted)).toBe('browser-envelope');
         expect(scoreVotingDomain()).toEqual([
             1n,
@@ -140,5 +157,22 @@ describe('browser public surface', () => {
             9n,
             10n,
         ]);
+    });
+
+    it('rejects duplicate decryption participant indices in tally publication payloads', async () => {
+        const auth = await generateAuthKeyPair({ extractable: true });
+
+        await expect(
+            createTallyPublicationPayload(auth.privateKey, {
+                sessionId: 'session',
+                manifestHash: 'aa'.repeat(32),
+                participantIndex: 1,
+                optionIndex: 1,
+                transcriptHash: 'bb'.repeat(32),
+                ballotCount: 3,
+                decryptionParticipantIndices: [1, 2, 2],
+                tally: 7n,
+            }),
+        ).rejects.toThrow('Decryption participant indices must be unique');
     });
 });

@@ -314,16 +314,23 @@ export const createTallyPublicationPayload = async (
     input: Omit<TallyPublicationPayload, 'messageType' | 'phase' | 'tally'> & {
         readonly tally: TallyPublicationPayload['tally'] | bigint;
     },
-): Promise<SignedPayload<TallyPublicationPayload>> =>
-    signProtocolPayload(privateKey, {
+): Promise<SignedPayload<TallyPublicationPayload>> => {
+    const decryptionParticipantIndices = [
+        ...input.decryptionParticipantIndices,
+    ].sort((left, right) => left - right);
+    assertUniqueSortedIndices(
+        decryptionParticipantIndices,
+        'Decryption participant',
+    );
+
+    return signProtocolPayload(privateKey, {
         ...input,
         phase: TALLY_PUBLICATION_PHASE,
         messageType: 'tally-publication',
-        decryptionParticipantIndices: [
-            ...input.decryptionParticipantIndices,
-        ].sort((left, right) => left - right),
+        decryptionParticipantIndices,
         tally:
             typeof input.tally === 'bigint'
                 ? encodeScalar(input.tally)
                 : input.tally,
     });
+};

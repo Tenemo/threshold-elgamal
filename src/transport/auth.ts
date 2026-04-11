@@ -13,7 +13,7 @@ export type GenerateAuthKeyPairOptions = {
 /**
  * Generates a fresh per-ceremony authentication key pair.
  *
- * @returns Extractable authentication key pair.
+ * @returns Authentication key pair. The private key is extractable only when requested.
  */
 export const generateAuthKeyPair = async (
     options: GenerateAuthKeyPairOptions = {},

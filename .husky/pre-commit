@@ -1,1 +1,1 @@
-pnpm run ci:release-smoke
+pnpm run precommit
