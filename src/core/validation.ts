@@ -1,11 +1,8 @@
 import {
-    assertAdditiveBound as assertSharedAdditiveBound,
-    assertAdditivePlaintext,
-} from './additive-validation.js';
-import {
     IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidScalarError,
+    PlaintextDomainError,
     ThresholdViolationError,
 } from './errors.js';
 import { decodePoint, RISTRETTO_ORDER } from './ristretto.js';
@@ -50,8 +47,13 @@ export const assertScalarInZq = (
  *
  * @throws {@link InvalidScalarError} When `bound` is outside `0..q-1`.
  */
-export const assertAdditiveBound = (bound: bigint, q: bigint): void =>
-    assertSharedAdditiveBound(bound, q);
+export const assertAdditiveBound = (bound: bigint, q: bigint): void => {
+    if (bound < 0n || bound >= q) {
+        throw new InvalidScalarError(
+            'Additive plaintext bound must be in the range 0..q-1',
+        );
+    }
+};
 
 /**
  * Validates the plaintext domain and caller-supplied bound for additive
@@ -64,7 +66,15 @@ export const assertPlaintextAdditive = (
     value: bigint,
     bound: bigint,
     q: bigint,
-): void => assertAdditivePlaintext(value, bound, q);
+): void => {
+    assertAdditiveBound(bound, q);
+
+    if (value < 0n || value > bound) {
+        throw new PlaintextDomainError(
+            `Additive mode requires plaintext values in the range 0..${bound}`,
+        );
+    }
+};
 
 /**
  * Validates threshold parameters for `k`-of-`n` protocols.

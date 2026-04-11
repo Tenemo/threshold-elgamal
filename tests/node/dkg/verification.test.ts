@@ -4,7 +4,7 @@ import {
     runVotingFlowScenario,
     type CompletedVotingFlowResult,
     type VotingFlowResult,
-} from '../integration/voting-flow-harness.js';
+} from '../../../dev-support/voting-flow-harness.js';
 
 import {
     deriveQualifiedParticipantIndices,
@@ -20,8 +20,8 @@ import {
     type RegistrationPayload,
     type SignedPayload,
 } from '#protocol';
+import { exportTransportPrivateKey } from '#src/transport/key-agreement';
 import { generateTransportKeyPair, signPayloadBytes } from '#transport';
-import { exportTransportPrivateKey } from '#transport-advanced';
 const expectCompleted = (
     result: VotingFlowResult,
     label: string,

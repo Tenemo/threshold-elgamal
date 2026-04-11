@@ -5,7 +5,7 @@ sidebar:
   order: 6
 ---
 
-`threshold-elgamal` is a hardened research prototype for browser-native Ristretto255 ElGamal workflows. It ships careful validation, additive-only root exports, threshold helpers, proofs, transport primitives, board-audit helpers, and log-driven DKG reducers, but it is not audited production voting software.
+`threshold-elgamal` is a hardened research prototype for browser-native Ristretto255 ElGamal workflows. It ships careful validation, additive-only root exports, threshold helpers, transport primitives, board-audit helpers, and log-driven DKG reducers. Internal proof and VSS components support those workflows, but they are not separate supported import surfaces. It is not audited production voting software.
 
 Its intended security boundary is still an honest-origin, honest-client, static-adversary model with a strict-majority threshold policy `floor(n / 2) + 1 <= k <= n - 1`.
 
@@ -14,7 +14,7 @@ Its intended security boundary is still an honest-origin, honest-client, static-
 - Group and scalar inputs are validated before secret-dependent operations.
 - The root package exposes additive ElGamal only.
 - Threshold decryption helpers carry participant indices explicitly and reject malformed or duplicate share sets.
-- Proof helpers bind protocol version, suite, manifest hash, session id, and any participant- or ballot-specific context you supply.
+- Internal proof components bind protocol version, suite, manifest hash, session id, and any participant- or ballot-specific context you supply.
 - Transport envelopes authenticate context through HKDF info and AES-GCM additional data.
 - Checkpointed DKG transcripts close each setup phase on a threshold-supported snapshot hash, so clients can compare the same board view before progressing.
 - The root package can recompute ballot aggregates locally and verify one published tally per option from signed ballot, decryption-share, and tally payloads.

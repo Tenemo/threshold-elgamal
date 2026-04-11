@@ -1,7 +1,7 @@
 {
     "name": "threshold-elgamal",
     "version": "1.0.0-beta.5",
-    "description": "A browser-native TypeScript ElGamal library for Ristretto255-based research prototypes, shipping additive ElGamal, threshold decryption, VSS, proofs, protocol helpers, board auditing, transport primitives, and log-driven DKG state machines.",
+    "description": "A browser-native TypeScript ElGamal library for Ristretto255-based research prototypes, shipping additive ElGamal, threshold decryption, protocol helpers, board auditing, transport primitives, and log-driven DKG state machines.",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MPL-2.0",
     "repository": {
@@ -99,7 +99,6 @@
         "#src/*": "./src/*.ts",
         "#threshold": "./src/threshold/index.ts",
         "#transport": "./src/transport/index.ts",
-        "#transport-advanced": "./src/transport/advanced.ts",
         "#vss": "./src/vss/index.ts",
         "#serialize": "./src/serialize/index.ts"
     },

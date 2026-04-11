@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { exportTransportPrivateKey } from '#src/transport/key-agreement';
 import {
     assertNonZeroSharedSecret,
     decryptEnvelope,
@@ -16,7 +17,6 @@ import {
     verifyComplaintPrecondition,
     verifyPayloadSignature,
 } from '#transport';
-import { exportTransportPrivateKey } from '#transport-advanced';
 
 const corruptHexTailByte = (value: string): string => {
     const lastByte = Number.parseInt(value.slice(-2), 16);

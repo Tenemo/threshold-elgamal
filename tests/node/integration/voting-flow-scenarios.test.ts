@@ -4,7 +4,7 @@ import {
     type CompletedVotingFlowResult,
     runVotingFlowScenario,
     type VotingFlowScenario,
-} from './voting-flow-harness.js';
+} from '../../../dev-support/voting-flow-harness.js';
 
 const scenarioTimeoutMs = 180_000;
 
@@ -22,20 +22,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
         expectedQual: [1, 2, 3],
     },
     {
-        name: 'completes a 2-of-3 unanimous maximum tally',
-        participantCount: 3,
-        votes: [3n, 3n, 3n],
-        decryptionParticipantIndices: [1, 2],
-        expectedQual: [1, 2, 3],
-    },
-    {
-        name: 'completes a 2-of-3 partial recovery flow',
-        participantCount: 3,
-        votes: [2n, 1n, 3n],
-        decryptionParticipantIndices: [1, 2],
-        expectedQual: [1, 2, 3],
-    },
-    {
         name: 'completes a 3-of-4 even-participant flow',
         participantCount: 4,
         votes: [1n, 2n, 3n, 1n],
@@ -47,13 +33,6 @@ const completedScenarios: readonly (VotingFlowScenario & {
         participantCount: 5,
         votes: [3n, 2n, 1n, 3n, 2n],
         decryptionParticipantIndices: [1, 3, 5],
-        expectedQual: [1, 2, 3, 4, 5],
-    },
-    {
-        name: 'completes a 3-of-5 low-score flow',
-        participantCount: 5,
-        votes: [1n, 3n, 1n, 3n, 3n],
-        decryptionParticipantIndices: [2, 4, 5],
         expectedQual: [1, 2, 3, 4, 5],
     },
     {

@@ -4,7 +4,7 @@ import {
     runVotingFlowScenario,
     type CompletedVotingFlowResult,
     type VotingFlowResult,
-} from '../integration/voting-flow-harness.js';
+} from '../../../dev-support/voting-flow-harness.js';
 
 import {
     canonicalUnsignedPayloadBytes,

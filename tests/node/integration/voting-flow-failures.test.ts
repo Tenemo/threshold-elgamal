@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     runVotingFlowScenario,
     type VotingFlowScenario,
-} from './voting-flow-harness.js';
+} from '../../../dev-support/voting-flow-harness.js';
 
 const scenarioTimeoutMs = 60_000;
 
