@@ -1,5 +1,10 @@
 import { InvalidPayloadError, type CryptoGroup } from '../core/index.js';
-import { decodeScalar } from '../core/ristretto.js';
+import {
+    RISTRETTO_ZERO,
+    decodePoint,
+    decodeScalar,
+    pointAdd,
+} from '../core/ristretto.js';
 import type { EncodedPoint } from '../core/types.js';
 import { verifySchnorrProof } from '../proofs/index.js';
 import { hashProtocolTranscript } from '../protocol/transcript.js';
@@ -105,6 +110,28 @@ export const verifyFeldmanProofs = async (
                 );
             }
         }
+    }
+};
+
+export const assertAggregateFeldmanDegree = (
+    feldmanCommitments: readonly ParsedFeldmanCommitment[],
+): void => {
+    const aggregateHighestDegreeCommitment = feldmanCommitments.reduce(
+        (sum, entry) =>
+            pointAdd(
+                sum,
+                decodePoint(
+                    entry.commitments[entry.commitments.length - 1],
+                    'Qualified Feldman highest-degree commitment',
+                ),
+            ),
+        RISTRETTO_ZERO,
+    );
+
+    if (aggregateHighestDegreeCommitment.is0()) {
+        throw new InvalidPayloadError(
+            'Qualified Feldman commitments collapse below the claimed reconstruction threshold',
+        );
     }
 };
 

@@ -29,7 +29,7 @@ import {
     createThresholdShareArtifacts,
 } from './voting-flow/voting.js';
 
-import { getGroup, majorityThreshold, modQ } from '#core';
+import { assertThreshold, getGroup, majorityThreshold, modQ } from '#core';
 import {
     deriveJointPublicKey,
     deriveTranscriptVerificationKeys,
@@ -121,11 +121,7 @@ export const runVotingFlowScenario = async (
     );
     const threshold =
         scenario.threshold ?? majorityThreshold(scenario.participantCount);
-    invariant(
-        threshold >= majorityThreshold(scenario.participantCount) &&
-            threshold <= scenario.participantCount - 1,
-        `Supported DKG threshold must satisfy floor(n / 2) + 1 <= k <= n - 1 (received ${threshold} for n = ${scenario.participantCount})`,
-    );
+    assertThreshold(threshold, scenario.participantCount);
     const validValues = validScores();
     const bound = singleBallotBound();
     votesByOption.forEach((votes, optionOffset) => {

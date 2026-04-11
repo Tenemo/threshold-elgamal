@@ -22,6 +22,14 @@ const completedScenarios: readonly (VotingFlowScenario & {
         expectedQual: [1, 2, 3],
     },
     {
+        name: 'completes a 3-of-3 all-required flow',
+        participantCount: 3,
+        threshold: 3,
+        votes: [3n, 2n, 1n],
+        decryptionParticipantIndices: [1, 2, 3],
+        expectedQual: [1, 2, 3],
+    },
+    {
         name: 'completes a 3-of-4 even-participant flow',
         participantCount: 4,
         votes: [1n, 2n, 3n, 1n],

@@ -47,10 +47,20 @@ const resignPayload = async <TPayload extends ProtocolPayload>(
     };
 };
 describe('published voting verification', () => {
+    let allRequired: CompletedVotingFlowResult;
     let completed: CompletedVotingFlowResult;
     let multiOption: CompletedVotingFlowResult;
     let withDealerFaultComplaint: CompletedVotingFlowResult;
     beforeAll(async () => {
+        allRequired = expectCompleted(
+            await runVotingFlowScenario({
+                participantCount: 3,
+                threshold: 3,
+                votes: [3n, 2n, 1n],
+                decryptionParticipantIndices: [1, 2, 3],
+            }),
+            'Expected the all-required voting fixture to complete',
+        );
         completed = expectCompleted(
             await runVotingFlowScenario({
                 participantCount: 3,
@@ -107,6 +117,41 @@ describe('published voting verification', () => {
             ).resolves.toMatchObject({
                 tally: 6n,
             });
+        },
+    );
+    it(
+        'requires every decryption share when the manifest uses n-of-n reconstruction',
+        {
+            timeout: publishedVotingTestTimeoutMs,
+        },
+        async () => {
+            await expect(
+                verifyPublishedVotingResult({
+                    manifest: allRequired.manifest,
+                    sessionId: allRequired.sessionId,
+                    dkgTranscript: allRequired.dkgTranscript,
+                    ballotPayloads: allRequired.ballotPayloads!,
+                    decryptionSharePayloads:
+                        allRequired.decryptionSharePayloads!,
+                    tallyPublication: allRequired.tallyPublication,
+                }),
+            ).resolves.toMatchObject({
+                tally: 6n,
+            });
+
+            await expect(
+                verifyPublishedVotingResult({
+                    manifest: allRequired.manifest,
+                    sessionId: allRequired.sessionId,
+                    dkgTranscript: allRequired.dkgTranscript,
+                    ballotPayloads: allRequired.ballotPayloads!,
+                    decryptionSharePayloads:
+                        allRequired.decryptionSharePayloads!.slice(1),
+                    tallyPublication: allRequired.tallyPublication,
+                }),
+            ).rejects.toThrow(
+                'At least 3 decryption shares are required for option 1',
+            );
         },
     );
     it(

@@ -67,6 +67,8 @@ const sessionId = await deriveSessionId(
 
 The manifest no longer carries `suiteId`. The shipped suite is implicit and fixed to `ristretto255`.
 
+For three participants, both `2 of 3` and `3 of 3` are supported. Choosing `3 of 3` removes dropout tolerance entirely, so any unresolved complaint, missing checkpoint signer, or missing decryption share prevents completion.
+
 ## Supported public workflow
 
 1. Freeze the participant roster and publish the manifest.

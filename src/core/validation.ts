@@ -107,6 +107,10 @@ export const assertThreshold = (
 
 /**
  * Derives the minimum strict-majority threshold `floor(n / 2) + 1`.
+ *
+ * This helper remains available for callers that intentionally want a
+ * strict-majority policy. It is not the only distributed threshold policy
+ * supported by the shipped manifest and DKG workflows.
  */
 export const majorityThreshold = (participantCount: number): number => {
     if (!Number.isInteger(participantCount) || participantCount < 1) {
@@ -119,8 +123,11 @@ export const majorityThreshold = (participantCount: number): number => {
 };
 
 /**
- * Validates that the supplied threshold satisfies the shipped strict-majority
- * policy.
+ * Validates that the supplied threshold satisfies a strict-majority policy.
+ *
+ * This helper remains available for callers that intentionally want the older
+ * strict-majority range. The shipped manifest and DKG workflows now accept the
+ * broader distributed range `1 <= k <= n` for `n >= 3`.
  */
 export const assertMajorityThreshold = (
     threshold: number,

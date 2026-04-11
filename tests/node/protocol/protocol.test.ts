@@ -74,9 +74,10 @@ describe('protocol payloads and transcripts', () => {
             deriveSessionId('manifest-1', 'roster-1', 'nonce-1', 'ts-1'),
         ).resolves.toHaveLength(64);
     });
-    it('derives the shipped publication floor as k plus one accepted voter', () => {
+    it('derives the shipped publication floor and clamps n-of-n to the participant count', () => {
         expect(defaultMinimumPublishedVoterCount(3, 5)).toBe(4);
         expect(defaultMinimumPublishedVoterCount(26, 51)).toBe(27);
+        expect(defaultMinimumPublishedVoterCount(5, 5)).toBe(5);
     });
     it('orders protocol payloads deterministically', () => {
         const sorted = sortProtocolPayloads([registration, acceptance]);
