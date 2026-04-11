@@ -1,19 +1,11 @@
 import {
     InvalidScalarError,
-    RISTRETTO_GROUP,
     assertScalarInZq,
-    assertThreshold,
     assertValidParticipantIndex,
-    randomScalarInRange,
 } from '../core/index.js';
-import { encodePoint, multiplyBase } from '../core/ristretto.js';
 
-import {
-    evaluatePolynomial,
-    generatePolynomial,
-    type Polynomial,
-} from './polynomial.js';
-import type { Share, ThresholdKeySet } from './types.js';
+import { evaluatePolynomial, type Polynomial } from './polynomial.js';
+import type { Share } from './types.js';
 
 const createSharesFromPolynomial = (
     polynomial: Polynomial,
@@ -37,31 +29,6 @@ const createSharesFromPolynomial = (
     }
 
     return shares;
-};
-
-/**
- * Splits a fresh secret into indexed Shamir shares and derives the threshold
- * public key for dealer-based threshold decryption.
- */
-export const dealerKeyGen = (
-    threshold: number,
-    participantCount: number,
-): ThresholdKeySet => {
-    assertThreshold(threshold, participantCount);
-
-    const secret = randomScalarInRange(1n, RISTRETTO_GROUP.q);
-    const polynomial = generatePolynomial(secret, threshold, RISTRETTO_GROUP.q);
-
-    return {
-        threshold,
-        participantCount,
-        publicKey: encodePoint(multiplyBase(secret)),
-        shares: createSharesFromPolynomial(
-            polynomial,
-            participantCount,
-            RISTRETTO_GROUP.q,
-        ),
-    };
 };
 
 /**

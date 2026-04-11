@@ -1,4 +1,4 @@
-/** Public dealer threshold decryption exports. */
+/** Threshold arithmetic exports used by the shipped ceremony flow. */
 export {
     combineDecryptionShares,
     createVerifiedDecryptionShare,
@@ -6,5 +6,4 @@ export {
 export * from './lagrange.js';
 export * from './polynomial.js';
 export * from './shares.js';
-export * from './storage.js';
 export * from './types.js';

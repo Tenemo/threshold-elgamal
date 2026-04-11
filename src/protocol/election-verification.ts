@@ -6,9 +6,11 @@ import {
 } from '../dkg/verification.js';
 import { combineDecryptionShares } from '../threshold/index.js';
 
+import { verifyBallotClosePayload } from './ballot-close.js';
 import type { VerifiedOptionBallotAggregation } from './ballots.js';
 import { auditSignedPayloads, type BoardAudit } from './board-audit.js';
 import type {
+    BallotClosePayload,
     BallotSubmissionPayload,
     DecryptionSharePayload,
     ElectionManifest,
@@ -84,7 +86,8 @@ export type VerifiedElectionCeremonyDetailed = {
     readonly manifestHash: string;
     readonly sessionId: string;
     readonly qual: readonly number[];
-    readonly acceptedVoterIndices: readonly number[];
+    readonly countedParticipantIndices: readonly number[];
+    readonly excludedParticipantIndices: readonly number[];
     readonly perOptionAcceptedCounts: readonly {
         readonly optionIndex: number;
         readonly acceptedCount: number;
@@ -96,6 +99,7 @@ export type VerifiedElectionCeremonyDetailed = {
     readonly boardAudit: {
         readonly dkg: BoardAudit;
         readonly ballots: BoardAudit<BallotSubmissionPayload>;
+        readonly ballotClose: BoardAudit<BallotClosePayload>;
         readonly decryptionShares: BoardAudit<DecryptionSharePayload>;
         readonly tallyPublications?: BoardAudit<TallyPublicationPayload>;
         readonly overall: BoardAudit;
@@ -222,12 +226,16 @@ export const verifyElectionCeremonyDetailed = async (
 
     let dkgAudit!: BoardAudit;
     let ballotAudit!: BoardAudit<BallotSubmissionPayload>;
+    let ballotCloseAudit!: BoardAudit<BallotClosePayload>;
     let decryptionAudit!: BoardAudit<DecryptionSharePayload>;
     let tallyAudit: BoardAudit<TallyPublicationPayload> | undefined;
     let overallAudit!: BoardAudit;
     try {
         dkgAudit = await auditSignedPayloads(input.dkgTranscript);
         ballotAudit = await auditSignedPayloads(input.ballotPayloads);
+        ballotCloseAudit = await auditSignedPayloads([
+            input.ballotClosePayload,
+        ]);
         decryptionAudit = await auditSignedPayloads(
             input.decryptionSharePayloads,
         );
@@ -239,6 +247,7 @@ export const verifyElectionCeremonyDetailed = async (
         overallAudit = await auditSignedPayloads([
             ...dkgAudit.acceptedPayloads,
             ...ballotAudit.acceptedPayloads,
+            ...ballotCloseAudit.acceptedPayloads,
             ...decryptionAudit.acceptedPayloads,
             ...(tallyAudit?.acceptedPayloads ?? []),
         ]);
@@ -261,6 +270,7 @@ export const verifyElectionCeremonyDetailed = async (
         await verifyPayloadsAgainstRegistrations(
             [
                 ...ballotAudit.acceptedPayloads,
+                ...ballotCloseAudit.acceptedPayloads,
                 ...decryptionAudit.acceptedPayloads,
                 ...(tallyAudit?.acceptedPayloads ?? []),
             ],
@@ -270,10 +280,32 @@ export const verifyElectionCeremonyDetailed = async (
         wrapStageError('SIGNATURE_INVALID', 'signatures', error);
     }
 
+    let ballotClose!: ReturnType<typeof verifyBallotClosePayload>;
+    try {
+        if (ballotCloseAudit.acceptedPayloads.length !== 1) {
+            throw new InvalidPayloadError(
+                'Ballot close requires exactly one payload',
+            );
+        }
+
+        ballotClose = verifyBallotClosePayload({
+            ballotClosePayload: ballotCloseAudit.acceptedPayloads[0],
+            ballotPayloads: ballotAudit.acceptedPayloads,
+            manifestHash: context.manifestHash,
+            optionCount: context.optionCount,
+            organizerIndex: dkg.organizerIndex,
+            participantCount: dkg.participantCount,
+            sessionId: context.sessionId,
+            threshold: dkg.threshold,
+        });
+    } catch (error) {
+        wrapStageError('BALLOT_INVALID', 'ballots', error);
+    }
+
     let ballots!: readonly VerifiedOptionBallotAggregation[];
     try {
         ballots = await verifyBallotSubmissionPayloadsByOption({
-            ballotPayloads: ballotAudit.acceptedPayloads,
+            ballotPayloads: ballotClose.countedBallotPayloads,
             publicKey: dkg.derivedPublicKey,
             manifest: context.manifest,
             sessionId: context.sessionId,
@@ -397,19 +429,13 @@ export const verifyElectionCeremonyDetailed = async (
         wrapStageError('TALLY_INVALID', 'tally', error);
     }
 
-    const acceptedVoterIndices = [
-        ...new Set(
-            options[0]?.ballots.ballots.map((ballot) => ballot.voterIndex) ??
-                [],
-        ),
-    ].sort((left, right) => left - right);
-
     return {
         manifest: context.manifest,
         manifestHash: context.manifestHash,
         sessionId: context.sessionId,
         qual: dkg.qual,
-        acceptedVoterIndices,
+        countedParticipantIndices: ballotClose.countedParticipantIndices,
+        excludedParticipantIndices: ballotClose.excludedParticipantIndices,
         perOptionAcceptedCounts: options.map((option) => ({
             optionIndex: option.optionIndex,
             acceptedCount: option.ballots.aggregate.ballotCount,
@@ -421,6 +447,7 @@ export const verifyElectionCeremonyDetailed = async (
         boardAudit: {
             dkg: dkgAudit,
             ballots: ballotAudit,
+            ballotClose: ballotCloseAudit,
             decryptionShares: decryptionAudit,
             tallyPublications: tallyAudit,
             overall: overallAudit,

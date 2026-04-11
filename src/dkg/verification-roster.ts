@@ -19,15 +19,11 @@ import {
 
 export const verifySignedRoster = async (
     transcript: readonly SignedPayload[],
-    participantCount: number,
     expectedRosterHash: string,
 ): Promise<VerifiedProtocolSignatures> => {
     assertUniqueSlots(transcript);
 
-    const verifiedSignatures = await verifySignedProtocolPayloads(
-        transcript,
-        participantCount,
-    );
+    const verifiedSignatures = await verifySignedProtocolPayloads(transcript);
     if (verifiedSignatures.rosterHash !== expectedRosterHash) {
         throw new InvalidPayloadError(
             'Registration roster hash does not match the manifest roster hash',
@@ -40,7 +36,7 @@ export const verifySignedRoster = async (
 export const verifyManifestPublicationPayload = async (
     transcript: readonly SignedPayload[],
     manifestHash: string,
-): Promise<void> => {
+): Promise<ManifestPublicationPayload> => {
     const manifestPublication = requireExactlyOnePayload(
         transcript
             .filter(
@@ -60,11 +56,13 @@ export const verifyManifestPublicationPayload = async (
             'Manifest publication does not match the verification input manifest',
         );
     }
+
+    return manifestPublication;
 };
 
 export const verifyManifestAcceptancePayloads = (
     transcript: readonly SignedPayload[],
-    participantCount: number,
+    allowedParticipantIndices: readonly number[],
     expectedRosterHash: string,
     requireUnanimous: boolean,
 ): readonly number[] => {
@@ -75,6 +73,8 @@ export const verifyManifestAcceptancePayloads = (
         )
         .map((payload) => payload.payload);
     const grouped = groupByParticipant(acceptances);
+    const participantCount = allowedParticipantIndices.length;
+    const allowedParticipantSet = new Set(allowedParticipantIndices);
 
     if (requireUnanimous && grouped.size !== participantCount) {
         throw new InvalidPayloadError(
@@ -88,6 +88,11 @@ export const verifyManifestAcceptancePayloads = (
             participantCount,
             'Manifest acceptance participant index',
         );
+        if (!allowedParticipantSet.has(participantIndex)) {
+            throw new InvalidPayloadError(
+                `Manifest acceptance participant ${participantIndex} is not part of the frozen registration roster`,
+            );
+        }
         if (participantPayloads.length !== 1) {
             throw new InvalidPayloadError(
                 `Manifest acceptance requires exactly one payload for participant ${participantIndex}`,
@@ -110,7 +115,19 @@ export const verifyManifestAcceptancePayloads = (
         }
     }
 
-    return acceptances
+    const acceptedParticipantIndices = acceptances
         .map((acceptance) => acceptance.participantIndex)
         .sort((left, right) => left - right);
+
+    if (requireUnanimous) {
+        for (const participantIndex of allowedParticipantIndices) {
+            if (!grouped.has(participantIndex)) {
+                throw new InvalidPayloadError(
+                    `Manifest acceptance requires a payload for registered participant ${participantIndex}`,
+                );
+            }
+        }
+    }
+
+    return acceptedParticipantIndices;
 };

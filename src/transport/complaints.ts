@@ -15,7 +15,6 @@ import type {
     EncodedTransportPrivateKey,
     EncodedTransportPublicKey,
     EncryptedEnvelope,
-    KeyAgreementSuite,
 } from './types.js';
 
 const decryptEnvelopeFromSharedSecret = async (
@@ -43,15 +42,13 @@ const decryptEnvelopeFromSharedSecret = async (
  *
  * @param privateKey Recipient transport private key.
  * @param expectedPublicKeyHex Registered recipient public key.
- * @param suite Transport key-agreement suite.
  * @returns `true` when the local key material matches the registration.
  */
 export const verifyComplaintPrecondition = async (
     privateKey: CryptoKey | EncodedTransportPrivateKey,
     expectedPublicKeyHex: EncodedTransportPublicKey,
-    suite: KeyAgreementSuite,
 ): Promise<boolean> =>
-    verifyLocalTransportKey(privateKey, expectedPublicKeyHex, suite);
+    verifyLocalTransportKey(privateKey, expectedPublicKeyHex);
 
 /**
  * Resolves a dealer challenge using only public transcript material plus the
@@ -70,7 +67,6 @@ export const resolveDealerChallengeFromPublicKey = async (
     const ephemeralKeyMatches = await verifyLocalTransportKey(
         revealedEphemeralPrivateKeyHex,
         envelope.ephemeralPublicKey,
-        envelope.suite,
     );
 
     if (!ephemeralKeyMatches) {
@@ -83,16 +79,13 @@ export const resolveDealerChallengeFromPublicKey = async (
     try {
         const revealedPrivateKey = await importTransportPrivateKey(
             revealedEphemeralPrivateKeyHex,
-            envelope.suite,
         );
         const recipientPublicKey = await importTransportPublicKey(
             recipientPublicKeyHex,
-            envelope.suite,
         );
         const sharedSecret = await deriveTransportSharedSecret(
             revealedPrivateKey,
             recipientPublicKey,
-            envelope.suite,
         );
 
         return {
@@ -131,15 +124,11 @@ export const resolveDealerChallenge = async (
     try {
         const resolvedRecipientPrivateKey =
             typeof recipientPrivateKey === 'string'
-                ? await importTransportPrivateKey(
-                      recipientPrivateKey,
-                      envelope.suite,
-                  )
+                ? await importTransportPrivateKey(recipientPrivateKey)
                 : recipientPrivateKey;
         const ephemeralKeyMatches = await verifyLocalTransportKey(
             revealedEphemeralPrivateKeyHex,
             envelope.ephemeralPublicKey,
-            envelope.suite,
         );
 
         if (!ephemeralKeyMatches) {

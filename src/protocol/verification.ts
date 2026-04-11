@@ -28,6 +28,7 @@ export type RosterEntry = {
 
 /** Verified protocol-signature result with the frozen registration roster. */
 export type VerifiedProtocolSignatures = {
+    readonly participantCount: number;
     readonly registrations: readonly SignedPayload<RegistrationPayload>[];
     readonly rosterEntries: readonly RosterEntry[];
     readonly rosterHash: string;
@@ -60,7 +61,7 @@ const assertNonEmptyHex = (value: string, label: string): void => {
  * @param rosterEntries Deterministic roster entries.
  * @returns Canonical JSON roster string.
  */
-export const canonicalizeRosterEntries = (
+const canonicalizeRosterEntries = (
     rosterEntries: readonly RosterEntry[],
 ): string => {
     for (const entry of rosterEntries) {
@@ -96,8 +97,9 @@ export const hashRosterEntries = async (
 const assertUniqueParticipantIndices = (
     payloads: readonly SignedPayload[],
     participantCount?: number,
-): void => {
+): readonly number[] => {
     const seen = new Set<number>();
+    const indices: number[] = [];
     for (const payload of payloads) {
         const participantIndex = payload.payload.participantIndex;
         assertValidParticipantIndex(
@@ -110,7 +112,20 @@ const assertUniqueParticipantIndices = (
             );
         }
         seen.add(participantIndex);
+        indices.push(participantIndex);
     }
+
+    indices.sort((left, right) => left - right);
+    for (let offset = 0; offset < indices.length; offset += 1) {
+        const expectedIndex = offset + 1;
+        if (indices[offset] !== expectedIndex) {
+            throw new InvalidPayloadError(
+                `Registration roster must use contiguous participant indices 1..n (missing ${expectedIndex})`,
+            );
+        }
+    }
+
+    return indices;
 };
 
 const registrationKey = (payload: RegistrationPayload): RosterEntry => ({
@@ -146,7 +161,10 @@ export const verifySignedProtocolPayloads = async (
         );
     }
 
-    assertUniqueParticipantIndices(registrations, participantCount);
+    const registrationIndices = assertUniqueParticipantIndices(
+        registrations,
+        participantCount,
+    );
 
     if (
         participantCount !== undefined &&
@@ -230,6 +248,7 @@ export const verifySignedProtocolPayloads = async (
     }
 
     return {
+        participantCount: registrationIndices.length,
         registrations,
         rosterEntries,
         rosterHash,

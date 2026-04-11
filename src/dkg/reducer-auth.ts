@@ -1,4 +1,4 @@
-import { p256 } from '@noble/curves/nist.js';
+import { ed25519 } from '@noble/curves/ed25519.js';
 
 import { canonicalUnsignedPayloadBytes } from '../protocol/payloads.js';
 import type { RegistrationPayload, SignedPayload } from '../protocol/types.js';
@@ -6,10 +6,8 @@ import { hexToBytes } from '../serialize/index.js';
 
 import type { DKGError } from './types.js';
 
-const P256_SPKI_PREFIX = Uint8Array.from([
-    0x30, 0x59, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
-    0x01, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07, 0x03,
-    0x42, 0x00,
+const ED25519_SPKI_PREFIX = Uint8Array.from([
+    0x30, 0x2a, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x03, 0x21, 0x00,
 ]);
 
 const sameBytes = (left: Uint8Array, right: Uint8Array): boolean => {
@@ -32,21 +30,16 @@ const parseRegisteredAuthPublicKey = (
     const spkiBytes = hexToBytes(authPublicKey);
 
     if (
-        spkiBytes.length !== P256_SPKI_PREFIX.length + 65 ||
+        spkiBytes.length !== ED25519_SPKI_PREFIX.length + 32 ||
         !sameBytes(
-            spkiBytes.slice(0, P256_SPKI_PREFIX.length),
-            P256_SPKI_PREFIX,
+            spkiBytes.slice(0, ED25519_SPKI_PREFIX.length),
+            ED25519_SPKI_PREFIX,
         )
     ) {
         throw new Error('Invalid auth public key encoding');
     }
 
-    const publicKey = spkiBytes.slice(P256_SPKI_PREFIX.length);
-    if (publicKey[0] !== 0x04) {
-        throw new Error('Invalid auth public key encoding');
-    }
-
-    return publicKey;
+    return spkiBytes.slice(ED25519_SPKI_PREFIX.length);
 };
 
 const verifyReducerSignature = (
@@ -54,14 +47,10 @@ const verifyReducerSignature = (
     publicKey: Uint8Array,
 ): boolean => {
     try {
-        // signPayloadBytes emits raw IEEE P1363 r||s bytes, which noble verifies directly.
-        return p256.verify(
+        return ed25519.verify(
             hexToBytes(signedPayload.signature),
             canonicalUnsignedPayloadBytes(signedPayload.payload),
             publicKey,
-            {
-                lowS: false,
-            },
         );
     } catch {
         return false;

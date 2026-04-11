@@ -3,6 +3,7 @@
         "baseUrl": ".",
         "ignoreDeprecations": "6.0",
         "paths": {
+            "threshold-elgamal": ["./src/index.ts"],
             "#root": ["./src/index.ts"],
             "#core": ["./src/core/index.ts"],
             "#elgamal": ["./src/elgamal/index.ts"],

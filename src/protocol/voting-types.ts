@@ -7,6 +7,7 @@ import type {
     VerifiedOptionBallotAggregation,
 } from './ballots.js';
 import type {
+    BallotClosePayload,
     BallotSubmissionPayload,
     DecryptionSharePayload,
     ElectionManifest,
@@ -64,22 +65,13 @@ export type VerifyDecryptionSharePayloadsByOptionInput = {
     readonly sessionId: string;
 };
 
-/** Input bundle for verifying one published tally. */
-export type VerifyPublishedVotingResultInput = {
-    readonly manifest: ElectionManifest;
-    readonly sessionId: string;
-    readonly dkgTranscript: readonly SignedPayload[];
-    readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
-    readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
-    readonly tallyPublication?: SignedPayload<TallyPublicationPayload>;
-};
-
 /** Input bundle for verifying one full published tally set across all options. */
 export type VerifyPublishedVotingResultsInput = {
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
     readonly dkgTranscript: readonly SignedPayload[];
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
     readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
     readonly tallyPublications?: readonly SignedPayload<TallyPublicationPayload>[];
 };
@@ -88,20 +80,6 @@ export type VerifyPublishedVotingResultsInput = {
 export type VerifiedPublishedOptionVotingResult = {
     readonly optionIndex: number;
     readonly ballots: VerifiedOptionBallotAggregation;
-    readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
-    readonly tally: bigint;
-};
-
-/** Verified published tallies and reusable transcript sub-results. */
-export type VerifiedPublishedVotingResults = {
-    readonly dkg: VerifiedDKGTranscript;
-    readonly options: readonly VerifiedPublishedOptionVotingResult[];
-};
-
-/** Verified published tally and all of its reusable sub-results. */
-export type VerifiedPublishedVotingResult = {
-    readonly dkg: VerifiedDKGTranscript;
-    readonly ballots: VerifiedBallotAggregation;
     readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
     readonly tally: bigint;
 };

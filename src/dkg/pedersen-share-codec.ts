@@ -9,6 +9,7 @@ type PedersenShareEnvelopeRecord = {
     readonly secretValue: string;
 };
 
+/** Encodes one Pedersen share pair for encrypted dealer-to-recipient transport. */
 export const encodePedersenShareEnvelope = (
     share: PedersenShare,
     byteLength: number,
@@ -24,6 +25,7 @@ export const encodePedersenShareEnvelope = (
         },
     );
 
+/** Decodes one encrypted Pedersen share pair after envelope decryption. */
 export const decodePedersenShareEnvelope = (
     plaintext: Uint8Array,
     expectedParticipantIndex: number,

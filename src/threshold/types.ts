@@ -9,18 +9,6 @@ export type Share = {
     readonly value: bigint;
 };
 
-/** Complete dealer-produced threshold key material. */
-export type ThresholdKeySet = {
-    /** Reconstruction threshold `k`. */
-    readonly threshold: number;
-    /** Total participant count `n`. */
-    readonly participantCount: number;
-    /** Group public key `Y = sG`. */
-    readonly publicKey: EncodedPoint;
-    /** Dealer-produced shares indexed `1..n`. */
-    readonly shares: readonly Share[];
-};
-
 /** A participant's partial decryption contribution. */
 export type DecryptionShare = {
     /** 1-based participant index matching the source share. */

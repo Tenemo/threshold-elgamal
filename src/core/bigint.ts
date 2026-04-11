@@ -1,25 +1,5 @@
 import { InvalidScalarError } from './errors.js';
 
-/** One base-exponent pair used by multi-exponentiation helpers. */
-export type MultiExponentiationTerm = {
-    readonly base: bigint;
-    readonly exponent: bigint;
-};
-
-/** Optional pluggable bigint backend used for modular exponentiation. */
-export type BigintMathBackend = {
-    readonly modPow?: (
-        base: bigint,
-        exponent: bigint,
-        modulus: bigint,
-    ) => bigint;
-};
-
-const fixedBasePowerCache = new Map<string, bigint[]>();
-const maxFixedBaseCacheEntries = 16;
-
-let currentBackend: BigintMathBackend = Object.freeze({});
-
 const assertPositiveModulus = (modulus: bigint): void => {
     if (modulus <= 0n) {
         throw new InvalidScalarError('Modulus must be positive');
@@ -61,10 +41,7 @@ const modInv = (value: bigint, modulus: bigint): bigint => {
     return normalize(x, modulus);
 };
 
-const bitLength = (value: bigint): number =>
-    value === 0n ? 1 : value.toString(2).length;
-
-const jsModPow = (base: bigint, exponent: bigint, modulus: bigint): bigint => {
+const modPow = (base: bigint, exponent: bigint, modulus: bigint): bigint => {
     if (modulus === 1n) {
         return 0n;
     }
@@ -82,187 +59,6 @@ const jsModPow = (base: bigint, exponent: bigint, modulus: bigint): bigint => {
         if (currentExponent > 0n) {
             currentBase = normalize(currentBase * currentBase, modulus);
         }
-    }
-
-    return result;
-};
-
-const fixedBaseCacheKey = (base: bigint, modulus: bigint): string =>
-    `${modulus.toString(16)}:${base.toString(16)}`;
-
-const ensureFixedBasePowers = (
-    base: bigint,
-    modulus: bigint,
-    exponent: bigint,
-): readonly bigint[] => {
-    const key = fixedBaseCacheKey(base, modulus);
-    const requiredLength = bitLength(exponent);
-    const existing = fixedBasePowerCache.get(key) ?? [base];
-
-    while (existing.length < requiredLength) {
-        const previous = existing[existing.length - 1];
-        existing.push(normalize(previous * previous, modulus));
-    }
-
-    fixedBasePowerCache.set(key, existing);
-    if (fixedBasePowerCache.size > maxFixedBaseCacheEntries) {
-        const oldestKey = fixedBasePowerCache.keys().next().value;
-        if (typeof oldestKey === 'string') {
-            fixedBasePowerCache.delete(oldestKey);
-        }
-    }
-
-    return existing;
-};
-
-const modPowWithBackend = (
-    base: bigint,
-    exponent: bigint,
-    modulus: bigint,
-): bigint =>
-    normalize(
-        currentBackend.modPow?.(base, exponent, modulus) ??
-            jsModPow(base, exponent, modulus),
-        modulus,
-    );
-
-/**
- * Installs an optional bigint backend for modular exponentiation.
- *
- * Passing `null` or `undefined` restores the built-in JavaScript backend.
- *
- * @param backend Optional custom bigint backend.
- */
-export const setBigintMathBackend = (
-    backend?: BigintMathBackend | null,
-): void => {
-    currentBackend = Object.freeze({
-        modPow: backend?.modPow,
-    });
-    fixedBasePowerCache.clear();
-};
-
-/** Returns the currently installed bigint backend. */
-export const getBigintMathBackend = (): BigintMathBackend => currentBackend;
-
-/** Restores the built-in JavaScript bigint backend. */
-export const resetBigintMathBackend = (): void => {
-    setBigintMathBackend();
-};
-
-/**
- * Computes `base^exponent mod modulus` using a fixed-base cache when the
- * built-in JavaScript backend is active.
- *
- * The cache is bounded and intended for genuinely reused bases such as frozen
- * generators. Variable bases should prefer `modPowP()`.
- *
- * @throws {@link InvalidScalarError} When `modulus` is not positive or
- * `exponent` is negative.
- */
-export const fixedBaseModPow = (
-    base: bigint,
-    exponent: bigint,
-    modulus: bigint,
-): bigint => {
-    assertPositiveModulus(modulus);
-    if (exponent < 0n) {
-        throw new InvalidScalarError('Exponent must be non-negative');
-    }
-    if (currentBackend.modPow !== undefined) {
-        return modPowWithBackend(normalize(base, modulus), exponent, modulus);
-    }
-    if (modulus === 1n) {
-        return 0n;
-    }
-    if (exponent === 0n) {
-        return 1n;
-    }
-
-    const normalizedBase = normalize(base, modulus);
-    const powers = ensureFixedBasePowers(normalizedBase, modulus, exponent);
-    let result = 1n;
-    let currentExponent = exponent;
-    let bitIndex = 0;
-
-    while (currentExponent > 0n) {
-        if ((currentExponent & 1n) === 1n) {
-            result = normalize(result * powers[bitIndex], modulus);
-        }
-
-        currentExponent >>= 1n;
-        bitIndex += 1;
-    }
-
-    return result;
-};
-
-/**
- * Computes `Π(base_i^exponent_i) mod modulus` with a shared JS bit walk.
- *
- * Custom backends fall back to repeated backend-backed exponentiations.
- *
- * @throws {@link InvalidScalarError} When `modulus` is not positive or any
- * exponent is negative.
- */
-export const multiExponentiate = (
-    terms: readonly MultiExponentiationTerm[],
-    modulus: bigint,
-): bigint => {
-    assertPositiveModulus(modulus);
-
-    const normalizedTerms = terms
-        .filter((term) => term.exponent !== 0n)
-        .map((term) => {
-            if (term.exponent < 0n) {
-                throw new InvalidScalarError('Exponent must be non-negative');
-            }
-
-            return {
-                base: normalize(term.base, modulus),
-                exponent: term.exponent,
-            };
-        });
-
-    if (normalizedTerms.length === 0) {
-        return 1n;
-    }
-    if (normalizedTerms.length === 1) {
-        return modPowWithBackend(
-            normalizedTerms[0].base,
-            normalizedTerms[0].exponent,
-            modulus,
-        );
-    }
-    if (currentBackend.modPow !== undefined) {
-        return normalizedTerms.reduce(
-            (product, term) =>
-                normalize(
-                    product *
-                        modPowWithBackend(term.base, term.exponent, modulus),
-                    modulus,
-                ),
-            1n,
-        );
-    }
-
-    let result = 1n;
-    const maxBits = Math.max(
-        ...normalizedTerms.map((term) => bitLength(term.exponent)),
-    );
-
-    for (let bitIndex = maxBits - 1; bitIndex >= 0; bitIndex -= 1) {
-        result = normalize(result * result, modulus);
-
-        let factor = 1n;
-        const bit = BigInt(bitIndex);
-        for (const term of normalizedTerms) {
-            if (((term.exponent >> bit) & 1n) === 1n) {
-                factor = normalize(factor * term.base, modulus);
-            }
-        }
-
-        result = normalize(result * factor, modulus);
     }
 
     return result;
@@ -324,5 +120,5 @@ export const modPowP = (base: bigint, exponent: bigint, p: bigint): bigint => {
     if (exponent < 0n) {
         throw new InvalidScalarError('Exponent must be non-negative');
     }
-    return modPowWithBackend(modP(base, p), exponent, p);
+    return normalize(modPow(modP(base, p), exponent, p), p);
 };

@@ -13,8 +13,10 @@ import {
 } from '#proofs';
 import {
     canonicalizeElectionManifest,
+    createElectionManifest,
     deriveSessionId,
     hashElectionManifest,
+    SHIPPED_PROTOCOL_VERSION,
     verifyAndAggregateBallots,
     type BallotTranscriptEntry,
     type ElectionManifest,
@@ -73,18 +75,10 @@ const buildBallot = async (
 };
 const main = async (): Promise<void> => {
     const group = getGroup('ristretto255');
-    const manifest: ElectionManifest = {
-        protocolVersion: 'v1',
-        reconstructionThreshold: 3,
-        participantCount: 5,
-        minimumPublishedVoterCount: 4,
-        ballotCompletenessPolicy: 'ALL_OPTIONS_REQUIRED',
-        ballotFinality: 'first-valid',
-        scoreDomain: '1..10',
+    const manifest: ElectionManifest = createElectionManifest({
         rosterHash: 'roster-hash',
         optionList: ['Alpha', 'Beta'],
-        epochDeadlines: ['2026-04-08T12:00:00Z', '2026-04-08T13:00:00Z'],
-    };
+    });
     const manifestHash = await hashElectionManifest(manifest);
     const sessionInputs = {
         left: {
@@ -183,18 +177,17 @@ const main = async (): Promise<void> => {
         }),
     );
     const ballots = await Promise.all([
-        buildBallot(3, 3n, 11n, publicKey, manifest.protocolVersion, group),
-        buildBallot(1, 1n, 7n, publicKey, manifest.protocolVersion, group),
-        buildBallot(2, 2n, 9n, publicKey, manifest.protocolVersion, group),
+        buildBallot(3, 3n, 11n, publicKey, SHIPPED_PROTOCOL_VERSION, group),
+        buildBallot(1, 1n, 7n, publicKey, SHIPPED_PROTOCOL_VERSION, group),
+        buildBallot(2, 2n, 9n, publicKey, SHIPPED_PROTOCOL_VERSION, group),
     ]);
     const ballotAggregation = await verifyAndAggregateBallots({
         ballots,
         publicKey,
         validValues: validScores,
-        protocolVersion: manifest.protocolVersion,
+        protocolVersion: SHIPPED_PROTOCOL_VERSION,
         manifestHash: 'manifest-hash',
         sessionId: 'session-1',
-        minimumBallotCount: 2,
     });
     await writeFile(
         new URL('../test-vectors/protocol.json', import.meta.url),

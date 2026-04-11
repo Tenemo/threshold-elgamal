@@ -27,9 +27,7 @@ export default defineConfig({
                     label: 'Guides',
                     items: [
                         'guides/getting-started',
-                        'guides/additive-elgamal',
                         'guides/three-participant-voting-flow',
-                        'guides/groups-and-validation',
                         'guides/runtime-and-compatibility',
                         'guides/security-and-non-goals',
                     ],

@@ -1,5 +1,3 @@
-import { p256 } from '@noble/curves/nist.js';
-
 import { toBufferSource } from '../core/bytes.js';
 import { InvalidPayloadError, getWebCrypto } from '../core/index.js';
 import { bytesToHex, hexToBytes } from '../serialize/index.js';
@@ -7,7 +5,6 @@ import { bytesToHex, hexToBytes } from '../serialize/index.js';
 import type {
     EncodedTransportPrivateKey,
     EncodedTransportPublicKey,
-    KeyAgreementSuite,
     TransportKeyPair,
 } from './types.js';
 
@@ -17,41 +14,9 @@ const X25519_BASE_POINT = (() => {
     return bytes;
 })();
 const X25519_PUBLIC_KEY_LENGTH = 32;
-const P256_PUBLIC_KEY_LENGTH = 65;
 
 const isAllZeroBytes = (bytes: Uint8Array): boolean =>
     bytes.every((value) => value === 0);
-
-const base64UrlToBytes = (value: string): Uint8Array => {
-    const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
-    const padded = normalized.padEnd(
-        normalized.length + ((4 - (normalized.length % 4)) % 4),
-        '=',
-    );
-
-    if (typeof globalThis.atob !== 'function') {
-        throw new InvalidPayloadError(
-            'Base64url decoding requires global atob support',
-        );
-    }
-
-    const decoded = globalThis.atob(padded);
-    return Uint8Array.from(decoded, (character) => character.charCodeAt(0));
-};
-
-const buildP256RawPublicKey = (jwk: JsonWebKey): Uint8Array => {
-    if (jwk.x === undefined || jwk.y === undefined) {
-        throw new InvalidPayloadError(
-            'P-256 private JWK export did not include x/y coordinates',
-        );
-    }
-
-    return Uint8Array.from([
-        0x04,
-        ...base64UrlToBytes(jwk.x),
-        ...base64UrlToBytes(jwk.y),
-    ]);
-};
 
 const assertValidX25519PublicKeyBytes = (
     publicKeyBytes: Uint8Array,
@@ -70,78 +35,10 @@ const assertValidX25519PublicKeyBytes = (
     }
 };
 
-const assertValidP256PublicKeyBytes = (
-    publicKeyBytes: Uint8Array,
-    label: string,
-): void => {
-    if (publicKeyBytes.length !== P256_PUBLIC_KEY_LENGTH) {
-        throw new InvalidPayloadError(
-            `${label} must be a supported uncompressed P-256 public key`,
-        );
-    }
-
-    if (publicKeyBytes[0] !== 0x04) {
-        throw new InvalidPayloadError(
-            `${label} must use the uncompressed P-256 point format`,
-        );
-    }
-
-    if (!p256.utils.isValidPublicKey(publicKeyBytes, false)) {
-        throw new InvalidPayloadError(`${label} is not a valid P-256 point`);
-    }
-};
-
-const assertSupportedRawTransportPublicKeyBytes = (
-    publicKeyBytes: Uint8Array,
-    label: string,
-): void => {
-    if (publicKeyBytes.length === X25519_PUBLIC_KEY_LENGTH) {
-        assertValidX25519PublicKeyBytes(publicKeyBytes, label);
-        return;
-    }
-
-    if (publicKeyBytes.length === P256_PUBLIC_KEY_LENGTH) {
-        assertValidP256PublicKeyBytes(publicKeyBytes, label);
-        return;
-    }
-
-    throw new InvalidPayloadError(
-        `${label} must be a supported raw X25519 or uncompressed P-256 public key`,
-    );
-};
-
-const assertTransportPublicKeyBytesForSuite = (
-    publicKeyBytes: Uint8Array,
-    suite: KeyAgreementSuite,
-    label: string,
-): void => {
-    if (suite === 'X25519') {
-        assertValidX25519PublicKeyBytes(publicKeyBytes, label);
-        return;
-    }
-
-    assertValidP256PublicKeyBytes(publicKeyBytes, label);
-};
-
-const algorithmForSuite = (
-    suite: KeyAgreementSuite,
-): EcKeyImportParams | AlgorithmIdentifier =>
-    suite === 'X25519'
-        ? { name: 'X25519' }
-        : { name: 'ECDH', namedCurve: 'P-256' };
-
-const deriveAlgorithmForSuite = (
-    publicKey: CryptoKey,
-    suite: KeyAgreementSuite,
-): EcdhKeyDeriveParams | AlgorithmIdentifier =>
-    suite === 'X25519'
-        ? { name: 'X25519', public: publicKey }
-        : { name: 'ECDH', public: publicKey };
+const x25519Algorithm = { name: 'X25519' } as const;
 
 /** Options controlling transport-key generation. */
 export type GenerateTransportKeyPairOptions = {
-    /** Requested suite, or omitted to auto-select the preferred suite. */
-    readonly suite?: KeyAgreementSuite;
     /** Whether the generated private key should be extractable. Defaults to `false`. */
     readonly extractable?: boolean;
 };
@@ -168,7 +65,7 @@ export const assertNonZeroSharedSecret = (sharedSecret: Uint8Array): void => {
 export const isX25519Supported = async (): Promise<boolean> => {
     try {
         const pair = await getWebCrypto().subtle.generateKey(
-            { name: 'X25519' },
+            x25519Algorithm,
             true,
             ['deriveBits'],
         );
@@ -185,38 +82,22 @@ export const isX25519Supported = async (): Promise<boolean> => {
 };
 
 /**
- * Resolves the preferred key-agreement suite with X25519 fallback to P-256.
+ * Generates an X25519 transport key pair.
  *
- * @returns Supported key-agreement suite for the current runtime.
- */
-export const resolveTransportSuite = async (): Promise<KeyAgreementSuite> =>
-    (await isX25519Supported()) ? 'X25519' : 'P-256';
-
-/**
- * Generates a transport key pair for the requested or preferred supported
- * suite.
- *
- * @param suiteOrOptions Requested suite or generation options.
- * @returns Transport key pair tagged with the resolved suite.
+ * @param options Generation options.
+ * @returns Transport key pair tagged with the shipped X25519 suite.
  */
 export const generateTransportKeyPair = async (
-    suiteOrOptions?: KeyAgreementSuite | GenerateTransportKeyPairOptions,
+    options: GenerateTransportKeyPairOptions = {},
 ): Promise<TransportKeyPair> => {
-    const options: GenerateTransportKeyPairOptions =
-        typeof suiteOrOptions === 'string'
-            ? {
-                  suite: suiteOrOptions,
-              }
-            : (suiteOrOptions ?? {});
-    const resolvedSuite = options.suite ?? (await resolveTransportSuite());
-    const keyPair = (await getWebCrypto().subtle.generateKey(
-        algorithmForSuite(resolvedSuite),
+    const keyPair = await getWebCrypto().subtle.generateKey(
+        x25519Algorithm,
         options.extractable ?? false,
         ['deriveBits'],
-    )) as CryptoKeyPair;
+    );
 
     return {
-        suite: resolvedSuite,
+        suite: 'X25519',
         privateKey: keyPair.privateKey,
         publicKey: keyPair.publicKey,
     };
@@ -254,24 +135,18 @@ export const exportTransportPrivateKey = async (
  * Imports a transport public key from raw hexadecimal bytes.
  *
  * @param publicKeyHex Lowercase hexadecimal public key bytes.
- * @param suite Transport key-agreement suite.
  * @returns Imported transport public key.
  */
 export const importTransportPublicKey = async (
     publicKeyHex: EncodedTransportPublicKey,
-    suite: KeyAgreementSuite,
 ): Promise<CryptoKey> => {
     const publicKeyBytes = hexToBytes(publicKeyHex);
-    assertTransportPublicKeyBytesForSuite(
-        publicKeyBytes,
-        suite,
-        'Transport public key',
-    );
+    assertValidX25519PublicKeyBytes(publicKeyBytes, 'Transport public key');
 
     return getWebCrypto().subtle.importKey(
         'raw',
         toBufferSource(publicKeyBytes),
-        algorithmForSuite(suite),
+        x25519Algorithm,
         true,
         [],
     );
@@ -291,44 +166,43 @@ export const assertSupportedTransportPublicKeyEncoding = (
         );
     }
 
-    assertSupportedRawTransportPublicKeyBytes(publicKeyBytes, label);
+    assertValidX25519PublicKeyBytes(publicKeyBytes, label);
 };
 
 /**
  * Imports a transport private key from PKCS#8 hexadecimal bytes.
  *
  * @param privateKeyHex Lowercase hexadecimal PKCS#8 bytes.
- * @param suite Transport key-agreement suite.
  * @returns Imported transport private key.
  */
 export const importTransportPrivateKey = async (
     privateKeyHex: EncodedTransportPrivateKey,
-    suite: KeyAgreementSuite,
 ): Promise<CryptoKey> =>
     getWebCrypto().subtle.importKey(
         'pkcs8',
         toBufferSource(hexToBytes(privateKeyHex)),
-        algorithmForSuite(suite),
+        x25519Algorithm,
         true,
         ['deriveBits'],
     );
 
 /**
- * Derives a raw shared secret for the selected transport suite.
+ * Derives a raw shared secret for X25519.
  *
  * @param privateKey Local transport private key.
  * @param publicKey Peer transport public key.
- * @param suite Transport key-agreement suite.
  * @returns Raw shared secret bytes.
  */
 export const deriveTransportSharedSecret = async (
     privateKey: CryptoKey,
     publicKey: CryptoKey,
-    suite: KeyAgreementSuite,
 ): Promise<Uint8Array> => {
     const sharedSecret = new Uint8Array(
         await getWebCrypto().subtle.deriveBits(
-            deriveAlgorithmForSuite(publicKey, suite),
+            {
+                name: 'X25519',
+                public: publicKey,
+            },
             privateKey,
             256,
         ),
@@ -338,81 +212,22 @@ export const deriveTransportSharedSecret = async (
     return sharedSecret;
 };
 
-const sameBytes = (left: Uint8Array, right: Uint8Array): boolean => {
-    if (left.length !== right.length) {
-        return false;
-    }
-
-    let difference = 0;
-
-    for (let index = 0; index < left.length; index += 1) {
-        difference |= left[index] ^ right[index];
-    }
-
-    return difference === 0;
-};
-
-const privateKeyMatchesPublicKey = async (
-    privateKey: CryptoKey,
-    expectedPublicKeyHex: EncodedTransportPublicKey,
-    suite: KeyAgreementSuite,
-): Promise<boolean> => {
-    try {
-        const expectedPublicKey = await importTransportPublicKey(
-            expectedPublicKeyHex,
-            suite,
-        );
-        const verificationPeer = await generateTransportKeyPair({ suite });
-        const [derivedFromPrivateKey, derivedFromExpectedPublicKey] =
-            await Promise.all([
-                deriveTransportSharedSecret(
-                    privateKey,
-                    verificationPeer.publicKey,
-                    suite,
-                ),
-                deriveTransportSharedSecret(
-                    verificationPeer.privateKey,
-                    expectedPublicKey,
-                    suite,
-                ),
-            ]);
-
-        return sameBytes(derivedFromPrivateKey, derivedFromExpectedPublicKey);
-    } catch {
-        return false;
-    }
-};
-
 /**
  * Re-derives the raw public key from a transport private key.
  *
  * @param privateKey Transport private key.
- * @param suite Transport key-agreement suite.
  * @returns Lowercase hexadecimal public key bytes.
  */
 export const deriveTransportPublicKey = async (
     privateKey: CryptoKey,
-    suite: KeyAgreementSuite,
 ): Promise<EncodedTransportPublicKey> => {
-    if (suite === 'X25519') {
-        const basePoint = await importTransportPublicKey(
-            bytesToHex(X25519_BASE_POINT) as EncodedTransportPublicKey,
-            suite,
-        );
+    const basePoint = await importTransportPublicKey(
+        bytesToHex(X25519_BASE_POINT) as EncodedTransportPublicKey,
+    );
 
-        return bytesToHex(
-            await deriveTransportSharedSecret(privateKey, basePoint, suite),
-        ) as EncodedTransportPublicKey;
-    }
-
-    if (!privateKey.extractable) {
-        throw new InvalidPayloadError(
-            'P-256 public-key derivation requires an extractable private key; use the registered public key or import an extractable private key instead',
-        );
-    }
-
-    const jwk = await getWebCrypto().subtle.exportKey('jwk', privateKey);
-    return bytesToHex(buildP256RawPublicKey(jwk)) as EncodedTransportPublicKey;
+    return bytesToHex(
+        await deriveTransportSharedSecret(privateKey, basePoint),
+    ) as EncodedTransportPublicKey;
 };
 
 /**
@@ -420,31 +235,21 @@ export const deriveTransportPublicKey = async (
  *
  * @param privateKey Local transport private key.
  * @param expectedPublicKeyHex Registered public key bytes.
- * @param suite Transport key-agreement suite.
  * @returns `true` when the private key expands to `expectedPublicKeyHex`.
  */
 export const verifyLocalTransportKey = async (
     privateKey: CryptoKey | EncodedTransportPrivateKey,
     expectedPublicKeyHex: EncodedTransportPublicKey,
-    suite: KeyAgreementSuite,
 ): Promise<boolean> => {
     try {
         const resolvedPrivateKey =
             typeof privateKey === 'string'
-                ? await importTransportPrivateKey(privateKey, suite)
+                ? await importTransportPrivateKey(privateKey)
                 : privateKey;
 
-        if (suite === 'X25519' || resolvedPrivateKey.extractable) {
-            return (
-                (await deriveTransportPublicKey(resolvedPrivateKey, suite)) ===
-                expectedPublicKeyHex
-            );
-        }
-
-        return privateKeyMatchesPublicKey(
-            resolvedPrivateKey,
-            expectedPublicKeyHex,
-            suite,
+        return (
+            (await deriveTransportPublicKey(resolvedPrivateKey)) ===
+            expectedPublicKeyHex
         );
     } catch {
         return false;

@@ -33,11 +33,14 @@ export type VerifiedDKGTranscript = {
         readonly commitments: readonly EncodedPoint[];
     }[];
     readonly manifestAccepted: readonly number[];
+    readonly organizerIndex: number;
+    readonly participantCount: number;
     readonly phaseCheckpoints: readonly FinalizedPhaseCheckpoint[];
     readonly qual: readonly number[];
     readonly qualHash: string;
     readonly registrations: readonly SignedPayload<RegistrationPayload>[];
     readonly rosterHash: string;
+    readonly threshold: number;
 };
 
 export type EncryptedShareMatrix = {

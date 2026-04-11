@@ -2,6 +2,7 @@ import { UnsupportedSuiteError } from './errors.js';
 import { derivePedersenGenerator, RISTRETTO_BYTE_LENGTH } from './ristretto.js';
 import type { CryptoGroup, GroupIdentifier } from './types.js';
 
+/** Immutable definition of the shipped Ristretto255 tally group. */
 export const RISTRETTO_GROUP: CryptoGroup = Object.freeze({
     name: 'ristretto255',
     byteLength: RISTRETTO_BYTE_LENGTH,
