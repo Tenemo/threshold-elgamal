@@ -55,7 +55,6 @@
         "@eslint/js": "^10.0.1",
         "@fontsource/ibm-plex-sans": "^5.2.8",
         "@fontsource/jetbrains-mono": "^5.2.8",
-        "@fontsource/space-grotesk": "^5.2.10",
         "@types/node": "^25.5.2",
         "@typescript-eslint/eslint-plugin": "^8.58.1",
         "@typescript-eslint/parser": "^8.58.1",

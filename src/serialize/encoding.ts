@@ -1,8 +1,10 @@
-import { bytesToHex as encodeBytesToHex } from '../core/bytes.js';
+import {
+    bytesToBigInt,
+    bytesToHex as encodeBytesToHex,
+    hexToBytes as decodeHexToBytes,
+} from '../core/bytes.js';
 import { utf8ToBytes } from '../core/crypto.js';
 import { InvalidPayloadError, InvalidScalarError } from '../core/errors.js';
-
-const hexPattern = /^[0-9a-f]+$/i;
 
 const encodeLength = (length: number): Uint8Array => {
     if (!Number.isInteger(length) || length < 0) {
@@ -15,12 +17,6 @@ const encodeLength = (length: number): Uint8Array => {
     const view = new DataView(bytes.buffer);
     view.setUint32(0, length, false);
     return bytes;
-};
-
-const assertHexInput = (hex: string, errorMessage: string): void => {
-    if (hex.length === 0 || hex.length % 2 !== 0 || !hexPattern.test(hex)) {
-        throw new InvalidPayloadError(errorMessage);
-    }
 };
 
 /**
@@ -40,18 +36,7 @@ export const bytesToHex = (bytes: Uint8Array): string =>
  *
  * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
  */
-export const hexToBytes = (hex: string): Uint8Array => {
-    assertHexInput(
-        hex,
-        'Hex input must be a non-empty even-length hexadecimal string',
-    );
-
-    const bytes = new Uint8Array(hex.length / 2);
-    for (let index = 0; index < hex.length; index += 2) {
-        bytes[index / 2] = Number.parseInt(hex.slice(index, index + 2), 16);
-    }
-    return bytes;
-};
+export const hexToBytes = (hex: string): Uint8Array => decodeHexToBytes(hex);
 
 /**
  * Encodes a non-negative bigint as fixed-width lowercase hexadecimal.
@@ -114,12 +99,12 @@ export const bigintToFixedBytes = (
  * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
  */
 export const fixedHexToBigint = (hex: string): bigint => {
-    assertHexInput(
+    const bytes = decodeHexToBytes(
         hex,
         'Fixed-width hex input must be a non-empty even-length hexadecimal string',
     );
 
-    return BigInt(`0x${hex}`);
+    return bytesToBigInt(bytes);
 };
 
 /**

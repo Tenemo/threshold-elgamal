@@ -1,3 +1,9 @@
+import { InvalidPayloadError } from './errors.js';
+
+const hexPattern = /^[0-9a-f]+$/i;
+const defaultHexErrorMessage =
+    'Hex input must be a non-empty even-length hexadecimal string';
+
 export const bytesToHex = (bytes: Uint8Array): string => {
     let hex = '';
     for (const byte of bytes) {
@@ -7,9 +13,12 @@ export const bytesToHex = (bytes: Uint8Array): string => {
     return hex;
 };
 
-export const hexToBytes = (hex: string): Uint8Array => {
-    if (hex.length === 0 || hex.length % 2 !== 0 || !/^[0-9a-f]+$/i.test(hex)) {
-        throw new Error('Hex input must be a non-empty even-length string');
+export const hexToBytes = (
+    hex: string,
+    errorMessage: string = defaultHexErrorMessage,
+): Uint8Array => {
+    if (hex.length === 0 || hex.length % 2 !== 0 || !hexPattern.test(hex)) {
+        throw new InvalidPayloadError(errorMessage);
     }
 
     const bytes = new Uint8Array(hex.length / 2);

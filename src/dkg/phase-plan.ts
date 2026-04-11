@@ -12,13 +12,11 @@ const GJKR_PHASE_PLAN: Readonly<Record<ProtocolMessageType, number | null>> = {
     complaint: 2,
     'complaint-resolution': 2,
     'feldman-commitment': 3,
-    'feldman-share-reveal': 3,
     'key-derivation-confirmation': 4,
     'ballot-submission': null,
     'ballot-close': null,
     'decryption-share': null,
     'tally-publication': null,
-    'ceremony-restart': null,
 };
 
 export const expectedDkgPhase = (

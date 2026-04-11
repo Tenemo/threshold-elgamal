@@ -3,6 +3,7 @@ import {
     copyFile,
     mkdtemp,
     mkdir,
+    readFile,
     readdir,
     rm,
     writeFile,
@@ -10,6 +11,8 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import * as ts from 'typescript';
 
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 const packageManagerEntrypoint = process.env.npm_execpath;
@@ -48,6 +51,28 @@ const runPackageManager = (args: readonly string[], cwd: string): void => {
             `Command exited with status ${result.status ?? 'null'}: ${commandDescription}${formattedOutput}`,
         );
     }
+};
+
+const transpileVotingFlowHarness = async (
+    consumerDirectory: string,
+): Promise<void> => {
+    const sourcePath = join(repoRoot, 'dev-support/voting-flow-harness.ts');
+    const supportDirectory = join(consumerDirectory, 'support');
+    const source = await readFile(sourcePath, 'utf8');
+    const transpiled = ts.transpileModule(source, {
+        compilerOptions: {
+            module: ts.ModuleKind.ESNext,
+            target: ts.ScriptTarget.ES2020,
+        },
+        fileName: sourcePath,
+    });
+
+    await mkdir(supportDirectory, { recursive: true });
+    await writeFile(
+        join(supportDirectory, 'voting-flow-harness.mjs'),
+        transpiled.outputText,
+        'utf8',
+    );
 };
 
 const main = async (): Promise<void> => {
@@ -94,6 +119,7 @@ const main = async (): Promise<void> => {
             join(repoRoot, 'tools/ci/packed-package-smoke.mjs'),
             join(consumerDirectory, 'smoke.mjs'),
         );
+        await transpileVotingFlowHarness(consumerDirectory);
 
         runPackageManager(
             ['add', '--ignore-scripts', '--silent', tarballPath],
