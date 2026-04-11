@@ -1,3 +1,4 @@
+import { InvalidPayloadError } from '../core/errors.js';
 import { decodePoint, decodeScalar, encodeScalar } from '../core/ristretto.js';
 import type { ElgamalCiphertext } from '../elgamal/types.js';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types.js';
@@ -7,6 +8,16 @@ import type {
     EncodedCompactProof,
     EncodedDisjunctiveProof,
 } from './types.js';
+
+const PROTOCOL_BYTE_LENGTH = 32;
+
+const assertProtocolByteLength = (byteLength: number): void => {
+    if (!Number.isInteger(byteLength) || byteLength !== PROTOCOL_BYTE_LENGTH) {
+        throw new InvalidPayloadError(
+            `Voting codecs require a ${PROTOCOL_BYTE_LENGTH}-byte Ristretto encoding width`,
+        );
+    }
+};
 
 /**
  * Encodes an additive ciphertext into fixed-width protocol hex.
@@ -19,7 +30,7 @@ export const encodeCiphertext = (
     ciphertext: ElgamalCiphertext,
     byteLength: number,
 ): EncodedCiphertext => {
-    void byteLength;
+    assertProtocolByteLength(byteLength);
 
     return {
         c1: ciphertext.c1,
@@ -56,7 +67,7 @@ export const encodeCompactProof = (
     proof: { readonly challenge: bigint; readonly response: bigint },
     byteLength: number,
 ): EncodedCompactProof => {
-    void byteLength;
+    assertProtocolByteLength(byteLength);
 
     return {
         challenge: encodeScalar(proof.challenge),
@@ -85,11 +96,15 @@ export const decodeCompactProof = (proof: EncodedCompactProof): DLEQProof => ({
 export const encodeDisjunctiveProof = (
     proof: DisjunctiveProof,
     byteLength: number,
-): EncodedDisjunctiveProof => ({
-    branches: proof.branches.map((branch) =>
-        encodeCompactProof(branch, byteLength),
-    ),
-});
+): EncodedDisjunctiveProof => {
+    assertProtocolByteLength(byteLength);
+
+    return {
+        branches: proof.branches.map((branch) =>
+            encodeCompactProof(branch, byteLength),
+        ),
+    };
+};
 
 /**
  * Decodes a protocol disjunctive proof into bigint fields.

@@ -3,6 +3,7 @@ import {
     assertInSubgroup,
     assertPositiveParticipantIndex,
     assertScalarInZq,
+    InvalidPayloadError,
     ThresholdViolationError,
     type CryptoGroup,
 } from '../core/index.js';
@@ -21,6 +22,9 @@ import {
 import { evaluateCommitmentProduct } from './commitment-product.js';
 import type { PedersenCommitments, PedersenShare } from './types.js';
 
+const pedersenPolynomialLengthError =
+    'Secret and blinding polynomials must have the same degree';
+
 /**
  * Computes Pedersen commitments for matching secret and blinding polynomials.
  */
@@ -32,9 +36,7 @@ export const generatePedersenCommitments = (
     assertCanonicalRistrettoGroup(group, 'Pedersen commitment group');
 
     if (secretPolynomial.length !== blindingPolynomial.length) {
-        throw new Error(
-            'Secret and blinding polynomials must have the same degree',
-        );
+        throw new InvalidPayloadError(pedersenPolynomialLengthError);
     }
 
     const h = decodePoint(group.h, 'Pedersen generator');
@@ -64,9 +66,7 @@ export const derivePedersenShares = (
     q: bigint,
 ): readonly PedersenShare[] => {
     if (secretPolynomial.length !== blindingPolynomial.length) {
-        throw new Error(
-            'Secret and blinding polynomials must have the same degree',
-        );
+        throw new InvalidPayloadError(pedersenPolynomialLengthError);
     }
 
     if (!Number.isInteger(participantCount) || participantCount < 1) {

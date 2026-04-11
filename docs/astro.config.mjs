@@ -10,6 +10,7 @@ export default defineConfig({
             title: 'Threshold ElGamal',
             description:
                 'Browser-native threshold ElGamal documentation for verifiable voting research prototypes.',
+            disable404Route: true,
             social: [
                 {
                     icon: 'github',

@@ -16,26 +16,17 @@ export type ProtocolMessageType =
     | 'complaint'
     | 'complaint-resolution'
     | 'feldman-commitment'
-    | 'feldman-share-reveal'
     | 'key-derivation-confirmation'
     | 'ballot-submission'
     | 'ballot-close'
     | 'decryption-share'
-    | 'tally-publication'
-    | 'ceremony-restart';
+    | 'tally-publication';
 
 /** Complaint reasons recognized by the protocol layer. */
 export type ComplaintReason =
     | 'aes-gcm-failure'
     | 'malformed-plaintext'
     | 'pedersen-failure';
-
-/** Public restart reason codes for aborted ceremonies. */
-export type RestartReasonCode =
-    | 'qual-too-small'
-    | 'timeout'
-    | 'equivocation-detected'
-    | 'local-aggregate-mismatch';
 
 /** Shared fields present on every unsigned protocol payload. */
 export type BaseProtocolPayload = {
@@ -148,13 +139,6 @@ export type FeldmanCommitmentPayload = BaseProtocolPayload & {
     }[];
 };
 
-/** Public share-reveal payload used for complaint-driven reconstruction. */
-export type FeldmanShareRevealPayload = BaseProtocolPayload & {
-    readonly messageType: 'feldman-share-reveal';
-    readonly dealerIndex: number;
-    readonly shareValue: string;
-};
-
 /** Optional final key-derivation confirmation payload for the derived joint key. */
 export type KeyDerivationConfirmation = BaseProtocolPayload & {
     readonly messageType: 'key-derivation-confirmation';
@@ -205,14 +189,6 @@ export type TallyPublicationPayload = BaseProtocolPayload & {
     readonly decryptionParticipantIndices: readonly number[];
 };
 
-/** Signed link from a restarted ceremony to the aborted prior attempt. */
-export type CeremonyRestartPayload = BaseProtocolPayload & {
-    readonly messageType: 'ceremony-restart';
-    readonly previousSessionId: string;
-    readonly previousTranscriptHash: string;
-    readonly reason: RestartReasonCode;
-};
-
 /** Union of all unsigned protocol payload shapes. */
 export type ProtocolPayload =
     | ManifestPublicationPayload
@@ -224,13 +200,11 @@ export type ProtocolPayload =
     | ComplaintPayload
     | ComplaintResolutionPayload
     | FeldmanCommitmentPayload
-    | FeldmanShareRevealPayload
     | KeyDerivationConfirmation
     | BallotSubmissionPayload
     | BallotClosePayload
     | DecryptionSharePayload
-    | TallyPublicationPayload
-    | CeremonyRestartPayload;
+    | TallyPublicationPayload;
 
 /** Unsigned protocol payload paired with an authentication signature. */
 export type SignedPayload<TPayload extends ProtocolPayload = ProtocolPayload> =

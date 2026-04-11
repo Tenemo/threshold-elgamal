@@ -9,7 +9,7 @@ import {
 
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { runVotingFlowScenario } from '../../../dev-support/voting-flow-harness.js';
+import { runVotingFlowScenario } from '../../../tools/internal/voting-flow-harness.js';
 
 const fixtureTimeoutMs = 240_000;
 
@@ -18,48 +18,48 @@ const allParticipantIndices = (participantCount: number): readonly number[] =>
 
 const positiveScenarios = [
     {
-        name: 'verifies a full 10-participant ceremony when all participants vote',
+        name: 'verifies a full 8-participant ceremony when all participants vote',
         scenario: {
-            participantCount: 10,
-            optionCount: 8,
-            votingParticipantIndices: allParticipantIndices(10),
-            closeParticipantIndices: allParticipantIndices(10),
+            participantCount: 8,
+            optionCount: 5,
+            votingParticipantIndices: allParticipantIndices(8),
+            closeParticipantIndices: allParticipantIndices(8),
         },
         expectedExcluded: [],
-        expectedAcceptedCount: 10,
+        expectedAcceptedCount: 8,
     },
     {
-        name: 'verifies a 10-participant ceremony when one participant never posts a ballot',
+        name: 'verifies a 7-participant ceremony when one participant never posts a ballot',
         scenario: {
-            participantCount: 10,
-            optionCount: 8,
-            votingParticipantIndices: allParticipantIndices(9),
-            closeParticipantIndices: allParticipantIndices(9),
+            participantCount: 7,
+            optionCount: 4,
+            votingParticipantIndices: allParticipantIndices(6),
+            closeParticipantIndices: allParticipantIndices(6),
         },
         expectedExcluded: [],
-        expectedAcceptedCount: 9,
+        expectedAcceptedCount: 6,
     },
     {
         name: 'verifies that organizer cutoff excludes already-posted late ballots in an auditable way',
         scenario: {
-            participantCount: 10,
-            optionCount: 8,
-            votingParticipantIndices: allParticipantIndices(10),
-            closeParticipantIndices: allParticipantIndices(8),
+            participantCount: 6,
+            optionCount: 3,
+            votingParticipantIndices: allParticipantIndices(6),
+            closeParticipantIndices: allParticipantIndices(4),
         },
-        expectedExcluded: [9, 10],
-        expectedAcceptedCount: 8,
+        expectedExcluded: [5, 6],
+        expectedAcceptedCount: 4,
     },
     {
-        name: 'verifies a 10-participant ceremony when the organizer closes at the majority threshold',
+        name: 'verifies an even-sized ceremony when the organizer closes exactly at the majority threshold',
         scenario: {
-            participantCount: 10,
-            optionCount: 8,
-            votingParticipantIndices: allParticipantIndices(5),
-            closeParticipantIndices: allParticipantIndices(5),
+            participantCount: 4,
+            optionCount: 2,
+            votingParticipantIndices: allParticipantIndices(2),
+            closeParticipantIndices: allParticipantIndices(2),
         },
         expectedExcluded: [],
-        expectedAcceptedCount: 5,
+        expectedAcceptedCount: 2,
     },
     {
         name: 'verifies a 3-participant ceremony with multiple options and boundary score values',
@@ -79,13 +79,13 @@ const positiveScenarios = [
         name: 'verifies a ceremony with mixed edge scores across multiple options',
         scenario: {
             participantCount: 5,
-            optionList: ['Alpha', 'Beta', 'Gamma'],
+            optionList: ['Alpha', 'Beta', 'Gamma', 'Delta'],
             participantVotes: [
-                [1n, 10n, 3n],
-                [10n, 1n, 8n],
-                [2n, 9n, 4n],
-                [9n, 2n, 7n],
-                [5n, 5n, 6n],
+                [1n, 10n, 3n, 8n],
+                [10n, 1n, 8n, 3n],
+                [2n, 9n, 4n, 7n],
+                [9n, 2n, 7n, 4n],
+                [5n, 5n, 6n, 6n],
             ],
         },
         expectedExcluded: [],
@@ -100,28 +100,26 @@ describe('public voting flow', () => {
     beforeAll(async () => {
         [fullFixture, partialFixture] = await Promise.all([
             runVotingFlowScenario({
-                participantCount: 5,
+                participantCount: 4,
                 optionList: ['One', 'Two', 'Three'],
                 participantVotes: [
                     [1n, 2n, 3n],
                     [4n, 5n, 6n],
                     [7n, 8n, 9n],
                     [10n, 1n, 2n],
-                    [3n, 4n, 5n],
                 ],
             }),
             runVotingFlowScenario({
-                participantCount: 5,
+                participantCount: 4,
                 optionList: ['One', 'Two', 'Three'],
                 participantVotes: [
                     [1n, 2n, 3n],
                     [4n, 5n, 6n],
                     [7n, 8n, 9n],
                     [10n, 1n, 2n],
-                    [3n, 4n, 5n],
                 ],
-                votingParticipantIndices: [1, 2, 3, 4],
-                closeParticipantIndices: [1, 2, 3, 4],
+                votingParticipantIndices: [1, 2, 3],
+                closeParticipantIndices: [1, 2, 3],
             }),
         ]);
     }, fixtureTimeoutMs);
@@ -303,7 +301,7 @@ describe('public voting flow', () => {
                 phase: 6,
                 participantIndex: fullFixture.participants[0].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices: [1, 2],
+                includedParticipantIndices: [1],
             },
         );
 
@@ -317,7 +315,7 @@ describe('public voting flow', () => {
                 decryptionSharePayloads: fullFixture.decryptionSharePayloads,
                 tallyPublications: fullFixture.tallyPublications,
             }),
-        ).rejects.toThrow('Ballot close must include at least 3 participants');
+        ).rejects.toThrow('Ballot close must include at least 2 participants');
     });
 
     it('rejects ballot close payloads that include a participant without a complete ballot', async () => {
@@ -329,7 +327,7 @@ describe('public voting flow', () => {
                 phase: 6,
                 participantIndex: partialFixture.participants[0].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices: [1, 2, 3, 5],
+                includedParticipantIndices: [1, 2, 4],
             },
         );
 
@@ -344,7 +342,7 @@ describe('public voting flow', () => {
                 tallyPublications: partialFixture.tallyPublications,
             }),
         ).rejects.toThrow(
-            'Ballot close requires a complete ballot from participant 5',
+            'Ballot close requires a complete ballot from participant 4',
         );
     });
 

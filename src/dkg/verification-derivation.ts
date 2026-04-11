@@ -1,6 +1,5 @@
 import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
 import {
-    InvalidPayloadError,
     assertPositiveParticipantIndex,
     modQ,
     type CryptoGroup,
@@ -14,8 +13,6 @@ import {
 } from '../core/ristretto.js';
 import type { EncodedPoint } from '../core/types.js';
 import type { ComplaintPayload } from '../protocol/types.js';
-
-import type { AcceptedShareContribution } from './verification-types.js';
 
 const deriveTranscriptVerificationKeyInternal = (
     commitmentSets: readonly (readonly EncodedPoint[])[],
@@ -74,31 +71,6 @@ export const deriveTranscriptVerificationKey = (
     );
 
 /**
- * Derives transcript verification keys for multiple participant indices.
- *
- * @param feldmanCommitments Qualified dealer commitment vectors.
- * @param participantIndices Participant indices to derive.
- * @param group Selected group.
- * @returns Indexed transcript-derived verification keys.
- */
-export const deriveTranscriptVerificationKeys = (
-    feldmanCommitments: readonly {
-        readonly dealerIndex: number;
-        readonly commitments: readonly EncodedPoint[];
-    }[],
-    participantIndices: readonly number[],
-    group: CryptoGroup,
-): readonly { readonly index: number; readonly value: EncodedPoint }[] =>
-    participantIndices.map((index) => ({
-        index,
-        value: deriveTranscriptVerificationKey(
-            feldmanCommitments,
-            index,
-            group,
-        ),
-    }));
-
-/**
  * Derives the qualified joint public key from the constant Feldman
  * commitments.
  *
@@ -125,48 +97,6 @@ export const deriveJointPublicKey = (
             RISTRETTO_ZERO,
         ),
     );
-};
-
-/**
- * Derives one participant's final share by summing accepted share
- * contributions from qualified dealers.
- *
- * @param contributions Local accepted share contributions.
- * @param qual Qualified dealer indices.
- * @param participantIndex Recipient participant index.
- * @param q Prime-order subgroup order.
- * @returns Final indexed share for the participant.
- */
-export const deriveFinalShare = (
-    contributions: readonly AcceptedShareContribution[],
-    qual: readonly number[],
-    participantIndex: number,
-    q: bigint,
-): { readonly index: number; readonly value: bigint } => {
-    assertPositiveParticipantIndex(participantIndex);
-    const qualSet = new Set(qual);
-    const relevant = contributions.filter(
-        (contribution) =>
-            qualSet.has(contribution.dealerIndex) &&
-            contribution.share.index === participantIndex,
-    );
-
-    if (relevant.length !== qual.length) {
-        throw new InvalidPayloadError(
-            `Final share derivation requires one accepted contribution from every qualified dealer for participant ${participantIndex}`,
-        );
-    }
-
-    return {
-        index: participantIndex,
-        value: modQ(
-            relevant.reduce(
-                (sum, contribution) => sum + contribution.share.secretValue,
-                0n,
-            ),
-            q,
-        ),
-    };
 };
 
 /**

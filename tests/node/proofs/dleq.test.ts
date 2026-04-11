@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createDeterministicSource } from '../../../dev-support/deterministic.js';
+import { createDeterministicSource } from '../../../tools/internal/deterministic.js';
 
 import { InvalidProofError, InvalidScalarError, getGroup } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';

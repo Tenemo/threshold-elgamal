@@ -92,6 +92,7 @@
 
     .hero {
         max-width: 44rem;
+        margin-inline: auto;
         padding: 0;
         border: 0;
         border-radius: 0;
@@ -105,6 +106,7 @@
 
     .hero .tagline {
         max-width: 38rem;
+        margin-inline: auto;
         color: var(--sl-color-gray-2);
     }
 
@@ -151,5 +153,34 @@
     .sl-markdown-content a {
         text-decoration-thickness: 0.08em;
         text-underline-offset: 0.18em;
+    }
+
+    @media (min-width: 50rem) {
+        .hero .stack {
+            text-align: center;
+        }
+
+        .hero .copy {
+            align-items: center;
+        }
+
+        .hero .actions {
+            justify-content: center;
+        }
+    }
+
+    @media (min-width: 72rem) {
+        [data-has-sidebar][data-has-toc] .right-sidebar-container {
+            width: var(--sl-sidebar-width);
+            flex: 0 0 var(--sl-sidebar-width);
+        }
+
+        [data-has-sidebar][data-has-toc] .main-pane {
+            width: calc(100% - var(--sl-sidebar-width));
+        }
+
+        [data-has-sidebar][data-has-toc] .content-panel .sl-container {
+            margin-inline: auto;
+        }
     }
 }

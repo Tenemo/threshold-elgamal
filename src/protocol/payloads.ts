@@ -24,15 +24,11 @@ export const payloadSlotKey = (payload: ProtocolPayload): string => {
             return `${prefix}:${payload.dealerIndex}:${payload.complainantIndex}:${payload.envelopeId}`;
         case 'phase-checkpoint':
             return `${prefix}:${payload.checkpointPhase}`;
-        case 'feldman-share-reveal':
-            return `${prefix}:${payload.dealerIndex}`;
         case 'ballot-submission':
             return `${prefix}:${payload.optionIndex}`;
         case 'decryption-share':
         case 'tally-publication':
             return `${prefix}:${payload.optionIndex}`;
-        case 'ceremony-restart':
-            return `${prefix}:${payload.previousSessionId}`;
         default:
             return prefix;
     }

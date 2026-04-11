@@ -1,4 +1,4 @@
-import { assertFrozenHDerivationsMatch } from '../dev-support/core-reproducibility.js';
+import { assertFrozenHDerivationsMatch } from './internal/core-reproducibility.js';
 
 const main = (): void => {
     assertFrozenHDerivationsMatch();
