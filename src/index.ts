@@ -46,7 +46,6 @@ export type {
     EncodedTransportPublicKey,
     EncryptedEnvelope,
     EnvelopeContext,
-    KeyAgreementSuite,
     TransportKeyPair,
 } from './transport/types.js';
 

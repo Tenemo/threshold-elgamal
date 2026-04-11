@@ -16,8 +16,21 @@ The shipped workflow is browser-native and assumes:
 - Modern browsers must expose Web Crypto and `bigint`
 - Node must be version `24.14.1` or newer and expose `globalThis.crypto`
 - If Web Crypto is missing, the library raises `UnsupportedSuiteError`
-- Transport key agreement prefers `X25519` when available and falls back to `P-256`
+- Authentication signatures require `Ed25519`
+- Transport key agreement requires `X25519`
 - The tally, proof, VSS, and DKG path is fixed to `ristretto255`
+
+## Browser baseline
+
+The shipped browser cryptographic path requires both Web Crypto `Ed25519` and
+`X25519`.
+
+Practical browser baseline:
+
+- Chrome and Edge `137+`
+- Firefox `130+`
+- Safari `18.4+`
+- iOS and iPadOS browsers on the Safari `18.4+` WebKit generation
 
 ## Application-owned runtime concerns
 

@@ -72,9 +72,7 @@ const main = async (): Promise<void> => {
         group,
         proofContext,
     );
-    const recipient = await generateTransportKeyPair({
-        suite: 'P-256',
-    });
+    const recipient = await generateTransportKeyPair();
     const recipientPublicKey = await exportTransportPublicKey(
         recipient.publicKey,
     );
@@ -87,7 +85,7 @@ const main = async (): Promise<void> => {
         payloadType: 'dkg-share',
         protocolVersion: 'v1',
         rosterHash: 'roster-hash',
-        suite: 'P-256' as const,
+        suite: 'X25519' as const,
     };
     const envelopePlaintext = utf8ToBytes('benchmark-envelope');
     const encrypted = await encryptEnvelope(

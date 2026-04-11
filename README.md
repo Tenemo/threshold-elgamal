@@ -32,6 +32,24 @@ pnpm add threshold-elgamal
 - Use ESM imports such as `import { createElectionManifest } from 'threshold-elgamal'`.
 - Browsers need native `bigint` together with Web Crypto.
 - Node requires version `24.14.1` or newer with `globalThis.crypto`.
+- Authentication signatures require Web Crypto `Ed25519`.
+- Transport share exchange requires Web Crypto `X25519`.
+
+## Browser support
+
+The shipped cryptographic browser path is fixed:
+
+- `Ed25519` for protocol payload signatures
+- `X25519` for encrypted share transport
+
+Practical browser baseline for the public workflow:
+
+- Chrome and Edge `137+`
+- Firefox `130+`
+- Safari `18.4+`
+- iOS and iPadOS browsers on the Safari `18.4+` WebKit generation
+
+Older browsers, stale embedded webviews, and runtimes without Web Crypto `X25519` support are not supported.
 
 ## Supported workflow
 

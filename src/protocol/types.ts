@@ -110,7 +110,7 @@ export type EncryptedDualSharePayload = BaseProtocolPayload & {
     readonly messageType: 'encrypted-dual-share';
     readonly recipientIndex: number;
     readonly envelopeId: string;
-    readonly suite: 'X25519' | 'P-256';
+    readonly suite: 'X25519';
     readonly ephemeralPublicKey: EncodedTransportPublicKey;
     readonly iv: string;
     readonly ciphertext: string;
@@ -133,7 +133,7 @@ export type ComplaintResolutionPayload = BaseProtocolPayload & {
     readonly dealerIndex: number;
     readonly complainantIndex: number;
     readonly envelopeId: string;
-    readonly suite: 'X25519' | 'P-256';
+    readonly suite: 'X25519';
     readonly revealedEphemeralPrivateKey: EncodedTransportPrivateKey;
 };
 
@@ -236,7 +236,7 @@ export type ProtocolPayload =
 export type SignedPayload<TPayload extends ProtocolPayload = ProtocolPayload> =
     {
         readonly payload: TPayload;
-        /** Raw IEEE P1363 signature bytes encoded as lowercase hex. */
+        /** Raw Ed25519 signature bytes encoded as lowercase hex. */
         readonly signature: string;
     };
 

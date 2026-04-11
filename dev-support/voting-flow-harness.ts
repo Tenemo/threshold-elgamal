@@ -47,7 +47,6 @@ import {
     type EncodedAuthPublicKey,
     type EncodedPoint,
     type EncodedTransportPublicKey,
-    type KeyAgreementSuite,
     type KeyDerivationConfirmation,
     type ProofContext,
     type SignedPayload,
@@ -80,7 +79,6 @@ export type VotingFlowScenario = {
     readonly participantVotes?: readonly (readonly bigint[])[];
     readonly sessionNonce?: string;
     readonly timestamp?: string;
-    readonly transportSuite?: KeyAgreementSuite;
     readonly votingParticipantIndices?: readonly number[];
 };
 
@@ -231,14 +229,12 @@ const normalizeParticipantIndices = (
 
 const buildParticipants = async (
     participantCount: number,
-    suite: KeyAgreementSuite,
 ): Promise<readonly VotingFlowParticipant[]> =>
     Promise.all(
         Array.from({ length: participantCount }, async (_value, offset) => {
             const index = offset + 1;
             const auth = await generateAuthKeyPair({ extractable: true });
             const transport = await generateTransportKeyPair({
-                suite,
                 extractable: true,
             });
 
@@ -517,10 +513,7 @@ export const runVotingFlowScenario = async (
         scenario.participantCount,
         'Ballot close',
     );
-    const participants = await buildParticipants(
-        scenario.participantCount,
-        scenario.transportSuite ?? 'P-256',
-    );
+    const participants = await buildParticipants(scenario.participantCount);
     const rosterHash = await hashRosterEntries(
         participants.map((participant) => ({
             participantIndex: participant.index,

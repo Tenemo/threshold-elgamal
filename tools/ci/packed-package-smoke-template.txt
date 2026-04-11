@@ -62,7 +62,6 @@ const buildParticipants = async () =>
             const auth = await generateAuthKeyPair({ extractable: true });
             const transport = await generateTransportKeyPair({
                 extractable: true,
-                suite: 'P-256',
             });
 
             return {

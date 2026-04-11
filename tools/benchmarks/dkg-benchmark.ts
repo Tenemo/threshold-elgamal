@@ -1,5 +1,5 @@
 import { performance } from 'node:perf_hooks';
-import { verifyDKGTranscript, type KeyAgreementSuite } from 'threshold-elgamal';
+import { verifyDKGTranscript } from 'threshold-elgamal';
 
 import { runVotingFlowScenario } from '../../dev-support/voting-flow-harness.js';
 
@@ -8,7 +8,6 @@ type BenchmarkRow = {
     readonly participantCount: number;
     readonly threshold: number;
     readonly transcriptMessages: number;
-    readonly transportSuite: KeyAgreementSuite;
     readonly verifyTranscriptMs: number;
     readonly votingFlowMs: number;
 };
@@ -35,23 +34,15 @@ const formatDurationMs = (value: number): string => {
 const parseArgs = (): {
     readonly optionCount: number;
     readonly participantCounts: readonly number[];
-    readonly transportSuite: KeyAgreementSuite;
 } => {
     const provided = process.argv
         .slice(2)
         .map((argument) => argument.trim())
         .filter((argument) => argument !== '' && argument !== '--');
     let optionCount = 1;
-    let transportSuite: KeyAgreementSuite = 'X25519';
     const participantArguments = provided.filter((argument) => {
         if (argument.startsWith('--options=')) {
             optionCount = Number(argument.slice('--options='.length));
-            return false;
-        }
-        if (argument.startsWith('--transport=')) {
-            transportSuite = argument.slice(
-                '--transport='.length,
-            ) as KeyAgreementSuite;
             return false;
         }
         return true;
@@ -81,18 +72,17 @@ const parseArgs = (): {
     return {
         optionCount,
         participantCounts,
-        transportSuite,
     };
 };
 const main = async (): Promise<void> => {
-    const { participantCounts, optionCount, transportSuite } = parseArgs();
+    const { participantCounts, optionCount } = parseArgs();
     const rows: BenchmarkRow[] = [];
     const benchmarkStart = performance.now();
     for (const [index, participantCount] of participantCounts.entries()) {
         const step = index + 1;
         const totalSteps = participantCounts.length;
         console.log(
-            `[${step}/${totalSteps}] Starting n=${participantCount}, options=${optionCount}, group=ristretto255, transport=${transportSuite}`,
+            `[${step}/${totalSteps}] Starting n=${participantCount}, options=${optionCount}, group=ristretto255, transport=X25519`,
         );
         console.log(`[${step}/${totalSteps}] Stage 1/2: full voting flow`);
         const votingFlowStart = performance.now();
@@ -107,7 +97,6 @@ const main = async (): Promise<void> => {
                 (_value, optionOffset) => `Option ${optionOffset + 1}`,
             ),
             participantCount,
-            transportSuite,
             votingParticipantIndices: Array.from(
                 { length: participantCount },
                 (_value, offset) => offset + 1,
@@ -142,7 +131,6 @@ const main = async (): Promise<void> => {
             participantCount,
             threshold: result.threshold,
             transcriptMessages: result.dkgTranscript.length,
-            transportSuite,
             votingFlowMs: round(votingFlowMs),
             verifyTranscriptMs: round(verifyTranscriptMs),
         });

@@ -76,7 +76,7 @@ const positiveScenarios = [
         expectedAcceptedCount: 3,
     },
     {
-        name: 'verifies an X25519 ceremony with mixed edge scores',
+        name: 'verifies a ceremony with mixed edge scores across multiple options',
         scenario: {
             participantCount: 5,
             optionList: ['Alpha', 'Beta', 'Gamma'],
@@ -87,7 +87,6 @@ const positiveScenarios = [
                 [9n, 2n, 7n],
                 [5n, 5n, 6n],
             ],
-            transportSuite: 'X25519' as const,
         },
         expectedExcluded: [],
         expectedAcceptedCount: 5,

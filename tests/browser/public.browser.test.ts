@@ -25,7 +25,6 @@ describe('browser public surface', () => {
                 const index = offset + 1;
                 const auth = await generateAuthKeyPair({ extractable: true });
                 const transport = await generateTransportKeyPair({
-                    suite: 'P-256',
                     extractable: true,
                 });
 
@@ -112,7 +111,7 @@ describe('browser public surface', () => {
                 envelopeId: 'env-1-2',
                 payloadType: 'encrypted-dual-share',
                 protocolVersion: 'v1',
-                suite: 'P-256',
+                suite: 'X25519',
             },
         );
         const decrypted = await decryptEnvelope(
