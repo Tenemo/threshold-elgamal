@@ -2,9 +2,6 @@ import {
     RISTRETTO_GROUP,
     createBallotClosePayload,
     createElectionManifest,
-    createManifestAcceptancePayload,
-    createManifestPublicationPayload,
-    createRegistrationPayload,
     createTallyPublicationPayload,
     decodePedersenShareEnvelope,
     decryptEnvelope,
@@ -18,7 +15,6 @@ import {
     hashElectionManifest,
     hashRosterEntries,
     majorityThreshold,
-    scoreVotingDomain,
 } from 'threshold-elgamal';
 
 const assert = (condition, message) => {
@@ -66,36 +62,6 @@ const sessionId = await deriveSessionId(
     '2026-04-11T12:00:00Z',
 );
 
-const manifestPublication = await createManifestPublicationPayload(
-    participants[0].auth.privateKey,
-    {
-        manifest,
-        manifestHash,
-        participantIndex: participants[0].index,
-        sessionId,
-    },
-);
-const registration = await createRegistrationPayload(
-    participants[1].auth.privateKey,
-    {
-        authPublicKey: participants[1].authPublicKey,
-        manifestHash,
-        participantIndex: participants[1].index,
-        rosterHash,
-        sessionId,
-        transportPublicKey: participants[1].transportPublicKey,
-    },
-);
-const acceptance = await createManifestAcceptancePayload(
-    participants[2].auth.privateKey,
-    {
-        assignedParticipantIndex: participants[2].index,
-        manifestHash,
-        participantIndex: participants[2].index,
-        rosterHash,
-        sessionId,
-    },
-);
 const ballotClose = await createBallotClosePayload(
     participants[0].auth.privateKey,
     {
@@ -153,20 +119,6 @@ const decrypted = await decryptEnvelope(
     encrypted.envelope,
     participants[1].transport.privateKey,
 );
-const scoreDomain = scoreVotingDomain().map((value) => value.toString());
-
-assert(
-    manifestPublication.payload.messageType === 'manifest-publication',
-    'Packed smoke manifest publication builder failed',
-);
-assert(
-    registration.payload.messageType === 'registration',
-    'Packed smoke registration builder failed',
-);
-assert(
-    acceptance.payload.messageType === 'manifest-acceptance',
-    'Packed smoke acceptance builder failed',
-);
 assert(
     ballotClose.payload.includedParticipantIndices.join(',') === '1,2,3',
     'Packed smoke ballot-close normalization failed',
@@ -194,10 +146,6 @@ assert(
 assert(
     majorityThreshold(3) === 2,
     'Packed smoke majority threshold helper returned the wrong threshold',
-);
-assert(
-    scoreDomain.join(',') === '1,2,3,4,5,6,7,8,9,10',
-    'Packed smoke score voting domain helper returned the wrong domain',
 );
 
 console.log('Packed package public API smoke test passed.');

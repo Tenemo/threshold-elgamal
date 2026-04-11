@@ -19,7 +19,6 @@ import {
     createSchnorrProof,
     signProtocolPayload,
     createTallyPublicationPayload,
-    createVerifiedDecryptionShare,
     deriveJointPublicKey,
     derivePedersenShares,
     deriveSessionId,
@@ -35,6 +34,7 @@ import {
     hashElectionManifest,
     hashProtocolTranscript,
     hashRosterEntries,
+    InvalidShareError,
     majorityThreshold,
     modQ,
     RISTRETTO_GROUP,
@@ -58,6 +58,7 @@ import {
     type TransportKeyPair,
     generateTransportKeyPair,
 } from '#root';
+import { createDecryptionShare } from '#src/threshold/decrypt';
 import type { EncodedTransportPrivateKey } from '#src/transport/types';
 
 export type VotingFlowParticipant = {
@@ -719,15 +720,17 @@ export const runVotingFlowScenario = async (
                           participantIndex !== complaintScenario.dealerIndex,
                   )
             : participants.map((participant) => participant.index);
+    const qualifiedParticipantIndexSet = new Set(qualifiedParticipantIndices);
+    const qualifiedDealerCommitments = dealerArtifacts
+        .map((dealer, offset) => ({
+            dealerIndex: offset + 1,
+            commitments: dealer.feldmanCommitments,
+        }))
+        .filter((dealer) =>
+            qualifiedParticipantIndexSet.has(dealer.dealerIndex),
+        );
     const derivedPublicKey = deriveJointPublicKey(
-        dealerArtifacts
-            .map((dealer, offset) => ({
-                dealerIndex: offset + 1,
-                commitments: dealer.feldmanCommitments,
-            }))
-            .filter((dealer) =>
-                qualifiedParticipantIndices.includes(dealer.dealerIndex),
-            ),
+        qualifiedDealerCommitments,
         RISTRETTO_GROUP,
     );
     const dkgTranscriptWithoutConfirmations: SignedPayload[] = [
@@ -815,7 +818,7 @@ export const runVotingFlowScenario = async (
 
     const confirmations = await createKeyDerivationConfirmations(
         participants.filter((participant) =>
-            qualifiedParticipantIndices.includes(participant.index),
+            qualifiedParticipantIndexSet.has(participant.index),
         ),
         dkgTranscriptWithoutConfirmations,
         derivedPublicKey,
@@ -831,7 +834,7 @@ export const runVotingFlowScenario = async (
         value: modQ(
             dealerArtifacts.reduce(
                 (sum, dealer, dealerOffset) =>
-                    qualifiedParticipantIndices.includes(dealerOffset + 1)
+                    qualifiedParticipantIndexSet.has(dealerOffset + 1)
                         ? sum + dealer.shares[participant.index - 1].secretValue
                         : sum,
                 0n,
@@ -867,7 +870,7 @@ export const runVotingFlowScenario = async (
     });
     const preferredDecryptionParticipants = closeParticipantIndices.filter(
         (participantIndex) =>
-            qualifiedParticipantIndices.includes(participantIndex),
+            qualifiedParticipantIndexSet.has(participantIndex),
     );
     const selectedParticipants = (
         preferredDecryptionParticipants.length >= threshold
@@ -881,22 +884,27 @@ export const runVotingFlowScenario = async (
         const optionSharePayloads = await Promise.all(
             selectedParticipants.map(async (participantIndex) => {
                 const share = finalShares[participantIndex - 1];
-                const verifiedShare = createVerifiedDecryptionShare(
-                    optionBallots.aggregate,
+                if (optionBallots.aggregate.transcriptHash.trim() === '') {
+                    throw new InvalidShareError(
+                        'Verified aggregate ciphertext requires a non-empty transcript hash',
+                    );
+                }
+                if (
+                    !Number.isInteger(optionBallots.aggregate.ballotCount) ||
+                    optionBallots.aggregate.ballotCount < 1
+                ) {
+                    throw new InvalidShareError(
+                        'Verified aggregate ciphertext requires at least one accepted ballot',
+                    );
+                }
+
+                const verifiedShare = createDecryptionShare(
+                    optionBallots.aggregate.ciphertext,
                     share,
                 );
                 const statement: DLEQStatement = {
                     publicKey: deriveTranscriptVerificationKey(
-                        dealerArtifacts
-                            .map((dealer, offset) => ({
-                                dealerIndex: offset + 1,
-                                commitments: dealer.feldmanCommitments,
-                            }))
-                            .filter((dealer) =>
-                                qualifiedParticipantIndices.includes(
-                                    dealer.dealerIndex,
-                                ),
-                            ),
+                        qualifiedDealerCommitments,
                         participantIndex,
                         RISTRETTO_GROUP,
                     ),

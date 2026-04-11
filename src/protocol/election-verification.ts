@@ -1,7 +1,7 @@
 import { InvalidPayloadError } from '../core/index.js';
 import { decodeScalar } from '../core/ristretto.js';
 import {
-    verifyDKGTranscriptFromAuditedTranscript,
+    verifyDKGTranscript,
     type VerifiedDKGTranscript,
 } from '../dkg/verification.js';
 import { combineDecryptionShares } from '../threshold/index.js';
@@ -14,11 +14,15 @@ import type {
     BallotSubmissionPayload,
     DecryptionSharePayload,
     ElectionManifest,
+    VerifiedDecryptionSharePayload,
+    VerifiedOptionDecryptionShares,
+    VerifiedPublishedOptionVotingResult,
+    VerifyPublishedVotingResultsInput,
     SignedPayload,
     TallyPublicationPayload,
 } from './types.js';
-import { verifyBallotSubmissionPayloadsByOptionFromAuditedPayloads } from './voting-ballots.js';
-import { verifyDecryptionSharePayloadsByOptionFromAuditedPayloads } from './voting-decryption.js';
+import { verifyBallotSubmissionPayloadsByOption } from './voting-ballots.js';
+import { verifyDecryptionSharePayloadsByOption } from './voting-decryption.js';
 import {
     assertPhase,
     assertUniqueSortedIndices,
@@ -28,12 +32,6 @@ import {
     TALLY_PUBLICATION_PHASE,
     verifyPayloadsAgainstRegistrations,
 } from './voting-shared.js';
-import type {
-    VerifiedDecryptionSharePayload,
-    VerifiedOptionDecryptionShares,
-    VerifiedPublishedOptionVotingResult,
-    VerifyPublishedVotingResultsInput,
-} from './voting-types.js';
 
 /** Stable high-level failure codes for full ceremony verification. */
 export type ElectionVerificationErrorCode =
@@ -257,7 +255,7 @@ export const verifyElectionCeremonyDetailed = async (
 
     let dkg!: VerifiedDKGTranscript;
     try {
-        dkg = await verifyDKGTranscriptFromAuditedTranscript({
+        dkg = await verifyDKGTranscript({
             transcript: dkgAudit.acceptedPayloads,
             manifest: context.manifest,
             sessionId: context.sessionId,
@@ -306,28 +304,28 @@ export const verifyElectionCeremonyDetailed = async (
 
     let ballots!: readonly VerifiedOptionBallotAggregation[];
     try {
-        ballots =
-            await verifyBallotSubmissionPayloadsByOptionFromAuditedPayloads({
-                ballotPayloads: ballotClose.countedBallotPayloads,
-                context,
-                publicKey: dkg.derivedPublicKey,
-            });
+        ballots = await verifyBallotSubmissionPayloadsByOption({
+            ballotPayloads: ballotClose.countedBallotPayloads,
+            publicKey: dkg.derivedPublicKey,
+            manifest: context.manifest,
+            sessionId: context.sessionId,
+        });
     } catch (error) {
         wrapStageError('BALLOT_INVALID', 'ballots', error);
     }
 
     let decryptionShares!: readonly VerifiedOptionDecryptionShares[];
     try {
-        decryptionShares =
-            await verifyDecryptionSharePayloadsByOptionFromAuditedPayloads({
-                aggregates: ballots.map((optionBallots) => ({
-                    optionIndex: optionBallots.optionIndex,
-                    aggregate: optionBallots.aggregate,
-                })),
-                context,
-                dkg,
-                decryptionSharePayloads: decryptionAudit.acceptedPayloads,
-            });
+        decryptionShares = await verifyDecryptionSharePayloadsByOption({
+            aggregates: ballots.map((optionBallots) => ({
+                optionIndex: optionBallots.optionIndex,
+                aggregate: optionBallots.aggregate,
+            })),
+            dkg,
+            decryptionSharePayloads: decryptionAudit.acceptedPayloads,
+            manifest: context.manifest,
+            sessionId: context.sessionId,
+        });
     } catch (error) {
         wrapStageError('DECRYPTION_INVALID', 'decryption', error);
     }

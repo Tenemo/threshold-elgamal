@@ -183,7 +183,7 @@ pnpm install
 pnpm run lint
 pnpm run tsc
 pnpm run test
-pnpm run build:skip
+pnpm run build
 ```
 
 ## License

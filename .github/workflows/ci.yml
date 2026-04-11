@@ -27,10 +27,9 @@ jobs:
       - run: pnpm run typecheck
       - run: pnpm run verify:unused
       - run: pnpm run guard:no-math-random
-      - run: pnpm run verify:h-derivation
       - run: pnpm run verify:vectors
       - run: pnpm run test:node:fast
-      - run: pnpm run build:skip
+      - run: pnpm run build
 
   node-heavy:
     runs-on: ubuntu-latest

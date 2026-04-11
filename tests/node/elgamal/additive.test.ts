@@ -1,112 +1,60 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-    getGroup,
-    InvalidGroupElementError,
     InvalidScalarError,
     PlaintextDomainError,
+    RISTRETTO_GROUP,
 } from '#core';
 import {
     addEncryptedValues,
     assertValidAdditiveCiphertext,
-    assertValidFreshAdditiveCiphertext,
     babyStepGiantStep,
-    decryptAdditive,
-    encryptAdditive,
     encryptAdditiveWithRandomness,
-    generateParameters,
-    generateParametersWithPrivateKey,
     type ElgamalCiphertext,
 } from '#elgamal';
-import { encodePoint, multiplyBase } from '#src/core/ristretto';
+import {
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointMultiply,
+    pointSubtract,
+} from '#src/core/ristretto';
+
+const privateKey = 12345n;
+const publicKey = encodePoint(multiplyBase(privateKey));
+
 const additiveIdentity = (): ElgamalCiphertext => {
     const identity = encodePoint(multiplyBase(0n));
+
     return {
         c1: identity,
         c2: identity,
     } as ElgamalCiphertext;
 };
+
+const decryptWithPrivateKey = (
+    ciphertext: ElgamalCiphertext,
+    bound: bigint,
+): bigint => {
+    const encodedMessage = encodePoint(
+        pointSubtract(
+            decodePoint(ciphertext.c2),
+            pointMultiply(decodePoint(ciphertext.c1), privateKey),
+        ),
+    );
+    const message = babyStepGiantStep(encodedMessage, RISTRETTO_GROUP.g, bound);
+
+    if (message === null) {
+        throw new PlaintextDomainError(
+            'Ciphertext decrypts to a value outside the supplied additive bound',
+        );
+    }
+
+    return message;
+};
+
 describe('additive ElGamal', () => {
-    it('round-trips bounded additive messages', () => {
-        const { publicKey, privateKey } = generateParameters();
-        for (const message of [0n, 1n, 42n, 1000n]) {
-            const ciphertext = encryptAdditive(message, publicKey, 1000n);
-            expect(decryptAdditive(ciphertext, privateKey, 1000n)).toBe(
-                message,
-            );
-        }
-    });
-    it('rejects invalid additive plaintexts and public keys', () => {
-        expect.assertions(3);
-        const { publicKey } = generateParameters();
-        expect(() => encryptAdditive(-1n, publicKey, 10n)).toThrow(
-            PlaintextDomainError,
-        );
-        expect(() => encryptAdditive(11n, publicKey, 10n)).toThrow(
-            PlaintextDomainError,
-        );
-        expect(() => encryptAdditive(1n, 'ff'.repeat(32), 10n)).toThrow(
-            InvalidGroupElementError,
-        );
-    });
-    it('rejects additive decryptions that exceed the supplied bound', () => {
-        const { publicKey, privateKey } = generateParameters();
-        const ciphertext = encryptAdditive(11n, publicKey, 20n);
-        expect(() => decryptAdditive(ciphertext, privateKey, 10n)).toThrow(
-            PlaintextDomainError,
-        );
-    });
-    it('adds ciphertexts homomorphically', () => {
-        const { publicKey, privateKey } = generateParameters();
-        const left = encryptAdditive(6n, publicKey, 20n);
-        const right = encryptAdditive(7n, publicKey, 20n);
-        const sum = addEncryptedValues(left, right);
-        expect(decryptAdditive(sum, privateKey, 20n)).toBe(13n);
-    });
-    it('accepts additive aggregates with identity c1', () => {
-        const group = getGroup('ristretto255');
-        const { publicKey, privateKey } = generateParametersWithPrivateKey(5n);
-        const left = encryptAdditiveWithRandomness(6n, publicKey, 7n, 20n);
-        const right = encryptAdditiveWithRandomness(
-            7n,
-            publicKey,
-            group.q - 7n,
-            20n,
-        );
-        const sum = addEncryptedValues(left, right);
-        const identity = encodePoint(multiplyBase(0n));
-        expect(sum.c1).toBe(identity);
-        expect(() => assertValidAdditiveCiphertext(sum)).not.toThrow();
-        expect(() => assertValidFreshAdditiveCiphertext(sum)).toThrow(
-            InvalidGroupElementError,
-        );
-        expect(decryptAdditive(sum, privateKey, 20n)).toBe(13n);
-    });
-    it('accepts additive neutral accumulators', () => {
-        const { publicKey, privateKey } = generateParameters();
-        const ciphertext = encryptAdditive(11n, publicKey, 20n);
-        const sum = addEncryptedValues(additiveIdentity(), ciphertext);
-        expect(decryptAdditive(sum, privateKey, 20n)).toBe(11n);
-    });
-    it('requires an explicit additive bound', () => {
-        const { publicKey, privateKey } = generateParameters();
-        const ciphertext = encryptAdditive(1n, publicKey, 10n);
-        const encryptAdditiveUnchecked = encryptAdditive as (
-            ...args: unknown[]
-        ) => unknown;
-        const decryptAdditiveUnchecked = decryptAdditive as (
-            ...args: unknown[]
-        ) => unknown;
-        expect(() => encryptAdditiveUnchecked(1n, publicKey)).toThrow(
-            InvalidScalarError,
-        );
-        expect(() => decryptAdditiveUnchecked(ciphertext, privateKey)).toThrow(
-            InvalidScalarError,
-        );
-    });
     it('uses deterministic canonical ciphertext encodings for fixed randomness', () => {
-        const { publicKey, privateKey } =
-            generateParametersWithPrivateKey(12345n);
         const first = encryptAdditiveWithRandomness(7n, publicKey, 4100n, 20n);
         const same = encryptAdditiveWithRandomness(7n, publicKey, 4100n, 20n);
         const different = encryptAdditiveWithRandomness(
@@ -115,19 +63,73 @@ describe('additive ElGamal', () => {
             4101n,
             20n,
         );
+
         expect(first).toEqual(same);
         expect(different).not.toEqual(first);
-        expect(decryptAdditive(first, privateKey, 20n)).toBe(7n);
+        expect(decryptWithPrivateKey(first, 20n)).toBe(7n);
     });
-    it('rejects invalid deterministic randomness', () => {
-        const { publicKey } = generateParameters();
+
+    it('adds ciphertexts homomorphically, including neutral accumulators', () => {
+        const left = encryptAdditiveWithRandomness(6n, publicKey, 7n, 20n);
+        const right = encryptAdditiveWithRandomness(7n, publicKey, 9n, 20n);
+        const sum = addEncryptedValues(left, right);
+
+        expect(decryptWithPrivateKey(sum, 20n)).toBe(13n);
+
+        const neutralAggregate = addEncryptedValues(additiveIdentity(), left);
+        expect(neutralAggregate).toEqual(left);
+        expect(() =>
+            assertValidAdditiveCiphertext(neutralAggregate),
+        ).not.toThrow();
+    });
+
+    it('accepts aggregate ciphertexts with identity c1', () => {
+        const left = encryptAdditiveWithRandomness(6n, publicKey, 7n, 20n);
+        const right = encryptAdditiveWithRandomness(
+            7n,
+            publicKey,
+            RISTRETTO_GROUP.q - 7n,
+            20n,
+        );
+        const sum = addEncryptedValues(left, right);
+        const identity = encodePoint(multiplyBase(0n));
+
+        expect(sum.c1).toBe(identity);
+        expect(() => assertValidAdditiveCiphertext(sum)).not.toThrow();
+        expect(decryptWithPrivateKey(sum, 20n)).toBe(13n);
+    });
+
+    it('rejects invalid additive plaintexts, bounds, and randomness', () => {
+        expect(() =>
+            encryptAdditiveWithRandomness(-1n, publicKey, 7n, 10n),
+        ).toThrow(PlaintextDomainError);
+        expect(() =>
+            encryptAdditiveWithRandomness(11n, publicKey, 7n, 10n),
+        ).toThrow(PlaintextDomainError);
         expect(() =>
             encryptAdditiveWithRandomness(7n, publicKey, 0n, 20n),
         ).toThrow(InvalidScalarError);
+        expect(() =>
+            encryptAdditiveWithRandomness(7n, publicKey, 7n, RISTRETTO_GROUP.q),
+        ).toThrow(InvalidScalarError);
+        const encryptUnchecked = encryptAdditiveWithRandomness as (
+            ...args: unknown[]
+        ) => unknown;
+        expect(() => encryptUnchecked(7n, publicKey, 7n)).toThrow(
+            InvalidScalarError,
+        );
     });
-    it('returns null when the BSGS search space is too small', () => {
-        const group = getGroup('ristretto255');
-        const target = encodePoint(multiplyBase(1n));
-        expect(babyStepGiantStep(target, group.g, 0n)).toBeNull();
+
+    it('fails to decode when the BSGS search space is too small', () => {
+        const ciphertext = encryptAdditiveWithRandomness(
+            1n,
+            publicKey,
+            7n,
+            10n,
+        );
+
+        expect(() => decryptWithPrivateKey(ciphertext, 0n)).toThrow(
+            PlaintextDomainError,
+        );
     });
 });

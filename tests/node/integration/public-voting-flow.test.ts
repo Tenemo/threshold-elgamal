@@ -360,6 +360,45 @@ describe('public voting flow', () => {
         );
     });
 
+    it('requires key-derivation confirmations by default but accepts explicit legacy replays', async () => {
+        const transcriptWithoutConfirmations = fullFixture.dkgTranscript.filter(
+            (entry) =>
+                entry.payload.messageType !== 'key-derivation-confirmation',
+        );
+
+        await expect(
+            verifyElectionCeremonyDetailed({
+                manifest: fullFixture.manifest,
+                sessionId: fullFixture.sessionId,
+                dkgTranscript: transcriptWithoutConfirmations,
+                ballotPayloads: fullFixture.ballotPayloads,
+                ballotClosePayload: fullFixture.ballotClosePayload,
+                decryptionSharePayloads: fullFixture.decryptionSharePayloads,
+                tallyPublications: fullFixture.tallyPublications,
+            }),
+        ).rejects.toThrow(
+            'Expected at least 4 key-derivation confirmations, received 0',
+        );
+
+        await expect(
+            verifyElectionCeremonyDetailed({
+                manifest: fullFixture.manifest,
+                sessionId: fullFixture.sessionId,
+                dkgTranscript: transcriptWithoutConfirmations,
+                keyDerivationConfirmationPolicy: 'optional',
+                ballotPayloads: fullFixture.ballotPayloads,
+                ballotClosePayload: fullFixture.ballotClosePayload,
+                decryptionSharePayloads: fullFixture.decryptionSharePayloads,
+                tallyPublications: fullFixture.tallyPublications,
+            }),
+        ).resolves.toEqual(
+            expect.objectContaining({
+                perOptionTallies: fullFixture.verified.perOptionTallies,
+                qual: fullFixture.verified.qual,
+            }),
+        );
+    });
+
     it('rejects tally publications that do not match the recomputed close-selected tally', async () => {
         const forgedTallyPublication = await createTallyPublicationPayload(
             fullFixture.participants[0].auth.privateKey,

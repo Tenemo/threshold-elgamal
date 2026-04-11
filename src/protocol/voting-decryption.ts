@@ -8,7 +8,13 @@ import { verifyDLEQProof, type DLEQStatement } from '../proofs/dleq.js';
 import type { DecryptionShare } from '../threshold/index.js';
 
 import { auditSignedPayloads } from './board-audit.js';
-import type { DecryptionSharePayload, SignedPayload } from './types.js';
+import type {
+    DecryptionSharePayload,
+    SignedPayload,
+    VerifiedDecryptionSharePayload,
+    VerifiedOptionDecryptionShares,
+    VerifyDecryptionSharePayloadsByOptionInput,
+} from './types.js';
 import { decodeCompactProof } from './voting-codecs.js';
 import {
     assertNonEmptyString,
@@ -17,21 +23,15 @@ import {
     buildOptionAggregateMap,
     buildVotingManifestContext,
     decryptionProofContext,
-    type VotingManifestContext,
     DECRYPTION_SHARE_PHASE,
 } from './voting-shared.js';
-import type {
-    VerifiedDecryptionSharePayload,
-    VerifiedOptionDecryptionShares,
-    VerifyDecryptionSharePayloadsByOptionInput,
-} from './voting-types.js';
 
-export async function verifyDecryptionSharePayloadsByOptionFromAuditedPayloads(input: {
+const verifyAuditedDecryptionSharePayloadsByOption = async (input: {
     readonly aggregates: VerifyDecryptionSharePayloadsByOptionInput['aggregates'];
-    readonly context: VotingManifestContext;
+    readonly context: Awaited<ReturnType<typeof buildVotingManifestContext>>;
     readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
     readonly dkg: VerifyDecryptionSharePayloadsByOptionInput['dkg'];
-}): Promise<readonly VerifiedOptionDecryptionShares[]> {
+}): Promise<readonly VerifiedOptionDecryptionShares[]> => {
     const qualSet = new Set(input.dkg.qual);
     const aggregateMap = buildOptionAggregateMap(
         input.aggregates,
@@ -166,7 +166,7 @@ export async function verifyDecryptionSharePayloadsByOptionFromAuditedPayloads(i
     }
 
     return verifiedShares;
-}
+};
 
 /**
  * Verifies typed decryption-share payloads against the DKG transcript-derived
@@ -189,7 +189,7 @@ export const verifyDecryptionSharePayloadsByOption = async (
         input.decryptionSharePayloads,
     );
 
-    return verifyDecryptionSharePayloadsByOptionFromAuditedPayloads({
+    return verifyAuditedDecryptionSharePayloadsByOption({
         aggregates: input.aggregates,
         context,
         decryptionSharePayloads: auditedShares.acceptedPayloads,

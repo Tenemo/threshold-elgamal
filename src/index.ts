@@ -49,10 +49,7 @@ export type {
     TransportKeyPair,
 } from './transport/types.js';
 
-export {
-    combineDecryptionShares,
-    createVerifiedDecryptionShare,
-} from './threshold/decrypt.js';
+export { combineDecryptionShares } from './threshold/decrypt.js';
 export type {
     DecryptionShare,
     Share,
@@ -71,7 +68,7 @@ export {
 export type {
     VerifyDKGTranscriptInput,
     VerifiedDKGTranscript,
-} from './dkg/verification-types.js';
+} from './dkg/verification.js';
 
 export {
     generateFeldmanCommitments,

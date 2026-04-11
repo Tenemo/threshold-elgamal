@@ -6,16 +6,18 @@ import {
     type VerifiedOptionBallotAggregation,
 } from './ballots.js';
 import { auditSignedPayloads } from './board-audit.js';
-import type { BallotSubmissionPayload, SignedPayload } from './types.js';
+import type {
+    BallotSubmissionPayload,
+    SignedPayload,
+    VerifyBallotSubmissionPayloadsByOptionInput,
+} from './types.js';
 import { decodeCiphertext, decodeDisjunctiveProof } from './voting-codecs.js';
 import {
     assertPhase,
     assertValidOptionIndex,
     buildVotingManifestContext,
-    type VotingManifestContext,
     BALLOT_SUBMISSION_PHASE,
 } from './voting-shared.js';
-import type { VerifyBallotSubmissionPayloadsByOptionInput } from './voting-types.js';
 
 const decodeBallotPayload = (
     payload: BallotSubmissionPayload,
@@ -36,11 +38,11 @@ const decodeBallotPayload = (
     };
 };
 
-export async function verifyBallotSubmissionPayloadsByOptionFromAuditedPayloads(input: {
+const verifyAuditedBallotSubmissionPayloadsByOption = async (input: {
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
-    readonly context: VotingManifestContext;
+    readonly context: Awaited<ReturnType<typeof buildVotingManifestContext>>;
     readonly publicKey: VerifyBallotSubmissionPayloadsByOptionInput['publicKey'];
-}): Promise<readonly VerifiedOptionBallotAggregation[]> {
+}): Promise<readonly VerifiedOptionBallotAggregation[]> => {
     const ballotEntries = input.ballotPayloads.map((payload) => {
         if (payload.payload.sessionId !== input.context.sessionId) {
             throw new InvalidPayloadError(
@@ -65,7 +67,7 @@ export async function verifyBallotSubmissionPayloadsByOptionFromAuditedPayloads(
         sessionId: input.context.sessionId,
         optionCount: input.context.optionCount,
     });
-}
+};
 
 /**
  * Verifies typed ballot-submission payloads and recomputes one aggregate tally
@@ -86,7 +88,7 @@ export const verifyBallotSubmissionPayloadsByOption = async (
     );
     const auditedBallots = await auditSignedPayloads(input.ballotPayloads);
 
-    return verifyBallotSubmissionPayloadsByOptionFromAuditedPayloads({
+    return verifyAuditedBallotSubmissionPayloadsByOption({
         ballotPayloads: auditedBallots.acceptedPayloads,
         context,
         publicKey: input.publicKey,

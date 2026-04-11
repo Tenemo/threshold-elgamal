@@ -15,14 +15,15 @@ import {
     pointMultiply,
     RISTRETTO_ZERO,
 } from '../core/ristretto.js';
+import type { EncodedPoint } from '../core/types.js';
 import type { Share } from '../threshold/types.js';
 
 import type { FeldmanCommitments } from './types.js';
 
 export const evaluateCommitmentProduct = (
-    commitments: readonly string[],
+    commitments: readonly EncodedPoint[],
     index: number,
-): string => {
+): EncodedPoint => {
     let result = RISTRETTO_ZERO;
     let exponent = 1n;
     const point = BigInt(index);

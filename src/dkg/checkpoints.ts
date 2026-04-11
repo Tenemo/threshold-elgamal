@@ -8,8 +8,8 @@ import type {
 import {
     assertIndexSubset,
     assertUniqueSortedParticipantIndices,
-} from './verification-shared.js';
-import type { ResolvePhaseCheckpointInput } from './verification-types.js';
+    type ResolvePhaseCheckpointInput,
+} from './verification.js';
 
 /** Finalized threshold-supported checkpoint for one DKG phase. */
 export type FinalizedPhaseCheckpoint = {

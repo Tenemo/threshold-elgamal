@@ -10,6 +10,5 @@ export {
     generateTransportKeyPair,
     type GenerateTransportKeyPairOptions,
     importTransportPublicKey,
-    verifyLocalTransportKey,
 } from './key-agreement.js';
 export * from './types.js';

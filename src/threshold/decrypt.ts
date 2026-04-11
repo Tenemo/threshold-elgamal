@@ -5,6 +5,7 @@ import {
     InvalidShareError,
     PlaintextDomainError,
     RISTRETTO_GROUP,
+    modInvQ,
     modQ,
 } from '../core/index.js';
 import {
@@ -18,12 +19,7 @@ import {
 import { babyStepGiantStep } from '../elgamal/bsgs.js';
 import type { ElgamalCiphertext } from '../elgamal/types.js';
 
-import { lagrangeCoefficient } from './lagrange.js';
-import type {
-    DecryptionShare,
-    Share,
-    VerifiedAggregateCiphertext,
-} from './types.js';
+import type { DecryptionShare, Share } from './types.js';
 
 const assertPositiveIndex = (index: number, label: string): void => {
     if (!Number.isInteger(index) || index < 1) {
@@ -45,6 +41,37 @@ const assertUniqueIndices = (
         }
         seen.add(index);
     }
+};
+
+/**
+ * Computes the Lagrange coefficient for `participantIndex` at `x = 0`.
+ *
+ * @param participantIndex Target share index as a bigint.
+ * @param allIndices Full subset of indices participating in reconstruction.
+ * @param q Prime-order subgroup order.
+ * @returns `lambda_i mod q`.
+ */
+export const lagrangeCoefficient = (
+    participantIndex: bigint,
+    allIndices: readonly bigint[],
+    q: bigint,
+): bigint => {
+    let numerator = 1n;
+    let denominator = 1n;
+
+    for (const otherIndex of allIndices) {
+        if (otherIndex === participantIndex) {
+            continue;
+        }
+
+        numerator = modQ(numerator * otherIndex, q);
+        denominator = modQ(
+            denominator * modQ(otherIndex - participantIndex, q),
+            q,
+        );
+    }
+
+    return modQ(numerator * modInvQ(denominator, q), q);
 };
 
 /**
@@ -126,30 +153,4 @@ export const combineDecryptionShares = (
     }
 
     return message;
-};
-
-/**
- * Creates a decryption share only for a locally recomputed aggregate that is
- * anchored to a canonical transcript hash.
- *
- * @internal Compatibility helper kept for internal harnesses and advanced
- * tests. The shipped public workflow prefers decryption-share payload builders
- * plus ceremony-level verification.
- */
-export const createVerifiedDecryptionShare = (
-    aggregate: VerifiedAggregateCiphertext,
-    share: Share,
-): DecryptionShare => {
-    if (aggregate.transcriptHash.trim() === '') {
-        throw new InvalidShareError(
-            'Verified aggregate ciphertext requires a non-empty transcript hash',
-        );
-    }
-    if (!Number.isInteger(aggregate.ballotCount) || aggregate.ballotCount < 1) {
-        throw new InvalidShareError(
-            'Verified aggregate ciphertext requires at least one accepted ballot',
-        );
-    }
-
-    return createDecryptionShare(aggregate.ciphertext, share);
 };

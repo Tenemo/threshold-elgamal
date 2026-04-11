@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 
-import { assertValidParticipantIndex, getGroup } from '#core';
+import { assertValidParticipantIndex, RISTRETTO_GROUP } from '#core';
 import {
     decodePoint,
     encodePoint,
@@ -16,9 +16,8 @@ import { babyStepGiantStep } from '#src/elgamal/bsgs';
 import {
     combineDecryptionShares,
     createDecryptionShare,
+    lagrangeCoefficient,
 } from '#src/threshold/decrypt';
-import { lagrangeCoefficient } from '#src/threshold/lagrange';
-import { deriveSharesFromPolynomial } from '#src/threshold/shares';
 
 type ThresholdVectorConfig = {
     readonly bound: bigint;
@@ -65,6 +64,40 @@ type ThresholdVectorRecord = {
     readonly threshold: number;
 };
 
+const deriveShares = (
+    polynomial: readonly bigint[],
+    participantCount: number,
+    q: bigint,
+): readonly {
+    readonly index: number;
+    readonly value: bigint;
+}[] => {
+    if (!Number.isInteger(participantCount) || participantCount < 1) {
+        throw new Error('Participant count must be a positive integer');
+    }
+
+    return Array.from({ length: participantCount }, (_value, offset) => {
+        const index = offset + 1;
+        let result = 0n;
+
+        for (
+            let coefficientIndex = polynomial.length - 1;
+            coefficientIndex >= 0;
+            coefficientIndex -= 1
+        ) {
+            result =
+                (((result * BigInt(index)) % q) +
+                    polynomial[coefficientIndex]) %
+                q;
+        }
+
+        return {
+            index,
+            value: result,
+        };
+    });
+};
+
 const assertVectorConfig = (config: ThresholdVectorConfig): void => {
     const threshold = config.polynomial.length;
 
@@ -101,9 +134,13 @@ const generateThresholdVectorRecord = (
 ): ThresholdVectorRecord => {
     assertVectorConfig(config);
 
-    const group = getGroup(config.groupName);
+    if (config.groupName !== RISTRETTO_GROUP.name) {
+        throw new Error(`Unsupported group: ${String(config.groupName)}`);
+    }
+
+    const group = RISTRETTO_GROUP;
     const threshold = config.polynomial.length;
-    const shares = deriveSharesFromPolynomial(
+    const shares = deriveShares(
         config.polynomial,
         config.participantCount,
         group.q,

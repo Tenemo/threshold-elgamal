@@ -21,16 +21,16 @@ import type {
     ProtocolPayload,
     RegistrationPayload,
     SignedPayload,
+    OptionAggregateInput,
 } from './types.js';
 import { scoreVotingDomain } from './voting-codecs.js';
-import type { OptionAggregateInput } from './voting-types.js';
 
 export const BALLOT_SUBMISSION_PHASE = 5;
 export const BALLOT_CLOSE_PHASE = 6;
 export const DECRYPTION_SHARE_PHASE = 7;
 export const TALLY_PUBLICATION_PHASE = 8;
 
-export type VotingManifestContext = {
+type VotingManifestContext = {
     readonly manifest: ElectionManifest;
     readonly manifestHash: string;
     readonly optionCount: number;

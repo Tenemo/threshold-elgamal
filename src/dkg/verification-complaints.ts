@@ -13,16 +13,16 @@ import { resolveDealerChallengeFromPublicKey } from '../transport/complaints.js'
 import { verifyPedersenShare } from '../vss/pedersen.js';
 
 import { decodePedersenShareEnvelope } from './pedersen-share-codec.js';
+import type {
+    EncryptedShareMatrix,
+    VerifyDKGTranscriptInput,
+} from './verification.js';
 import {
     complaintResolutionKey,
     encryptedShareSlotKey,
     parseCommitmentVector,
     validateParticipantIndex,
-} from './verification-shared.js';
-import type {
-    EncryptedShareMatrix,
-    VerifyDKGTranscriptInput,
-} from './verification-types.js';
+} from './verification.js';
 
 export const buildEncryptedShareMatrix = (
     transcript: readonly SignedPayload[],

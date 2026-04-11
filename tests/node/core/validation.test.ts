@@ -9,7 +9,6 @@ import {
     assertThreshold,
     assertValidParticipantIndex,
     assertValidPublicKey,
-    getGroup,
     IndexOutOfRangeError,
     InvalidGroupElementError,
     InvalidScalarError,
@@ -17,12 +16,13 @@ import {
     isInSubgroupOrIdentity,
     majorityThreshold,
     PlaintextDomainError,
+    RISTRETTO_GROUP,
     ThresholdViolationError,
 } from '#core';
 import { encodePoint, RISTRETTO_ZERO } from '#src/core/ristretto';
 
 describe('core validation', () => {
-    const group = getGroup('ristretto255');
+    const group = RISTRETTO_GROUP;
     const identity = encodePoint(RISTRETTO_ZERO);
     const invalidPoint = 'ff'.repeat(32);
 
