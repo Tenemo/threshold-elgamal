@@ -1,6 +1,6 @@
 {
     "name": "threshold-elgamal",
-    "version": "1.0.0-beta.6",
+    "version": "1.0.0-beta.7",
     "description": "A browser-native TypeScript ElGamal library for Ristretto255-based research prototypes, shipping additive ElGamal, threshold decryption, protocol helpers, board auditing, transport primitives, and log-driven DKG state machines.",
     "author": "Piotr Piech <piotr@piech.dev>",
     "license": "MPL-2.0",
