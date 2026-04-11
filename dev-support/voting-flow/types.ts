@@ -3,6 +3,7 @@ import type { DKGState } from '#dkg';
 import type { ElgamalCiphertext } from '#elgamal';
 import type { DLEQProof, DisjunctiveProof, ProofContext } from '#proofs';
 import type {
+    BallotClosePayload,
     BallotSubmissionPayload,
     DecryptionSharePayload,
     ElectionManifest,
@@ -112,6 +113,7 @@ export type OptionVotingArtifacts = {
 type CommonScenarioResult = {
     readonly aggregate: ElgamalCiphertext;
     readonly ballotLogHash?: string;
+    readonly ballotClosePayload?: SignedPayload<BallotClosePayload>;
     readonly ballotPayloads?: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly ballots: readonly BallotArtifact[];
     readonly complaintResolutions: readonly (ComplaintResolution & {

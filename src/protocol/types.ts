@@ -19,6 +19,7 @@ export type ProtocolMessageType =
     | 'feldman-share-reveal'
     | 'key-derivation-confirmation'
     | 'ballot-submission'
+    | 'ballot-close'
     | 'decryption-share'
     | 'tally-publication'
     | 'ceremony-restart';
@@ -175,6 +176,12 @@ export type BallotSubmissionPayload = BaseProtocolPayload & {
     readonly proof: EncodedDisjunctiveProof;
 };
 
+/** Signed organizer payload that freezes which participants are counted. */
+export type BallotClosePayload = BaseProtocolPayload & {
+    readonly messageType: 'ballot-close';
+    readonly includedParticipantIndices: readonly number[];
+};
+
 /**
  * Signed threshold decryption-share payload tied to a locally recomputed
  * additive aggregate transcript.
@@ -220,6 +227,7 @@ export type ProtocolPayload =
     | FeldmanShareRevealPayload
     | KeyDerivationConfirmation
     | BallotSubmissionPayload
+    | BallotClosePayload
     | DecryptionSharePayload
     | TallyPublicationPayload
     | CeremonyRestartPayload;
@@ -234,16 +242,6 @@ export type SignedPayload<TPayload extends ProtocolPayload = ProtocolPayload> =
 
 /** Canonical election-manifest shape bound into protocol transcripts. */
 export type ElectionManifest = {
-    readonly protocolVersion: string;
-    readonly reconstructionThreshold: number;
-    readonly participantCount: number;
-    /** Minimum accepted voter count required before publication, separate from the DKG reconstruction threshold. */
-    readonly minimumPublishedVoterCount: number;
-    readonly ballotCompletenessPolicy: BallotCompletenessPolicy;
-    readonly ballotFinality: 'first-valid';
-    readonly scoreDomain: ScoreDomainPolicy;
     readonly rosterHash: string;
     readonly optionList: readonly string[];
-    /** Application coordination deadlines carried in the manifest but not yet enforced by transcript verification. */
-    readonly epochDeadlines: readonly string[];
 };

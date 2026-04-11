@@ -29,7 +29,7 @@
         "prebuild": "pnpm run check && pnpm exec del-cli dist",
         "build": "tsc --project tsconfig.build.json",
         "build:skip": "pnpm exec del-cli dist && tsc --project tsconfig.build.json",
-        "test:node": "vitest --project node --run",
+        "test:node": "pnpm run build:skip && vitest --project node --run",
         "test:node:fast": "tsx ./tools/ci/run-node-test-slice.ts fast",
         "test:node:heavy": "tsx ./tools/ci/run-node-test-slice.ts heavy",
         "test:browser": "vitest --project browser --run",

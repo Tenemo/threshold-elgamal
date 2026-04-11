@@ -1,17 +1,17 @@
 ---
-title: Threshold ElGamal documentation
-description: Browser-native threshold ElGamal documentation for verifiable voting research prototypes.
+title: threshold-elgamal documentation
+description: Browser-native threshold ElGamal documentation for honest-majority voting research prototypes.
 template: splash
 editUrl: false
 hero:
-  title: Threshold ElGamal
-  tagline: Browser-native threshold ElGamal and transcript-driven voting workflows for verifiable research prototypes.
+  title: threshold-elgamal
+  tagline: Browser-native honest-majority voting workflows for verifiable research prototypes.
   actions:
     - text: Get started
       link: ./guides/getting-started/
       icon: right-arrow
       variant: primary
-    - text: Build a voting flow
+    - text: Honest-majority voting flow
       link: ./guides/three-participant-voting-flow/
       variant: secondary
     - text: Browse the API
@@ -27,29 +27,35 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components';
   <LinkCard
     title="Get started"
     href="./guides/getting-started/"
-    description="Use the safe root package, understand the supported surface, and get to a correct additive setup quickly."
+    description="Use the minimal manifest, the honest-majority threshold rule, and the supported root-only import surface."
   />
   <LinkCard
-    title="Build a voting flow"
+    title="Honest-majority voting flow"
     href="./guides/three-participant-voting-flow/"
-    description="Walk through roster freeze, transcript setup, additive ballots, aggregate recomputation, and threshold decryption."
+    description="Follow the supported ceremony from manifest publication through ballot close, decryption shares, and tally verification."
   />
   <LinkCard
-    title="Understand the security model"
+    title="Security and non-goals"
     href="./guides/security-and-non-goals/"
-    description="See the actual boundary of the library, what it guarantees, and what still belongs to the application."
+    description="See the actual boundary of the library and the guarantees that still belong to the application."
   />
   <LinkCard
-    title="Browse the API reference"
+    title="API docs"
     href="./api/"
-    description="Start with the curated API pages and drill down into the generated symbol reference only when you need exact contracts."
+    description="Use the curated API pages first, then the generated reference when you need exact contracts."
   />
 </CardGrid>
 
 ## What this library is for
 
-`threshold-elgamal` is a browser-native TypeScript library for Ristretto255-based voting research prototypes. It ships additive ElGamal on the safe root package, dealer threshold sharing and decryption, typed protocol payloads, board-audit helpers, transport helpers, and log-driven DKG reducers. Internal proof and VSS components support the shipped protocol and DKG workflows, but they are not separate supported import surfaces.
+`threshold-elgamal` is a browser-native TypeScript library for one shipped workflow:
+
+- additive ElGamal on `ristretto255`
+- honest-majority GJKR DKG
+- fixed `1..10` score voting
+- organizer-signed `ballot-close`
+- full public-board verification
 
 ## What it does not try to do
 
-This is a hardened research prototype, not audited production voting software. It does not claim coercion resistance, cast-as-intended guarantees, or constant-time JavaScript `bigint` arithmetic.
+This is a hardened research prototype, not audited production voting software. It does not claim coercion resistance, cast-as-intended guarantees against a compromised client, or constant-time JavaScript `bigint` arithmetic.

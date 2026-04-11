@@ -77,10 +77,9 @@ export const verifyBallotSubmissionPayloadsByOption = async (
         ballots: ballotEntries,
         publicKey: input.publicKey,
         validValues: context.scoreDomainValues,
-        protocolVersion: context.manifest.protocolVersion,
+        protocolVersion: context.protocolVersion,
         manifestHash: context.manifestHash,
         sessionId: context.sessionId,
-        minimumBallotCount: context.manifest.minimumPublishedVoterCount,
         optionCount: context.optionCount,
     });
 };

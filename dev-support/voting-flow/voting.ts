@@ -191,7 +191,7 @@ export const createDecryptionSharePayloads = async (
                 {
                     sessionId,
                     manifestHash,
-                    phase: 6,
+                    phase: 7,
                     participantIndex: artifact.share.index,
                     messageType: 'decryption-share',
                     optionIndex,
@@ -217,7 +217,7 @@ export const createTallyPublicationPayload = async (
     signPayload(publisher.auth.privateKey, {
         sessionId,
         manifestHash,
-        phase: 7,
+        phase: 8,
         participantIndex: publisher.index,
         messageType: 'tally-publication',
         optionIndex,

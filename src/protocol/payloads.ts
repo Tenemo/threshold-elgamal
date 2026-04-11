@@ -14,6 +14,8 @@ export const payloadSlotKey = (payload: ProtocolPayload): string => {
     const prefix = `${payload.sessionId}:${payload.phase}:${payload.participantIndex}:${payload.messageType}`;
 
     switch (payload.messageType) {
+        case 'ballot-close':
+            return `${payload.sessionId}:${payload.phase}:${payload.messageType}`;
         case 'encrypted-dual-share':
             return `${prefix}:${payload.recipientIndex}`;
         case 'complaint':

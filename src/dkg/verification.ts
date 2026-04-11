@@ -1,12 +1,15 @@
-import { assertDistributedThreshold } from '../core/distributed-threshold.js';
 import {
     InvalidPayloadError,
     getGroup,
+    majorityThreshold,
     type CryptoGroup,
 } from '../core/index.js';
 import type { EncodedPoint } from '../core/types.js';
 import { auditSignedPayloads } from '../protocol/board-audit.js';
-import { hashElectionManifest } from '../protocol/manifest.js';
+import {
+    hashElectionManifest,
+    SHIPPED_PROTOCOL_VERSION,
+} from '../protocol/manifest.js';
 import type { ComplaintPayload } from '../protocol/types.js';
 import type { VerifiedProtocolSignatures } from '../protocol/verification.js';
 
@@ -101,6 +104,7 @@ const normalizeFeldmanCommitments = (
 const finalizeVerifiedTranscript = async (
     input: VerifyDKGTranscriptInput,
     verifiedSignatures: VerifiedProtocolSignatures,
+    organizerIndex: number,
     acceptedComplaints: readonly ComplaintPayload[],
     manifestAccepted: readonly number[],
     phaseCheckpoints: readonly FinalizedPhaseCheckpoint[],
@@ -119,7 +123,7 @@ const finalizeVerifiedTranscript = async (
     );
     await verifyFeldmanProofs(
         feldmanCommitments,
-        input.manifest.protocolVersion,
+        SHIPPED_PROTOCOL_VERSION,
         group,
     );
     assertAggregateFeldmanDegree(feldmanCommitments);
@@ -143,11 +147,14 @@ const finalizeVerifiedTranscript = async (
         derivedPublicKey,
         feldmanCommitments: normalizedFeldmanCommitments,
         manifestAccepted,
+        organizerIndex,
+        participantCount: verifiedSignatures.participantCount,
         phaseCheckpoints,
         qual,
         qualHash,
         registrations: verifiedSignatures.registrations,
         rosterHash: verifiedSignatures.rosterHash,
+        threshold,
     };
 };
 
@@ -159,23 +166,24 @@ const verifyLegacyDKGTranscript = async (
 ): Promise<VerifiedDKGTranscript> => {
     const verifiedSignatures = await verifySignedRoster(
         input.transcript,
-        input.manifest.participantCount,
         input.manifest.rosterHash,
     );
-    await verifyManifestPublicationPayload(input.transcript, manifestHash);
+    const manifestPublication = await verifyManifestPublicationPayload(
+        input.transcript,
+        manifestHash,
+    );
+    const participantIndices = allParticipantIndices(
+        verifiedSignatures.participantCount,
+    );
     const manifestAccepted = verifyManifestAcceptancePayloads(
         input.transcript,
-        input.manifest.participantCount,
+        participantIndices,
         input.manifest.rosterHash,
         true,
     );
-
-    const participantIndices = allParticipantIndices(
-        input.manifest.participantCount,
-    );
     const encryptedShareMatrix = buildEncryptedShareMatrix(
         input.transcript,
-        input.manifest.participantCount,
+        verifiedSignatures.participantCount,
     );
     assertEncryptedShareCoverage(encryptedShareMatrix, participantIndices);
 
@@ -195,13 +203,14 @@ const verifyLegacyDKGTranscript = async (
         new Set(participantIndices),
     );
     const qual = deriveQualifiedParticipantIndices(
-        input.manifest.participantCount,
+        verifiedSignatures.participantCount,
         acceptedComplaints,
     );
 
     return finalizeVerifiedTranscript(
         input,
         verifiedSignatures,
+        manifestPublication.participantIndex,
         acceptedComplaints,
         manifestAccepted,
         [],
@@ -221,13 +230,18 @@ const verifyCheckpointedDKGTranscript = async (
 
     const verifiedSignatures = await verifySignedRoster(
         input.transcript,
-        input.manifest.participantCount,
         input.manifest.rosterHash,
     );
-    await verifyManifestPublicationPayload(input.transcript, manifestHash);
+    const manifestPublication = await verifyManifestPublicationPayload(
+        input.transcript,
+        manifestHash,
+    );
+    const participantIndices = allParticipantIndices(
+        verifiedSignatures.participantCount,
+    );
     const manifestAccepted = verifyManifestAcceptancePayloads(
         input.transcript,
-        input.manifest.participantCount,
+        participantIndices,
         input.manifest.rosterHash,
         false,
     );
@@ -237,14 +251,14 @@ const verifyCheckpointedDKGTranscript = async (
         transcript: input.transcript,
         checkpointPhase: 0,
         threshold,
-        participantCount: input.manifest.participantCount,
+        participantCount: verifiedSignatures.participantCount,
         signerUniverse: manifestAcceptedSet,
         qualUniverse: manifestAcceptedSet,
     });
 
     const encryptedShareMatrix = buildEncryptedShareMatrix(
         input.transcript,
-        input.manifest.participantCount,
+        verifiedSignatures.participantCount,
     );
     const pedersenCommitmentMap = parsePedersenCommitmentMap(
         input.transcript,
@@ -259,7 +273,7 @@ const verifyCheckpointedDKGTranscript = async (
         transcript: input.transcript,
         checkpointPhase: 1,
         threshold,
-        participantCount: input.manifest.participantCount,
+        participantCount: verifiedSignatures.participantCount,
         signerUniverse: phase0QualSet,
         qualUniverse: phase0QualSet,
     });
@@ -284,7 +298,7 @@ const verifyCheckpointedDKGTranscript = async (
         transcript: input.transcript,
         checkpointPhase: 2,
         threshold,
-        participantCount: input.manifest.participantCount,
+        participantCount: verifiedSignatures.participantCount,
         signerUniverse: activeComplaintParticipants,
         qualUniverse: new Set(complaintBoundQual),
     });
@@ -302,7 +316,7 @@ const verifyCheckpointedDKGTranscript = async (
         transcript: input.transcript,
         checkpointPhase: 3,
         threshold,
-        participantCount: input.manifest.participantCount,
+        participantCount: verifiedSignatures.participantCount,
         signerUniverse: phase2QualSet,
         qualUniverse: phase2QualSet,
     });
@@ -312,6 +326,7 @@ const verifyCheckpointedDKGTranscript = async (
     return finalizeVerifiedTranscript(
         input,
         verifiedSignatures,
+        manifestPublication.participantIndex,
         acceptedComplaints,
         manifestAccepted,
         phaseCheckpoints,
@@ -340,11 +355,12 @@ export const verifyDKGTranscript = async (
         transcript: auditedTranscript.acceptedPayloads,
     };
     const group = getGroup('ristretto255');
-    const threshold = assertDistributedThreshold(
-        normalizedInput.manifest.reconstructionThreshold,
-        normalizedInput.manifest.participantCount,
-    );
     validateTranscriptShape(normalizedInput, manifestHash);
+    const verifiedSignatures = await verifySignedRoster(
+        normalizedInput.transcript,
+        normalizedInput.manifest.rosterHash,
+    );
+    const threshold = majorityThreshold(verifiedSignatures.participantCount);
 
     return normalizedInput.transcript.some(isPhaseCheckpointPayload)
         ? verifyCheckpointedDKGTranscript(

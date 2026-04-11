@@ -1,34 +1,24 @@
 import { bytesToHex } from '../core/bytes.js';
-import { assertDistributedThreshold } from '../core/distributed-threshold.js';
 import { InvalidPayloadError, sha256, utf8ToBytes } from '../core/index.js';
 import { encodeForChallenge } from '../serialize/index.js';
 
 import { canonicalizeJson } from './canonical-json.js';
 import type { ElectionManifest } from './types.js';
 
+/** Fixed transcript version string for the shipped beta protocol. */
+export const SHIPPED_PROTOCOL_VERSION = 'v1';
+/** Fixed score domain identifier for the shipped score-voting workflow. */
+export const SHIPPED_SCORE_DOMAIN = '1..10';
+/** Fixed ballot-completeness policy for the shipped workflow. */
+export const SHIPPED_BALLOT_COMPLETENESS = 'ALL_OPTIONS_REQUIRED';
+/** Fixed ballot-finality policy for the shipped workflow. */
+export const SHIPPED_BALLOT_FINALITY = 'first-valid';
+
 const assertNonEmptyString = (value: string, label: string): void => {
     if (value.trim() === '') {
         throw new InvalidPayloadError(`${label} must be a non-empty string`);
     }
 };
-
-/**
- * Returns the default publication floor compatible with the shipped
- * distributed voting workflow.
- *
- * @param reconstructionThreshold Reconstruction threshold `k`.
- * @param participantCount Total participant count `n`.
- * @returns Minimum accepted ballot count `min(k + 1, n)`.
- */
-export const defaultMinimumPublishedVoterCount = (
-    reconstructionThreshold: number,
-    participantCount: number,
-): number =>
-    Math.min(
-        assertDistributedThreshold(reconstructionThreshold, participantCount) +
-            1,
-        participantCount,
-    );
 
 /**
  * Validates the supported election-manifest invariants for the shipped
@@ -40,48 +30,17 @@ export const validateElectionManifest = (
     manifest: ElectionManifest,
 ): ElectionManifest => {
     const manifestRecord = manifest as Record<string, unknown>;
-
-    assertNonEmptyString(manifest.protocolVersion, 'Protocol version');
     assertNonEmptyString(manifest.rosterHash, 'Roster hash');
-    assertDistributedThreshold(
-        manifest.reconstructionThreshold,
-        manifest.participantCount,
-    );
-
-    if (manifest.ballotFinality !== 'first-valid') {
-        throw new InvalidPayloadError(
-            'Only "first-valid" ballot finality is supported',
-        );
-    }
-    if (manifest.ballotCompletenessPolicy !== 'ALL_OPTIONS_REQUIRED') {
-        throw new InvalidPayloadError(
-            'Only "ALL_OPTIONS_REQUIRED" ballot completeness is supported',
-        );
-    }
-    if (manifest.scoreDomain !== '1..10') {
-        throw new InvalidPayloadError(
-            'Only the fixed "1..10" score domain is supported',
-        );
-    }
-
-    if (
-        !Number.isInteger(manifest.minimumPublishedVoterCount) ||
-        manifest.minimumPublishedVoterCount <
-            defaultMinimumPublishedVoterCount(
-                manifest.reconstructionThreshold,
-                manifest.participantCount,
-            ) ||
-        manifest.minimumPublishedVoterCount > manifest.participantCount
-    ) {
-        throw new InvalidPayloadError(
-            `Minimum published voter count must be an integer in ${defaultMinimumPublishedVoterCount(
-                manifest.reconstructionThreshold,
-                manifest.participantCount,
-            )}..${manifest.participantCount}`,
-        );
-    }
 
     for (const legacyField of [
+        'participantCount',
+        'reconstructionThreshold',
+        'minimumPublishedVoterCount',
+        'protocolVersion',
+        'ballotCompletenessPolicy',
+        'ballotFinality',
+        'scoreDomain',
+        'epochDeadlines',
         'threshold',
         'minimumPublicationThreshold',
         'allowAbstention',
@@ -113,32 +72,13 @@ export const validateElectionManifest = (
         seenOptions.add(option);
     }
 
-    if (manifest.epochDeadlines.length === 0) {
-        throw new InvalidPayloadError(
-            'Election manifest requires at least one epoch deadline',
-        );
-    }
-
-    const seenDeadlines = new Set<string>();
-    let previousDeadline = '';
-    for (const deadline of manifest.epochDeadlines) {
-        assertNonEmptyString(deadline, 'Epoch deadline');
-        if (seenDeadlines.has(deadline)) {
-            throw new InvalidPayloadError(
-                `Duplicate epoch deadline "${deadline}" is not allowed`,
-            );
-        }
-        if (previousDeadline !== '' && deadline <= previousDeadline) {
-            throw new InvalidPayloadError(
-                'Epoch deadlines must be strictly increasing',
-            );
-        }
-        seenDeadlines.add(deadline);
-        previousDeadline = deadline;
-    }
-
     return manifest;
 };
+
+/** Creates the minimal shipped election manifest. */
+export const createElectionManifest = (
+    manifest: ElectionManifest,
+): ElectionManifest => validateElectionManifest(manifest);
 
 /**
  * Canonically serializes an election manifest.

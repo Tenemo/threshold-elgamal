@@ -90,13 +90,16 @@ describe('core validation', () => {
         );
     });
 
-    it('enforces strict-majority distributed thresholds for even groups', () => {
-        expect(majorityThreshold(4)).toBe(3);
+    it('enforces the shipped ceil(n / 2) threshold for even groups', () => {
+        expect(majorityThreshold(4)).toBe(2);
 
-        expect(() => assertMajorityThreshold(2, 4)).toThrow(
-            'Supported distributed threshold must satisfy floor(n / 2) + 1 <= k <= n - 1 (minimum 3, maximum 3 for n = 4)',
+        expect(() => assertMajorityThreshold(1, 4)).toThrow(
+            'Supported distributed threshold must equal ceil(n / 2) (expected 2 for n = 4)',
         );
-        expect(() => assertMajorityThreshold(3, 4)).not.toThrow();
+        expect(() => assertMajorityThreshold(2, 4)).not.toThrow();
+        expect(() => assertMajorityThreshold(3, 4)).toThrow(
+            'Supported distributed threshold must equal ceil(n / 2) (expected 2 for n = 4)',
+        );
     });
 
     it('rejects distributed thresholds when the ceremony is too small', () => {
@@ -109,8 +112,8 @@ describe('core validation', () => {
     });
 
     it('accepts the shipped distributed threshold range and centralizes the ceremony-size guard', () => {
-        expect(() => assertDistributedThreshold(3, 3)).not.toThrow();
-        expect(() => assertDistributedThreshold(5, 5)).not.toThrow();
+        expect(() => assertDistributedThreshold(2, 3)).not.toThrow();
+        expect(() => assertDistributedThreshold(3, 5)).not.toThrow();
         expect(() => assertDistributedThreshold(0, 5)).toThrow(
             'Threshold 0 must satisfy 1 <= k <= n (n = 5)',
         );
@@ -119,9 +122,11 @@ describe('core validation', () => {
         );
     });
 
-    it('accepts organizer-selected strict-majority thresholds above the minimum', () => {
-        expect(majorityThreshold(6)).toBe(4);
-        expect(() => assertMajorityThreshold(4, 6)).not.toThrow();
-        expect(() => assertMajorityThreshold(5, 6)).not.toThrow();
+    it('derives the shipped majority threshold directly from the participant count', () => {
+        expect(majorityThreshold(6)).toBe(3);
+        expect(() => assertMajorityThreshold(3, 6)).not.toThrow();
+        expect(() => assertMajorityThreshold(4, 6)).toThrow(
+            'Supported distributed threshold must equal ceil(n / 2) (expected 3 for n = 6)',
+        );
     });
 });

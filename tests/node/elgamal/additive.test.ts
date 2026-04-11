@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { getGroup } from '#core';
-import type { ElgamalCiphertext } from '#elgamal';
+import {
+    getGroup,
+    InvalidGroupElementError,
+    InvalidScalarError,
+    PlaintextDomainError,
+} from '#core';
 import {
     addEncryptedValues,
     assertValidAdditiveCiphertext,
@@ -12,10 +16,8 @@ import {
     encryptAdditiveWithRandomness,
     generateParameters,
     generateParametersWithPrivateKey,
-    InvalidGroupElementError,
-    InvalidScalarError,
-    PlaintextDomainError,
-} from '#root';
+    type ElgamalCiphertext,
+} from '#elgamal';
 import { encodePoint, multiplyBase } from '#src/core/ristretto';
 const additiveIdentity = (): ElgamalCiphertext => {
     const identity = encodePoint(multiplyBase(0n));

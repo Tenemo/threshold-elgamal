@@ -39,10 +39,12 @@ import {
 } from '#dkg';
 import { addEncryptedValues } from '#elgamal';
 import {
+    createBallotClosePayload,
     deriveSessionId,
     formatSessionFingerprint,
     hashElectionManifest,
     hashProtocolTranscript,
+    SHIPPED_PROTOCOL_VERSION,
     verifyBallotSubmissionPayloadsByOption,
     verifyPublishedVotingResults,
     type KeyDerivationConfirmation,
@@ -194,7 +196,7 @@ export const runVotingFlowScenario = async (
                 participants,
                 sessionId,
                 manifestHash,
-                manifest.protocolVersion,
+                SHIPPED_PROTOCOL_VERSION,
                 rosterHash,
                 group,
                 threshold,
@@ -525,7 +527,7 @@ export const runVotingFlowScenario = async (
                 votes,
                 jointPublicKey,
                 group,
-                manifest.protocolVersion,
+                SHIPPED_PROTOCOL_VERSION,
                 manifestHash,
                 sessionId,
                 validValues,
@@ -541,6 +543,17 @@ export const runVotingFlowScenario = async (
         sessionId,
         manifestHash,
         group,
+    );
+    const ballotClosePayload = await createBallotClosePayload(
+        participants[0].auth.privateKey,
+        {
+            sessionId,
+            manifestHash,
+            participantIndex: participants[0].index,
+            includedParticipantIndices: participants.map(
+                (participant) => participant.index,
+            ),
+        },
     );
     const verifiedBallotsByOption =
         await verifyBallotSubmissionPayloadsByOption({
@@ -614,7 +627,7 @@ export const runVotingFlowScenario = async (
                 verifiedBallots.aggregate,
                 transcriptDerivedVerificationKeys,
                 group,
-                manifest.protocolVersion,
+                SHIPPED_PROTOCOL_VERSION,
                 manifestHash,
                 sessionId,
                 optionIndex,
@@ -693,6 +706,7 @@ export const runVotingFlowScenario = async (
         sessionId,
         dkgTranscript,
         ballotPayloads,
+        ballotClosePayload,
         decryptionSharePayloads,
         tallyPublications,
     });
@@ -722,6 +736,7 @@ export const runVotingFlowScenario = async (
     return {
         aggregate: primaryOption.aggregate,
         ballotLogHash: primaryOption.ballotLogHash,
+        ballotClosePayload,
         ballotPayloads,
         ballots,
         complaintResolutions,

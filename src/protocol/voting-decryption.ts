@@ -91,9 +91,9 @@ export const verifyDecryptionSharePayloadsByOption = async (
                 `Missing verified aggregate for option ${optionIndex}`,
             );
         }
-        if (optionPayloads.length < context.manifest.reconstructionThreshold) {
+        if (optionPayloads.length < input.dkg.threshold) {
             throw new InvalidPayloadError(
-                `At least ${context.manifest.reconstructionThreshold} decryption shares are required for option ${optionIndex}`,
+                `At least ${input.dkg.threshold} decryption shares are required for option ${optionIndex}`,
             );
         }
 
@@ -162,7 +162,7 @@ export const verifyDecryptionSharePayloadsByOption = async (
                 RISTRETTO_GROUP,
                 decryptionProofContext(
                     payload,
-                    context.manifest.protocolVersion,
+                    context.protocolVersion,
                     RISTRETTO_GROUP,
                 ),
             );

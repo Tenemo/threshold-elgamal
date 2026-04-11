@@ -1,28 +1,32 @@
 ---
-title: Three-participant voting flow
-description: The supported 3-participant workflow on the root-only beta line.
+title: Honest-majority voting flow
+description: The supported root-only ceremony flow on the current beta line.
 sidebar:
   order: 3
 ---
 
-This guide describes the supported 3-participant flow on the current beta line:
+This guide describes the supported ceremony shape on the current beta line:
 
-- freeze the roster and manifest
-- run a GJKR setup transcript
-- publish additive ballots over the fixed score domain `1..10`
-- recompute aggregates locally
-- verify decryption shares and tallies
+1. Freeze the roster in the application and hash it.
+2. Publish the minimal manifest.
+3. Collect registrations and manifest acceptances.
+4. Complete the honest-majority GJKR transcript.
+5. Publish complete score ballots.
+6. Publish one organizer-signed `ballot-close`.
+7. Publish decryption shares and tallies for the close-selected ballot set.
+8. Verify the entire ceremony from the public board.
 
-The public package is now root-only. Import everything from `threshold-elgamal`.
+The public package is root-only. Import everything from `threshold-elgamal`.
 
-## Core setup values
+## Minimal manifest
 
 ```typescript
 import {
+    createElectionManifest,
     deriveSessionId,
     hashElectionManifest,
     hashRosterEntries,
-    type ElectionManifest,
+    majorityThreshold,
 } from "threshold-elgamal";
 
 const rosterHash = await hashRosterEntries([
@@ -43,54 +47,65 @@ const rosterHash = await hashRosterEntries([
     },
 ]);
 
-const manifest: ElectionManifest = {
-    protocolVersion: "v1",
-    reconstructionThreshold: 2,
-    participantCount: 3,
-    minimumPublishedVoterCount: 3,
-    ballotCompletenessPolicy: "ALL_OPTIONS_REQUIRED",
-    ballotFinality: "first-valid",
-    scoreDomain: "1..10",
+const manifest = createElectionManifest({
     rosterHash,
     optionList: ["Option A"],
-    epochDeadlines: ["2026-04-08T12:00:00Z"],
-};
+});
 
 const manifestHash = await hashElectionManifest(manifest);
 const sessionId = await deriveSessionId(
     manifestHash,
     rosterHash,
     "nonce-three-participants",
-    "2026-04-08T12:00:00Z",
+    "2026-04-11T12:00:00Z",
 );
+
+console.log(majorityThreshold(3)); // 2
 ```
 
-The manifest no longer carries `suiteId`. The shipped suite is implicit and fixed to `ristretto255`.
+The manifest does not carry `participantCount`, `reconstructionThreshold`, publication floors, or deadline metadata. The verifier derives `n` from the accepted registration roster and derives `k` internally as `ceil(n / 2)`.
 
-For three participants, both `2 of 3` and `3 of 3` are supported. Choosing `3 of 3` removes dropout tolerance entirely, so any unresolved complaint, missing checkpoint signer, or missing decryption share prevents completion. The verifier also rejects accepted transcripts whose qualified Feldman commitments collapse below the claimed threshold, but that hardening does not expand the classical GJKR proof boundary.
+## Supported public builders
 
-## Supported public workflow
+The root package exposes public builders for the standard ceremony payloads:
 
-1. Freeze the participant roster and publish the manifest.
-2. Collect signed setup payloads for registrations, manifest acceptances, commitments, encrypted shares, complaints, resolutions, optional checkpoints, and key-derivation confirmations.
-3. Accept ballots only after verifying signatures and statement-bound score proofs against the manifest, session, voter slot, and option slot context.
-4. Recompute every published aggregate locally from the accepted ballots.
-5. Verify decryption shares and tally publications against the recomputed aggregates.
-6. Accept the result only if the DKG transcript, ballots, decryption shares, tallies, and board consistency all verify together.
+- `createManifestPublicationPayload(...)`
+- `createRegistrationPayload(...)`
+- `createManifestAcceptancePayload(...)`
+- `createPedersenCommitmentPayload(...)`
+- `createEncryptedDualSharePayload(...)`
+- `createFeldmanCommitmentPayload(...)`
+- `createKeyDerivationConfirmationPayload(...)`
+- `createBallotSubmissionPayload(...)`
+- `createBallotClosePayload(...)`
+- `createDecryptionSharePayload(...)`
+- `createTallyPublicationPayload(...)`
 
-## Public helpers to reach for
+## Ballot close
 
-- `createGjkrState()`, `processGjkrPayload()`, and `replayGjkrTranscript()` for deterministic reducer replay
-- `verifyDKGTranscript()` for verifier-side DKG transcript validation
-- `verifyAndAggregateBallots()` for local ballot verification and aggregation
-- `verifyPublishedVotingResults()` for published tally verification
-- `verifyElectionCeremonyDetailed()` for end-to-end ceremony verification
+`ballot-close` is mandatory before decryption and tally verification.
 
-## What changed on this beta line
+Its rules are:
 
-- There are no supported public subpath imports.
-- There is no public group-selection step.
-- The only supported DKG ceremony is GJKR.
-- The manifest contract no longer carries `suiteId`.
+- it must be signed by the organizer, defined as the manifest publisher
+- it contains sorted, unique participant indices
+- every included participant must have a complete ballot
+- the included set must contain at least `k` participants
+- omitted but otherwise valid ballots are excluded in a publicly auditable way
 
-For an end-to-end executable example, inspect the local development harness and node integration tests in this repository. For exact public signatures, use the generated [API reference](../api/reference/threshold-elgamal/).
+This is an administrative cutoff, not a fairness proof about waiting long enough.
+
+## End-to-end verification
+
+Use `verifyElectionCeremonyDetailed(...)` to replay the public ceremony from manifest publication through tally publication in one pass. The verifier checks:
+
+- the frozen manifest and session context
+- registrations and manifest acceptances
+- the DKG transcript and derived joint key
+- the counted ballot set selected by `ballot-close`
+- locally recomputed per-option aggregates
+- decryption shares
+- tally publications
+- board-consistency digests and audit metadata
+
+For an executable example, inspect the root-only public node integration tests in this repository.

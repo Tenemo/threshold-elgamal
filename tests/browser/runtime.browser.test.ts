@@ -141,7 +141,6 @@ describe('browser runtime coverage', () => {
             protocolVersion: 'v1',
             manifestHash: 'manifest-hash',
             sessionId: 'session-1',
-            minimumBallotCount: 2,
         });
         expect(verified.ballots.map((ballot) => ballot.voterIndex)).toEqual([
             1, 2, 3,

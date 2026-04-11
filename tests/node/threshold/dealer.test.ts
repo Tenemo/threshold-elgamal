@@ -189,7 +189,7 @@ describe('dealer-based threshold decryption', () => {
             combineDecryptionShares(zeroCiphertext, [singleShare], 10n),
         ).toBe(0n);
     });
-    it('does not recover the correct plaintext for n-of-n with one share missing', () => {
+    it('does not recover the correct plaintext when one required share is missing', () => {
         const keySet = dealerKeyGen(4, 4);
         const ciphertext = encryptAdditive(7n, keySet.publicKey, 7n);
         const partialShares = keySet.shares

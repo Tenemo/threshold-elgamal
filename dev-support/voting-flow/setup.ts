@@ -1,9 +1,7 @@
 import { signPayload } from './common.js';
 import type { ParticipantRuntime, VotingFlowScenario } from './types.js';
 
-import { majorityThreshold } from '#core';
 import {
-    defaultMinimumPublishedVoterCount,
     type ElectionManifest,
     type ManifestAcceptancePayload,
     type RegistrationPayload,
@@ -44,8 +42,6 @@ export const buildManifest = (
     rosterHash: string,
     scenario: VotingFlowScenario,
 ): ElectionManifest => {
-    const threshold =
-        scenario.threshold ?? majorityThreshold(scenario.participantCount);
     const optionCount = scenario.votesByOption?.length ?? 1;
     const optionList =
         scenario.optionList ??
@@ -54,19 +50,8 @@ export const buildManifest = (
             return `Option ${suffix}`;
         });
     return {
-        protocolVersion: 'v1',
-        reconstructionThreshold: threshold,
-        participantCount: scenario.participantCount,
-        minimumPublishedVoterCount: defaultMinimumPublishedVoterCount(
-            threshold,
-            scenario.participantCount,
-        ),
-        ballotCompletenessPolicy: 'ALL_OPTIONS_REQUIRED',
-        ballotFinality: 'first-valid',
-        scoreDomain: '1..10',
         rosterHash,
         optionList,
-        epochDeadlines: ['2026-04-08T12:00:00Z'],
     };
 };
 export const createRegistrationPayloads = async (

@@ -3,6 +3,7 @@ import { decodeScalar } from '../core/ristretto.js';
 import { verifyDKGTranscript } from '../dkg/verification.js';
 import { combineDecryptionShares } from '../threshold/index.js';
 
+import { verifyBallotClosePayload } from './ballot-close.js';
 import type { VerifiedOptionBallotAggregation } from './ballots.js';
 import { auditSignedPayloads } from './board-audit.js';
 import type { SignedPayload, TallyPublicationPayload } from './types.js';
@@ -121,14 +122,26 @@ export const verifyPublishedVotingResults = async (
     await verifyPayloadsAgainstRegistrations(
         [
             ...auditedBallots.acceptedPayloads,
+            input.ballotClosePayload,
             ...auditedDecryptionShares.acceptedPayloads,
             ...(tallyPublications ?? []),
         ],
         dkg.registrations,
     );
 
-    const ballots = await verifyBallotSubmissionPayloadsByOption({
+    const ballotClose = await verifyBallotClosePayload({
+        ballotClosePayloads: [input.ballotClosePayload],
         ballotPayloads: auditedBallots.acceptedPayloads,
+        manifestHash: context.manifestHash,
+        optionCount: context.optionCount,
+        organizerIndex: dkg.organizerIndex,
+        participantCount: dkg.participantCount,
+        sessionId: context.sessionId,
+        threshold: dkg.threshold,
+    });
+
+    const ballots = await verifyBallotSubmissionPayloadsByOption({
+        ballotPayloads: ballotClose.countedBallotPayloads,
         publicKey: dkg.derivedPublicKey,
         manifest: context.manifest,
         sessionId: context.sessionId,
@@ -236,7 +249,9 @@ export const verifyPublishedVotingResults = async (
     }
 
     return {
+        countedParticipantIndices: ballotClose.countedParticipantIndices,
         dkg,
+        excludedParticipantIndices: ballotClose.excludedParticipantIndices,
         options: results,
     };
 };
@@ -263,6 +278,7 @@ export const verifyPublishedVotingResult = async (
         sessionId: context.sessionId,
         dkgTranscript: input.dkgTranscript,
         ballotPayloads: input.ballotPayloads,
+        ballotClosePayload: input.ballotClosePayload,
         decryptionSharePayloads: input.decryptionSharePayloads,
         tallyPublications:
             input.tallyPublication === undefined
@@ -272,9 +288,11 @@ export const verifyPublishedVotingResult = async (
     const option = results.options[0];
 
     return {
+        countedParticipantIndices: results.countedParticipantIndices,
         dkg: results.dkg,
         ballots: option.ballots,
         decryptionShares: option.decryptionShares,
+        excludedParticipantIndices: results.excludedParticipantIndices,
         tally: option.tally,
     };
 };

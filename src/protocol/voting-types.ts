@@ -7,6 +7,7 @@ import type {
     VerifiedOptionBallotAggregation,
 } from './ballots.js';
 import type {
+    BallotClosePayload,
     BallotSubmissionPayload,
     DecryptionSharePayload,
     ElectionManifest,
@@ -70,6 +71,7 @@ export type VerifyPublishedVotingResultInput = {
     readonly sessionId: string;
     readonly dkgTranscript: readonly SignedPayload[];
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
     readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
     readonly tallyPublication?: SignedPayload<TallyPublicationPayload>;
 };
@@ -80,6 +82,7 @@ export type VerifyPublishedVotingResultsInput = {
     readonly sessionId: string;
     readonly dkgTranscript: readonly SignedPayload[];
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
     readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
     readonly tallyPublications?: readonly SignedPayload<TallyPublicationPayload>[];
 };
@@ -94,14 +97,18 @@ export type VerifiedPublishedOptionVotingResult = {
 
 /** Verified published tallies and reusable transcript sub-results. */
 export type VerifiedPublishedVotingResults = {
+    readonly countedParticipantIndices: readonly number[];
     readonly dkg: VerifiedDKGTranscript;
+    readonly excludedParticipantIndices: readonly number[];
     readonly options: readonly VerifiedPublishedOptionVotingResult[];
 };
 
 /** Verified published tally and all of its reusable sub-results. */
 export type VerifiedPublishedVotingResult = {
+    readonly countedParticipantIndices: readonly number[];
     readonly dkg: VerifiedDKGTranscript;
     readonly ballots: VerifiedBallotAggregation;
     readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
+    readonly excludedParticipantIndices: readonly number[];
     readonly tally: bigint;
 };

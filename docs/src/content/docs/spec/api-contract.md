@@ -9,22 +9,20 @@ The current package draws a hard boundary between the shipped cryptographic libr
 
 ## Library responsibilities
 
-- Ristretto255 group definitions and scalar arithmetic
-- Safe additive ElGamal on the root package
-- Ciphertext combination helpers for the shipped additive workflow
-- Serialization and deterministic encoding helpers
-- Runtime validation for public inputs, plaintext domains, and point validity
-- Dealer-based threshold sharing and additive threshold decryption
-- Protocol, transport, and log-driven DKG helpers on the supported root package
-- Internal VSS and proof components used by the shipped protocol and DKG workflows
-- Typed manifest, ballot, decryption-share, tally-publication, and restart payload schemas
-- Transcript-native complaint-resolution verification
-- Bulletin-board auditing that canonicalizes ordering, classifies duplicate slots, and exposes ceremony digests and fingerprints
-- A high-level full-ceremony verifier that replays the DKG transcript, recomputes the accepted ballot aggregates locally, verifies decryption-share proofs, checks per-option tally publications, and validates board consistency
+- The minimal public manifest with `rosterHash` and `optionList`
+- Honest-majority threshold derivation from the accepted registration roster
+- Typed payload builders for manifest publication, registration, acceptance, DKG messages, ballots, ballot close, decryption shares, and tally publication
+- Transport and authentication helpers used by the shipped ceremony flow
+- Ristretto255-based ballot encryption, proof generation, threshold share handling, and tally recovery helpers
+- GJKR transcript verification over the signed public log
+- Organizer-signed `ballot-close` verification and counted-ballot selection
+- Full-ceremony verification that replays the DKG transcript, recomputes the counted ballot aggregates locally, verifies decryption-share proofs, checks tally publications, and returns board-audit metadata
 
 ## Application responsibilities
 
-- Bulletin-board storage, deployment-specific transport plumbing, and operational policy
-- Tally policy, additive bound selection, arithmetic-mean interpretation, and result presentation
-- UI, orchestration, retries, and deadline handling
-- Final application decisions about enrollment, trustee workflows, deadlines, retries, and publication timing
+- Bulletin-board storage and deployment-specific transport plumbing
+- UI, orchestration, retries, worker usage, and deadline handling
+- Enrollment policy and roster governance before manifest publication
+- Pre-DKG vote collection, local plaintext staging, reminders, and organizer controls
+- Final application decisions about when the organizer closes voting
+- Result presentation and any fairness policy beyond the auditable counted-ballot set

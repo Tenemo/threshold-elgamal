@@ -1,6 +1,8 @@
 /** Public protocol payload and transcript exports. */
 export * from './ballots.js';
+export * from './ballot-close.js';
 export * from './board-audit.js';
+export * from './builders.js';
 export * from './canonical-json.js';
 export * from './election-verification.js';
 export * from './manifest.js';
