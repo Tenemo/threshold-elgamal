@@ -10,7 +10,11 @@ import {
     verifyPayloadSignature,
 } from '../transport/auth.js';
 
-import { hashElectionManifest, validateElectionManifest } from './manifest.js';
+import {
+    hashElectionManifest,
+    SHIPPED_PROTOCOL_VERSION,
+    validateElectionManifest,
+} from './manifest.js';
 import { canonicalUnsignedPayloadBytes } from './payloads.js';
 import type {
     DecryptionSharePayload,
@@ -23,14 +27,16 @@ import { scoreVotingDomain } from './voting-codecs.js';
 import type { OptionAggregateInput } from './voting-types.js';
 
 export const BALLOT_SUBMISSION_PHASE = 5;
-export const DECRYPTION_SHARE_PHASE = 6;
-export const TALLY_PUBLICATION_PHASE = 7;
+export const BALLOT_CLOSE_PHASE = 6;
+export const DECRYPTION_SHARE_PHASE = 7;
+export const TALLY_PUBLICATION_PHASE = 8;
 
 export type VotingManifestContext = {
     readonly manifest: ElectionManifest;
     readonly manifestHash: string;
     readonly group: CryptoGroup;
     readonly optionCount: number;
+    readonly protocolVersion: string;
     readonly scoreDomainValues: readonly bigint[];
     readonly sessionId: string;
 };
@@ -115,6 +121,7 @@ export const buildVotingManifestContext = async (
         manifestHash: await hashElectionManifest(validatedManifest),
         group: getGroup('ristretto255'),
         optionCount: validatedManifest.optionList.length,
+        protocolVersion: SHIPPED_PROTOCOL_VERSION,
         scoreDomainValues: scoreVotingDomain(),
         sessionId,
     };

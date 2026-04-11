@@ -1,5 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+import {
+    copyFile,
+    mkdtemp,
+    mkdir,
+    readdir,
+    rm,
+    writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -76,41 +83,9 @@ const main = async (): Promise<void> => {
             ),
             'utf8',
         );
-        await writeFile(
+        await copyFile(
+            join(repoRoot, 'tools/ci/packed-package-smoke-template.txt'),
             join(consumerDirectory, 'smoke.mjs'),
-            [
-                "import { addEncryptedValues, createGjkrState, decryptAdditive, deriveH, encryptAdditive, generateParameters, hashProtocolPhaseSnapshot, resetBigintMathBackend, setBigintMathBackend } from 'threshold-elgamal';",
-                '',
-                'const { publicKey, privateKey } = generateParameters();',
-                'const left = encryptAdditive(2n, publicKey, 10n);',
-                'const right = encryptAdditive(3n, publicKey, 10n);',
-                'const aggregate = addEncryptedValues(left, right);',
-                'const tally = decryptAdditive(aggregate, privateKey, 20n);',
-                'if (tally !== 5n) {',
-                '  throw new Error(`Packed root import produced the wrong tally: ${tally.toString()}`);',
-                '}',
-                'if (deriveH().length !== 64) {',
-                "  throw new Error('Packed core import failed deterministic H derivation');",
-                '}',
-                'const dkgState = createGjkrState({',
-                "  sessionId: 'session-smoke',",
-                "  manifestHash: 'manifest-smoke',",
-                '  participantCount: 3,',
-                '  threshold: 2,',
-                '});',
-                'if (dkgState.phase !== 0) {',
-                "  throw new Error('Packed dkg import returned an unexpected initial phase');",
-                '}',
-                'const snapshotHash = await hashProtocolPhaseSnapshot([], 0);',
-                'if (snapshotHash.length !== 64) {',
-                "  throw new Error('Packed protocol import returned an invalid snapshot hash');",
-                '}',
-                'setBigintMathBackend();',
-                'resetBigintMathBackend();',
-                "console.log('Packed package smoke test passed.');",
-                '',
-            ].join('\n'),
-            'utf8',
         );
 
         runPackageManager(['add', tarballPath], consumerDirectory);

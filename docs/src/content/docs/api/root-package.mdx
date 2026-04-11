@@ -1,43 +1,43 @@
 ---
 title: Root package
-description: The only supported public import surface.
+description: The supported public import surface for the shipped voting flow.
 sidebar:
   order: 1
 ---
 
-Use the root package for all public imports. The package no longer ships supported subpath entrypoints.
+Use the root package for all supported public imports. The package does not ship supported public subpath entrypoints.
 
 ## What lives here
 
-- additive ElGamal encryption and decryption
-- additive ciphertext combination
-- key generation
-- validation helpers
-- threshold sharing and decryption helpers
+- manifest helpers
+- roster hashing and session derivation
 - transport and authentication helpers
-- protocol hashing, transcript, and verification helpers
-- GJKR reducer and transcript-verification helpers
+- public builders for the standard ceremony payloads
+- GJKR transcript verification
+- ballot verification
+- tally verification
+- full ceremony verification
 
 ## Typical import style
 
 ```typescript
 import {
-    addEncryptedValues,
-    decryptAdditive,
-    deriveH,
-    encryptAdditive,
-    generateParameters,
+    createElectionManifest,
+    createManifestPublicationPayload,
+    createRegistrationPayload,
+    createManifestAcceptancePayload,
+    createBallotClosePayload,
+    verifyElectionCeremonyDetailed,
 } from "threshold-elgamal";
 ```
 
 ## Use the root package when
 
-- you want the supported `ristretto255` workflow
-- you want public additive, threshold, protocol, transport, or DKG helpers
-- you want an import surface that will match the published package exports
+- you want the shipped `ristretto255` voting workflow
+- you want the minimal manifest and derived majority-threshold rules
+- you want public builders and verifiers that match the published package exports
 
 ## Explore the generated reference when
 
 - you need exact signatures, types, and return shapes
-- you want the full root export inventory
-- you are wiring a larger voting or DKG workflow and need contract-level detail
+- you are wiring a full ceremony and want contract-level detail

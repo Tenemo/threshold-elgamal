@@ -11,7 +11,7 @@ export type GenerateAuthKeyPairOptions = {
 };
 
 /**
- * Generates a fresh per-ceremony ECDSA P-256 authentication key pair.
+ * Generates a fresh per-ceremony authentication key pair.
  *
  * @returns Extractable authentication key pair.
  */
@@ -20,8 +20,7 @@ export const generateAuthKeyPair = async (
 ): Promise<CryptoKeyPair> =>
     getWebCrypto().subtle.generateKey(
         {
-            name: 'ECDSA',
-            namedCurve: 'P-256',
+            name: 'Ed25519',
         },
         options.extractable ?? false,
         ['sign', 'verify'],
@@ -55,8 +54,7 @@ export const importAuthPublicKey = async (
         'spki',
         toBufferSource(hexToBytes(spkiHex)),
         {
-            name: 'ECDSA',
-            namedCurve: 'P-256',
+            name: 'Ed25519',
         },
         true,
         ['verify'],
@@ -67,7 +65,7 @@ export const importAuthPublicKey = async (
  *
  * @param privateKey Authentication private key.
  * @param payloadBytes Canonical unsigned payload bytes.
- * @returns Lowercase hexadecimal raw P1363 `r || s` signature bytes.
+ * @returns Lowercase hexadecimal raw Ed25519 signature bytes.
  */
 export const signPayloadBytes = async (
     privateKey: CryptoKey,
@@ -76,10 +74,7 @@ export const signPayloadBytes = async (
     bytesToHex(
         new Uint8Array(
             await getWebCrypto().subtle.sign(
-                {
-                    name: 'ECDSA',
-                    hash: 'SHA-256',
-                },
+                'Ed25519',
                 privateKey,
                 toBufferSource(payloadBytes),
             ),
@@ -87,11 +82,11 @@ export const signPayloadBytes = async (
     );
 
 /**
- * Verifies canonical payload bytes against a P-256 authentication signature.
+ * Verifies canonical payload bytes against an authentication signature.
  *
  * @param publicKey Authentication public key.
  * @param payloadBytes Canonical unsigned payload bytes.
- * @param signatureHex Lowercase hexadecimal raw P1363 `r || s` signature bytes.
+ * @param signatureHex Lowercase hexadecimal raw Ed25519 signature bytes.
  * @returns `true` when the signature verifies.
  */
 export const verifyPayloadSignature = async (
@@ -100,10 +95,7 @@ export const verifyPayloadSignature = async (
     signatureHex: string,
 ): Promise<boolean> =>
     getWebCrypto().subtle.verify(
-        {
-            name: 'ECDSA',
-            hash: 'SHA-256',
-        },
+        'Ed25519',
         publicKey,
         toBufferSource(hexToBytes(signatureHex)),
         toBufferSource(payloadBytes),

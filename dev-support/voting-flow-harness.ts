@@ -1,771 +1,765 @@
-import {
-    computeRosterHash,
-    createPhaseCheckpointPayload,
-    createManifestPublicationPayload,
-    invariant,
-    signPayload,
-    verifySignedTranscript,
-} from './voting-flow/common.js';
-import {
-    buildComplaintArtifacts,
-    buildDealerMaterial,
-} from './voting-flow/dealers.js';
-import {
-    buildManifest,
-    createAcceptancePayloads,
-    createParticipants,
-    createRegistrationPayloads,
-} from './voting-flow/setup.js';
-import type {
-    CompletedVotingFlowResult,
-    VotingFlowScenario,
-    VotingFlowResult,
-} from './voting-flow/types.js';
-import {
-    createBallotArtifacts,
-    createBallotSubmissionPayloads,
-    createDecryptionSharePayloads,
-    createTallyPublicationPayload,
-    createThresholdShareArtifacts,
-} from './voting-flow/voting.js';
-
-import { assertThreshold, getGroup, majorityThreshold, modQ } from '#core';
-import {
-    deriveJointPublicKey,
-    deriveTranscriptVerificationKeys,
-    replayGjkrTranscript,
-    verifyDKGTranscript,
-    type DKGState,
-} from '#dkg';
-import { addEncryptedValues } from '#elgamal';
-import {
-    deriveSessionId,
-    formatSessionFingerprint,
-    hashElectionManifest,
-    hashProtocolTranscript,
-    verifyBallotSubmissionPayloadsByOption,
-    verifyPublishedVotingResults,
-    type KeyDerivationConfirmation,
-} from '#protocol';
-import { encodePoint, multiplyBase } from '#src/core/ristretto';
+import { TextEncoder } from 'node:util';
 import {
     combineDecryptionShares,
+    createBallotClosePayload,
+    createBallotSubmissionPayload,
+    createDLEQProof,
+    createDecryptionSharePayload,
+    createDisjunctiveProof,
+    createElectionManifest,
+    createEncryptedDualSharePayload,
+    createFeldmanCommitmentPayload,
+    createKeyDerivationConfirmationPayload,
+    createManifestAcceptancePayload,
+    createManifestPublicationPayload,
+    createPedersenCommitmentPayload,
+    createRegistrationPayload,
+    createSchnorrProof,
+    createTallyPublicationPayload,
     createVerifiedDecryptionShare,
-    type Share,
-} from '#threshold';
-export type {
-    CompletedVotingFlowResult,
-    VotingFlowScenario,
-    VotingFlowResult,
-} from './voting-flow/types.js';
-const DEFAULT_GROUP = 'ristretto255';
-const RISTRETTO_IDENTITY = encodePoint(multiplyBase(0n));
-const singleBallotBound = (): bigint => 10n;
-const validScores = (): readonly bigint[] =>
-    Array.from({ length: 10 }, (_value, index) => BigInt(index + 1));
-const normalizedVotesByOption = (
-    scenario: VotingFlowScenario,
-): readonly (readonly bigint[])[] => scenario.votesByOption ?? [scenario.votes];
-const votesFingerprint = (
-    votesByOption: readonly (readonly bigint[])[],
-): string => votesByOption.map((votes) => votes.join('-')).join('|');
-const excludeParticipants = <
-    TPayload extends {
-        readonly payload: {
-            readonly participantIndex: number;
-        };
-    },
->(
-    payloads: readonly TPayload[],
-    excluded: ReadonlySet<number>,
-): readonly TPayload[] =>
-    payloads.filter(
-        (payload) => !excluded.has(payload.payload.participantIndex),
-    );
-const checkpointSigners = (
-    qual: readonly number[],
-    threshold: number,
-    excluded: ReadonlySet<number>,
-): readonly number[] => {
-    const signers = qual.filter(
-        (participantIndex) => !excluded.has(participantIndex),
-    );
-    invariant(
-        signers.length >= threshold,
-        `Checkpoint signer subset must contain at least ${threshold} participants`,
-    );
-    return signers.slice(0, threshold);
+    deriveJointPublicKey,
+    derivePedersenShares,
+    deriveSessionId,
+    deriveTranscriptVerificationKey,
+    encodePedersenShareEnvelope,
+    encryptAdditiveWithRandomness,
+    encryptEnvelope,
+    exportAuthPublicKey,
+    exportTransportPublicKey,
+    generateAuthKeyPair,
+    generateFeldmanCommitments,
+    generatePedersenCommitments,
+    hashElectionManifest,
+    hashProtocolTranscript,
+    hashRosterEntries,
+    majorityThreshold,
+    modQ,
+    RISTRETTO_GROUP,
+    scoreVotingDomain,
+    SHIPPED_PROTOCOL_VERSION,
+    verifyBallotSubmissionPayloadsByOption,
+    verifyElectionCeremonyDetailed,
+    type BallotClosePayload,
+    type BallotSubmissionPayload,
+    type DecryptionSharePayload,
+    type DLEQStatement,
+    type ElectionManifest,
+    type EncodedAuthPublicKey,
+    type EncodedPoint,
+    type EncodedTransportPublicKey,
+    type KeyDerivationConfirmation,
+    type ProofContext,
+    type SignedPayload,
+    type TallyPublicationPayload,
+    type TransportKeyPair,
+    generateTransportKeyPair,
+} from 'threshold-elgamal';
+
+export type VotingFlowParticipant = {
+    readonly auth: CryptoKeyPair;
+    readonly authPublicKey: EncodedAuthPublicKey;
+    readonly index: number;
+    readonly transport: TransportKeyPair;
+    readonly transportPublicKey: EncodedTransportPublicKey;
 };
-/**
- * Runs a parameterized end-to-end voting-flow scenario.
- *
- * Aborting scenarios return immediately after the DKG replay reaches the
- * terminal aborted state.
- */
+
+type DealerArtifacts = {
+    readonly encryptedSharePayloads: readonly SignedPayload[];
+    readonly feldmanCommitments: readonly EncodedPoint[];
+    readonly feldmanPayload: SignedPayload;
+    readonly pedersenPayload: SignedPayload;
+    readonly shares: ReturnType<typeof derivePedersenShares>;
+};
+
+export type VotingFlowScenario = {
+    readonly closeParticipantIndices?: readonly number[];
+    readonly optionCount?: number;
+    readonly optionList?: readonly string[];
+    readonly participantCount: number;
+    readonly participantVotes?: readonly (readonly bigint[])[];
+    readonly sessionNonce?: string;
+    readonly timestamp?: string;
+    readonly votingParticipantIndices?: readonly number[];
+};
+
+export type CompletedVotingFlowResult = {
+    readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
+    readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly countedParticipantIndices: readonly number[];
+    readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
+    readonly dkgTranscript: readonly SignedPayload[];
+    readonly expectedTallies: readonly bigint[];
+    readonly finalShares: readonly {
+        readonly index: number;
+        readonly value: bigint;
+    }[];
+    readonly manifest: ElectionManifest;
+    readonly manifestHash: string;
+    readonly participants: readonly VotingFlowParticipant[];
+    readonly participantVotes: readonly (readonly bigint[])[];
+    readonly rosterHash: string;
+    readonly sessionId: string;
+    readonly tallyPublications: readonly SignedPayload<TallyPublicationPayload>[];
+    readonly threshold: number;
+    readonly verified: Awaited<
+        ReturnType<typeof verifyElectionCeremonyDetailed>
+    >;
+    readonly votingParticipantIndices: readonly number[];
+};
+
+const assert = (condition: boolean, message: string): void => {
+    if (!condition) {
+        throw new Error(message);
+    }
+};
+
+const coefficientValue = (
+    dealerIndex: number,
+    coefficientIndex: number,
+    q: bigint,
+    offset: number,
+): bigint =>
+    modQ(BigInt(dealerIndex * 97 + coefficientIndex * 31 + offset), q - 1n) +
+    1n;
+
+const buildPolynomial = (
+    dealerIndex: number,
+    threshold: number,
+    q: bigint,
+    offset: number,
+): readonly bigint[] =>
+    Array.from({ length: threshold }, (_value, coefficientIndex) =>
+        coefficientValue(dealerIndex, coefficientIndex, q, offset),
+    );
+
+const buildDefaultParticipantVotes = (
+    participantCount: number,
+    optionCount: number,
+): readonly (readonly bigint[])[] =>
+    Array.from({ length: participantCount }, (_value, participantOffset) =>
+        Array.from({ length: optionCount }, (_entry, optionOffset) =>
+            BigInt(((participantOffset + optionOffset * 2) % 10) + 1),
+        ),
+    );
+
+const normalizeOptionList = (
+    scenario: VotingFlowScenario,
+): readonly string[] => {
+    const inferredOptionCount =
+        scenario.optionList?.length ??
+        scenario.optionCount ??
+        scenario.participantVotes?.[0]?.length ??
+        2;
+
+    assert(
+        Number.isInteger(inferredOptionCount) && inferredOptionCount >= 1,
+        'Voting flow scenarios require at least one option',
+    );
+
+    if (
+        scenario.optionList !== undefined &&
+        scenario.optionCount !== undefined &&
+        scenario.optionList.length !== scenario.optionCount
+    ) {
+        throw new Error(
+            'Voting flow scenario optionList length must match optionCount',
+        );
+    }
+
+    return (
+        scenario.optionList ??
+        Array.from(
+            { length: inferredOptionCount },
+            (_value, index) => `Option ${index + 1}`,
+        )
+    );
+};
+
+const normalizeParticipantVotes = (
+    scenario: VotingFlowScenario,
+    optionCount: number,
+): readonly (readonly bigint[])[] => {
+    const participantVotes =
+        scenario.participantVotes ??
+        buildDefaultParticipantVotes(scenario.participantCount, optionCount);
+
+    if (participantVotes.length !== scenario.participantCount) {
+        throw new Error(
+            `Voting flow scenario requires exactly ${scenario.participantCount} participant vote rows`,
+        );
+    }
+
+    participantVotes.forEach((votes, participantOffset) => {
+        if (votes.length !== optionCount) {
+            throw new Error(
+                `Participant ${participantOffset + 1} vote row must include exactly ${optionCount} option scores`,
+            );
+        }
+    });
+
+    return participantVotes;
+};
+
+const normalizeParticipantIndices = (
+    participantIndices: readonly number[],
+    participantCount: number,
+    label: string,
+): readonly number[] => {
+    const normalized = [...participantIndices].sort(
+        (left, right) => left - right,
+    );
+
+    normalized.forEach((participantIndex, offset) => {
+        if (
+            !Number.isInteger(participantIndex) ||
+            participantIndex < 1 ||
+            participantIndex > participantCount
+        ) {
+            throw new Error(
+                `${label} participant indices must stay within 1..${participantCount}`,
+            );
+        }
+        if (offset > 0 && participantIndex === normalized[offset - 1]) {
+            throw new Error(`${label} participant indices must be unique`);
+        }
+    });
+
+    return normalized;
+};
+
+const buildParticipants = async (
+    participantCount: number,
+): Promise<readonly VotingFlowParticipant[]> =>
+    Promise.all(
+        Array.from({ length: participantCount }, async (_value, offset) => {
+            const index = offset + 1;
+            const auth = await generateAuthKeyPair({ extractable: true });
+            const transport = await generateTransportKeyPair({
+                extractable: true,
+            });
+
+            return {
+                auth,
+                authPublicKey: await exportAuthPublicKey(auth.publicKey),
+                index,
+                transport,
+                transportPublicKey: await exportTransportPublicKey(
+                    transport.publicKey,
+                ),
+            };
+        }),
+    );
+
+const buildDealerArtifacts = async (
+    participant: VotingFlowParticipant,
+    participants: readonly VotingFlowParticipant[],
+    sessionId: string,
+    manifestHash: string,
+    rosterHash: string,
+    threshold: number,
+): Promise<DealerArtifacts> => {
+    const secretPolynomial = buildPolynomial(
+        participant.index,
+        threshold,
+        RISTRETTO_GROUP.q,
+        7,
+    );
+    const blindingPolynomial = buildPolynomial(
+        participant.index,
+        threshold,
+        RISTRETTO_GROUP.q,
+        43,
+    );
+    const pedersenCommitments = generatePedersenCommitments(
+        secretPolynomial,
+        blindingPolynomial,
+        RISTRETTO_GROUP,
+    );
+    const shares = derivePedersenShares(
+        secretPolynomial,
+        blindingPolynomial,
+        participants.length,
+        RISTRETTO_GROUP.q,
+    );
+    const feldmanCommitments = generateFeldmanCommitments(
+        secretPolynomial,
+        RISTRETTO_GROUP,
+    );
+    const pedersenPayload = await createPedersenCommitmentPayload(
+        participant.auth.privateKey,
+        {
+            sessionId,
+            manifestHash,
+            participantIndex: participant.index,
+            commitments: pedersenCommitments.commitments,
+        },
+    );
+    const proofs = await Promise.all(
+        secretPolynomial.map(async (coefficient, offset) => {
+            const coefficientIndex = offset + 1;
+            const context: ProofContext = {
+                protocolVersion: SHIPPED_PROTOCOL_VERSION,
+                suiteId: RISTRETTO_GROUP.name,
+                manifestHash,
+                sessionId,
+                label: 'feldman-coefficient-proof',
+                participantIndex: participant.index,
+                coefficientIndex,
+            };
+            const proof = await createSchnorrProof(
+                coefficient,
+                feldmanCommitments.commitments[offset],
+                RISTRETTO_GROUP,
+                context,
+            );
+
+            return {
+                coefficientIndex,
+                challenge: proof.challenge,
+                response: proof.response,
+            };
+        }),
+    );
+    const feldmanPayload = await createFeldmanCommitmentPayload(
+        participant.auth.privateKey,
+        {
+            sessionId,
+            manifestHash,
+            participantIndex: participant.index,
+            commitments: feldmanCommitments.commitments,
+            proofs,
+        },
+    );
+    const encryptedSharePayloads = await Promise.all(
+        participants
+            .filter((recipient) => recipient.index !== participant.index)
+            .map(async (recipient) => {
+                const share = shares[recipient.index - 1];
+                const plaintext = new TextEncoder().encode(
+                    encodePedersenShareEnvelope(
+                        share,
+                        RISTRETTO_GROUP.byteLength,
+                    ),
+                );
+                const { envelope } = await encryptEnvelope(
+                    plaintext,
+                    recipient.transportPublicKey,
+                    {
+                        sessionId,
+                        rosterHash,
+                        phase: 1,
+                        dealerIndex: participant.index,
+                        recipientIndex: recipient.index,
+                        envelopeId: `env-${participant.index}-${recipient.index}`,
+                        payloadType: 'encrypted-dual-share',
+                        protocolVersion: SHIPPED_PROTOCOL_VERSION,
+                        suite: recipient.transport.suite,
+                    },
+                );
+
+                return createEncryptedDualSharePayload(
+                    participant.auth.privateKey,
+                    {
+                        sessionId,
+                        manifestHash,
+                        participantIndex: participant.index,
+                        recipientIndex: recipient.index,
+                        envelopeId: envelope.envelopeId,
+                        suite: envelope.suite,
+                        ephemeralPublicKey: envelope.ephemeralPublicKey,
+                        iv: envelope.iv,
+                        ciphertext: envelope.ciphertext,
+                    },
+                );
+            }),
+    );
+
+    return {
+        encryptedSharePayloads,
+        feldmanCommitments: feldmanCommitments.commitments,
+        feldmanPayload,
+        pedersenPayload,
+        shares,
+    };
+};
+
+const createKeyDerivationConfirmations = async (
+    participants: readonly VotingFlowParticipant[],
+    dkgTranscript: readonly SignedPayload[],
+    derivedPublicKey: EncodedPoint,
+    manifestHash: string,
+    sessionId: string,
+): Promise<readonly SignedPayload<KeyDerivationConfirmation>[]> => {
+    const qualHash = await hashProtocolTranscript(
+        dkgTranscript.map((entry) => entry.payload),
+        RISTRETTO_GROUP.byteLength,
+    );
+
+    return Promise.all(
+        participants.map((participant) =>
+            createKeyDerivationConfirmationPayload(
+                participant.auth.privateKey,
+                {
+                    sessionId,
+                    manifestHash,
+                    participantIndex: participant.index,
+                    qualHash,
+                    publicKey: derivedPublicKey,
+                },
+            ),
+        ),
+    );
+};
+
+const transposeParticipantVotes = (
+    participantVotes: readonly (readonly bigint[])[],
+): readonly (readonly bigint[])[] =>
+    Array.from(
+        { length: participantVotes[0]?.length ?? 0 },
+        (_value, optionOffset) =>
+            participantVotes.map((participant) => participant[optionOffset]),
+    );
+
+const createBallotPayloads = async (input: {
+    readonly participants: readonly VotingFlowParticipant[];
+    readonly publicKey: EncodedPoint;
+    readonly manifestHash: string;
+    readonly participantVotes: readonly (readonly bigint[])[];
+    readonly sessionId: string;
+    readonly votingParticipantIndices: readonly number[];
+}): Promise<readonly SignedPayload<BallotSubmissionPayload>[]> => {
+    const payloads: SignedPayload<BallotSubmissionPayload>[] = [];
+    const validValues = scoreVotingDomain();
+
+    for (const participantIndex of input.votingParticipantIndices) {
+        const votes = input.participantVotes[participantIndex - 1];
+
+        for (
+            let optionIndex = 1;
+            optionIndex <= votes.length;
+            optionIndex += 1
+        ) {
+            const vote = votes[optionIndex - 1];
+            const randomness = BigInt(
+                1000 + participantIndex * 97 + optionIndex * 31,
+            );
+            const ciphertext = encryptAdditiveWithRandomness(
+                vote,
+                input.publicKey,
+                randomness,
+                10n,
+            );
+            const context: ProofContext = {
+                protocolVersion: SHIPPED_PROTOCOL_VERSION,
+                suiteId: RISTRETTO_GROUP.name,
+                manifestHash: input.manifestHash,
+                sessionId: input.sessionId,
+                label: 'ballot-range-proof',
+                voterIndex: participantIndex,
+                optionIndex,
+            };
+            const proof = await createDisjunctiveProof(
+                vote,
+                randomness,
+                ciphertext,
+                input.publicKey,
+                validValues,
+                RISTRETTO_GROUP,
+                context,
+            );
+
+            payloads.push(
+                await createBallotSubmissionPayload(
+                    input.participants[participantIndex - 1].auth.privateKey,
+                    {
+                        sessionId: input.sessionId,
+                        manifestHash: input.manifestHash,
+                        participantIndex,
+                        optionIndex,
+                        ciphertext,
+                        proof,
+                    },
+                ),
+            );
+        }
+    }
+
+    return payloads;
+};
+
 export const runVotingFlowScenario = async (
     scenario: VotingFlowScenario,
-): Promise<VotingFlowResult> => {
-    invariant(
-        scenario.participantCount >= 3,
-        'Integration scenarios require at least three participants',
+): Promise<CompletedVotingFlowResult> => {
+    assert(
+        Number.isInteger(scenario.participantCount) &&
+            scenario.participantCount >= 3,
+        'Voting flow scenarios require at least three participants',
     );
-    const votesByOption = normalizedVotesByOption(scenario);
-    invariant(
-        votesByOption.length >= 1,
-        'Scenario must define at least one option vote set',
-    );
-    invariant(
-        scenario.optionList === undefined ||
-            scenario.optionList.length === votesByOption.length,
-        'Scenario option list must match the number of option vote sets',
-    );
-    const threshold =
-        scenario.threshold ?? majorityThreshold(scenario.participantCount);
-    assertThreshold(threshold, scenario.participantCount);
-    const validValues = validScores();
-    const bound = singleBallotBound();
-    votesByOption.forEach((votes, optionOffset) => {
-        invariant(
-            votes.length === scenario.participantCount,
-            `Scenario votes for option ${optionOffset + 1} must match the participant count`,
-        );
-        votes.forEach((vote, index) => {
-            invariant(
-                validValues.includes(vote),
-                `Vote ${vote.toString()} for participant ${index + 1} and option ${optionOffset + 1} is outside the allowed domain`,
-            );
-            invariant(
-                vote <= bound,
-                'Vote exceeds the supported single-ballot bound',
-            );
-        });
-    });
-    const group = getGroup(scenario.group ?? DEFAULT_GROUP);
-    const participants = await createParticipants(
+
+    const optionList = normalizeOptionList(scenario);
+    const optionCount = optionList.length;
+    const participantVotes = normalizeParticipantVotes(scenario, optionCount);
+    const votingParticipantIndices = normalizeParticipantIndices(
+        scenario.votingParticipantIndices ??
+            Array.from(
+                { length: scenario.participantCount },
+                (_value, index) => index + 1,
+            ),
         scenario.participantCount,
-        scenario.transportSuite ?? 'P-256',
+        'Voting flow',
     );
-    const rosterHash = await computeRosterHash(participants);
-    const manifest = buildManifest(rosterHash, scenario);
+    const closeParticipantIndices = normalizeParticipantIndices(
+        scenario.closeParticipantIndices ?? votingParticipantIndices,
+        scenario.participantCount,
+        'Ballot close',
+    );
+    const participants = await buildParticipants(scenario.participantCount);
+    const rosterHash = await hashRosterEntries(
+        participants.map((participant) => ({
+            participantIndex: participant.index,
+            authPublicKey: participant.authPublicKey,
+            transportPublicKey: participant.transportPublicKey,
+        })),
+    );
+    const manifest = createElectionManifest({
+        rosterHash,
+        optionList,
+    });
     const manifestHash = await hashElectionManifest(manifest);
+    const threshold = majorityThreshold(scenario.participantCount);
     const sessionId = await deriveSessionId(
         manifestHash,
         rosterHash,
-        `nonce-${scenario.participantCount}-${threshold}-${votesFingerprint(votesByOption)}`,
-        `2026-04-08T12:${String(scenario.participantCount).padStart(2, '0')}:00Z`,
+        scenario.sessionNonce ??
+            `harness-${scenario.participantCount}-${optionCount}-${closeParticipantIndices.join('-')}`,
+        scenario.timestamp ?? '2026-04-11T12:00:00Z',
     );
     const manifestPublication = await createManifestPublicationPayload(
-        participants[0],
-        sessionId,
-        manifestHash,
-        manifest,
+        participants[0].auth.privateKey,
+        {
+            manifest,
+            manifestHash,
+            participantIndex: participants[0].index,
+            sessionId,
+        },
     );
-    const registrations = await createRegistrationPayloads(
-        participants,
-        sessionId,
-        manifestHash,
-        rosterHash,
-    );
-    const acceptances = await createAcceptancePayloads(
-        participants,
-        sessionId,
-        manifestHash,
-        rosterHash,
-    );
-    await verifySignedTranscript(participants, [
-        manifestPublication,
-        ...registrations,
-        ...acceptances,
-    ]);
-    const setupTranscriptHash = await hashProtocolTranscript(
-        [manifestPublication, ...registrations, ...acceptances].map(
-            (item) => item.payload,
+    const registrations = await Promise.all(
+        participants.map((participant) =>
+            createRegistrationPayload(participant.auth.privateKey, {
+                authPublicKey: participant.authPublicKey,
+                manifestHash,
+                participantIndex: participant.index,
+                rosterHash,
+                sessionId,
+                transportPublicKey: participant.transportPublicKey,
+            }),
         ),
     );
-    const sessionFingerprint = formatSessionFingerprint(setupTranscriptHash);
-    invariant(
-        /^[0-9A-F]{4}(?:-[0-9A-F]{4}){7}$/.test(sessionFingerprint),
-        'Session fingerprint formatting is invalid',
-    );
-    const dealerMaterials = await Promise.all(
+    const acceptances = await Promise.all(
         participants.map((participant) =>
-            buildDealerMaterial(
+            createManifestAcceptancePayload(participant.auth.privateKey, {
+                assignedParticipantIndex: participant.index,
+                manifestHash,
+                participantIndex: participant.index,
+                rosterHash,
+                sessionId,
+            }),
+        ),
+    );
+    const dealerArtifacts = await Promise.all(
+        participants.map((participant) =>
+            buildDealerArtifacts(
                 participant,
                 participants,
                 sessionId,
                 manifestHash,
-                manifest.protocolVersion,
                 rosterHash,
-                group,
                 threshold,
             ),
         ),
     );
-    const missingPedersenCommitmentIndices = new Set(
-        scenario.missingPedersenCommitmentParticipantIndices ?? [],
+    const derivedPublicKey = deriveJointPublicKey(
+        dealerArtifacts.map((dealer, offset) => ({
+            dealerIndex: offset + 1,
+            commitments: dealer.feldmanCommitments,
+        })),
+        RISTRETTO_GROUP,
     );
-    const missingEncryptedShareDealerIndices = new Set(
-        scenario.missingEncryptedShareDealerIndices ?? [],
-    );
-    const missingFeldmanCommitmentIndices = new Set(
-        scenario.missingFeldmanCommitmentParticipantIndices ?? [],
-    );
-    const missingKeyDerivationConfirmationIndices = new Set(
-        scenario.missingKeyDerivationConfirmationParticipantIndices ?? [],
-    );
-    const missingCheckpointSignerIndices =
-        scenario.missingPhaseCheckpointSignerIndices ?? {};
-    const phase0Qual = participants.map((participant) => participant.index);
-    const phase0CheckpointSigners = checkpointSigners(
-        phase0Qual,
-        threshold,
-        new Set(missingCheckpointSignerIndices[0] ?? []),
-    );
-    const phase0CheckpointTranscript = [
+    const dkgTranscriptWithoutConfirmations = [
         manifestPublication,
         ...registrations,
         ...acceptances,
+        ...dealerArtifacts.map((dealer) => dealer.pedersenPayload),
+        ...dealerArtifacts.flatMap((dealer) => dealer.encryptedSharePayloads),
+        ...dealerArtifacts.map((dealer) => dealer.feldmanPayload),
     ] as const;
-    const phase0Checkpoints = await Promise.all(
-        phase0CheckpointSigners.map((participantIndex) =>
-            createPhaseCheckpointPayload(
-                participants[participantIndex - 1],
-                sessionId,
-                manifestHash,
-                phase0CheckpointTranscript,
-                0,
-                phase0Qual,
-            ),
-        ),
-    );
-    const {
-        allEncryptedSharePayloads,
-        complainedDealerIndices,
-        complaintPayloads,
-        complaintResolutionPayloads,
-        complaintResolutions,
-    } = await buildComplaintArtifacts(
-        scenario.complaints,
-        dealerMaterials,
+    const confirmations = await createKeyDerivationConfirmations(
         participants,
-        sessionId,
+        dkgTranscriptWithoutConfirmations,
+        derivedPublicKey,
         manifestHash,
+        sessionId,
     );
-    const pedersenPayloads = excludeParticipants(
-        dealerMaterials.map((dealer) => dealer.pedersenCommitmentPayload),
-        missingPedersenCommitmentIndices,
-    );
-    const encryptedSharePayloads = allEncryptedSharePayloads.filter(
-        (payload) =>
-            !missingEncryptedShareDealerIndices.has(
-                payload.payload.participantIndex,
-            ),
-    );
-    const phase1Qual = phase0Qual.filter(
-        (participantIndex) =>
-            !missingPedersenCommitmentIndices.has(participantIndex) &&
-            !missingEncryptedShareDealerIndices.has(participantIndex),
-    );
-    const phase1CheckpointTranscript = [
-        ...phase0CheckpointTranscript,
-        ...phase0Checkpoints,
-        ...pedersenPayloads,
-        ...encryptedSharePayloads,
-    ] as const;
-    const phase1Checkpoints =
-        phase1Qual.length >= threshold
-            ? await Promise.all(
-                  checkpointSigners(
-                      phase1Qual,
-                      threshold,
-                      new Set(missingCheckpointSignerIndices[1] ?? []),
-                  ).map((participantIndex) =>
-                      createPhaseCheckpointPayload(
-                          participants[participantIndex - 1],
-                          sessionId,
-                          manifestHash,
-                          phase1CheckpointTranscript,
-                          1,
-                          phase1Qual,
-                      ),
-                  ),
-              )
-            : [];
-    const complaintQual = phase1Qual.filter(
-        (participantIndex) => !complainedDealerIndices.has(participantIndex),
-    );
-    const phase2Checkpoints =
-        complaintQual.length >= threshold
-            ? await Promise.all(
-                  checkpointSigners(
-                      complaintQual,
-                      threshold,
-                      new Set(missingCheckpointSignerIndices[2] ?? []),
-                  ).map((participantIndex) =>
-                      createPhaseCheckpointPayload(
-                          participants[participantIndex - 1],
-                          sessionId,
-                          manifestHash,
-                          [
-                              ...phase1CheckpointTranscript,
-                              ...phase1Checkpoints,
-                              ...complaintPayloads,
-                              ...complaintResolutionPayloads,
-                          ] as const,
-                          2,
-                          complaintQual,
-                      ),
-                  ),
-              )
-            : [];
-    const finalQual = complaintQual.filter(
-        (participantIndex) =>
-            !missingFeldmanCommitmentIndices.has(participantIndex),
-    );
-    const qualDealerMaterials = dealerMaterials.filter((dealer) =>
-        finalQual.includes(dealer.participantIndex),
-    );
-    const feldmanPayloads = excludeParticipants(
-        qualDealerMaterials.map((dealer) => dealer.feldmanCommitmentPayload),
-        new Set<number>(),
-    );
-    const phase3Checkpoints =
-        finalQual.length >= threshold
-            ? await Promise.all(
-                  checkpointSigners(
-                      finalQual,
-                      threshold,
-                      new Set(missingCheckpointSignerIndices[3] ?? []),
-                  ).map((participantIndex) =>
-                      createPhaseCheckpointPayload(
-                          participants[participantIndex - 1],
-                          sessionId,
-                          manifestHash,
-                          [
-                              ...phase1CheckpointTranscript,
-                              ...phase1Checkpoints,
-                              ...complaintPayloads,
-                              ...complaintResolutionPayloads,
-                              ...phase2Checkpoints,
-                              ...feldmanPayloads,
-                          ] as const,
-                          3,
-                          finalQual,
-                      ),
-                  ),
-              )
-            : [];
-    const directJointSecret = modQ(
-        qualDealerMaterials.reduce(
-            (sum, dealer) => sum + dealer.secretPolynomial[0],
-            0n,
-        ),
-        group.q,
-    );
-    const directJointPublicKey = encodePoint(multiplyBase(directJointSecret));
-    const preConfirmationTranscript = [
-        ...phase0CheckpointTranscript,
-        ...phase0Checkpoints,
-        ...pedersenPayloads,
-        ...encryptedSharePayloads,
-        ...phase1Checkpoints,
-        ...complaintPayloads,
-        ...complaintResolutionPayloads,
-        ...phase2Checkpoints,
-        ...feldmanPayloads,
-        ...phase3Checkpoints,
-    ] as const;
-    const preConfirmationQualHash = await hashProtocolTranscript(
-        preConfirmationTranscript.map((item) => item.payload),
-    );
-    const confirmations =
-        scenario.includeKeyDerivationConfirmations === true &&
-        finalQual.length >= threshold
-            ? await Promise.all(
-                  finalQual
-                      .filter(
-                          (participantIndex) =>
-                              !missingKeyDerivationConfirmationIndices.has(
-                                  participantIndex,
-                              ),
-                      )
-                      .map((participantIndex) =>
-                          signPayload(
-                              participants[participantIndex - 1].auth
-                                  .privateKey,
-                              {
-                                  sessionId,
-                                  manifestHash,
-                                  phase: 4,
-                                  participantIndex,
-                                  messageType: 'key-derivation-confirmation',
-                                  qualHash: preConfirmationQualHash,
-                                  publicKey: directJointPublicKey,
-                              } satisfies KeyDerivationConfirmation,
-                          ),
-                      ),
-              )
-            : [];
     const dkgTranscript = [
-        ...phase0CheckpointTranscript,
-        ...phase0Checkpoints,
-        ...pedersenPayloads,
-        ...encryptedSharePayloads,
-        ...phase1Checkpoints,
-        ...complaintPayloads,
-        ...complaintResolutionPayloads,
-        ...phase2Checkpoints,
-        ...feldmanPayloads,
-        ...phase3Checkpoints,
+        ...dkgTranscriptWithoutConfirmations,
         ...confirmations,
     ] as const;
-    await verifySignedTranscript(participants, dkgTranscript);
-    const finalState = replayGjkrTranscript(
+    const finalShares = participants.map((participant) => ({
+        index: participant.index,
+        value: modQ(
+            dealerArtifacts.reduce(
+                (sum, dealer) =>
+                    sum + dealer.shares[participant.index - 1].secretValue,
+                0n,
+            ),
+            RISTRETTO_GROUP.q,
+        ),
+    }));
+    const ballotPayloads = await createBallotPayloads({
+        participants,
+        publicKey: derivedPublicKey,
+        manifestHash,
+        participantVotes,
+        sessionId,
+        votingParticipantIndices,
+    });
+    const ballotClosePayload = await createBallotClosePayload(
+        participants[0].auth.privateKey,
         {
             sessionId,
             manifestHash,
-            participantCount: scenario.participantCount,
-            threshold,
+            participantIndex: participants[0].index,
+            includedParticipantIndices: closeParticipantIndices,
         },
-        dkgTranscript,
     );
-    if (finalState.phase === 'aborted') {
-        const abortedState = finalState as DKGState & {
-            readonly phase: 'aborted';
-        };
-        return {
-            aggregate: {
-                c1: RISTRETTO_IDENTITY,
-                c2: RISTRETTO_IDENTITY,
-            },
-            ballots: [],
-            complaintResolutions,
-            dkgTranscript,
-            dkgPhaseCheckpoints: [
-                ...phase0Checkpoints,
-                ...phase1Checkpoints,
-                ...phase2Checkpoints,
-                ...phase3Checkpoints,
-            ],
-            manifest,
-            finalState: abortedState,
-            group,
-            manifestHash,
-            participantAuthKeys: participants.map((participant) => ({
-                index: participant.index,
-                privateKey: participant.auth.privateKey,
-            })),
-            registrations,
-            sessionFingerprint,
-            sessionId,
-        };
-    }
-    const verifiedTranscript = await verifyDKGTranscript({
-        transcript: dkgTranscript,
+    const countedBallotPayloads = ballotPayloads.filter((payload) =>
+        closeParticipantIndices.includes(payload.payload.participantIndex),
+    );
+    const verifiedBallots = await verifyBallotSubmissionPayloadsByOption({
+        ballotPayloads: countedBallotPayloads,
+        publicKey: derivedPublicKey,
         manifest,
         sessionId,
     });
-    invariant(
-        finalState.phase === 'completed',
-        'Expected the DKG scenario to complete',
-    );
-    const completedState = finalState as DKGState & {
-        readonly phase: 'completed';
-    };
-    invariant(
-        JSON.stringify(finalState.qual) === JSON.stringify(finalQual),
-        'Reducer QUAL set does not match the checkpointed DKG outcomes',
-    );
-    invariant(
-        JSON.stringify(verifiedTranscript.qual) === JSON.stringify(finalQual),
-        'Verified transcript QUAL set does not match the checkpointed DKG outcomes',
-    );
-    const finalShares: readonly Share[] = finalQual.map((participantIndex) => ({
-        index: participantIndex,
-        value: modQ(
-            qualDealerMaterials.reduce(
-                (sum, dealer) =>
-                    sum +
-                    dealer.pedersenShares[participantIndex - 1].secretValue,
-                0n,
-            ),
-            group.q,
-        ),
-    }));
-    const jointPublicKey = deriveJointPublicKey(
-        qualDealerMaterials.map((dealer) => ({
-            dealerIndex: dealer.participantIndex,
-            commitments: dealer.feldmanCommitments,
-        })),
-        group,
-    );
-    invariant(
-        jointPublicKey === directJointPublicKey,
-        'Joint public key does not match the direct secret sum',
-    );
-    invariant(
-        verifiedTranscript.derivedPublicKey === jointPublicKey,
-        'Verified transcript public key does not match the derived joint public key',
-    );
-    const transcriptDerivedVerificationKeys = deriveTranscriptVerificationKeys(
-        verifiedTranscript.feldmanCommitments,
-        finalShares.map((share) => share.index),
-        group,
-    );
-    transcriptDerivedVerificationKeys.forEach((transcriptKey, offset) => {
-        invariant(
-            transcriptKey.value ===
-                encodePoint(multiplyBase(finalShares[offset].value)),
-            `Transcript-derived verification key mismatch for participant ${transcriptKey.index}`,
-        );
-    });
-    const ballotsByOption = await Promise.all(
-        votesByOption.map((votes, optionOffset) =>
-            createBallotArtifacts(
-                votes,
-                jointPublicKey,
-                group,
-                manifest.protocolVersion,
-                manifestHash,
-                sessionId,
-                validValues,
-                bound,
-                optionOffset + 1,
-            ),
-        ),
-    );
-    const ballots = ballotsByOption.flat();
-    const ballotPayloads = await createBallotSubmissionPayloads(
-        participants,
-        ballots,
-        sessionId,
-        manifestHash,
-        group,
-    );
-    const verifiedBallotsByOption =
-        await verifyBallotSubmissionPayloadsByOption({
-            ballotPayloads,
-            publicKey: jointPublicKey,
-            manifest,
-            sessionId,
-        });
-    const reversedVerifiedBallotsByOption =
-        await verifyBallotSubmissionPayloadsByOption({
-            ballotPayloads: [...ballotPayloads].reverse(),
-            publicKey: jointPublicKey,
-            manifest,
-            sessionId,
-        });
-    verifiedBallotsByOption.forEach((verifiedBallots, offset) => {
-        const reversedBallots = reversedVerifiedBallotsByOption[offset];
-        invariant(
-            reversedBallots !== undefined,
-            `Missing reversed ballot verification for option ${verifiedBallots.optionIndex}`,
-        );
-        invariant(
-            reversedBallots.aggregate.ciphertext.c1 ===
-                verifiedBallots.aggregate.ciphertext.c1 &&
-                reversedBallots.aggregate.ciphertext.c2 ===
-                    verifiedBallots.aggregate.ciphertext.c2,
-            `Aggregate recomputation must be order-independent for option ${verifiedBallots.optionIndex}`,
-        );
-        invariant(
-            reversedBallots.transcriptHash === verifiedBallots.transcriptHash,
-            `Transcript hashing must be order-independent for option ${verifiedBallots.optionIndex}`,
-        );
-    });
-    const selectedIndices =
-        scenario.decryptionParticipantIndices ?? finalQual.slice(0, threshold);
-    invariant(
-        selectedIndices.length >= threshold,
-        'Scenario decryption subset must contain at least threshold participants',
-    );
-    const selectedShares = selectedIndices.map((index) => {
-        const share = finalShares.find((item) => item.index === index);
-        invariant(
-            share !== undefined,
-            `Missing final share for selected participant ${index}`,
-        );
-        return share;
-    });
-    const optionResults = await Promise.all(
-        verifiedBallotsByOption.map(async (verifiedBallots, offset) => {
-            const optionBallots = ballotsByOption[offset] ?? [];
-            const optionIndex = verifiedBallots.optionIndex;
-            const aggregate = verifiedBallots.aggregate.ciphertext;
-            const mismatchedAggregate = optionBallots
-                .slice(0, -1)
-                .map((ballot) => ballot.ciphertext)
-                .reduce(
-                    (accumulator, ciphertext) =>
-                        addEncryptedValues(accumulator, ciphertext),
-                    {
-                        c1: RISTRETTO_IDENTITY,
-                        c2: RISTRETTO_IDENTITY,
-                    },
+    const selectedParticipants = closeParticipantIndices.slice(0, threshold);
+    const decryptionSharePayloads: SignedPayload<DecryptionSharePayload>[] = [];
+    const tallyPublications: SignedPayload<TallyPublicationPayload>[] = [];
+
+    for (const optionBallots of verifiedBallots) {
+        const optionSharePayloads = await Promise.all(
+            selectedParticipants.map(async (participantIndex) => {
+                const share = finalShares[participantIndex - 1];
+                const verifiedShare = createVerifiedDecryptionShare(
+                    optionBallots.aggregate,
+                    share,
                 );
-            invariant(
-                mismatchedAggregate.c1 !== aggregate.c1 ||
-                    mismatchedAggregate.c2 !== aggregate.c2,
-                `Dropped-ballot aggregate should not equal the full aggregate for option ${optionIndex}`,
-            );
-            const thresholdShareArtifacts = await createThresholdShareArtifacts(
-                selectedShares,
-                verifiedBallots.aggregate,
-                transcriptDerivedVerificationKeys,
-                group,
-                manifest.protocolVersion,
-                manifestHash,
-                sessionId,
-                optionIndex,
-            );
-            const recovered = combineDecryptionShares(
-                aggregate,
-                thresholdShareArtifacts.map((item) => item.share),
-                BigInt(verifiedBallots.aggregate.ballotCount) * bound,
-            );
-            const recoveredWithAllShares = combineDecryptionShares(
-                aggregate,
-                finalShares.map((share) =>
-                    createVerifiedDecryptionShare(
-                        verifiedBallots.aggregate,
-                        share,
+                const statement: DLEQStatement = {
+                    publicKey: deriveTranscriptVerificationKey(
+                        dealerArtifacts.map((dealer, offset) => ({
+                            dealerIndex: offset + 1,
+                            commitments: dealer.feldmanCommitments,
+                        })),
+                        participantIndex,
+                        RISTRETTO_GROUP,
                     ),
-                ),
-                BigInt(verifiedBallots.aggregate.ballotCount) * bound,
-            );
-            const expectedTally = votesByOption[offset].reduce(
-                (sum, vote) => sum + vote,
-                0n,
-            );
-            const decryptionSharePayloads = await createDecryptionSharePayloads(
-                participants,
-                thresholdShareArtifacts,
-                sessionId,
-                manifestHash,
-                verifiedBallots.transcriptHash,
-                verifiedBallots.aggregate.ballotCount,
-                group,
-                optionIndex,
-            );
-            const tallyPublication = await createTallyPublicationPayload(
-                participants[0],
-                sessionId,
-                manifestHash,
-                verifiedBallots.transcriptHash,
-                verifiedBallots.aggregate.ballotCount,
-                recovered,
-                thresholdShareArtifacts.map((artifact) => artifact.share.index),
-                group,
-                optionIndex,
-            );
-            invariant(
-                recovered === expectedTally,
-                `Threshold subset recovered the wrong tally for option ${optionIndex}`,
-            );
-            invariant(
-                recoveredWithAllShares === expectedTally,
-                `All-share threshold recovery returned the wrong tally for option ${optionIndex}`,
-            );
-            return {
-                optionIndex,
-                aggregate,
-                ballotLogHash: verifiedBallots.transcriptHash,
-                ballots: optionBallots,
-                expectedTally,
-                mismatchedAggregate,
-                recovered,
-                recoveredWithAllShares,
-                tallyPublication,
-                thresholdShareArtifacts,
-                decryptionSharePayloads,
-            };
-        }),
-    );
-    const decryptionSharePayloads = optionResults.flatMap(
-        (result) => result.decryptionSharePayloads,
-    );
-    const tallyPublications = optionResults.map(
-        (result) => result.tallyPublication,
-    );
-    const verifiedPublished = await verifyPublishedVotingResults({
+                    ciphertext: optionBallots.aggregate.ciphertext,
+                    decryptionShare: verifiedShare.value,
+                };
+                const context: ProofContext = {
+                    protocolVersion: SHIPPED_PROTOCOL_VERSION,
+                    suiteId: RISTRETTO_GROUP.name,
+                    manifestHash,
+                    sessionId,
+                    label: 'decryption-share-dleq',
+                    participantIndex,
+                    optionIndex: optionBallots.optionIndex,
+                };
+                const proof = await createDLEQProof(
+                    share.value,
+                    statement,
+                    RISTRETTO_GROUP,
+                    context,
+                );
+
+                return {
+                    payload: await createDecryptionSharePayload(
+                        participants[participantIndex - 1].auth.privateKey,
+                        {
+                            sessionId,
+                            manifestHash,
+                            participantIndex,
+                            optionIndex: optionBallots.optionIndex,
+                            transcriptHash:
+                                optionBallots.aggregate.transcriptHash,
+                            ballotCount: optionBallots.aggregate.ballotCount,
+                            decryptionShare: verifiedShare.value,
+                            proof,
+                        },
+                    ),
+                    share: verifiedShare,
+                };
+            }),
+        );
+        const tally = combineDecryptionShares(
+            optionBallots.aggregate.ciphertext,
+            optionSharePayloads.map((entry) => entry.share),
+            BigInt(optionBallots.aggregate.ballotCount) * 10n,
+        );
+
+        decryptionSharePayloads.push(
+            ...optionSharePayloads.map((entry) => entry.payload),
+        );
+        tallyPublications.push(
+            await createTallyPublicationPayload(
+                participants[0].auth.privateKey,
+                {
+                    sessionId,
+                    manifestHash,
+                    participantIndex: participants[0].index,
+                    optionIndex: optionBallots.optionIndex,
+                    transcriptHash: optionBallots.aggregate.transcriptHash,
+                    ballotCount: optionBallots.aggregate.ballotCount,
+                    tally,
+                    decryptionParticipantIndices: selectedParticipants,
+                },
+            ),
+        );
+    }
+
+    const verified = await verifyElectionCeremonyDetailed({
         manifest,
         sessionId,
         dkgTranscript,
         ballotPayloads,
+        ballotClosePayload,
         decryptionSharePayloads,
         tallyPublications,
     });
-    optionResults.forEach((result) => {
-        const verifiedOption = verifiedPublished.options.find(
-            (entry) => entry.optionIndex === result.optionIndex,
-        );
-        invariant(
-            verifiedOption !== undefined,
-            `Missing verified published tally for option ${result.optionIndex}`,
-        );
-        invariant(
-            verifiedOption.tally === result.expectedTally,
-            `Published tally verification returned the wrong tally for option ${result.optionIndex}`,
-        );
-        invariant(
-            verifiedOption.ballots.transcriptHash === result.ballotLogHash,
-            `Published ballot verification returned the wrong transcript hash for option ${result.optionIndex}`,
-        );
-        invariant(
-            verifiedOption.decryptionShares.length ===
-                result.thresholdShareArtifacts.length,
-            `Published tally verification accepted the wrong number of decryption shares for option ${result.optionIndex}`,
-        );
-    });
-    const primaryOption = optionResults[0];
+    const optionVotesByOption = transposeParticipantVotes(participantVotes);
+    const expectedTallies = optionVotesByOption.map((optionVotes) =>
+        closeParticipantIndices.reduce(
+            (sum, participantIndex) => sum + optionVotes[participantIndex - 1],
+            0n,
+        ),
+    );
+
     return {
-        aggregate: primaryOption.aggregate,
-        ballotLogHash: primaryOption.ballotLogHash,
+        ballotClosePayload,
         ballotPayloads,
-        ballots,
-        complaintResolutions,
+        countedParticipantIndices: closeParticipantIndices,
         decryptionSharePayloads,
         dkgTranscript,
-        dkgPhaseCheckpoints: [
-            ...phase0Checkpoints,
-            ...phase1Checkpoints,
-            ...phase2Checkpoints,
-            ...phase3Checkpoints,
-        ],
-        directJointSecret,
-        expectedTally: primaryOption.expectedTally,
+        expectedTallies,
         finalShares,
-        finalState: completedState,
-        group,
-        jointPublicKey,
         manifest,
         manifestHash,
-        mismatchedAggregate: primaryOption.mismatchedAggregate,
-        optionResults: optionResults.map((result) => ({
-            aggregate: result.aggregate,
-            ballotLogHash: result.ballotLogHash,
-            ballots: result.ballots,
-            expectedTally: result.expectedTally,
-            mismatchedAggregate: result.mismatchedAggregate,
-            optionIndex: result.optionIndex,
-            recovered: result.recovered,
-            recoveredWithAllShares: result.recoveredWithAllShares,
-            tallyPublication: result.tallyPublication,
-            thresholdShareArtifacts: result.thresholdShareArtifacts,
-        })),
-        participantAuthKeys: participants.map((participant) => ({
-            index: participant.index,
-            privateKey: participant.auth.privateKey,
-        })),
-        recovered: primaryOption.recovered,
-        recoveredWithAllShares: primaryOption.recoveredWithAllShares,
-        registrations,
-        sessionFingerprint,
+        participants,
+        participantVotes,
+        rosterHash,
         sessionId,
-        tallyPublication: primaryOption.tallyPublication,
         tallyPublications,
-        thresholdShareArtifacts: primaryOption.thresholdShareArtifacts,
-        transcriptDerivedVerificationKeys,
-    } satisfies CompletedVotingFlowResult;
+        threshold,
+        verified,
+        votingParticipantIndices,
+    };
 };

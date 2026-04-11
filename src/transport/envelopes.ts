@@ -35,17 +35,14 @@ export const encryptEnvelope = async (
     readonly ephemeralPrivateKey: EncodedTransportPrivateKey;
 }> => {
     const ephemeral = await generateTransportKeyPair({
-        suite: context.suite,
         extractable: true,
     });
     const recipientPublicKey = await importTransportPublicKey(
         recipientPublicKeyHex,
-        context.suite,
     );
     const sharedSecret = await deriveTransportSharedSecret(
         ephemeral.privateKey,
         recipientPublicKey,
-        context.suite,
     );
     const key = await deriveEnvelopeKey(sharedSecret, context);
     const iv = randomBytes(12);
@@ -89,19 +86,14 @@ export const decryptEnvelope = async (
 ): Promise<Uint8Array> => {
     const resolvedRecipientPrivateKey =
         typeof recipientPrivateKey === 'string'
-            ? await importTransportPrivateKey(
-                  recipientPrivateKey,
-                  envelope.suite,
-              )
+            ? await importTransportPrivateKey(recipientPrivateKey)
             : recipientPrivateKey;
     const senderPublicKey = await importTransportPublicKey(
         envelope.ephemeralPublicKey,
-        envelope.suite,
     );
     const sharedSecret = await deriveTransportSharedSecret(
         resolvedRecipientPrivateKey,
         senderPublicKey,
-        envelope.suite,
     );
     const key = await deriveEnvelopeKey(sharedSecret, envelope);
 

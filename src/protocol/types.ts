@@ -19,6 +19,7 @@ export type ProtocolMessageType =
     | 'feldman-share-reveal'
     | 'key-derivation-confirmation'
     | 'ballot-submission'
+    | 'ballot-close'
     | 'decryption-share'
     | 'tally-publication'
     | 'ceremony-restart';
@@ -109,7 +110,7 @@ export type EncryptedDualSharePayload = BaseProtocolPayload & {
     readonly messageType: 'encrypted-dual-share';
     readonly recipientIndex: number;
     readonly envelopeId: string;
-    readonly suite: 'X25519' | 'P-256';
+    readonly suite: 'X25519';
     readonly ephemeralPublicKey: EncodedTransportPublicKey;
     readonly iv: string;
     readonly ciphertext: string;
@@ -132,7 +133,7 @@ export type ComplaintResolutionPayload = BaseProtocolPayload & {
     readonly dealerIndex: number;
     readonly complainantIndex: number;
     readonly envelopeId: string;
-    readonly suite: 'X25519' | 'P-256';
+    readonly suite: 'X25519';
     readonly revealedEphemeralPrivateKey: EncodedTransportPrivateKey;
 };
 
@@ -173,6 +174,12 @@ export type BallotSubmissionPayload = BaseProtocolPayload & {
     readonly optionIndex: number;
     readonly ciphertext: EncodedCiphertext;
     readonly proof: EncodedDisjunctiveProof;
+};
+
+/** Signed organizer payload that freezes which participants are counted. */
+export type BallotClosePayload = BaseProtocolPayload & {
+    readonly messageType: 'ballot-close';
+    readonly includedParticipantIndices: readonly number[];
 };
 
 /**
@@ -220,6 +227,7 @@ export type ProtocolPayload =
     | FeldmanShareRevealPayload
     | KeyDerivationConfirmation
     | BallotSubmissionPayload
+    | BallotClosePayload
     | DecryptionSharePayload
     | TallyPublicationPayload
     | CeremonyRestartPayload;
@@ -228,22 +236,12 @@ export type ProtocolPayload =
 export type SignedPayload<TPayload extends ProtocolPayload = ProtocolPayload> =
     {
         readonly payload: TPayload;
-        /** Raw IEEE P1363 signature bytes encoded as lowercase hex. */
+        /** Raw Ed25519 signature bytes encoded as lowercase hex. */
         readonly signature: string;
     };
 
 /** Canonical election-manifest shape bound into protocol transcripts. */
 export type ElectionManifest = {
-    readonly protocolVersion: string;
-    readonly reconstructionThreshold: number;
-    readonly participantCount: number;
-    /** Minimum accepted voter count required before publication, separate from the DKG reconstruction threshold. */
-    readonly minimumPublishedVoterCount: number;
-    readonly ballotCompletenessPolicy: BallotCompletenessPolicy;
-    readonly ballotFinality: 'first-valid';
-    readonly scoreDomain: ScoreDomainPolicy;
     readonly rosterHash: string;
     readonly optionList: readonly string[];
-    /** Application coordination deadlines carried in the manifest but not yet enforced by transcript verification. */
-    readonly epochDeadlines: readonly string[];
 };

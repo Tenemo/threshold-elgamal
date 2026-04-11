@@ -1,1 +1,1 @@
-pnpm run check && pnpm run build:skip
+pnpm run ci:release-smoke

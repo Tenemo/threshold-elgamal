@@ -1,6 +1,6 @@
 import { performance } from 'node:perf_hooks';
 
-import { fixedBaseModPow, getGroup, utf8ToBytes } from '#core';
+import { getGroup, utf8ToBytes } from '#core';
 import {
     generateParametersWithPrivateKey,
     encryptAdditiveWithRandomness,
@@ -72,9 +72,7 @@ const main = async (): Promise<void> => {
         group,
         proofContext,
     );
-    const recipient = await generateTransportKeyPair({
-        suite: 'P-256',
-    });
+    const recipient = await generateTransportKeyPair();
     const recipientPublicKey = await exportTransportPublicKey(
         recipient.publicKey,
     );
@@ -87,7 +85,7 @@ const main = async (): Promise<void> => {
         payloadType: 'dkg-share',
         protocolVersion: 'v1',
         rosterHash: 'roster-hash',
-        suite: 'P-256' as const,
+        suite: 'X25519' as const,
     };
     const envelopePlaintext = utf8ToBytes('benchmark-envelope');
     const encrypted = await encryptEnvelope(
@@ -96,9 +94,6 @@ const main = async (): Promise<void> => {
         envelopeContext,
     );
     const rows = await Promise.all([
-        measure('fixedBaseModPow', 250, () => {
-            fixedBaseModPow(5n, 123456n, 97n);
-        }),
         measure('createSchnorrProof', 40, async () => {
             await createSchnorrProof(
                 77n,

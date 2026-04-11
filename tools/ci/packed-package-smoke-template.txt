@@ -1,0 +1,539 @@
+import { TextEncoder } from 'node:util';
+
+import {
+    combineDecryptionShares,
+    createBallotClosePayload,
+    createBallotSubmissionPayload,
+    createDLEQProof,
+    createDecryptionSharePayload,
+    createDisjunctiveProof,
+    createElectionManifest,
+    createEncryptedDualSharePayload,
+    createFeldmanCommitmentPayload,
+    createKeyDerivationConfirmationPayload,
+    createManifestAcceptancePayload,
+    createManifestPublicationPayload,
+    createPedersenCommitmentPayload,
+    createRegistrationPayload,
+    createSchnorrProof,
+    createTallyPublicationPayload,
+    createVerifiedDecryptionShare,
+    deriveJointPublicKey,
+    derivePedersenShares,
+    deriveSessionId,
+    deriveTranscriptVerificationKey,
+    encodePedersenShareEnvelope,
+    encryptAdditiveWithRandomness,
+    encryptEnvelope,
+    exportAuthPublicKey,
+    exportTransportPublicKey,
+    generateAuthKeyPair,
+    generateFeldmanCommitments,
+    generatePedersenCommitments,
+    generateTransportKeyPair,
+    hashElectionManifest,
+    hashProtocolTranscript,
+    hashRosterEntries,
+    majorityThreshold,
+    modQ,
+    RISTRETTO_GROUP,
+    scoreVotingDomain,
+    SHIPPED_PROTOCOL_VERSION,
+    verifyBallotSubmissionPayloadsByOption,
+    verifyDKGTranscript,
+    verifyDLEQProof,
+    verifyDisjunctiveProof,
+    verifyElectionCeremonyDetailed,
+    verifyFeldmanShare,
+    verifyPedersenShare,
+    verifySchnorrProof,
+} from 'threshold-elgamal';
+
+const buildPolynomial = (dealerIndex, threshold, q, offset) =>
+    Array.from({ length: threshold }, (_, coefficientIndex) =>
+        modQ(BigInt(dealerIndex * 97 + coefficientIndex * 31 + offset), q - 1n) +
+        1n,
+    );
+
+const buildParticipants = async () =>
+    Promise.all(
+        Array.from({ length: 3 }, async (_, offset) => {
+            const index = offset + 1;
+            const auth = await generateAuthKeyPair({ extractable: true });
+            const transport = await generateTransportKeyPair({
+                extractable: true,
+            });
+
+            return {
+                index,
+                auth,
+                authPublicKey: await exportAuthPublicKey(auth.publicKey),
+                transport,
+                transportPublicKey: await exportTransportPublicKey(
+                    transport.publicKey,
+                ),
+            };
+        }),
+    );
+
+const buildDealerArtifacts = async (
+    participant,
+    participants,
+    sessionId,
+    manifestHash,
+    rosterHash,
+    threshold,
+) => {
+    const secretPolynomial = buildPolynomial(
+        participant.index,
+        threshold,
+        RISTRETTO_GROUP.q,
+        7,
+    );
+    const blindingPolynomial = buildPolynomial(
+        participant.index,
+        threshold,
+        RISTRETTO_GROUP.q,
+        43,
+    );
+    const pedersenCommitments = generatePedersenCommitments(
+        secretPolynomial,
+        blindingPolynomial,
+        RISTRETTO_GROUP,
+    );
+    const shares = derivePedersenShares(
+        secretPolynomial,
+        blindingPolynomial,
+        participants.length,
+        RISTRETTO_GROUP.q,
+    );
+    const feldmanCommitments = generateFeldmanCommitments(
+        secretPolynomial,
+        RISTRETTO_GROUP,
+    );
+
+    for (const share of shares) {
+        if (!verifyPedersenShare(share, pedersenCommitments, RISTRETTO_GROUP)) {
+            throw new Error('Packed smoke Pedersen verification failed');
+        }
+        if (
+            !verifyFeldmanShare(
+                { index: share.index, value: share.secretValue },
+                feldmanCommitments,
+                RISTRETTO_GROUP,
+            )
+        ) {
+            throw new Error('Packed smoke Feldman verification failed');
+        }
+    }
+
+    const proofs = [];
+    for (let offset = 0; offset < secretPolynomial.length; offset += 1) {
+        const coefficientIndex = offset + 1;
+        const context = {
+            protocolVersion: SHIPPED_PROTOCOL_VERSION,
+            suiteId: RISTRETTO_GROUP.name,
+            manifestHash,
+            sessionId,
+            label: 'feldman-coefficient-proof',
+            participantIndex: participant.index,
+            coefficientIndex,
+        };
+        const proof = await createSchnorrProof(
+            secretPolynomial[offset],
+            feldmanCommitments.commitments[offset],
+            RISTRETTO_GROUP,
+            context,
+        );
+        const valid = await verifySchnorrProof(
+            proof,
+            feldmanCommitments.commitments[offset],
+            RISTRETTO_GROUP,
+            context,
+        );
+        if (!valid) {
+            throw new Error('Packed smoke Schnorr verification failed');
+        }
+        proofs.push({
+            coefficientIndex,
+            challenge: proof.challenge,
+            response: proof.response,
+        });
+    }
+
+    const pedersenPayload = await createPedersenCommitmentPayload(
+        participant.auth.privateKey,
+        {
+            sessionId,
+            manifestHash,
+            participantIndex: participant.index,
+            commitments: pedersenCommitments.commitments,
+        },
+    );
+    const feldmanPayload = await createFeldmanCommitmentPayload(
+        participant.auth.privateKey,
+        {
+            sessionId,
+            manifestHash,
+            participantIndex: participant.index,
+            commitments: feldmanCommitments.commitments,
+            proofs,
+        },
+    );
+    const encryptedSharePayloads = [];
+
+    for (const recipient of participants) {
+        if (recipient.index === participant.index) {
+            continue;
+        }
+
+        const share = shares[recipient.index - 1];
+        const plaintext = new TextEncoder().encode(
+            encodePedersenShareEnvelope(share, RISTRETTO_GROUP.byteLength),
+        );
+        const { envelope } = await encryptEnvelope(
+            plaintext,
+            recipient.transportPublicKey,
+            {
+                sessionId,
+                rosterHash,
+                phase: 1,
+                dealerIndex: participant.index,
+                recipientIndex: recipient.index,
+                envelopeId: `env-${participant.index}-${recipient.index}`,
+                payloadType: 'encrypted-dual-share',
+                protocolVersion: SHIPPED_PROTOCOL_VERSION,
+                suite: recipient.transport.suite,
+            },
+        );
+        encryptedSharePayloads.push(
+            await createEncryptedDualSharePayload(
+                participant.auth.privateKey,
+                {
+                    sessionId,
+                    manifestHash,
+                    participantIndex: participant.index,
+                    recipientIndex: recipient.index,
+                    envelopeId: envelope.envelopeId,
+                    suite: envelope.suite,
+                    ephemeralPublicKey: envelope.ephemeralPublicKey,
+                    iv: envelope.iv,
+                    ciphertext: envelope.ciphertext,
+                },
+            ),
+        );
+    }
+
+    return {
+        shares,
+        feldmanCommitments: feldmanCommitments.commitments,
+        pedersenPayload,
+        feldmanPayload,
+        encryptedSharePayloads,
+    };
+};
+
+const participants = await buildParticipants();
+const rosterHash = await hashRosterEntries(
+    participants.map((participant) => ({
+        participantIndex: participant.index,
+        authPublicKey: participant.authPublicKey,
+        transportPublicKey: participant.transportPublicKey,
+    })),
+);
+const manifest = createElectionManifest({
+    rosterHash,
+    optionList: ['Option A', 'Option B'],
+});
+const manifestHash = await hashElectionManifest(manifest);
+const sessionId = await deriveSessionId(
+    manifestHash,
+    rosterHash,
+    'packed-smoke-nonce',
+    '2026-04-11T12:00:00Z',
+);
+const threshold = majorityThreshold(participants.length);
+
+const manifestPublication = await createManifestPublicationPayload(
+    participants[0].auth.privateKey,
+    {
+        manifest,
+        manifestHash,
+        participantIndex: participants[0].index,
+        sessionId,
+    },
+);
+const registrations = await Promise.all(
+    participants.map((participant) =>
+        createRegistrationPayload(participant.auth.privateKey, {
+            authPublicKey: participant.authPublicKey,
+            manifestHash,
+            participantIndex: participant.index,
+            rosterHash,
+            sessionId,
+            transportPublicKey: participant.transportPublicKey,
+        }),
+    ),
+);
+const acceptances = await Promise.all(
+    participants.map((participant) =>
+        createManifestAcceptancePayload(participant.auth.privateKey, {
+            assignedParticipantIndex: participant.index,
+            manifestHash,
+            participantIndex: participant.index,
+            rosterHash,
+            sessionId,
+        }),
+    ),
+);
+const dealerArtifacts = await Promise.all(
+    participants.map((participant) =>
+        buildDealerArtifacts(
+            participant,
+            participants,
+            sessionId,
+            manifestHash,
+            rosterHash,
+            threshold,
+        ),
+    ),
+);
+const derivedPublicKey = deriveJointPublicKey(
+    dealerArtifacts.map((dealer, offset) => ({
+        dealerIndex: offset + 1,
+        commitments: dealer.feldmanCommitments,
+    })),
+    RISTRETTO_GROUP,
+);
+const dkgTranscriptWithoutConfirmations = [
+    manifestPublication,
+    ...registrations,
+    ...acceptances,
+    ...dealerArtifacts.map((dealer) => dealer.pedersenPayload),
+    ...dealerArtifacts.flatMap((dealer) => dealer.encryptedSharePayloads),
+    ...dealerArtifacts.map((dealer) => dealer.feldmanPayload),
+];
+const qualHash = await hashProtocolTranscript(
+    dkgTranscriptWithoutConfirmations.map((entry) => entry.payload),
+    RISTRETTO_GROUP.byteLength,
+);
+const confirmations = await Promise.all(
+    participants.map((participant) =>
+        createKeyDerivationConfirmationPayload(
+            participant.auth.privateKey,
+            {
+                sessionId,
+                manifestHash,
+                participantIndex: participant.index,
+                qualHash,
+                publicKey: derivedPublicKey,
+            },
+        ),
+    ),
+);
+const dkgTranscript = [
+    ...dkgTranscriptWithoutConfirmations,
+    ...confirmations,
+];
+const dkg = await verifyDKGTranscript({
+    transcript: dkgTranscript,
+    manifest,
+    sessionId,
+});
+
+const participantVotes = [
+    [4n, 1n],
+    [7n, 9n],
+    [9n, 3n],
+];
+const ballotPayloads = [];
+for (const participant of participants) {
+    for (let optionIndex = 1; optionIndex <= participantVotes[0].length; optionIndex += 1) {
+        const vote = participantVotes[participant.index - 1][optionIndex - 1];
+        const randomness = BigInt(1000 + participant.index * 97 + optionIndex * 31);
+        const ciphertext = encryptAdditiveWithRandomness(
+            vote,
+            dkg.derivedPublicKey,
+            randomness,
+            10n,
+        );
+        const proofContext = {
+            protocolVersion: SHIPPED_PROTOCOL_VERSION,
+            suiteId: RISTRETTO_GROUP.name,
+            manifestHash,
+            sessionId,
+            label: 'ballot-range-proof',
+            voterIndex: participant.index,
+            optionIndex,
+        };
+        const proof = await createDisjunctiveProof(
+            vote,
+            randomness,
+            ciphertext,
+            dkg.derivedPublicKey,
+            scoreVotingDomain(),
+            RISTRETTO_GROUP,
+            proofContext,
+        );
+        const valid = await verifyDisjunctiveProof(
+            proof,
+            ciphertext,
+            dkg.derivedPublicKey,
+            scoreVotingDomain(),
+            RISTRETTO_GROUP,
+            proofContext,
+        );
+        if (!valid) {
+            throw new Error('Packed smoke disjunctive proof verification failed');
+        }
+        ballotPayloads.push(
+            await createBallotSubmissionPayload(participant.auth.privateKey, {
+                sessionId,
+                manifestHash,
+                participantIndex: participant.index,
+                optionIndex,
+                ciphertext,
+                proof,
+            }),
+        );
+    }
+}
+
+const ballotClosePayload = await createBallotClosePayload(
+    participants[0].auth.privateKey,
+    {
+        sessionId,
+        manifestHash,
+        participantIndex: participants[0].index,
+        includedParticipantIndices: [1, 2, 3],
+    },
+);
+const verifiedBallots = await verifyBallotSubmissionPayloadsByOption({
+    ballotPayloads,
+    publicKey: dkg.derivedPublicKey,
+    manifest,
+    sessionId,
+});
+const finalShares = participants.map((participant) => ({
+    index: participant.index,
+    value: modQ(
+        dealerArtifacts.reduce(
+            (sum, dealer) =>
+                sum + dealer.shares[participant.index - 1].secretValue,
+            0n,
+        ),
+        RISTRETTO_GROUP.q,
+    ),
+}));
+const decryptionParticipantIndices = [1, 2];
+const decryptionSharePayloads = [];
+const tallyPublications = [];
+
+for (const optionBallots of verifiedBallots) {
+    const verifiedShares = [];
+    for (const participantIndex of decryptionParticipantIndices) {
+        const share = finalShares.find((entry) => entry.index === participantIndex);
+        const verifiedShare = createVerifiedDecryptionShare(
+            optionBallots.aggregate,
+            share,
+        );
+        const statement = {
+            publicKey: deriveTranscriptVerificationKey(
+                dkg.feldmanCommitments,
+                participantIndex,
+                RISTRETTO_GROUP,
+            ),
+            ciphertext: optionBallots.aggregate.ciphertext,
+            decryptionShare: verifiedShare.value,
+        };
+        const proofContext = {
+            protocolVersion: SHIPPED_PROTOCOL_VERSION,
+            suiteId: RISTRETTO_GROUP.name,
+            manifestHash,
+            sessionId,
+            label: 'decryption-share-dleq',
+            participantIndex,
+            optionIndex: optionBallots.optionIndex,
+        };
+        const proof = await createDLEQProof(
+            share.value,
+            statement,
+            RISTRETTO_GROUP,
+            proofContext,
+        );
+        const valid = await verifyDLEQProof(
+            proof,
+            statement,
+            RISTRETTO_GROUP,
+            proofContext,
+        );
+        if (!valid) {
+            throw new Error('Packed smoke DLEQ verification failed');
+        }
+        verifiedShares.push(verifiedShare);
+        decryptionSharePayloads.push(
+            await createDecryptionSharePayload(
+                participants[participantIndex - 1].auth.privateKey,
+                {
+                    sessionId,
+                    manifestHash,
+                    participantIndex,
+                    optionIndex: optionBallots.optionIndex,
+                    transcriptHash: optionBallots.aggregate.transcriptHash,
+                    ballotCount: optionBallots.aggregate.ballotCount,
+                    decryptionShare: verifiedShare.value,
+                    proof,
+                },
+            ),
+        );
+    }
+
+    const tally = combineDecryptionShares(
+        optionBallots.aggregate.ciphertext,
+        verifiedShares,
+        BigInt(optionBallots.aggregate.ballotCount) * 10n,
+    );
+    tallyPublications.push(
+        await createTallyPublicationPayload(
+            participants[0].auth.privateKey,
+            {
+                sessionId,
+                manifestHash,
+                participantIndex: participants[0].index,
+                optionIndex: optionBallots.optionIndex,
+                transcriptHash: optionBallots.aggregate.transcriptHash,
+                ballotCount: optionBallots.aggregate.ballotCount,
+                tally,
+                decryptionParticipantIndices,
+            },
+        ),
+    );
+}
+
+const verified = await verifyElectionCeremonyDetailed({
+    manifest,
+    sessionId,
+    dkgTranscript,
+    ballotPayloads,
+    ballotClosePayload,
+    decryptionSharePayloads,
+    tallyPublications,
+});
+
+if (verified.dkg.participantCount !== 3) {
+    throw new Error('Packed smoke verifier derived the wrong participant count');
+}
+if (verified.dkg.threshold !== 2) {
+    throw new Error('Packed smoke verifier derived the wrong threshold');
+}
+if (verified.perOptionTallies[0]?.tally !== 20n) {
+    throw new Error('Packed smoke verifier derived the wrong tally for option 1');
+}
+if (verified.perOptionTallies[1]?.tally !== 13n) {
+    throw new Error('Packed smoke verifier derived the wrong tally for option 2');
+}
+if (verified.countedParticipantIndices.join(',') !== '1,2,3') {
+    throw new Error('Packed smoke verifier counted the wrong participants');
+}
+
+console.log('Packed package honest-majority voting smoke test passed.');

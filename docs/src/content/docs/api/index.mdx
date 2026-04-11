@@ -1,27 +1,27 @@
 ---
-title: API reference
-description: Curated entry points into the shipped API surface, with the exhaustive generated symbol reference underneath.
+title: API docs
+description: Curated entry points into the shipped public surface, with the generated symbol reference underneath.
 editUrl: false
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-Start here before diving into the generated symbol pages. The goal is to help readers choose the right surface, not to make them browse a raw module dump.
+Start here before diving into the generated symbol pages. The goal is to help readers choose the correct surface, not to browse a raw module dump first.
 
 <CardGrid>
   <LinkCard
     title="Root package"
     href="./root-package/"
-    description="Use the root package as the only supported import surface for additive ElGamal, threshold helpers, protocol verification, transport, and GJKR."
+    description="Use the root package as the only supported import surface for the shipped voting workflow."
   />
   <LinkCard
     title="Generated reference"
     href="./reference/threshold-elgamal/"
-    description="Browse exact types, signatures, and symbol-level details for the root export surface."
+    description="Browse exact types, signatures, and symbol-level details for the current root export surface."
   />
   <LinkCard
-    title="Build a voting flow"
+    title="Honest-majority voting flow"
     href="../guides/three-participant-voting-flow/"
-    description="Follow the supported root-only workflow first, then use the generated reference for exact contracts."
+    description="Follow the supported ceremony flow first, then use the generated reference for exact contracts."
   />
 </CardGrid>

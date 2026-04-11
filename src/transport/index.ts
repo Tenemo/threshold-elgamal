@@ -11,7 +11,6 @@ export {
     type GenerateTransportKeyPairOptions,
     importTransportPublicKey,
     isX25519Supported,
-    resolveTransportSuite,
     verifyLocalTransportKey,
 } from './key-agreement.js';
 export * from './types.js';

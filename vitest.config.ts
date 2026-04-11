@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
@@ -5,6 +7,13 @@ const heavyNodeTestTimeoutMs = 60_000;
 const heavyNodeHookTimeoutMs = 240_000;
 
 export default defineConfig({
+    resolve: {
+        alias: {
+            'threshold-elgamal': fileURLToPath(
+                new URL('./src/index.ts', import.meta.url),
+            ),
+        },
+    },
     test: {
         coverage: {
             provider: 'v8',

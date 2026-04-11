@@ -106,11 +106,11 @@ export const assertThreshold = (
 };
 
 /**
- * Derives the minimum strict-majority threshold `floor(n / 2) + 1`.
+ * Derives the shipped GJKR honest-majority threshold `ceil(n / 2)`.
  *
- * This helper remains available for callers that intentionally want a
- * strict-majority policy. It is not the only distributed threshold policy
- * supported by the shipped manifest and DKG workflows.
+ * For odd `n` this matches the usual strict-majority value. For even `n` the
+ * shipped protocol uses the maximal honest-majority instantiation proved for
+ * GJKR, which yields `k = n / 2`.
  */
 export const majorityThreshold = (participantCount: number): number => {
     if (!Number.isInteger(participantCount) || participantCount < 1) {
@@ -119,15 +119,12 @@ export const majorityThreshold = (participantCount: number): number => {
         );
     }
 
-    return Math.floor(participantCount / 2) + 1;
+    return Math.ceil(participantCount / 2);
 };
 
 /**
- * Validates that the supplied threshold satisfies a strict-majority policy.
- *
- * This helper remains available for callers that intentionally want the older
- * strict-majority range. The shipped manifest and DKG workflows now accept the
- * broader distributed range `1 <= k <= n` for `n >= 3`.
+ * Validates that the supplied threshold matches the shipped GJKR
+ * honest-majority policy.
  */
 export const assertMajorityThreshold = (
     threshold: number,
@@ -141,11 +138,10 @@ export const assertMajorityThreshold = (
         );
     }
 
-    const minimumThreshold = majorityThreshold(participantCount);
-    const maximumThreshold = participantCount - 1;
-    if (threshold < minimumThreshold || threshold > maximumThreshold) {
+    const expectedThreshold = majorityThreshold(participantCount);
+    if (threshold !== expectedThreshold) {
         throw new ThresholdViolationError(
-            `Supported distributed threshold must satisfy floor(n / 2) + 1 <= k <= n - 1 (minimum ${minimumThreshold}, maximum ${maximumThreshold} for n = ${participantCount})`,
+            `Supported distributed threshold must equal ceil(n / 2) (expected ${expectedThreshold} for n = ${participantCount})`,
         );
     }
 

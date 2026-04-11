@@ -1,6 +1,5 @@
 import {
-    ThresholdViolationError,
-    assertThreshold,
+    assertMajorityThreshold,
     assertValidParticipantIndex,
 } from '../core/index.js';
 import type {
@@ -28,21 +27,6 @@ import {
 import { expectedDkgPhase } from './phase-plan.js';
 import { validateAuthenticatedPayload } from './reducer-auth.js';
 import type { DKGState, DKGTransition, DKGConfigInput } from './types.js';
-
-const assertDistributedDkgThreshold = (
-    threshold: number,
-    participantCount: number,
-): number => {
-    assertThreshold(threshold, participantCount);
-
-    if (participantCount < 3) {
-        throw new ThresholdViolationError(
-            'Distributed threshold workflows require at least three participants',
-        );
-    }
-
-    return threshold;
-};
 
 const acceptedParticipants = (
     transcript: readonly SignedPayload[],
@@ -116,7 +100,7 @@ const complaintResolutionsFromTranscript = (
         .map((item) => item.payload);
 
 export const createMajorityDkgState = (config: DKGConfigInput): DKGState => {
-    assertDistributedDkgThreshold(config.threshold, config.participantCount);
+    assertMajorityThreshold(config.threshold, config.participantCount);
 
     return createBaseState(config);
 };

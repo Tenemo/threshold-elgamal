@@ -14,7 +14,6 @@ import {
 } from '../core/ristretto.js';
 
 import { babyStepGiantStep } from './bsgs.js';
-import { assertEncryptionRandomness } from './helpers.js';
 import type { ElgamalCiphertext } from './types.js';
 import {
     assertValidAdditiveBound,
@@ -52,6 +51,14 @@ const resolveAdditiveContext = (
     return {
         bound: resolvedBound,
     };
+};
+
+const assertEncryptionRandomness = (randomness: bigint): void => {
+    if (randomness <= 0n || randomness >= RISTRETTO_GROUP.q) {
+        throw new InvalidScalarError(
+            'Encryption randomness must be in the range 1..q-1',
+        );
+    }
 };
 
 const encryptAdditiveWithValidatedInputs = (

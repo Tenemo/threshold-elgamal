@@ -70,7 +70,6 @@ export type VerifyAndAggregateBallotsInput = {
     readonly protocolVersion: string;
     readonly manifestHash: string;
     readonly sessionId: string;
-    readonly minimumBallotCount: number;
     readonly label?: string;
 };
 
@@ -190,15 +189,6 @@ export const verifyAndAggregateBallots = async (
 ): Promise<VerifiedBallotAggregation> => {
     assertInSubgroup(input.publicKey);
 
-    if (
-        !Number.isInteger(input.minimumBallotCount) ||
-        input.minimumBallotCount < 1
-    ) {
-        throw new InvalidPayloadError(
-            'minimumBallotCount must be a positive integer',
-        );
-    }
-
     const sortedBallots = [...input.ballots].sort(compareBallotEntries);
     const seenSlots = new Set<string>();
 
@@ -228,12 +218,6 @@ export const verifyAndAggregateBallots = async (
                 `Ballot proof failed verification for voter ${ballot.voterIndex} option ${ballot.optionIndex}`,
             );
         }
-    }
-
-    if (sortedBallots.length < input.minimumBallotCount) {
-        throw new InvalidPayloadError(
-            `Accepted ballot count ${sortedBallots.length} is below the minimum published voter count requirement ${input.minimumBallotCount}`,
-        );
     }
 
     const ciphertext = sortedBallots.reduce(
@@ -275,11 +259,6 @@ export const verifyAndAggregateBallotsByOption = async (
         input.ballots,
         input.optionCount,
     );
-    if (groupedVoterBallots.length < input.minimumBallotCount) {
-        throw new InvalidPayloadError(
-            `Accepted voter count ${groupedVoterBallots.length} is below the minimum published voter count requirement ${input.minimumBallotCount}`,
-        );
-    }
 
     const aggregations: VerifiedOptionBallotAggregation[] = [];
     for (

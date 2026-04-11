@@ -1,5 +1,6 @@
 import { InvalidPayloadError, type CryptoGroup } from '../core/index.js';
 import type { EncodedPoint } from '../core/types.js';
+import { SHIPPED_PROTOCOL_VERSION } from '../protocol/manifest.js';
 import type {
     ComplaintPayload,
     ComplaintResolutionPayload,
@@ -283,7 +284,7 @@ export const verifyComplaintOutcomes = async (
                     dealerIndex: matchingEnvelope.payload.participantIndex,
                     rosterHash: input.manifest.rosterHash,
                     payloadType: 'encrypted-dual-share',
-                    protocolVersion: input.manifest.protocolVersion,
+                    protocolVersion: SHIPPED_PROTOCOL_VERSION,
                 },
                 complainantRosterEntry.transportPublicKey,
                 resolutionPayload.revealedEphemeralPrivateKey,
