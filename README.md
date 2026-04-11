@@ -30,7 +30,7 @@ This is a hardened research prototype. It has not been audited.
 ## Installation
 
 ```bash
-pnpm add threshold-elgamal
+npm install threshold-elgamal
 ```
 
 ## Runtime requirements
