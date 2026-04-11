@@ -1,8 +1,7 @@
 import { performance } from 'node:perf_hooks';
+import { verifyDKGTranscript, type KeyAgreementSuite } from 'threshold-elgamal';
 
 import { runVotingFlowScenario } from '../../dev-support/voting-flow-harness.js';
-
-import { verifyDKGTranscript, type KeyAgreementSuite } from 'threshold-elgamal';
 
 type BenchmarkRow = {
     readonly optionCount: number;

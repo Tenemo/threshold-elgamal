@@ -36,6 +36,7 @@ export default [
             react: {
                 version: 'detect',
             },
+            'import-x/core-modules': ['threshold-elgamal'],
             'import-x/resolver-next': [
                 createNodeResolver({
                     extensions: [

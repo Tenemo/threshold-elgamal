@@ -244,7 +244,7 @@ const rosterHash = await hashRosterEntries(
 );
 const manifest = createElectionManifest({
     rosterHash,
-    optionList: ['Option A'],
+    optionList: ['Option A', 'Option B'],
 });
 const manifestHash = await hashElectionManifest(manifest);
 const sessionId = await deriveSessionId(
@@ -342,56 +342,62 @@ const dkg = await verifyDKGTranscript({
     sessionId,
 });
 
-const votes = [4n, 7n, 9n];
+const participantVotes = [
+    [4n, 1n],
+    [7n, 9n],
+    [9n, 3n],
+];
 const ballotPayloads = [];
 for (const participant of participants) {
-    const vote = votes[participant.index - 1];
-    const randomness = BigInt(1000 + participant.index * 97);
-    const ciphertext = encryptAdditiveWithRandomness(
-        vote,
-        dkg.derivedPublicKey,
-        randomness,
-        10n,
-    );
-    const proofContext = {
-        protocolVersion: SHIPPED_PROTOCOL_VERSION,
-        suiteId: RISTRETTO_GROUP.name,
-        manifestHash,
-        sessionId,
-        label: 'ballot-range-proof',
-        voterIndex: participant.index,
-        optionIndex: 1,
-    };
-    const proof = await createDisjunctiveProof(
-        vote,
-        randomness,
-        ciphertext,
-        dkg.derivedPublicKey,
-        scoreVotingDomain(),
-        RISTRETTO_GROUP,
-        proofContext,
-    );
-    const valid = await verifyDisjunctiveProof(
-        proof,
-        ciphertext,
-        dkg.derivedPublicKey,
-        scoreVotingDomain(),
-        RISTRETTO_GROUP,
-        proofContext,
-    );
-    if (!valid) {
-        throw new Error('Packed smoke disjunctive proof verification failed');
-    }
-    ballotPayloads.push(
-        await createBallotSubmissionPayload(participant.auth.privateKey, {
-            sessionId,
+    for (let optionIndex = 1; optionIndex <= participantVotes[0].length; optionIndex += 1) {
+        const vote = participantVotes[participant.index - 1][optionIndex - 1];
+        const randomness = BigInt(1000 + participant.index * 97 + optionIndex * 31);
+        const ciphertext = encryptAdditiveWithRandomness(
+            vote,
+            dkg.derivedPublicKey,
+            randomness,
+            10n,
+        );
+        const proofContext = {
+            protocolVersion: SHIPPED_PROTOCOL_VERSION,
+            suiteId: RISTRETTO_GROUP.name,
             manifestHash,
-            participantIndex: participant.index,
-            optionIndex: 1,
+            sessionId,
+            label: 'ballot-range-proof',
+            voterIndex: participant.index,
+            optionIndex,
+        };
+        const proof = await createDisjunctiveProof(
+            vote,
+            randomness,
             ciphertext,
+            dkg.derivedPublicKey,
+            scoreVotingDomain(),
+            RISTRETTO_GROUP,
+            proofContext,
+        );
+        const valid = await verifyDisjunctiveProof(
             proof,
-        }),
-    );
+            ciphertext,
+            dkg.derivedPublicKey,
+            scoreVotingDomain(),
+            RISTRETTO_GROUP,
+            proofContext,
+        );
+        if (!valid) {
+            throw new Error('Packed smoke disjunctive proof verification failed');
+        }
+        ballotPayloads.push(
+            await createBallotSubmissionPayload(participant.auth.privateKey, {
+                sessionId,
+                manifestHash,
+                participantIndex: participant.index,
+                optionIndex,
+                ciphertext,
+                proof,
+            }),
+        );
+    }
 }
 
 const ballotClosePayload = await createBallotClosePayload(
@@ -522,7 +528,10 @@ if (verified.dkg.threshold !== 2) {
     throw new Error('Packed smoke verifier derived the wrong threshold');
 }
 if (verified.perOptionTallies[0]?.tally !== 20n) {
-    throw new Error('Packed smoke verifier derived the wrong tally');
+    throw new Error('Packed smoke verifier derived the wrong tally for option 1');
+}
+if (verified.perOptionTallies[1]?.tally !== 13n) {
+    throw new Error('Packed smoke verifier derived the wrong tally for option 2');
 }
 if (verified.countedParticipantIndices.join(',') !== '1,2,3') {
     throw new Error('Packed smoke verifier counted the wrong participants');

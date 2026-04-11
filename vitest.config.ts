@@ -10,7 +10,7 @@ export default defineConfig({
     resolve: {
         alias: {
             'threshold-elgamal': fileURLToPath(
-                new URL('./dist/index.js', import.meta.url),
+                new URL('./src/index.ts', import.meta.url),
             ),
         },
     },

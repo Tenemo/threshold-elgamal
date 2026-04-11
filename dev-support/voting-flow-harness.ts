@@ -1,5 +1,4 @@
 import { TextEncoder } from 'node:util';
-
 import {
     combineDecryptionShares,
     createBallotClosePayload,
@@ -30,7 +29,6 @@ import {
     generateAuthKeyPair,
     generateFeldmanCommitments,
     generatePedersenCommitments,
-    generateTransportKeyPair,
     hashElectionManifest,
     hashProtocolTranscript,
     hashRosterEntries,
@@ -41,24 +39,29 @@ import {
     SHIPPED_PROTOCOL_VERSION,
     verifyBallotSubmissionPayloadsByOption,
     verifyElectionCeremonyDetailed,
+    type BallotClosePayload,
     type BallotSubmissionPayload,
     type DecryptionSharePayload,
     type DLEQStatement,
     type ElectionManifest,
+    type EncodedAuthPublicKey,
     type EncodedPoint,
+    type EncodedTransportPublicKey,
     type KeyAgreementSuite,
     type KeyDerivationConfirmation,
     type ProofContext,
     type SignedPayload,
     type TallyPublicationPayload,
+    type TransportKeyPair,
+    generateTransportKeyPair,
 } from 'threshold-elgamal';
 
-type HarnessParticipant = {
+export type VotingFlowParticipant = {
     readonly auth: CryptoKeyPair;
-    readonly authPublicKey: string;
+    readonly authPublicKey: EncodedAuthPublicKey;
     readonly index: number;
-    readonly transport: Awaited<ReturnType<typeof generateTransportKeyPair>>;
-    readonly transportPublicKey: string;
+    readonly transport: TransportKeyPair;
+    readonly transportPublicKey: EncodedTransportPublicKey;
 };
 
 type DealerArtifacts = {
@@ -74,18 +77,36 @@ export type VotingFlowScenario = {
     readonly optionCount?: number;
     readonly optionList?: readonly string[];
     readonly participantCount: number;
+    readonly participantVotes?: readonly (readonly bigint[])[];
+    readonly sessionNonce?: string;
+    readonly timestamp?: string;
     readonly transportSuite?: KeyAgreementSuite;
     readonly votingParticipantIndices?: readonly number[];
 };
 
 export type CompletedVotingFlowResult = {
+    readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
+    readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly countedParticipantIndices: readonly number[];
+    readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
     readonly dkgTranscript: readonly SignedPayload[];
+    readonly expectedTallies: readonly bigint[];
+    readonly finalShares: readonly {
+        readonly index: number;
+        readonly value: bigint;
+    }[];
     readonly manifest: ElectionManifest;
+    readonly manifestHash: string;
+    readonly participants: readonly VotingFlowParticipant[];
+    readonly participantVotes: readonly (readonly bigint[])[];
+    readonly rosterHash: string;
     readonly sessionId: string;
+    readonly tallyPublications: readonly SignedPayload<TallyPublicationPayload>[];
     readonly threshold: number;
     readonly verified: Awaited<
         ReturnType<typeof verifyElectionCeremonyDetailed>
     >;
+    readonly votingParticipantIndices: readonly number[];
 };
 
 const assert = (condition: boolean, message: string): void => {
@@ -94,10 +115,124 @@ const assert = (condition: boolean, message: string): void => {
     }
 };
 
+const coefficientValue = (
+    dealerIndex: number,
+    coefficientIndex: number,
+    q: bigint,
+    offset: number,
+): bigint =>
+    modQ(BigInt(dealerIndex * 97 + coefficientIndex * 31 + offset), q - 1n) +
+    1n;
+
+const buildPolynomial = (
+    dealerIndex: number,
+    threshold: number,
+    q: bigint,
+    offset: number,
+): readonly bigint[] =>
+    Array.from({ length: threshold }, (_value, coefficientIndex) =>
+        coefficientValue(dealerIndex, coefficientIndex, q, offset),
+    );
+
+const buildDefaultParticipantVotes = (
+    participantCount: number,
+    optionCount: number,
+): readonly (readonly bigint[])[] =>
+    Array.from({ length: participantCount }, (_value, participantOffset) =>
+        Array.from({ length: optionCount }, (_entry, optionOffset) =>
+            BigInt(((participantOffset + optionOffset * 2) % 10) + 1),
+        ),
+    );
+
+const normalizeOptionList = (
+    scenario: VotingFlowScenario,
+): readonly string[] => {
+    const inferredOptionCount =
+        scenario.optionList?.length ??
+        scenario.optionCount ??
+        scenario.participantVotes?.[0]?.length ??
+        2;
+
+    assert(
+        Number.isInteger(inferredOptionCount) && inferredOptionCount >= 1,
+        'Voting flow scenarios require at least one option',
+    );
+
+    if (
+        scenario.optionList !== undefined &&
+        scenario.optionCount !== undefined &&
+        scenario.optionList.length !== scenario.optionCount
+    ) {
+        throw new Error(
+            'Voting flow scenario optionList length must match optionCount',
+        );
+    }
+
+    return (
+        scenario.optionList ??
+        Array.from(
+            { length: inferredOptionCount },
+            (_value, index) => `Option ${index + 1}`,
+        )
+    );
+};
+
+const normalizeParticipantVotes = (
+    scenario: VotingFlowScenario,
+    optionCount: number,
+): readonly (readonly bigint[])[] => {
+    const participantVotes =
+        scenario.participantVotes ??
+        buildDefaultParticipantVotes(scenario.participantCount, optionCount);
+
+    if (participantVotes.length !== scenario.participantCount) {
+        throw new Error(
+            `Voting flow scenario requires exactly ${scenario.participantCount} participant vote rows`,
+        );
+    }
+
+    participantVotes.forEach((votes, participantOffset) => {
+        if (votes.length !== optionCount) {
+            throw new Error(
+                `Participant ${participantOffset + 1} vote row must include exactly ${optionCount} option scores`,
+            );
+        }
+    });
+
+    return participantVotes;
+};
+
+const normalizeParticipantIndices = (
+    participantIndices: readonly number[],
+    participantCount: number,
+    label: string,
+): readonly number[] => {
+    const normalized = [...participantIndices].sort(
+        (left, right) => left - right,
+    );
+
+    normalized.forEach((participantIndex, offset) => {
+        if (
+            !Number.isInteger(participantIndex) ||
+            participantIndex < 1 ||
+            participantIndex > participantCount
+        ) {
+            throw new Error(
+                `${label} participant indices must stay within 1..${participantCount}`,
+            );
+        }
+        if (offset > 0 && participantIndex === normalized[offset - 1]) {
+            throw new Error(`${label} participant indices must be unique`);
+        }
+    });
+
+    return normalized;
+};
+
 const buildParticipants = async (
     participantCount: number,
     suite: KeyAgreementSuite,
-): Promise<readonly HarnessParticipant[]> =>
+): Promise<readonly VotingFlowParticipant[]> =>
     Promise.all(
         Array.from({ length: participantCount }, async (_value, offset) => {
             const index = offset + 1;
@@ -119,70 +254,40 @@ const buildParticipants = async (
         }),
     );
 
-const coefficientValue = (
-    dealerIndex: number,
-    coefficientIndex: number,
-    q: bigint,
-    offset: number,
-): bigint =>
-    modQ(BigInt(dealerIndex * 97 + coefficientIndex * 31 + offset), q - 1n) +
-    1n;
-
-const buildPolynomial = (
-    dealerIndex: number,
-    threshold: number,
-    q: bigint,
-    offset: number,
-): readonly bigint[] =>
-    Array.from({ length: threshold }, (_value, coefficientIndex) =>
-        coefficientValue(dealerIndex, coefficientIndex, q, offset),
-    );
-
-const buildOptionVotes = (
-    participantCount: number,
-    optionCount: number,
-): readonly (readonly bigint[])[] =>
-    Array.from({ length: optionCount }, (_value, optionOffset) =>
-        Array.from({ length: participantCount }, (_entry, participantOffset) =>
-            BigInt(((participantOffset + optionOffset * 2) % 10) + 1),
-        ),
-    );
-
 const buildDealerArtifacts = async (
-    participant: HarnessParticipant,
-    participants: readonly HarnessParticipant[],
+    participant: VotingFlowParticipant,
+    participants: readonly VotingFlowParticipant[],
     sessionId: string,
     manifestHash: string,
     rosterHash: string,
     threshold: number,
 ): Promise<DealerArtifacts> => {
-    const group = RISTRETTO_GROUP;
     const secretPolynomial = buildPolynomial(
         participant.index,
         threshold,
-        group.q,
+        RISTRETTO_GROUP.q,
         7,
     );
     const blindingPolynomial = buildPolynomial(
         participant.index,
         threshold,
-        group.q,
+        RISTRETTO_GROUP.q,
         43,
     );
     const pedersenCommitments = generatePedersenCommitments(
         secretPolynomial,
         blindingPolynomial,
-        group,
+        RISTRETTO_GROUP,
     );
     const shares = derivePedersenShares(
         secretPolynomial,
         blindingPolynomial,
         participants.length,
-        group.q,
+        RISTRETTO_GROUP.q,
     );
     const feldmanCommitments = generateFeldmanCommitments(
         secretPolynomial,
-        group,
+        RISTRETTO_GROUP,
     );
     const pedersenPayload = await createPedersenCommitmentPayload(
         participant.auth.privateKey,
@@ -198,7 +303,7 @@ const buildDealerArtifacts = async (
             const coefficientIndex = offset + 1;
             const context: ProofContext = {
                 protocolVersion: SHIPPED_PROTOCOL_VERSION,
-                suiteId: group.name,
+                suiteId: RISTRETTO_GROUP.name,
                 manifestHash,
                 sessionId,
                 label: 'feldman-coefficient-proof',
@@ -208,7 +313,7 @@ const buildDealerArtifacts = async (
             const proof = await createSchnorrProof(
                 coefficient,
                 feldmanCommitments.commitments[offset],
-                group,
+                RISTRETTO_GROUP,
                 context,
             );
 
@@ -235,11 +340,14 @@ const buildDealerArtifacts = async (
             .map(async (recipient) => {
                 const share = shares[recipient.index - 1];
                 const plaintext = new TextEncoder().encode(
-                    encodePedersenShareEnvelope(share, group.byteLength),
+                    encodePedersenShareEnvelope(
+                        share,
+                        RISTRETTO_GROUP.byteLength,
+                    ),
                 );
                 const { envelope } = await encryptEnvelope(
                     plaintext,
-                    recipient.transportPublicKey as never,
+                    recipient.transportPublicKey,
                     {
                         sessionId,
                         rosterHash,
@@ -280,7 +388,7 @@ const buildDealerArtifacts = async (
 };
 
 const createKeyDerivationConfirmations = async (
-    participants: readonly HarnessParticipant[],
+    participants: readonly VotingFlowParticipant[],
     dkgTranscript: readonly SignedPayload[],
     derivedPublicKey: EncodedPoint,
     manifestHash: string,
@@ -307,11 +415,20 @@ const createKeyDerivationConfirmations = async (
     );
 };
 
+const transposeParticipantVotes = (
+    participantVotes: readonly (readonly bigint[])[],
+): readonly (readonly bigint[])[] =>
+    Array.from(
+        { length: participantVotes[0]?.length ?? 0 },
+        (_value, optionOffset) =>
+            participantVotes.map((participant) => participant[optionOffset]),
+    );
+
 const createBallotPayloads = async (input: {
-    readonly participants: readonly HarnessParticipant[];
+    readonly participants: readonly VotingFlowParticipant[];
     readonly publicKey: EncodedPoint;
     readonly manifestHash: string;
-    readonly optionVotes: readonly (readonly bigint[])[];
+    readonly participantVotes: readonly (readonly bigint[])[];
     readonly sessionId: string;
     readonly votingParticipantIndices: readonly number[];
 }): Promise<readonly SignedPayload<BallotSubmissionPayload>[]> => {
@@ -319,13 +436,14 @@ const createBallotPayloads = async (input: {
     const validValues = scoreVotingDomain();
 
     for (const participantIndex of input.votingParticipantIndices) {
+        const votes = input.participantVotes[participantIndex - 1];
+
         for (
             let optionIndex = 1;
-            optionIndex <= input.optionVotes.length;
+            optionIndex <= votes.length;
             optionIndex += 1
         ) {
-            const vote =
-                input.optionVotes[optionIndex - 1][participantIndex - 1];
+            const vote = votes[optionIndex - 1];
             const randomness = BigInt(
                 1000 + participantIndex * 97 + optionIndex * 31,
             );
@@ -382,44 +500,46 @@ export const runVotingFlowScenario = async (
         'Voting flow scenarios require at least three participants',
     );
 
-    const transportSuite = scenario.transportSuite ?? 'P-256';
+    const optionList = normalizeOptionList(scenario);
+    const optionCount = optionList.length;
+    const participantVotes = normalizeParticipantVotes(scenario, optionCount);
+    const votingParticipantIndices = normalizeParticipantIndices(
+        scenario.votingParticipantIndices ??
+            Array.from(
+                { length: scenario.participantCount },
+                (_value, index) => index + 1,
+            ),
+        scenario.participantCount,
+        'Voting flow',
+    );
+    const closeParticipantIndices = normalizeParticipantIndices(
+        scenario.closeParticipantIndices ?? votingParticipantIndices,
+        scenario.participantCount,
+        'Ballot close',
+    );
     const participants = await buildParticipants(
         scenario.participantCount,
-        transportSuite,
+        scenario.transportSuite ?? 'P-256',
     );
     const rosterHash = await hashRosterEntries(
         participants.map((participant) => ({
             participantIndex: participant.index,
-            authPublicKey: participant.authPublicKey as never,
-            transportPublicKey: participant.transportPublicKey as never,
+            authPublicKey: participant.authPublicKey,
+            transportPublicKey: participant.transportPublicKey,
         })),
     );
-    const optionCount =
-        scenario.optionList?.length ?? Math.max(1, scenario.optionCount ?? 1);
     const manifest = createElectionManifest({
         rosterHash,
-        optionList:
-            scenario.optionList ??
-            Array.from(
-                { length: optionCount },
-                (_value, index) => `Option ${index + 1}`,
-            ),
+        optionList,
     });
     const manifestHash = await hashElectionManifest(manifest);
     const threshold = majorityThreshold(scenario.participantCount);
-    const votingParticipantIndices =
-        scenario.votingParticipantIndices ??
-        Array.from(
-            { length: scenario.participantCount },
-            (_value, index) => index + 1,
-        );
-    const closeParticipantIndices =
-        scenario.closeParticipantIndices ?? votingParticipantIndices;
     const sessionId = await deriveSessionId(
         manifestHash,
         rosterHash,
-        `benchmark-${scenario.participantCount}-${optionCount}-${closeParticipantIndices.join('-')}`,
-        '2026-04-11T12:00:00Z',
+        scenario.sessionNonce ??
+            `harness-${scenario.participantCount}-${optionCount}-${closeParticipantIndices.join('-')}`,
+        scenario.timestamp ?? '2026-04-11T12:00:00Z',
     );
     const manifestPublication = await createManifestPublicationPayload(
         participants[0].auth.privateKey,
@@ -433,12 +553,12 @@ export const runVotingFlowScenario = async (
     const registrations = await Promise.all(
         participants.map((participant) =>
             createRegistrationPayload(participant.auth.privateKey, {
-                authPublicKey: participant.authPublicKey as never,
+                authPublicKey: participant.authPublicKey,
                 manifestHash,
                 participantIndex: participant.index,
                 rosterHash,
                 sessionId,
-                transportPublicKey: participant.transportPublicKey as never,
+                transportPublicKey: participant.transportPublicKey,
             }),
         ),
     );
@@ -502,15 +622,11 @@ export const runVotingFlowScenario = async (
             RISTRETTO_GROUP.q,
         ),
     }));
-    const optionVotes = buildOptionVotes(
-        scenario.participantCount,
-        optionCount,
-    );
     const ballotPayloads = await createBallotPayloads({
         participants,
         publicKey: derivedPublicKey,
         manifestHash,
-        optionVotes,
+        participantVotes,
         sessionId,
         votingParticipantIndices,
     });
@@ -626,12 +742,31 @@ export const runVotingFlowScenario = async (
         decryptionSharePayloads,
         tallyPublications,
     });
+    const optionVotesByOption = transposeParticipantVotes(participantVotes);
+    const expectedTallies = optionVotesByOption.map((optionVotes) =>
+        closeParticipantIndices.reduce(
+            (sum, participantIndex) => sum + optionVotes[participantIndex - 1],
+            0n,
+        ),
+    );
 
     return {
+        ballotClosePayload,
+        ballotPayloads,
+        countedParticipantIndices: closeParticipantIndices,
+        decryptionSharePayloads,
         dkgTranscript,
+        expectedTallies,
+        finalShares,
         manifest,
+        manifestHash,
+        participants,
+        participantVotes,
+        rosterHash,
         sessionId,
+        tallyPublications,
         threshold,
         verified,
+        votingParticipantIndices,
     };
 };

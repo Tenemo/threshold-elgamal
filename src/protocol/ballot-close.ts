@@ -64,11 +64,7 @@ const completeBallotParticipants = (
  * subset used for all later decryption and tally verification.
  */
 export const verifyBallotClosePayload = async (input: {
-    readonly ballotClosePayloads:
-        | readonly SignedPayload<BallotClosePayload>[]
-        | readonly SignedPayload<
-              BallotClosePayload | BallotSubmissionPayload
-          >[];
+    readonly ballotClosePayloads: readonly SignedPayload<BallotClosePayload>[];
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly manifestHash: string;
     readonly optionCount: number;
@@ -77,8 +73,16 @@ export const verifyBallotClosePayload = async (input: {
     readonly sessionId: string;
     readonly threshold: number;
 }): Promise<VerifiedBallotClose> => {
+    for (const signedPayload of input.ballotClosePayloads) {
+        if (signedPayload.payload.messageType !== 'ballot-close') {
+            throw new InvalidPayloadError(
+                'Ballot close verification only accepts ballot-close payloads',
+            );
+        }
+    }
+
     const auditedBallotClosePayloads = await auditSignedPayloads(
-        input.ballotClosePayloads as readonly SignedPayload<BallotClosePayload>[],
+        input.ballotClosePayloads,
     );
     const closePayload = requireExactlyOnePayload(
         auditedBallotClosePayloads.acceptedPayloads,

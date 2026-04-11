@@ -1,4 +1,5 @@
 import {
+    assertMajorityThreshold,
     InvalidPayloadError,
     getGroup,
     majorityThreshold,
@@ -243,7 +244,7 @@ const verifyCheckpointedDKGTranscript = async (
         input.transcript,
         participantIndices,
         input.manifest.rosterHash,
-        false,
+        true,
     );
     const manifestAcceptedSet = new Set(manifestAccepted);
 
@@ -360,7 +361,10 @@ export const verifyDKGTranscript = async (
         normalizedInput.transcript,
         normalizedInput.manifest.rosterHash,
     );
-    const threshold = majorityThreshold(verifiedSignatures.participantCount);
+    const threshold = assertMajorityThreshold(
+        majorityThreshold(verifiedSignatures.participantCount),
+        verifiedSignatures.participantCount,
+    );
 
     return normalizedInput.transcript.some(isPhaseCheckpointPayload)
         ? verifyCheckpointedDKGTranscript(

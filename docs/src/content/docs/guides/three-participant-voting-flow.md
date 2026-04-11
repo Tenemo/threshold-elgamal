@@ -49,7 +49,7 @@ const rosterHash = await hashRosterEntries([
 
 const manifest = createElectionManifest({
     rosterHash,
-    optionList: ["Option A"],
+    optionList: ["Option A", "Option B", "Option C"],
 });
 
 const manifestHash = await hashElectionManifest(manifest);

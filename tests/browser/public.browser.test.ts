@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
 import {
     createBallotClosePayload,
     createElectionManifest,
@@ -17,6 +15,8 @@ import {
     hashRosterEntries,
     scoreVotingDomain,
 } from 'threshold-elgamal';
+
+import { describe, expect, it } from 'vitest';
 
 describe('browser public surface', () => {
     it('round-trips the shipped browser ceremony primitives through the root package', async () => {

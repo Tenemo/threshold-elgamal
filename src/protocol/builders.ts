@@ -33,6 +33,7 @@ import {
     encodeDisjunctiveProof,
 } from './voting-codecs.js';
 import {
+    assertUniqueSortedIndices,
     BALLOT_CLOSE_PHASE,
     BALLOT_SUBMISSION_PHASE,
     DECRYPTION_SHARE_PHASE,
@@ -271,15 +272,22 @@ export const createBallotSubmissionPayload = async (
 export const createBallotClosePayload = async (
     privateKey: CryptoKey,
     input: Omit<BallotClosePayload, 'messageType' | 'phase'>,
-): Promise<SignedPayload<BallotClosePayload>> =>
-    signProtocolPayload(privateKey, {
+): Promise<SignedPayload<BallotClosePayload>> => {
+    const includedParticipantIndices = [
+        ...input.includedParticipantIndices,
+    ].sort((left, right) => left - right);
+    assertUniqueSortedIndices(
+        includedParticipantIndices,
+        'Ballot close participant',
+    );
+
+    return signProtocolPayload(privateKey, {
         ...input,
         phase: BALLOT_CLOSE_PHASE,
         messageType: 'ballot-close',
-        includedParticipantIndices: [...input.includedParticipantIndices].sort(
-            (left, right) => left - right,
-        ),
+        includedParticipantIndices,
     });
+};
 
 /** Creates a signed threshold decryption-share payload for one option slot. */
 export const createDecryptionSharePayload = async (
