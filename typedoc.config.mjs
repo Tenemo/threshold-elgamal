@@ -5,7 +5,7 @@ const config = {
     entryPoints: typedocEntryPoints,
     entryPointStrategy: 'resolve',
     alwaysCreateEntryPointModule: true,
-    plugin: ['typedoc-plugin-markdown', './typedoc/sentence-case-plugin.ts'],
+    plugin: ['typedoc-plugin-markdown'],
     out: 'docs/src/content/docs/api/reference',
     router: 'member',
     readme: 'typedoc.readme.md',
@@ -19,6 +19,9 @@ const config = {
     excludePrivate: true,
     excludeProtected: true,
     excludeInternal: true,
+    validation: {
+        notExported: false,
+    },
     classPropertiesFormat: 'table',
     interfacePropertiesFormat: 'table',
     indexFormat: 'table',

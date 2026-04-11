@@ -33,9 +33,6 @@ importers:
       '@fontsource/jetbrains-mono':
         specifier: ^5.2.8
         version: 5.2.8
-      '@fontsource/space-grotesk':
-        specifier: ^5.2.10
-        version: 5.2.10
       '@types/node':
         specifier: ^25.5.2
         version: 25.5.2
@@ -403,9 +400,6 @@ packages:
 
   '@fontsource/jetbrains-mono@5.2.8':
     resolution: {integrity: sha512-6w8/SG4kqvIMu7xd7wt6x3idn1Qux3p9N62s6G3rfldOUYHpWcc2FKrqf+Vo44jRvqWj2oAtTHrZXEP23oSKwQ==}
-
-  '@fontsource/space-grotesk@5.2.10':
-    resolution: {integrity: sha512-XNXEbT74OIITPqw2H6HXwPDp85fy43uxfBwFR5PU+9sLnjuLj12KlhVM9nZVN6q6dlKjkuN8JisW/OBxwxgUew==}
 
   '@gerrit0/mini-shiki@3.23.0':
     resolution: {integrity: sha512-bEMORlG0cqdjVyCEuU0cDQbORWX+kYCeo0kV1lbxF5bt4r7SID2l9bqsxJEM0zndaxpOUT7riCyIVEuqq/Ynxg==}
@@ -3807,8 +3801,6 @@ snapshots:
   '@fontsource/ibm-plex-sans@5.2.8': {}
 
   '@fontsource/jetbrains-mono@5.2.8': {}
-
-  '@fontsource/space-grotesk@5.2.10': {}
 
   '@gerrit0/mini-shiki@3.23.0':
     dependencies:

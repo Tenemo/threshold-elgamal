@@ -12,6 +12,10 @@ import {
     fixedHexToBigint,
     hexToBytes,
 } from '#serialize';
+import {
+    bytesToHex as coreBytesToHex,
+    hexToBytes as coreHexToBytes,
+} from '#src/core/bytes';
 
 describe('foundational encoding', () => {
     it('round-trips fixed-width hex', () => {
@@ -77,5 +81,22 @@ describe('foundational encoding', () => {
         expect(() => hexToBytes('')).toThrow(InvalidPayloadError);
         expect(() => hexToBytes('0')).toThrow(InvalidPayloadError);
         expect(() => hexToBytes('zz')).toThrow(InvalidPayloadError);
+    });
+
+    it('keeps core and serialize hex helpers behaviorally aligned', () => {
+        const mixedCaseHex = '00Aa10';
+        const serializedBytes = hexToBytes(mixedCaseHex);
+        const coreBytes = coreHexToBytes(mixedCaseHex);
+
+        expect(Array.from(serializedBytes)).toEqual(Array.from(coreBytes));
+        expect(bytesToHex(serializedBytes)).toBe('00aa10');
+        expect(coreBytesToHex(coreBytes)).toBe('00aa10');
+
+        for (const decode of [hexToBytes, coreHexToBytes]) {
+            expect(() => decode('xyz')).toThrow(InvalidPayloadError);
+            expect(() => decode('xyz')).toThrow(
+                'Hex input must be a non-empty even-length hexadecimal string',
+            );
+        }
     });
 });

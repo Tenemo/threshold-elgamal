@@ -6,8 +6,7 @@ import { sortProtocolPayloads } from './ordering.js';
 import type { ProtocolPayload } from './types.js';
 
 const isProtocolPhasePayload = (payload: ProtocolPayload): boolean =>
-    payload.messageType !== 'phase-checkpoint' &&
-    payload.messageType !== 'ceremony-restart';
+    payload.messageType !== 'phase-checkpoint';
 
 /**
  * Canonically serializes the ordered unsigned payload set for a transcript.

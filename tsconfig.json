@@ -29,7 +29,6 @@
         "noUnusedLocals": true
     },
     "include": [
-        "dev-support/**/*",
         "src/**/*",
         "tools/**/*",
         "typedoc/**/*",

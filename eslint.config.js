@@ -183,11 +183,23 @@ export default [
     }),
     {
         ignores: [
-            'node_modules/*',
-            'dist/*',
-            'coverage/*',
-            'docs/.astro/*',
-            'docs/dist/*',
+            'node_modules',
+            'node_modules/**',
+            'dist',
+            'dist/**',
+            'coverage',
+            'coverage/**',
+            'docs/.astro',
+            'docs/.astro/**',
+            'docs/dist',
+            'docs/dist/**',
         ],
+    },
+    {
+        files: ['tools/ci/*.mjs'],
+        rules: {
+            '@typescript-eslint/explicit-function-return-type': OFF,
+            '@typescript-eslint/no-unsafe-argument': OFF,
+        },
     },
 ];

@@ -7,15 +7,8 @@ import type {
     RegistrationPayload,
     SignedPayload,
 } from '../protocol/types.js';
-import type { PedersenShare } from '../vss/types.js';
 
 import type { FinalizedPhaseCheckpoint } from './checkpoints.js';
-
-/** Share contribution accepted from one qualified dealer. */
-export type AcceptedShareContribution = {
-    readonly dealerIndex: number;
-    readonly share: PedersenShare;
-};
 
 /** Input bundle for verifying a DKG transcript. */
 export type VerifyDKGTranscriptInput = {

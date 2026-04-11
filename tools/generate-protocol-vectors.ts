@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 
-import { createDeterministicSource } from '../dev-support/deterministic.js';
+import { createDeterministicSource } from './internal/deterministic.js';
 
 import { getGroup } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';

@@ -3,6 +3,7 @@ import {
     copyFile,
     mkdtemp,
     mkdir,
+    readFile,
     readdir,
     rm,
     writeFile,
@@ -10,6 +11,8 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import * as ts from 'typescript';
 
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
 const packageManagerEntrypoint = process.env.npm_execpath;
@@ -22,8 +25,9 @@ const runPackageManager = (args: readonly string[], cwd: string): void => {
     const commandDescription = [process.execPath, ...commandArgs].join(' ');
     const result = spawnSync(process.execPath, commandArgs, {
         cwd,
-        stdio: 'inherit',
         env: process.env,
+        encoding: 'utf8',
+        maxBuffer: 100 * 1024 * 1024,
     });
 
     if (result.error !== undefined) {
@@ -37,10 +41,36 @@ const runPackageManager = (args: readonly string[], cwd: string): void => {
         );
     }
     if (result.status !== 0) {
+        const stdout = result.stdout?.trim();
+        const stderr = result.stderr?.trim();
+        const formattedOutput =
+            stdout !== '' || stderr !== ''
+                ? `\n${[stdout, stderr].filter(Boolean).join('\n')}`
+                : '';
         throw new Error(
-            `Command exited with status ${result.status ?? 'null'}: ${commandDescription}`,
+            `Command exited with status ${result.status ?? 'null'}: ${commandDescription}${formattedOutput}`,
         );
     }
+};
+
+const transpileVotingFlowHarness = async (
+    consumerDirectory: string,
+): Promise<void> => {
+    const sourcePath = join(repoRoot, 'tools/internal/voting-flow-harness.ts');
+    const source = await readFile(sourcePath, 'utf8');
+    const transpiled = ts.transpileModule(source, {
+        compilerOptions: {
+            module: ts.ModuleKind.ESNext,
+            target: ts.ScriptTarget.ES2020,
+        },
+        fileName: sourcePath,
+    });
+
+    await writeFile(
+        join(consumerDirectory, 'voting-flow-harness.mjs'),
+        transpiled.outputText,
+        'utf8',
+    );
 };
 
 const main = async (): Promise<void> => {
@@ -84,18 +114,23 @@ const main = async (): Promise<void> => {
             'utf8',
         );
         await copyFile(
-            join(repoRoot, 'tools/ci/packed-package-smoke-template.txt'),
+            join(repoRoot, 'tools/ci/packed-package-smoke.mjs'),
             join(consumerDirectory, 'smoke.mjs'),
         );
+        await transpileVotingFlowHarness(consumerDirectory);
 
-        runPackageManager(['add', tarballPath], consumerDirectory);
+        runPackageManager(
+            ['add', '--ignore-scripts', '--silent', tarballPath],
+            consumerDirectory,
+        );
 
         const commandArgs = ['smoke.mjs'];
         const commandDescription = [process.execPath, ...commandArgs].join(' ');
         const result = spawnSync(process.execPath, commandArgs, {
             cwd: consumerDirectory,
-            stdio: 'inherit',
             env: process.env,
+            encoding: 'utf8',
+            maxBuffer: 100 * 1024 * 1024,
         });
         if (result.error !== undefined) {
             throw new Error(
@@ -108,10 +143,18 @@ const main = async (): Promise<void> => {
             );
         }
         if (result.status !== 0) {
+            const stdout = result.stdout?.trim();
+            const stderr = result.stderr?.trim();
+            const formattedOutput =
+                stdout !== '' || stderr !== ''
+                    ? `\n${[stdout, stderr].filter(Boolean).join('\n')}`
+                    : '';
             throw new Error(
-                `Smoke entrypoint exited with status ${result.status ?? 'null'}: ${commandDescription}`,
+                `Smoke entrypoint exited with status ${result.status ?? 'null'}: ${commandDescription}${formattedOutput}`,
             );
         }
+
+        console.log('Packed package smoke test passed.');
     } finally {
         await rm(tempRoot, { recursive: true, force: true });
     }
