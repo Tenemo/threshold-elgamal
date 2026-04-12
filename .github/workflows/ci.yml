@@ -26,6 +26,47 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm run build
 
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          run_install: false
+      - uses: actions/setup-node@v6.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run coverage:node
+
+  browser-compat:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            playwright_browsers: chromium firefox
+            probe_targets: desktop-chromium,desktop-firefox,mobile-android-chromium
+          - os: macos-latest
+            playwright_browsers: webkit
+            probe_targets: desktop-webkit,mobile-ios-webkit,mobile-ipados-webkit
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          run_install: false
+      - uses: actions/setup-node@v6.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps ${{ matrix.playwright_browsers }}
+      - run: pnpm exec tsx ./tools/ci/verify-browser-compat.ts --target=${{ matrix.probe_targets }}
+
   docs:
     runs-on: ubuntu-latest
     timeout-minutes: 25

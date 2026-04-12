@@ -234,9 +234,13 @@ pnpm install
 pnpm run lint
 pnpm run tsc
 pnpm run test
+pnpm run coverage:node
 pnpm run build
+pnpm exec playwright install chromium firefox webkit
+pnpm exec tsx ./tools/ci/verify-browser-compat.ts
 pnpm run verify:docs
 pnpm run docs:build:site
+pnpm run smoke:pack
 ```
 
 ## License
