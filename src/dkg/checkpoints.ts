@@ -30,6 +30,12 @@ const checkpointKey = (payload: PhaseCheckpointPayload): string =>
     });
 
 const compareNumbers = (left: number, right: number): number => left - right;
+const sameParticipantIndexList = (
+    left: readonly number[],
+    right: readonly number[],
+): boolean =>
+    left.length === right.length &&
+    left.every((participantIndex, index) => participantIndex === right[index]);
 
 /** Returns `true` when the signed payload is a phase checkpoint. */
 export const isPhaseCheckpointPayload = (
@@ -128,6 +134,11 @@ export const resolveVerifiedPhaseCheckpoint = async (
         input.participantCount,
         `Phase ${input.checkpointPhase} checkpoint QUAL participant`,
     );
+    if (!sameParticipantIndexList(qual, input.expectedQualParticipantIndices)) {
+        throw new InvalidPayloadError(
+            `Phase ${input.checkpointPhase} checkpoint QUAL does not match the verifier-computed active participant set`,
+        );
+    }
     if (qual.length < input.threshold) {
         throw new InvalidPayloadError(
             `Checkpoint QUAL for phase ${input.checkpointPhase} must contain at least ${input.threshold} participants`,
@@ -144,11 +155,6 @@ export const resolveVerifiedPhaseCheckpoint = async (
         );
     }
 
-    assertIndexSubset(
-        qual,
-        input.qualUniverse,
-        `Phase ${input.checkpointPhase} checkpoint QUAL participant`,
-    );
     assertIndexSubset(
         checkpoint.signers,
         input.signerUniverse,

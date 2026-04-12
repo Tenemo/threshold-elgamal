@@ -112,8 +112,8 @@ export type ResolvePhaseCheckpointInput = {
     readonly checkpointPhase: number;
     readonly threshold: number;
     readonly participantCount: number;
+    readonly expectedQualParticipantIndices: readonly number[];
     readonly signerUniverse: ReadonlySet<number>;
-    readonly qualUniverse: ReadonlySet<number>;
 };
 
 type VerifiedDKGSetup = {
@@ -824,6 +824,11 @@ const finalizeVerifiedTranscript = async (
         normalizedFeldmanCommitments,
         group,
     );
+    if (decodePoint(derivedPublicKey, 'Derived joint public key').is0()) {
+        throw new InvalidPayloadError(
+            'Derived joint public key must not be the identity element',
+        );
+    }
     const qualHash = await verifyKeyDerivationConfirmations(
         input.transcript,
         qual,
@@ -912,8 +917,8 @@ const verifyCheckpointedDKGTranscript = async (
         checkpointPhase: 0,
         threshold: setup.threshold,
         participantCount: setup.verifiedSignatures.participantCount,
+        expectedQualParticipantIndices: setup.manifestAccepted,
         signerUniverse: manifestAcceptedSet,
-        qualUniverse: manifestAcceptedSet,
     });
 
     const encryptedShareMatrix = buildEncryptedShareMatrix(
@@ -933,8 +938,9 @@ const verifyCheckpointedDKGTranscript = async (
         checkpointPhase: 1,
         threshold: setup.threshold,
         participantCount: setup.verifiedSignatures.participantCount,
+        expectedQualParticipantIndices:
+            phase0Checkpoint.payload.qualParticipantIndices,
         signerUniverse: phase0QualSet,
-        qualUniverse: phase0QualSet,
     });
     const phase1Qual = phase1Checkpoint.payload.qualParticipantIndices;
     assertEncryptedShareCoverage(encryptedShareMatrix, phase1Qual);
@@ -958,8 +964,8 @@ const verifyCheckpointedDKGTranscript = async (
         checkpointPhase: 2,
         threshold: setup.threshold,
         participantCount: setup.verifiedSignatures.participantCount,
+        expectedQualParticipantIndices: complaintBoundQual,
         signerUniverse: activeComplaintParticipants,
-        qualUniverse: new Set(complaintBoundQual),
     });
 
     const phaseCheckpoints: FinalizedPhaseCheckpoint[] = [
@@ -976,8 +982,9 @@ const verifyCheckpointedDKGTranscript = async (
         checkpointPhase: 3,
         threshold: setup.threshold,
         participantCount: setup.verifiedSignatures.participantCount,
+        expectedQualParticipantIndices:
+            phase2Checkpoint.payload.qualParticipantIndices,
         signerUniverse: phase2QualSet,
-        qualUniverse: phase2QualSet,
     });
     phaseCheckpoints.push(phase3Checkpoint);
     const finalQual = phase3Checkpoint.payload.qualParticipantIndices;

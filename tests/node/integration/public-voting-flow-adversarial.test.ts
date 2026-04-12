@@ -225,6 +225,65 @@ describe('public voting flow adversarial coverage', () => {
         fixtureTimeoutMs,
     );
 
+    it(
+        'accepts exact signed retransmissions and collapses them to one canonical ballot slot',
+        async () => {
+            const duplicateBallot = findBallotPayload(fullFixture, 1, 1);
+            const verified = await verifyElectionCeremonyDetailed(
+                verificationInput(fullFixture, {
+                    ballotPayloads: [
+                        ...fullFixture.ballotPayloads,
+                        duplicateBallot,
+                    ],
+                }),
+            );
+
+            expect(verified.perOptionTallies).toEqual(
+                fullFixture.verified.perOptionTallies,
+            );
+            expect(verified.boardAudit.ballots.acceptedPayloads).toHaveLength(
+                fullFixture.ballotPayloads.length,
+            );
+            expect(verified.boardAudit.ballots.slotAudit).toContainEqual(
+                expect.objectContaining({
+                    occurrences: 2,
+                    status: 'idempotent-retransmission',
+                }),
+            );
+        },
+        fixtureTimeoutMs,
+    );
+
+    it(
+        'rejects same-payload retransmissions whose signature bytes differ',
+        async () => {
+            const original = findBallotPayload(fullFixture, 1, 1);
+
+            await expectFailure(
+                verifyElectionCeremonyDetailedResult(
+                    verificationInput(fullFixture, {
+                        ballotPayloads: [
+                            ...fullFixture.ballotPayloads,
+                            {
+                                ...original,
+                                signature: corruptHexTailByte(
+                                    original.signature,
+                                ),
+                            },
+                        ],
+                    }),
+                ),
+                {
+                    code: 'BOARD_INVALID',
+                    stage: 'board',
+                    reasonFragment:
+                        'Detected non-identical retransmission for canonical slot',
+                },
+            );
+        },
+        fixtureTimeoutMs,
+    );
+
     it('rejects ballot equivocation on one canonical board slot', async () => {
         const original = findBallotPayload(fullFixture, 1, 1);
         const equivocated = await createBallotSubmissionPayload(
