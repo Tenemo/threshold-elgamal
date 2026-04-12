@@ -26,7 +26,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run check
       - run: pnpm run test:node
-      - run: pnpm run build:dist
+      - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
 
   browser-tests:
     name: browser tests
@@ -120,7 +120,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run build:dist
+      - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
       - run: pnpm run verify:docs
       - run: pnpm run docs:build:site
       - run: pnpm run smoke:pack
