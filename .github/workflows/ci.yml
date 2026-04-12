@@ -10,7 +10,8 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  test:
+  verify:
+    name: verify
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -23,10 +24,46 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm run build
+      - run: pnpm run check
+      - run: pnpm run test:node
+      - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          run_install: false
+      - uses: actions/setup-node@v6.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run coverage:node
+
+  browser:
+    name: browser
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: pnpm/action-setup@v5.0.0
+        with:
+          run_install: false
+      - uses: actions/setup-node@v6.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - run: pnpm run test:browser
+      - run: pnpm exec tsx ./tools/ci/verify-browser-compat.ts
 
   docs:
+    name: docs
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -43,6 +80,7 @@ jobs:
       - run: pnpm run docs:build:site
 
   release-smoke:
+    name: release smoke
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -56,8 +94,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm run build
+      - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
       - run: pnpm run verify:docs
       - run: pnpm run docs:build:site
       - run: pnpm run smoke:pack
