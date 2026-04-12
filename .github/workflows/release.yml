@@ -31,8 +31,25 @@ env:
     FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+    validate-dispatch:
+        name: validate dispatch
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        defaults:
+            run:
+                shell: bash
+        steps:
+            - name: ensure master dispatch
+              run: |
+                  if [[ "${GITHUB_REF_TYPE}" != "branch" || "${GITHUB_REF_NAME}" != "master" ]]; then
+                    echo "Releases must be started from the master branch." >&2
+                    exit 1
+                  fi
+
     verify:
         name: verify
+        needs:
+            - validate-dispatch
         runs-on: ubuntu-latest
         timeout-minutes: 35
         steps:
@@ -53,6 +70,8 @@ jobs:
 
     coverage:
         name: coverage
+        needs:
+            - validate-dispatch
         runs-on: ubuntu-latest
         timeout-minutes: 25
         steps:
@@ -71,6 +90,8 @@ jobs:
 
     browser:
         name: browser
+        needs:
+            - validate-dispatch
         runs-on: macos-latest
         timeout-minutes: 45
         steps:
@@ -91,6 +112,8 @@ jobs:
 
     docs:
         name: docs
+        needs:
+            - validate-dispatch
         runs-on: ubuntu-latest
         timeout-minutes: 25
         steps:
@@ -110,6 +133,8 @@ jobs:
 
     release-smoke:
         name: release smoke
+        needs:
+            - validate-dispatch
         runs-on: ubuntu-latest
         timeout-minutes: 60
         steps:
@@ -131,6 +156,7 @@ jobs:
 
     prepare-release:
         needs:
+            - validate-dispatch
             - verify
             - coverage
             - browser
@@ -149,13 +175,6 @@ jobs:
             run:
                 shell: bash
         steps:
-            - name: ensure master dispatch
-              run: |
-                  if [[ "${GITHUB_REF_TYPE}" != "branch" || "${GITHUB_REF_NAME}" != "master" ]]; then
-                    echo "Releases must be started from the master branch." >&2
-                    exit 1
-                  fi
-
             - uses: actions/checkout@v6.0.2
               with:
                   fetch-depth: 0
