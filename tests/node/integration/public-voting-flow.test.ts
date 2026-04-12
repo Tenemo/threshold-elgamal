@@ -7,7 +7,7 @@ import {
     createTallyPublicationPayload,
     majorityThreshold,
     signProtocolPayload,
-    verifyElectionCeremonyDetailed,
+    verifyElectionCeremony,
 } from '#root';
 
 const fixtureTimeoutMs = 240_000;
@@ -211,13 +211,13 @@ describe('honest-majority voting flow', () => {
                 phase: 6,
                 participantIndex: fullFixture.participants[1].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices:
+                countedParticipantIndices:
                     fullFixture.countedParticipantIndices,
             },
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
@@ -238,7 +238,7 @@ describe('honest-majority voting flow', () => {
                 phase: 6,
                 participantIndex: fullFixture.participants[0].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices: [1, 2, 2, 3],
+                countedParticipantIndices: [1, 2, 2, 3],
             },
         );
         const unsortedBallotClosePayload = await signProtocolPayload(
@@ -249,12 +249,12 @@ describe('honest-majority voting flow', () => {
                 phase: 6,
                 participantIndex: fullFixture.participants[0].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices: [1, 3, 2, 4, 5],
+                countedParticipantIndices: [1, 3, 2, 4, 5],
             },
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
@@ -265,7 +265,7 @@ describe('honest-majority voting flow', () => {
             }),
         ).rejects.toThrow('Ballot close participant indices must be unique');
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
@@ -288,12 +288,12 @@ describe('honest-majority voting flow', () => {
                 phase: 6,
                 participantIndex: fullFixture.participants[0].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices: [1],
+                countedParticipantIndices: [1],
             },
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
@@ -314,12 +314,12 @@ describe('honest-majority voting flow', () => {
                 phase: 6,
                 participantIndex: partialFixture.participants[0].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices: [1, 2, 4],
+                countedParticipantIndices: [1, 2, 4],
             },
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: partialFixture.manifest,
                 sessionId: partialFixture.sessionId,
                 dkgTranscript: partialFixture.dkgTranscript,
@@ -343,7 +343,7 @@ describe('honest-majority voting flow', () => {
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
@@ -360,14 +360,14 @@ describe('honest-majority voting flow', () => {
         );
     });
 
-    it('requires key-derivation confirmations by default but accepts explicit legacy replays', async () => {
+    it('requires key-derivation confirmations', async () => {
         const transcriptWithoutConfirmations = fullFixture.dkgTranscript.filter(
             (entry) =>
                 entry.payload.messageType !== 'key-derivation-confirmation',
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: transcriptWithoutConfirmations,
@@ -378,24 +378,6 @@ describe('honest-majority voting flow', () => {
             }),
         ).rejects.toThrow(
             'Expected at least 4 key-derivation confirmations, received 0',
-        );
-
-        await expect(
-            verifyElectionCeremonyDetailed({
-                manifest: fullFixture.manifest,
-                sessionId: fullFixture.sessionId,
-                dkgTranscript: transcriptWithoutConfirmations,
-                keyDerivationConfirmationPolicy: 'optional',
-                ballotPayloads: fullFixture.ballotPayloads,
-                ballotClosePayload: fullFixture.ballotClosePayload,
-                decryptionSharePayloads: fullFixture.decryptionSharePayloads,
-                tallyPublications: fullFixture.tallyPublications,
-            }),
-        ).resolves.toEqual(
-            expect.objectContaining({
-                perOptionTallies: fullFixture.verified.perOptionTallies,
-                qual: fullFixture.verified.qual,
-            }),
         );
     });
 
@@ -409,7 +391,7 @@ describe('honest-majority voting flow', () => {
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,

@@ -24,7 +24,7 @@ type VotingFlowFixture = Awaited<ReturnType<typeof runVotingFlowScenario>>;
 const replacePhaseCheckpointPayloads = async (input: {
     readonly checkpointPhase: 0 | 1 | 2 | 3;
     readonly fixture: VotingFlowFixture;
-    readonly qualParticipantIndices: readonly number[];
+    readonly qualifiedParticipantIndices: readonly number[];
     readonly signerIndices: readonly number[];
 }): Promise<readonly SignedPayload[]> => [
     ...input.fixture.dkgTranscript.filter(
@@ -41,7 +41,8 @@ const replacePhaseCheckpointPayloads = async (input: {
                     checkpointPhase: input.checkpointPhase,
                     manifestHash: input.fixture.manifestHash,
                     participantIndex,
-                    qualParticipantIndices: input.qualParticipantIndices,
+                    qualifiedParticipantIndices:
+                        input.qualifiedParticipantIndices,
                     sessionId: input.fixture.sessionId,
                     transcript: input.fixture.dkgTranscript,
                 },
@@ -122,7 +123,7 @@ const buildIdentityJointKeyTranscript = async (
         })),
         RISTRETTO_GROUP,
     );
-    const qualHash = await hashProtocolTranscript(
+    const dkgTranscriptHash = await hashProtocolTranscript(
         transcriptBeforeConfirmations.map((entry) => entry.payload),
         RISTRETTO_GROUP.byteLength,
     );
@@ -134,7 +135,7 @@ const buildIdentityJointKeyTranscript = async (
                     sessionId: fixture.sessionId,
                     manifestHash: fixture.manifestHash,
                     participantIndex: participant.index,
-                    qualHash,
+                    dkgTranscriptHash,
                     publicKey: identityJointPublicKey,
                 },
             ),
@@ -211,13 +212,13 @@ describe('public dkg checkpoints', () => {
                     (checkpoint) => checkpoint.signatures.length,
                 ),
             ).toEqual([4, 4, 4, 4]);
-            expect(verified.qual).toEqual([1, 2, 3, 4]);
+            expect(verified.qualifiedParticipantIndices).toEqual([1, 2, 3, 4]);
         },
         fixtureTimeoutMs,
     );
 
     it(
-        'verifies complaint-driven checkpoint QUAL reduction when complaints justify the shrinkage',
+        'verifies complaint-driven checkpoint qualified-participant reduction when complaints justify the shrinkage',
         async () => {
             const verified = await verifyDKGTranscript({
                 manifest: checkpointedComplaintFixture.manifest,
@@ -230,7 +231,7 @@ describe('public dkg checkpoints', () => {
                     (checkpoint) => checkpoint.signatures.length,
                 ),
             ).toEqual([4, 4, 3, 3]);
-            expect(verified.qual).toEqual([1, 2, 3]);
+            expect(verified.qualifiedParticipantIndices).toEqual([1, 2, 3]);
         },
         fixtureTimeoutMs,
     );
@@ -300,13 +301,13 @@ describe('public dkg checkpoints', () => {
     );
 
     it(
-        'rejects phase 1 checkpoints that silently shrink QUAL without complaint-driven justification',
+        'rejects phase 1 checkpoints that silently shrink the qualified participant set without complaint-driven justification',
         async () => {
             const transcriptWithShrunkPhase1Qual =
                 await replacePhaseCheckpointPayloads({
                     fixture: checkpointedFixture,
                     checkpointPhase: 1,
-                    qualParticipantIndices: [1, 2],
+                    qualifiedParticipantIndices: [1, 2],
                     signerIndices: [1, 2],
                 });
 
@@ -317,20 +318,20 @@ describe('public dkg checkpoints', () => {
                     transcript: transcriptWithShrunkPhase1Qual,
                 }),
             ).rejects.toThrow(
-                'Phase 1 checkpoint QUAL does not match the verifier-computed active participant set',
+                'Phase 1 checkpoint qualified participant set does not match the verifier-computed active participant set',
             );
         },
         fixtureTimeoutMs,
     );
 
     it(
-        'rejects phase 3 checkpoints that shrink QUAL below the complaint-bounded active set',
+        'rejects phase 3 checkpoints that shrink the qualified participant set below the complaint-bounded active set',
         async () => {
             const transcriptWithShrunkPhase3Qual =
                 await replacePhaseCheckpointPayloads({
                     fixture: checkpointedFixture,
                     checkpointPhase: 3,
-                    qualParticipantIndices: [1, 2],
+                    qualifiedParticipantIndices: [1, 2],
                     signerIndices: [1, 2],
                 });
 
@@ -341,7 +342,7 @@ describe('public dkg checkpoints', () => {
                     transcript: transcriptWithShrunkPhase3Qual,
                 }),
             ).rejects.toThrow(
-                'Phase 3 checkpoint QUAL does not match the verifier-computed active participant set',
+                'Phase 3 checkpoint qualified participant set does not match the verifier-computed active participant set',
             );
         },
         fixtureTimeoutMs,

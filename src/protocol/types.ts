@@ -1,8 +1,5 @@
 import type { EncodedPoint } from '../core/types.js';
-import type {
-    KeyDerivationConfirmationPolicy,
-    VerifiedDKGTranscript,
-} from '../dkg/verification.js';
+import type { VerifiedDKGTranscript } from '../dkg/verification.js';
 import type { DecryptionShare } from '../threshold/types.js';
 import type {
     EncodedAuthPublicKey,
@@ -86,7 +83,7 @@ export type PhaseCheckpointPayload = BaseProtocolPayload & {
     readonly messageType: 'phase-checkpoint';
     readonly checkpointPhase: 0 | 1 | 2 | 3;
     readonly checkpointTranscriptHash: string;
-    readonly qualParticipantIndices: readonly number[];
+    readonly qualifiedParticipantIndices: readonly number[];
 };
 
 /** Broadcast payload carrying Pedersen coefficient commitments. */
@@ -140,13 +137,10 @@ export type FeldmanCommitmentPayload = BaseProtocolPayload & {
 
 /**
  * Final key-derivation confirmation payload for the derived joint key.
- *
- * Transcript verifiers require these confirmations by default and only treat
- * them as optional when callers explicitly opt into the legacy relaxed policy.
  */
 export type KeyDerivationConfirmation = BaseProtocolPayload & {
     readonly messageType: 'key-derivation-confirmation';
-    readonly qualHash: string;
+    readonly dkgTranscriptHash: string;
     readonly publicKey: EncodedPoint;
 };
 
@@ -167,7 +161,7 @@ export type BallotSubmissionPayload = BaseProtocolPayload & {
 /** Signed organizer payload that freezes which participants are counted. */
 export type BallotClosePayload = BaseProtocolPayload & {
     readonly messageType: 'ballot-close';
-    readonly includedParticipantIndices: readonly number[];
+    readonly countedParticipantIndices: readonly number[];
 };
 
 /**
@@ -247,7 +241,7 @@ export type VerifiedDecryptionSharePayload = {
 /** Verified aggregate input for one option slot. */
 export type OptionAggregateInput = {
     readonly optionIndex: number;
-    readonly aggregate: import('./ballots.js').VerifiedBallotAggregation['aggregate'];
+    readonly aggregate: import('./voting-ballot-aggregation.js').VerifiedBallotAggregation['aggregate'];
 };
 
 /** Verified decryption shares grouped by option slot. */
@@ -270,8 +264,6 @@ export type VerifyPublishedVotingResultsInput = {
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
     readonly dkgTranscript: readonly SignedPayload[];
-    /** Defaults to `'required'`; set to `'optional'` only when replaying a legacy DKG transcript without confirmations. */
-    readonly keyDerivationConfirmationPolicy?: KeyDerivationConfirmationPolicy;
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
     readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
@@ -281,7 +273,7 @@ export type VerifyPublishedVotingResultsInput = {
 /** Verified published tally for one option slot. */
 export type VerifiedPublishedOptionVotingResult = {
     readonly optionIndex: number;
-    readonly ballots: import('./ballots.js').VerifiedOptionBallotAggregation;
+    readonly ballots: import('./voting-ballot-aggregation.js').VerifiedOptionBallotAggregation;
     readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
     readonly tally: bigint;
 };

@@ -111,15 +111,15 @@ export {
 export { hashRosterEntries } from './protocol/verification.js';
 export { hashProtocolTranscript } from './protocol/transcript.js';
 export {
-    verifyElectionCeremonyDetailed,
-    verifyElectionCeremonyDetailedResult,
+    verifyElectionCeremony,
+    tryVerifyElectionCeremony,
     type ElectionVerificationErrorCode,
     type ElectionVerificationFailure,
     type ElectionVerificationResult,
     type ElectionVerificationStage,
-    type VerifiedElectionCeremonyDetailed,
-    type VerifyElectionCeremonyDetailedInput,
-} from './protocol/election-verification.js';
+    type VerifiedElectionCeremony,
+    type VerifyElectionCeremonyInput,
+} from './protocol/voting-verification.js';
 export { verifyBallotSubmissionPayloadsByOption } from './protocol/voting-ballots.js';
 export { scoreVotingDomain } from './protocol/voting-codecs.js';
 export type {

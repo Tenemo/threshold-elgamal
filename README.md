@@ -68,7 +68,7 @@ The supported boardroom flow is:
 5. Post ballot payloads for complete `1..10` score ballots.
 6. Post one organizer-signed `ballot-close` payload that freezes which complete ballots are counted.
 7. Post threshold decryption shares and tally publications for the close-selected ballot set.
-8. Verify the whole ceremony with `verifyElectionCeremonyDetailed(...)`.
+8. Verify the whole ceremony with `verifyElectionCeremony(...)`.
 
 The cryptographic threshold is derived internally from the accepted registration roster:
 
@@ -78,7 +78,7 @@ The cryptographic threshold is derived internally from the accepted registration
 
 There is no supported `n-of-n` mode and no supported public `k-of-n` configuration.
 
-Transcript verification requires key-derivation confirmations from every qualified participant by default. If you need to replay an older transcript that omits them, pass `keyDerivationConfirmationPolicy: 'optional'` to `verifyDKGTranscript(...)` or `verifyElectionCeremonyDetailed(...)`.
+Transcript verification requires key-derivation confirmations from every qualified participant.
 
 ## Getting started
 

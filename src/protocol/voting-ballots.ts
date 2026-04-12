@@ -1,16 +1,16 @@
 import { InvalidPayloadError } from '../core/index.js';
 
-import {
-    verifyAndAggregateBallotsByOption,
-    type BallotTranscriptEntry,
-    type VerifiedOptionBallotAggregation,
-} from './ballots.js';
 import { auditSignedPayloads } from './board-audit.js';
 import type {
     BallotSubmissionPayload,
     SignedPayload,
     VerifyBallotSubmissionPayloadsByOptionInput,
 } from './types.js';
+import {
+    verifyAndAggregateBallotsByOption,
+    type BallotTranscriptEntry,
+    type VerifiedOptionBallotAggregation,
+} from './voting-ballot-aggregation.js';
 import { decodeCiphertext, decodeDisjunctiveProof } from './voting-codecs.js';
 import {
     assertPhase,

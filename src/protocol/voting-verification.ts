@@ -6,8 +6,6 @@ import {
 } from '../dkg/verification.js';
 import { combineDecryptionShares } from '../threshold/index.js';
 
-import { verifyBallotClosePayload } from './ballot-close.js';
-import type { VerifiedOptionBallotAggregation } from './ballots.js';
 import { auditSignedPayloads, type BoardAudit } from './board-audit.js';
 import type {
     BallotClosePayload,
@@ -21,6 +19,8 @@ import type {
     SignedPayload,
     TallyPublicationPayload,
 } from './types.js';
+import type { VerifiedOptionBallotAggregation } from './voting-ballot-aggregation.js';
+import { verifyBallotClosePayload } from './voting-ballot-close.js';
 import { verifyBallotSubmissionPayloadsByOption } from './voting-ballots.js';
 import { verifyDecryptionSharePayloadsByOption } from './voting-decryption.js';
 import {
@@ -79,11 +79,11 @@ class ElectionVerificationError extends InvalidPayloadError {
 }
 
 /** Detailed successful output from full ceremony verification. */
-export type VerifiedElectionCeremonyDetailed = {
+export type VerifiedElectionCeremony = {
     readonly manifest: ElectionManifest;
     readonly manifestHash: string;
     readonly sessionId: string;
-    readonly qual: readonly number[];
+    readonly qualifiedParticipantIndices: readonly number[];
     readonly countedParticipantIndices: readonly number[];
     readonly excludedParticipantIndices: readonly number[];
     readonly perOptionAcceptedCounts: readonly {
@@ -107,14 +107,13 @@ export type VerifiedElectionCeremonyDetailed = {
 };
 
 /** Input bundle for full ceremony verification across all published options. */
-export type VerifyElectionCeremonyDetailedInput =
-    VerifyPublishedVotingResultsInput;
+export type VerifyElectionCeremonyInput = VerifyPublishedVotingResultsInput;
 
 /** Non-throwing result shape for full ceremony verification. */
 export type ElectionVerificationResult =
     | {
           readonly ok: true;
-          readonly verified: VerifiedElectionCeremonyDetailed;
+          readonly verified: VerifiedElectionCeremony;
       }
     | {
           readonly ok: false;
@@ -209,9 +208,9 @@ const findOptionDecryptionShares = (
  * @param input Full public ceremony input bundle.
  * @returns Detailed verified ceremony output.
  */
-export const verifyElectionCeremonyDetailed = async (
-    input: VerifyElectionCeremonyDetailedInput,
-): Promise<VerifiedElectionCeremonyDetailed> => {
+export const verifyElectionCeremony = async (
+    input: VerifyElectionCeremonyInput,
+): Promise<VerifiedElectionCeremony> => {
     let context!: Awaited<ReturnType<typeof buildVotingManifestContext>>;
     try {
         context = await buildVotingManifestContext(
@@ -259,8 +258,6 @@ export const verifyElectionCeremonyDetailed = async (
             transcript: dkgAudit.acceptedPayloads,
             manifest: context.manifest,
             sessionId: context.sessionId,
-            keyDerivationConfirmationPolicy:
-                input.keyDerivationConfirmationPolicy,
         });
     } catch (error) {
         wrapStageError('DKG_INVALID', 'dkg', error);
@@ -306,7 +303,7 @@ export const verifyElectionCeremonyDetailed = async (
     try {
         ballots = await verifyBallotSubmissionPayloadsByOption({
             ballotPayloads: ballotClose.countedBallotPayloads,
-            publicKey: dkg.derivedPublicKey,
+            publicKey: dkg.jointPublicKey,
             manifest: context.manifest,
             sessionId: context.sessionId,
         });
@@ -433,7 +430,7 @@ export const verifyElectionCeremonyDetailed = async (
         manifest: context.manifest,
         manifestHash: context.manifestHash,
         sessionId: context.sessionId,
-        qual: dkg.qual,
+        qualifiedParticipantIndices: dkg.qualifiedParticipantIndices,
         countedParticipantIndices: ballotClose.countedParticipantIndices,
         excludedParticipantIndices: ballotClose.excludedParticipantIndices,
         perOptionAcceptedCounts: options.map((option) => ({
@@ -464,13 +461,13 @@ export const verifyElectionCeremonyDetailed = async (
  * @param input Full public ceremony input bundle.
  * @returns Verified ceremony output or a stable structured failure.
  */
-export const verifyElectionCeremonyDetailedResult = async (
-    input: VerifyElectionCeremonyDetailedInput,
+export const tryVerifyElectionCeremony = async (
+    input: VerifyElectionCeremonyInput,
 ): Promise<ElectionVerificationResult> => {
     try {
         return {
             ok: true,
-            verified: await verifyElectionCeremonyDetailed(input),
+            verified: await verifyElectionCeremony(input),
         };
     } catch (error) {
         if (error instanceof ElectionVerificationError) {

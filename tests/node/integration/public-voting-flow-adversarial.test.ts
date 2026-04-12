@@ -6,8 +6,8 @@ import {
     createBallotSubmissionPayload,
     createDecryptionSharePayload,
     createTallyPublicationPayload,
-    verifyElectionCeremonyDetailed,
-    verifyElectionCeremonyDetailedResult,
+    tryVerifyElectionCeremony,
+    verifyElectionCeremony,
     type SignedPayload,
 } from '#root';
 
@@ -18,7 +18,7 @@ type VerifiedCeremonyProjection = {
     readonly countedParticipantIndices: readonly number[];
     readonly decryptionParticipantSets: readonly (readonly number[])[];
     readonly excludedParticipantIndices: readonly number[];
-    readonly qual: readonly number[];
+    readonly qualifiedParticipantIndices: readonly number[];
     readonly tallies: readonly bigint[];
     readonly transcriptHashes: readonly string[];
 };
@@ -39,7 +39,7 @@ const verificationInput = (
         dkgTranscript: VotingFlowFixture['dkgTranscript'];
         tallyPublications: VotingFlowFixture['tallyPublications'];
     }> = {},
-): Parameters<typeof verifyElectionCeremonyDetailed>[0] => ({
+): Parameters<typeof verifyElectionCeremony>[0] => ({
     manifest: fixture.manifest,
     sessionId: fixture.sessionId,
     dkgTranscript: overrides.dkgTranscript ?? fixture.dkgTranscript,
@@ -52,11 +52,11 @@ const verificationInput = (
 });
 
 const projectVerifiedCeremony = (
-    verified: Awaited<ReturnType<typeof verifyElectionCeremonyDetailed>>,
+    verified: Awaited<ReturnType<typeof verifyElectionCeremony>>,
 ): VerifiedCeremonyProjection => ({
     countedParticipantIndices: verified.countedParticipantIndices,
     excludedParticipantIndices: verified.excludedParticipantIndices,
-    qual: verified.qual,
+    qualifiedParticipantIndices: verified.qualifiedParticipantIndices,
     transcriptHashes: verified.options.map(
         (option) => option.ballots.aggregate.transcriptHash,
     ),
@@ -114,7 +114,7 @@ const replaceSignedPayload = <TPayload extends SignedPayload>(
     payloads.map((payload) => (matcher(payload) ? replacement : payload));
 
 const expectFailure = async (
-    resultPromise: ReturnType<typeof verifyElectionCeremonyDetailedResult>,
+    resultPromise: ReturnType<typeof tryVerifyElectionCeremony>,
     expected: {
         readonly code:
             | 'BOARD_INVALID'
@@ -174,12 +174,14 @@ describe('honest-majority voting flow adversarial coverage', () => {
     }, fixtureTimeoutMs);
 
     it(
-        'verifies a complaint-path ceremony and reduces qual after an accepted dealer complaint',
+        'verifies a complaint-path ceremony and reduces the qualified participant set after an accepted dealer complaint',
         () => {
             expect(complaintFixture.qualifiedParticipantIndices).toEqual([
                 1, 2, 3,
             ]);
-            expect(complaintFixture.verified.qual).toEqual([1, 2, 3]);
+            expect(
+                complaintFixture.verified.qualifiedParticipantIndices,
+            ).toEqual([1, 2, 3]);
             expect(complaintFixture.verified.dkg.acceptedComplaints).toEqual([
                 expect.objectContaining({
                     participantIndex: 2,
@@ -211,9 +213,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
         async () => {
             const replays = await Promise.all(
                 Array.from({ length: 3 }, () =>
-                    verifyElectionCeremonyDetailed(
-                        verificationInput(fullFixture),
-                    ),
+                    verifyElectionCeremony(verificationInput(fullFixture)),
                 ),
             );
             const baseline = projectVerifiedCeremony(fullFixture.verified);
@@ -229,7 +229,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
         'accepts exact signed retransmissions and collapses them to one canonical ballot slot',
         async () => {
             const duplicateBallot = findBallotPayload(fullFixture, 1, 1);
-            const verified = await verifyElectionCeremonyDetailed(
+            const verified = await verifyElectionCeremony(
                 verificationInput(fullFixture, {
                     ballotPayloads: [
                         ...fullFixture.ballotPayloads,
@@ -260,7 +260,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
             const original = findBallotPayload(fullFixture, 1, 1);
 
             await expectFailure(
-                verifyElectionCeremonyDetailedResult(
+                tryVerifyElectionCeremony(
                     verificationInput(fullFixture, {
                         ballotPayloads: [
                             ...fullFixture.ballotPayloads,
@@ -307,7 +307,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
         );
 
         await expectFailure(
-            verifyElectionCeremonyDetailedResult(
+            tryVerifyElectionCeremony(
                 verificationInput(fullFixture, {
                     ballotPayloads: [
                         ...fullFixture.ballotPayloads,
@@ -325,7 +325,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
 
     it('rejects ceremonies with a missing registration payload', async () => {
         await expectFailure(
-            verifyElectionCeremonyDetailedResult(
+            tryVerifyElectionCeremony(
                 verificationInput(fullFixture, {
                     dkgTranscript: fullFixture.dkgTranscript.filter(
                         (entry) =>
@@ -354,7 +354,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
         );
 
         await expectFailure(
-            verifyElectionCeremonyDetailedResult(
+            tryVerifyElectionCeremony(
                 verificationInput(fullFixture, {
                     ballotPayloads: replaceSignedPayload(
                         fullFixture.ballotPayloads,
@@ -385,7 +385,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
         );
 
         await expectFailure(
-            verifyElectionCeremonyDetailedResult(
+            tryVerifyElectionCeremony(
                 verificationInput(fullFixture, {
                     decryptionSharePayloads: replaceSignedPayload(
                         fullFixture.decryptionSharePayloads,
@@ -415,7 +415,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
         );
 
         await expectFailure(
-            verifyElectionCeremonyDetailedResult(
+            tryVerifyElectionCeremony(
                 verificationInput(fullFixture, {
                     tallyPublications: [
                         forgedTallyPublication,
@@ -519,7 +519,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
             };
 
             await expectFailure(
-                verifyElectionCeremonyDetailedResult(
+                tryVerifyElectionCeremony(
                     verificationInput(fullFixture, {
                         ballotPayloads: replaceSignedPayload(
                             fullFixture.ballotPayloads,

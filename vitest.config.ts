@@ -29,21 +29,6 @@ export default defineConfig({
             },
             {
                 test: {
-                    name: 'node-fast',
-                    include: ['tests/node/**/*.test.ts'],
-                    exclude: ['tests/node/integration/**/*.test.ts'],
-                    ...nodeProject,
-                },
-            },
-            {
-                test: {
-                    name: 'node-heavy',
-                    include: ['tests/node/integration/**/*.test.ts'],
-                    ...nodeProject,
-                },
-            },
-            {
-                test: {
                     name: 'browser',
                     include: ['tests/browser/**/*.browser.test.ts'],
                     browser: {

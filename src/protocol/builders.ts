@@ -149,7 +149,7 @@ export const createPhaseCheckpointPayload = async (
         readonly checkpointPhase: 0 | 1 | 2 | 3;
         readonly manifestHash: string;
         readonly participantIndex: number;
-        readonly qualParticipantIndices: readonly number[];
+        readonly qualifiedParticipantIndices: readonly number[];
         readonly sessionId: string;
         readonly transcript: readonly SignedPayload[];
     },
@@ -165,7 +165,7 @@ export const createPhaseCheckpointPayload = async (
             input.transcript.map((entry) => entry.payload),
             input.checkpointPhase,
         ),
-        qualParticipantIndices: [...input.qualParticipantIndices],
+        qualifiedParticipantIndices: [...input.qualifiedParticipantIndices],
     });
 
 /** Creates a signed Pedersen-commitment payload for DKG phase 1. */
@@ -273,11 +273,11 @@ export const createBallotClosePayload = async (
     privateKey: CryptoKey,
     input: Omit<BallotClosePayload, 'messageType' | 'phase'>,
 ): Promise<SignedPayload<BallotClosePayload>> => {
-    const includedParticipantIndices = [
-        ...input.includedParticipantIndices,
-    ].sort((left, right) => left - right);
+    const countedParticipantIndices = [...input.countedParticipantIndices].sort(
+        (left, right) => left - right,
+    );
     assertUniqueSortedIndices(
-        includedParticipantIndices,
+        countedParticipantIndices,
         'Ballot close participant',
     );
 
@@ -285,7 +285,7 @@ export const createBallotClosePayload = async (
         ...input,
         phase: BALLOT_CLOSE_PHASE,
         messageType: 'ballot-close',
-        includedParticipantIndices,
+        countedParticipantIndices,
     });
 };
 

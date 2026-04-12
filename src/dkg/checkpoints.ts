@@ -26,7 +26,7 @@ const checkpointKey = (payload: PhaseCheckpointPayload): string =>
         messageType: payload.messageType,
         checkpointPhase: payload.checkpointPhase,
         checkpointTranscriptHash: payload.checkpointTranscriptHash,
-        qualParticipantIndices: payload.qualParticipantIndices,
+        qualifiedParticipantIndices: payload.qualifiedParticipantIndices,
     });
 
 const compareNumbers = (left: number, right: number): number => left - right;
@@ -127,21 +127,27 @@ export const resolveVerifiedPhaseCheckpoint = async (
     }
 
     const checkpoint = supported[0];
-    const qual = checkpoint.payload.qualParticipantIndices;
+    const qualifiedParticipantIndices =
+        checkpoint.payload.qualifiedParticipantIndices;
 
     assertUniqueSortedParticipantIndices(
-        qual,
+        qualifiedParticipantIndices,
         input.participantCount,
-        `Phase ${input.checkpointPhase} checkpoint QUAL participant`,
+        `Phase ${input.checkpointPhase} checkpoint qualified participant`,
     );
-    if (!sameParticipantIndexList(qual, input.expectedQualParticipantIndices)) {
+    if (
+        !sameParticipantIndexList(
+            qualifiedParticipantIndices,
+            input.expectedQualifiedParticipantIndices,
+        )
+    ) {
         throw new InvalidPayloadError(
-            `Phase ${input.checkpointPhase} checkpoint QUAL does not match the verifier-computed active participant set`,
+            `Phase ${input.checkpointPhase} checkpoint qualified participant set does not match the verifier-computed active participant set`,
         );
     }
-    if (qual.length < input.threshold) {
+    if (qualifiedParticipantIndices.length < input.threshold) {
         throw new InvalidPayloadError(
-            `Checkpoint QUAL for phase ${input.checkpointPhase} must contain at least ${input.threshold} participants`,
+            `Checkpoint qualified participant set for phase ${input.checkpointPhase} must contain at least ${input.threshold} participants`,
         );
     }
 
@@ -161,11 +167,11 @@ export const resolveVerifiedPhaseCheckpoint = async (
         `Phase ${input.checkpointPhase} checkpoint signer`,
     );
 
-    const qualSet = new Set(qual);
+    const qualifiedParticipantSet = new Set(qualifiedParticipantIndices);
     for (const signer of checkpoint.signers) {
-        if (!qualSet.has(signer)) {
+        if (!qualifiedParticipantSet.has(signer)) {
             throw new InvalidPayloadError(
-                `Phase ${input.checkpointPhase} checkpoint signer ${signer} is not part of the checkpoint QUAL set`,
+                `Phase ${input.checkpointPhase} checkpoint signer ${signer} is not part of the checkpoint qualified participant set`,
             );
         }
     }

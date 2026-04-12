@@ -8,7 +8,7 @@ const config = {
     plugin: ['typedoc-plugin-markdown'],
     out: 'docs/src/content/docs/api/reference',
     router: 'member',
-    readme: 'typedoc.readme.md',
+    readme: 'typedoc/generated-reference-intro.md',
     entryFileName: 'index.md',
     navigationJson: 'docs/src/content/docs/api/reference/navigation.json',
     cleanOutputDir: true,

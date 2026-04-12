@@ -58,21 +58,17 @@ import {
     verifyComplaintOutcomes,
 } from './verification-complaints.js';
 
-export type KeyDerivationConfirmationPolicy = 'optional' | 'required';
-
 /** Input bundle for verifying a DKG transcript. */
 export type VerifyDKGTranscriptInput = {
     readonly transcript: readonly SignedPayload[];
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
-    /** Defaults to `'required'`; set to `'optional'` only for legacy transcripts that omit phase 4 confirmations. */
-    readonly keyDerivationConfirmationPolicy?: KeyDerivationConfirmationPolicy;
 };
 
 /** Verified DKG transcript result with reusable derived ceremony material. */
 export type VerifiedDKGTranscript = {
     readonly acceptedComplaints: readonly ComplaintPayload[];
-    readonly derivedPublicKey: EncodedPoint;
+    readonly jointPublicKey: EncodedPoint;
     readonly feldmanCommitments: readonly {
         readonly dealerIndex: number;
         readonly commitments: readonly EncodedPoint[];
@@ -81,8 +77,8 @@ export type VerifiedDKGTranscript = {
     readonly organizerIndex: number;
     readonly participantCount: number;
     readonly phaseCheckpoints: readonly FinalizedPhaseCheckpoint[];
-    readonly qual: readonly number[];
-    readonly qualHash: string;
+    readonly qualifiedParticipantIndices: readonly number[];
+    readonly dkgTranscriptHash: string;
     readonly registrations: readonly SignedPayload<RegistrationPayload>[];
     readonly rosterHash: string;
     readonly threshold: number;
@@ -111,7 +107,7 @@ export type ResolvePhaseCheckpointInput = {
     readonly checkpointPhase: number;
     readonly threshold: number;
     readonly participantCount: number;
-    readonly expectedQualParticipantIndices: readonly number[];
+    readonly expectedQualifiedParticipantIndices: readonly number[];
     readonly signerUniverse: ReadonlySet<number>;
 };
 
@@ -122,8 +118,6 @@ type VerifiedDKGSetup = {
     readonly threshold: number;
     readonly verifiedSignatures: VerifiedProtocolSignatures;
 };
-
-const defaultKeyDerivationConfirmationPolicy = 'required' as const;
 
 const GJKR_PHASE_PLAN: Readonly<Record<ProtocolMessageType, number | null>> = {
     'manifest-publication': 0,
@@ -528,7 +522,7 @@ const verifyManifestAcceptancePayloads = (
 
 const parseQualifiedFeldmanCommitments = (
     transcript: readonly SignedPayload[],
-    qual: readonly number[],
+    qualifiedParticipantIndices: readonly number[],
     threshold: number,
 ): readonly ParsedFeldmanCommitment[] => {
     const feldmanPayloads = transcript.filter(
@@ -536,7 +530,7 @@ const parseQualifiedFeldmanCommitments = (
             payload.payload.messageType === 'feldman-commitment',
     );
 
-    return qual.map((participantIndex) => {
+    return qualifiedParticipantIndices.map((participantIndex) => {
         const payload = feldmanPayloads.find(
             (candidate) =>
                 candidate.payload.participantIndex === participantIndex,
@@ -636,17 +630,17 @@ const assertAggregateFeldmanDegree = (
 
 const verifyKeyDerivationConfirmations = async (
     transcript: readonly SignedPayload[],
-    qual: readonly number[],
-    derivedPublicKey: EncodedPoint,
+    qualifiedParticipantIndices: readonly number[],
+    jointPublicKey: EncodedPoint,
     group: CryptoGroup,
-    minimumConfirmations = qual.length,
+    minimumConfirmations = qualifiedParticipantIndices.length,
 ): Promise<string> => {
-    const qualSet = new Set(qual);
+    const qualifiedParticipantSet = new Set(qualifiedParticipantIndices);
     const preConfirmationTranscript = transcript.filter(
         (payload) =>
             payload.payload.messageType !== 'key-derivation-confirmation',
     );
-    const qualHash = await hashProtocolTranscript(
+    const dkgTranscriptHash = await hashProtocolTranscript(
         preConfirmationTranscript.map((payload) => payload.payload),
         group.byteLength,
     );
@@ -663,7 +657,9 @@ const verifyKeyDerivationConfirmations = async (
 
     const seenConfirmations = new Set<number>();
     for (const confirmation of confirmations) {
-        if (!qualSet.has(confirmation.payload.participantIndex)) {
+        if (
+            !qualifiedParticipantSet.has(confirmation.payload.participantIndex)
+        ) {
             throw new InvalidPayloadError(
                 `Key-derivation confirmation came from non-qualified participant ${confirmation.payload.participantIndex}`,
             );
@@ -675,41 +671,41 @@ const verifyKeyDerivationConfirmations = async (
         }
         seenConfirmations.add(confirmation.payload.participantIndex);
 
-        if (confirmation.payload.qualHash !== qualHash) {
+        if (confirmation.payload.dkgTranscriptHash !== dkgTranscriptHash) {
             throw new InvalidPayloadError(
-                `qualHash mismatch in confirmation from participant ${confirmation.payload.participantIndex}`,
+                `DKG transcript hash mismatch in confirmation from participant ${confirmation.payload.participantIndex}`,
             );
         }
-        if (confirmation.payload.publicKey !== derivedPublicKey) {
+        if (confirmation.payload.publicKey !== jointPublicKey) {
             throw new InvalidPayloadError(
                 `Joint public key mismatch in confirmation from participant ${confirmation.payload.participantIndex}`,
             );
         }
     }
 
-    return qualHash;
+    return dkgTranscriptHash;
 };
 
 const reduceQualifiedParticipantIndices = (
-    qual: readonly number[],
+    qualifiedParticipantIndices: readonly number[],
     acceptedComplaints: readonly ComplaintPayload[],
 ): readonly number[] => {
     const disqualifiedDealers = new Set(
         acceptedComplaints.map((complaint) => complaint.dealerIndex),
     );
 
-    return qual.filter(
+    return qualifiedParticipantIndices.filter(
         (participantIndex) => !disqualifiedDealers.has(participantIndex),
     );
 };
 
 const assertQualifiedThreshold = (
-    qual: readonly number[],
+    qualifiedParticipantIndices: readonly number[],
     threshold: number,
 ): void => {
-    if (qual.length < threshold) {
+    if (qualifiedParticipantIndices.length < threshold) {
         throw new InvalidPayloadError(
-            'QUAL fell below the reconstruction threshold',
+            'The qualified participant set fell below the reconstruction threshold',
         );
     }
 };
@@ -724,13 +720,6 @@ const normalizeFeldmanCommitments = (
         dealerIndex: entry.dealerIndex,
         commitments: entry.commitments,
     }));
-
-const minimumKeyDerivationConfirmations = (
-    qual: readonly number[],
-    policy:
-        | KeyDerivationConfirmationPolicy
-        | undefined = defaultKeyDerivationConfirmationPolicy,
-): number => (policy === 'optional' ? 0 : qual.length);
 
 const buildVerifiedDKGSetup = async (
     input: VerifyDKGTranscriptInput,
@@ -777,15 +766,15 @@ const finalizeVerifiedTranscript = async (
     acceptedComplaints: readonly ComplaintPayload[],
     manifestAccepted: readonly number[],
     phaseCheckpoints: readonly FinalizedPhaseCheckpoint[],
-    qual: readonly number[],
+    qualifiedParticipantIndices: readonly number[],
     group: CryptoGroup,
     threshold: number,
 ): Promise<VerifiedDKGTranscript> => {
-    assertQualifiedThreshold(qual, threshold);
+    assertQualifiedThreshold(qualifiedParticipantIndices, threshold);
 
     const feldmanCommitments = parseQualifiedFeldmanCommitments(
         input.transcript,
-        qual,
+        qualifiedParticipantIndices,
         threshold,
     );
     await verifyFeldmanProofs(
@@ -797,36 +786,33 @@ const finalizeVerifiedTranscript = async (
 
     const normalizedFeldmanCommitments =
         normalizeFeldmanCommitments(feldmanCommitments);
-    const derivedPublicKey = deriveJointPublicKey(
+    const jointPublicKey = deriveJointPublicKey(
         normalizedFeldmanCommitments,
         group,
     );
-    if (decodePoint(derivedPublicKey, 'Derived joint public key').is0()) {
+    if (decodePoint(jointPublicKey, 'Derived joint public key').is0()) {
         throw new InvalidPayloadError(
             'Derived joint public key must not be the identity element',
         );
     }
-    const qualHash = await verifyKeyDerivationConfirmations(
+    const dkgTranscriptHash = await verifyKeyDerivationConfirmations(
         input.transcript,
-        qual,
-        derivedPublicKey,
+        qualifiedParticipantIndices,
+        jointPublicKey,
         group,
-        minimumKeyDerivationConfirmations(
-            qual,
-            input.keyDerivationConfirmationPolicy,
-        ),
+        qualifiedParticipantIndices.length,
     );
 
     return {
         acceptedComplaints,
-        derivedPublicKey,
+        jointPublicKey,
         feldmanCommitments: normalizedFeldmanCommitments,
         manifestAccepted,
         organizerIndex,
         participantCount: verifiedSignatures.participantCount,
         phaseCheckpoints,
-        qual,
-        qualHash,
+        qualifiedParticipantIndices,
+        dkgTranscriptHash,
         registrations: verifiedSignatures.registrations,
         rosterHash: verifiedSignatures.rosterHash,
         threshold,
@@ -863,7 +849,7 @@ const verifyLegacyDKGTranscript = async (
         RISTRETTO_GROUP,
         new Set(setup.participantIndices),
     );
-    const qual = deriveQualifiedParticipantIndices(
+    const qualifiedParticipantIndices = deriveQualifiedParticipantIndices(
         setup.verifiedSignatures.participantCount,
         acceptedComplaints,
     );
@@ -875,7 +861,7 @@ const verifyLegacyDKGTranscript = async (
         acceptedComplaints,
         setup.manifestAccepted,
         [],
-        qual,
+        qualifiedParticipantIndices,
         RISTRETTO_GROUP,
         setup.threshold,
     );
@@ -894,7 +880,7 @@ const verifyCheckpointedDKGTranscript = async (
         checkpointPhase: 0,
         threshold: setup.threshold,
         participantCount: setup.verifiedSignatures.participantCount,
-        expectedQualParticipantIndices: setup.manifestAccepted,
+        expectedQualifiedParticipantIndices: setup.manifestAccepted,
         signerUniverse: manifestAcceptedSet,
     });
 
@@ -908,22 +894,31 @@ const verifyCheckpointedDKGTranscript = async (
     );
 
     const phase0QualSet = new Set(
-        phase0Checkpoint.payload.qualParticipantIndices,
+        phase0Checkpoint.payload.qualifiedParticipantIndices,
     );
     const phase1Checkpoint = await resolveVerifiedPhaseCheckpoint({
         transcript: input.transcript,
         checkpointPhase: 1,
         threshold: setup.threshold,
         participantCount: setup.verifiedSignatures.participantCount,
-        expectedQualParticipantIndices:
-            phase0Checkpoint.payload.qualParticipantIndices,
+        expectedQualifiedParticipantIndices:
+            phase0Checkpoint.payload.qualifiedParticipantIndices,
         signerUniverse: phase0QualSet,
     });
-    const phase1Qual = phase1Checkpoint.payload.qualParticipantIndices;
-    assertEncryptedShareCoverage(encryptedShareMatrix, phase1Qual);
-    assertPedersenCommitmentCoverage(pedersenCommitmentMap, phase1Qual);
+    const phase1QualifiedParticipantIndices =
+        phase1Checkpoint.payload.qualifiedParticipantIndices;
+    assertEncryptedShareCoverage(
+        encryptedShareMatrix,
+        phase1QualifiedParticipantIndices,
+    );
+    assertPedersenCommitmentCoverage(
+        pedersenCommitmentMap,
+        phase1QualifiedParticipantIndices,
+    );
 
-    const activeComplaintParticipants = new Set(phase1Qual);
+    const activeComplaintParticipants = new Set(
+        phase1QualifiedParticipantIndices,
+    );
     const acceptedComplaints = await verifyComplaintOutcomes(
         input,
         setup.verifiedSignatures,
@@ -932,16 +927,18 @@ const verifyCheckpointedDKGTranscript = async (
         RISTRETTO_GROUP,
         activeComplaintParticipants,
     );
-    const complaintBoundQual = reduceQualifiedParticipantIndices(
-        phase1Qual,
-        acceptedComplaints,
-    );
+    const complaintBoundQualifiedParticipantIndices =
+        reduceQualifiedParticipantIndices(
+            phase1QualifiedParticipantIndices,
+            acceptedComplaints,
+        );
     const phase2Checkpoint = await resolveVerifiedPhaseCheckpoint({
         transcript: input.transcript,
         checkpointPhase: 2,
         threshold: setup.threshold,
         participantCount: setup.verifiedSignatures.participantCount,
-        expectedQualParticipantIndices: complaintBoundQual,
+        expectedQualifiedParticipantIndices:
+            complaintBoundQualifiedParticipantIndices,
         signerUniverse: activeComplaintParticipants,
     });
 
@@ -952,19 +949,20 @@ const verifyCheckpointedDKGTranscript = async (
     ];
 
     const phase2QualSet = new Set(
-        phase2Checkpoint.payload.qualParticipantIndices,
+        phase2Checkpoint.payload.qualifiedParticipantIndices,
     );
     const phase3Checkpoint = await resolveVerifiedPhaseCheckpoint({
         transcript: input.transcript,
         checkpointPhase: 3,
         threshold: setup.threshold,
         participantCount: setup.verifiedSignatures.participantCount,
-        expectedQualParticipantIndices:
-            phase2Checkpoint.payload.qualParticipantIndices,
+        expectedQualifiedParticipantIndices:
+            phase2Checkpoint.payload.qualifiedParticipantIndices,
         signerUniverse: phase2QualSet,
     });
     phaseCheckpoints.push(phase3Checkpoint);
-    const finalQual = phase3Checkpoint.payload.qualParticipantIndices;
+    const finalQualifiedParticipantIndices =
+        phase3Checkpoint.payload.qualifiedParticipantIndices;
 
     return finalizeVerifiedTranscript(
         input,
@@ -973,7 +971,7 @@ const verifyCheckpointedDKGTranscript = async (
         acceptedComplaints,
         setup.manifestAccepted,
         phaseCheckpoints,
-        finalQual,
+        finalQualifiedParticipantIndices,
         RISTRETTO_GROUP,
         setup.threshold,
     );
@@ -981,8 +979,8 @@ const verifyCheckpointedDKGTranscript = async (
 
 /**
  * Verifies a DKG transcript, its signatures, Feldman extraction proofs,
- * the exact claimed threshold degree, accepted complaint outcomes, `qualHash`,
- * and the announced joint public key.
+ * the exact claimed threshold degree, accepted complaint outcomes, the DKG
+ * transcript hash, and the announced joint public key.
  *
  * @param input Transcript verification input.
  * @returns Verified transcript metadata and derived ceremony material.

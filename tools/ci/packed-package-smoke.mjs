@@ -68,7 +68,7 @@ const ballotClose = await createBallotClosePayload(
         sessionId,
         manifestHash,
         participantIndex: participants[0].index,
-        includedParticipantIndices: [3, 1, 2],
+        countedParticipantIndices: [3, 1, 2],
     },
 );
 const tallyPublication = await createTallyPublicationPayload(
@@ -120,7 +120,7 @@ const decrypted = await decryptEnvelope(
     participants[1].transport.privateKey,
 );
 assert(
-    ballotClose.payload.includedParticipantIndices.join(',') === '1,2,3',
+    ballotClose.payload.countedParticipantIndices.join(',') === '1,2,3',
     'Packed smoke ballot-close normalization failed',
 );
 assert(

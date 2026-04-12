@@ -32,7 +32,9 @@ const verifyAuditedDecryptionSharePayloadsByOption = async (input: {
     readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
     readonly dkg: VerifyDecryptionSharePayloadsByOptionInput['dkg'];
 }): Promise<readonly VerifiedOptionDecryptionShares[]> => {
-    const qualSet = new Set(input.dkg.qual);
+    const qualifiedParticipantSet = new Set(
+        input.dkg.qualifiedParticipantIndices,
+    );
     const aggregateMap = buildOptionAggregateMap(
         input.aggregates,
         input.context.optionCount,
@@ -95,7 +97,7 @@ const verifyAuditedDecryptionSharePayloadsByOption = async (input: {
                     'Decryption-share payload manifest hash does not match the verification input',
                 );
             }
-            if (!qualSet.has(payload.participantIndex)) {
+            if (!qualifiedParticipantSet.has(payload.participantIndex)) {
                 throw new InvalidPayloadError(
                     `Decryption share came from non-qualified participant ${payload.participantIndex}`,
                 );

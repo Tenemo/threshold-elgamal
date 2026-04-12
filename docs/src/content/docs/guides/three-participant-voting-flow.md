@@ -97,11 +97,11 @@ This is an administrative cutoff, not a fairness proof about waiting long enough
 
 ## End-to-end verification
 
-Use `verifyElectionCeremonyDetailed(...)` to replay the public ceremony from manifest publication through tally publication in one pass. The verifier checks:
+Use `verifyElectionCeremony(...)` to replay the public ceremony from manifest publication through tally publication in one pass. The verifier checks:
 
 - the frozen manifest and session context
 - registrations and manifest acceptances
-- the DKG transcript and derived joint key
+- the DKG transcript and joint public key
 - the counted ballot set selected by `ballot-close`
 - locally recomputed per-option aggregates
 - decryption shares

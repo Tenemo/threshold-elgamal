@@ -41,7 +41,7 @@ import {
     scoreVotingDomain,
     SHIPPED_PROTOCOL_VERSION,
     verifyBallotSubmissionPayloadsByOption,
-    verifyElectionCeremonyDetailed,
+    verifyElectionCeremony,
     type BallotClosePayload,
     type BallotSubmissionPayload,
     type DecryptionSharePayload,
@@ -127,9 +127,7 @@ export type CompletedVotingFlowResult = {
     readonly sessionId: string;
     readonly tallyPublications: readonly SignedPayload<TallyPublicationPayload>[];
     readonly threshold: number;
-    readonly verified: Awaited<
-        ReturnType<typeof verifyElectionCeremonyDetailed>
-    >;
+    readonly verified: Awaited<ReturnType<typeof verifyElectionCeremony>>;
     readonly votingParticipantIndices: readonly number[];
 };
 
@@ -493,11 +491,11 @@ const createComplaintPayloads = async (input: {
 const createKeyDerivationConfirmations = async (
     participants: readonly VotingFlowParticipant[],
     dkgTranscript: readonly SignedPayload[],
-    derivedPublicKey: EncodedPoint,
+    jointPublicKey: EncodedPoint,
     manifestHash: string,
     sessionId: string,
 ): Promise<readonly SignedPayload<KeyDerivationConfirmation>[]> => {
-    const qualHash = await hashProtocolTranscript(
+    const dkgTranscriptHash = await hashProtocolTranscript(
         dkgTranscript.map((entry) => entry.payload),
         RISTRETTO_GROUP.byteLength,
     );
@@ -510,8 +508,8 @@ const createKeyDerivationConfirmations = async (
                     sessionId,
                     manifestHash,
                     participantIndex: participant.index,
-                    qualHash,
-                    publicKey: derivedPublicKey,
+                    dkgTranscriptHash,
+                    publicKey: jointPublicKey,
                 },
             ),
         ),
@@ -522,19 +520,20 @@ const createPhaseCheckpointPayloads = async (input: {
     readonly checkpointPhase: 0 | 1 | 2 | 3;
     readonly manifestHash: string;
     readonly participants: readonly VotingFlowParticipant[];
-    readonly qualParticipantIndices: readonly number[];
+    readonly qualifiedParticipantIndices: readonly number[];
     readonly sessionId: string;
     readonly transcript: readonly SignedPayload[];
 }): Promise<readonly SignedPayload[]> =>
     Promise.all(
-        input.qualParticipantIndices.map((participantIndex) =>
+        input.qualifiedParticipantIndices.map((participantIndex) =>
             createPhaseCheckpointPayload(
                 input.participants[participantIndex - 1].auth.privateKey,
                 {
                     checkpointPhase: input.checkpointPhase,
                     manifestHash: input.manifestHash,
                     participantIndex,
-                    qualParticipantIndices: input.qualParticipantIndices,
+                    qualifiedParticipantIndices:
+                        input.qualifiedParticipantIndices,
                     sessionId: input.sessionId,
                     transcript: input.transcript,
                 },
@@ -729,7 +728,7 @@ export const runVotingFlowScenario = async (
         .filter((dealer) =>
             qualifiedParticipantIndexSet.has(dealer.dealerIndex),
         );
-    const derivedPublicKey = deriveJointPublicKey(
+    const jointPublicKey = deriveJointPublicKey(
         qualifiedDealerCommitments,
         RISTRETTO_GROUP,
     );
@@ -745,7 +744,7 @@ export const runVotingFlowScenario = async (
                 checkpointPhase: 0,
                 manifestHash,
                 participants,
-                qualParticipantIndices: participants.map(
+                qualifiedParticipantIndices: participants.map(
                     (participant) => participant.index,
                 ),
                 sessionId,
@@ -765,7 +764,7 @@ export const runVotingFlowScenario = async (
                 checkpointPhase: 1,
                 manifestHash,
                 participants,
-                qualParticipantIndices: participants.map(
+                qualifiedParticipantIndices: participants.map(
                     (participant) => participant.index,
                 ),
                 sessionId,
@@ -792,7 +791,7 @@ export const runVotingFlowScenario = async (
                 checkpointPhase: 2,
                 manifestHash,
                 participants,
-                qualParticipantIndices: qualifiedParticipantIndices,
+                qualifiedParticipantIndices,
                 sessionId,
                 transcript: dkgTranscriptWithoutConfirmations,
             })),
@@ -809,7 +808,7 @@ export const runVotingFlowScenario = async (
                 checkpointPhase: 3,
                 manifestHash,
                 participants,
-                qualParticipantIndices: qualifiedParticipantIndices,
+                qualifiedParticipantIndices,
                 sessionId,
                 transcript: dkgTranscriptWithoutConfirmations,
             })),
@@ -821,7 +820,7 @@ export const runVotingFlowScenario = async (
             qualifiedParticipantIndexSet.has(participant.index),
         ),
         dkgTranscriptWithoutConfirmations,
-        derivedPublicKey,
+        jointPublicKey,
         manifestHash,
         sessionId,
     );
@@ -844,7 +843,7 @@ export const runVotingFlowScenario = async (
     }));
     const ballotPayloads = await createBallotPayloads({
         participants,
-        publicKey: derivedPublicKey,
+        publicKey: jointPublicKey,
         manifestHash,
         participantVotes,
         sessionId,
@@ -856,7 +855,7 @@ export const runVotingFlowScenario = async (
             sessionId,
             manifestHash,
             participantIndex: participants[0].index,
-            includedParticipantIndices: closeParticipantIndices,
+            countedParticipantIndices: closeParticipantIndices,
         },
     );
     const countedBallotPayloads = ballotPayloads.filter((payload) =>
@@ -864,7 +863,7 @@ export const runVotingFlowScenario = async (
     );
     const verifiedBallots = await verifyBallotSubmissionPayloadsByOption({
         ballotPayloads: countedBallotPayloads,
-        publicKey: derivedPublicKey,
+        publicKey: jointPublicKey,
         manifest,
         sessionId,
     });
@@ -972,7 +971,7 @@ export const runVotingFlowScenario = async (
         );
     }
 
-    const verified = await verifyElectionCeremonyDetailed({
+    const verified = await verifyElectionCeremony({
         manifest,
         sessionId,
         dkgTranscript,
