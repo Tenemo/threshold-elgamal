@@ -1,4 +1,4 @@
-import type { EncodedPoint } from '../core/types.js';
+import type { EncodedPoint } from '../core/types';
 
 /** Feldman coefficient commitments `A_m = a_m G`. */
 export type FeldmanCommitments = {

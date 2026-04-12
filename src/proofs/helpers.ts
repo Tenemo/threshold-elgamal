@@ -1,13 +1,13 @@
-import { hexToBytes } from '../core/bytes.js';
+import { hexToBytes } from '../core/bytes';
 import {
     assertCanonicalRistrettoGroup,
     InvalidProofError,
     modQ,
     type CryptoGroup,
-} from '../core/index.js';
-import { encodeScalar, hashChallengeToScalar } from '../core/ristretto.js';
+} from '../core/index';
+import { encodeScalar, hashChallengeToScalar } from '../core/ristretto';
 
-import type { ProofContext } from './types.js';
+import type { ProofContext } from './types';
 
 const encodeOptionalIndex = (value: number | undefined): bigint | undefined => {
     if (value === undefined) {

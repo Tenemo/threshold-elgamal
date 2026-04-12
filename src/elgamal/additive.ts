@@ -5,16 +5,16 @@ import {
     assertPlaintextAdditive,
     assertValidPublicKey,
     InvalidScalarError,
-} from '../core/index.js';
+} from '../core/index';
 import {
     decodePoint,
     encodePoint,
     multiplyBase,
     pointAdd,
     pointMultiply,
-} from '../core/ristretto.js';
+} from '../core/ristretto';
 
-import type { ElGamalCiphertext } from './types.js';
+import type { ElGamalCiphertext } from './types';
 
 type ResolvedAdditiveContext = {
     readonly bound: bigint;

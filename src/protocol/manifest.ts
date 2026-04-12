@@ -1,9 +1,9 @@
-import { bytesToHex } from '../core/bytes.js';
-import { InvalidPayloadError, sha256, utf8ToBytes } from '../core/index.js';
-import { encodeForChallenge } from '../serialize/index.js';
+import { bytesToHex } from '../core/bytes';
+import { InvalidPayloadError, sha256, utf8ToBytes } from '../core/index';
+import { encodeForChallenge } from '../serialize/index';
 
-import { canonicalizeJson } from './canonical-json.js';
-import type { ElectionManifest } from './types.js';
+import { canonicalizeJson } from './canonical-json';
+import type { ElectionManifest } from './types';
 
 /** Fixed transcript version string for the shipped beta protocol. */
 export const SHIPPED_PROTOCOL_VERSION = 'v1';

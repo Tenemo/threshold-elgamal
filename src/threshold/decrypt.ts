@@ -7,7 +7,7 @@ import {
     RISTRETTO_GROUP,
     modInvQ,
     modQ,
-} from '../core/index.js';
+} from '../core/index';
 import {
     decodePoint,
     encodePoint,
@@ -15,11 +15,11 @@ import {
     pointMultiply,
     pointSubtract,
     RISTRETTO_ZERO,
-} from '../core/ristretto.js';
-import { babyStepGiantStep } from '../elgamal/bsgs.js';
-import type { ElGamalCiphertext } from '../elgamal/types.js';
+} from '../core/ristretto';
+import { babyStepGiantStep } from '../elgamal/bsgs';
+import type { ElGamalCiphertext } from '../elgamal/types';
 
-import type { DecryptionShare, Share } from './types.js';
+import type { DecryptionShare, Share } from './types';
 
 const assertPositiveIndex = (index: number, label: string): void => {
     if (!Number.isInteger(index) || index < 1) {

@@ -10,80 +10,77 @@ export {
     ThresholdViolationError,
     TranscriptMismatchError,
     UnsupportedSuiteError,
-} from './core/errors.js';
-export { modQ } from './core/bigint.js';
-export { RISTRETTO_GROUP } from './core/groups.js';
-export type { EncodedPoint } from './core/types.js';
-export { majorityThreshold } from './core/validation.js';
+} from './core/errors';
+export { modQ } from './core/bigint';
+export { RISTRETTO_GROUP } from './core/groups';
+export type { EncodedPoint } from './core/types';
+export { majorityThreshold } from './core/validation';
 
-export { encryptAdditiveWithRandomness } from './elgamal/additive.js';
+export { encryptAdditiveWithRandomness } from './elgamal/additive';
 
 export {
     createDisjunctiveProof,
     verifyDisjunctiveProof,
-} from './proofs/disjunctive.js';
+} from './proofs/disjunctive';
 export {
     createDLEQProof,
     type DLEQStatement,
     verifyDLEQProof,
-} from './proofs/dleq.js';
-export { createSchnorrProof, verifySchnorrProof } from './proofs/schnorr.js';
+} from './proofs/dleq';
+export { createSchnorrProof, verifySchnorrProof } from './proofs/schnorr';
 export type {
     DLEQProof,
     DisjunctiveProof,
     ProofContext,
     SchnorrProof,
-} from './proofs/types.js';
+} from './proofs/types';
 
-export { decryptEnvelope, encryptEnvelope } from './transport/envelopes.js';
-export { exportAuthPublicKey, generateAuthKeyPair } from './transport/auth.js';
+export { decryptEnvelope, encryptEnvelope } from './transport/envelopes';
+export { exportAuthPublicKey, generateAuthKeyPair } from './transport/auth';
 export {
     exportTransportPublicKey,
     generateTransportKeyPair,
-} from './transport/key-agreement.js';
+} from './transport/key-agreement';
 export type {
     EncodedAuthPublicKey,
     EncodedTransportPublicKey,
     EncryptedEnvelope,
     EnvelopeContext,
     TransportKeyPair,
-} from './transport/types.js';
+} from './transport/types';
 
-export { combineDecryptionShares } from './threshold/decrypt.js';
+export { combineDecryptionShares } from './threshold/decrypt';
 export type {
     DecryptionShare,
     Share,
     VerifiedAggregateCiphertext,
-} from './threshold/types.js';
+} from './threshold/types';
 
 export {
     deriveJointPublicKey,
     deriveTranscriptVerificationKey,
     verifyDKGTranscript,
-} from './dkg/verification.js';
+} from './dkg/verification';
 export {
     decodePedersenShareEnvelope,
     encodePedersenShareEnvelope,
-} from './dkg/pedersen-share-codec.js';
+} from './dkg/pedersen-share-codec';
 export type {
     VerifyDKGTranscriptInput,
     VerifiedDKGTranscript,
-} from './dkg/verification.js';
+} from './dkg/verification';
 
-export {
-    generateFeldmanCommitments,
-    verifyFeldmanShare,
-} from './vss/feldman.js';
+export { generateFeldmanCommitments, verifyFeldmanShare } from './vss/feldman';
 export {
     derivePedersenShares,
     generatePedersenCommitments,
     verifyPedersenShare,
-} from './vss/pedersen.js';
+} from './vss/pedersen';
 export type {
     FeldmanCommitments,
     PedersenCommitments,
     PedersenShare,
-} from './vss/types.js';
+} from './vss/types';
 
 export {
     createBallotClosePayload,
@@ -99,7 +96,7 @@ export {
     createRegistrationPayload,
     createTallyPublicationPayload,
     signProtocolPayload,
-} from './protocol/builders.js';
+} from './protocol/builders';
 export {
     canonicalizeElectionManifest,
     createElectionManifest,
@@ -107,9 +104,9 @@ export {
     hashElectionManifest,
     SHIPPED_PROTOCOL_VERSION,
     validateElectionManifest,
-} from './protocol/manifest.js';
-export { hashRosterEntries } from './protocol/verification.js';
-export { hashProtocolTranscript } from './protocol/transcript.js';
+} from './protocol/manifest';
+export { hashRosterEntries } from './protocol/verification';
+export { hashProtocolTranscript } from './protocol/transcript';
 export {
     verifyElectionCeremony,
     tryVerifyElectionCeremony,
@@ -118,10 +115,9 @@ export {
     type ElectionVerificationResult,
     type ElectionVerificationStage,
     type VerifiedElectionCeremony,
-    type VerifyElectionCeremonyInput,
-} from './protocol/voting-verification.js';
-export { verifyBallotSubmissionPayloadsByOption } from './protocol/voting-ballots.js';
-export { scoreVotingDomain } from './protocol/voting-codecs.js';
+} from './protocol/voting-verification';
+export { verifyBallotSubmissionPayloadsByOption } from './protocol/voting-ballots';
+export { scoreVotingDomain } from './protocol/voting-codecs';
 export type {
     BallotClosePayload,
     BallotSubmissionPayload,
@@ -142,4 +138,5 @@ export type {
     RegistrationPayload,
     SignedPayload,
     TallyPublicationPayload,
-} from './protocol/types.js';
+    VerifyElectionCeremonyInput,
+} from './protocol/types';

@@ -1,11 +1,11 @@
-import { InvalidScalarError } from '../core/index.js';
+import { InvalidScalarError } from '../core/index';
 import {
     decodePoint,
     encodePoint,
     pointAdd,
     pointSubtract,
     pointMultiply,
-} from '../core/ristretto.js';
+} from '../core/ristretto';
 
 const integerSquareRootCeil = (value: bigint): bigint => {
     if (value < 0n) {

@@ -1,20 +1,20 @@
-import { toBufferSource } from '../core/bytes.js';
-import { getWebCrypto } from '../core/index.js';
-import { hexToBytes } from '../serialize/index.js';
+import { toBufferSource } from '../core/bytes';
+import { getWebCrypto } from '../core/index';
+import { hexToBytes } from '../serialize/index';
 
-import { deriveEnvelopeKey, encodeEnvelopeContext } from './envelopes.js';
+import { deriveEnvelopeKey, encodeEnvelopeContext } from './envelopes';
 import {
     deriveTransportSharedSecret,
     importTransportPrivateKey,
     importTransportPublicKey,
     verifyLocalTransportKey,
-} from './key-agreement.js';
+} from './key-agreement';
 import type {
     ComplaintResolution,
     EncodedTransportPrivateKey,
     EncodedTransportPublicKey,
     EncryptedEnvelope,
-} from './types.js';
+} from './types';
 
 const decryptEnvelopeFromSharedSecret = async (
     envelope: EncryptedEnvelope,

@@ -2,19 +2,16 @@ import {
     assertPositiveParticipantIndex,
     InvalidPayloadError,
     RISTRETTO_GROUP,
-} from '../core/index.js';
-import type { ProofContext } from '../proofs/types.js';
-import {
-    importAuthPublicKey,
-    verifyPayloadSignature,
-} from '../transport/auth.js';
+} from '../core/index';
+import type { ProofContext } from '../proofs/types';
+import { importAuthPublicKey, verifyPayloadSignature } from '../transport/auth';
 
 import {
     hashElectionManifest,
     SHIPPED_PROTOCOL_VERSION,
     validateElectionManifest,
-} from './manifest.js';
-import { canonicalUnsignedPayloadBytes } from './payloads.js';
+} from './manifest';
+import { canonicalUnsignedPayloadBytes } from './payloads';
 import type {
     DecryptionSharePayload,
     ElectionManifest,
@@ -22,8 +19,8 @@ import type {
     RegistrationPayload,
     SignedPayload,
     OptionAggregateInput,
-} from './types.js';
-import { scoreVotingDomain } from './voting-codecs.js';
+} from './types';
+import { scoreVotingDomain } from './voting-codecs';
 
 export const BALLOT_SUBMISSION_PHASE = 5;
 export const BALLOT_CLOSE_PHASE = 6;

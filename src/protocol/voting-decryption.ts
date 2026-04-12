@@ -2,20 +2,20 @@ import {
     InvalidPayloadError,
     RISTRETTO_GROUP,
     assertInSubgroupOrIdentity,
-} from '../core/index.js';
-import { deriveTranscriptVerificationKey } from '../dkg/verification.js';
-import { verifyDLEQProof, type DLEQStatement } from '../proofs/dleq.js';
-import type { DecryptionShare } from '../threshold/index.js';
+} from '../core/index';
+import { deriveTranscriptVerificationKey } from '../dkg/verification';
+import { verifyDLEQProof, type DLEQStatement } from '../proofs/dleq';
+import type { DecryptionShare } from '../threshold/index';
 
-import { auditSignedPayloads } from './board-audit.js';
+import { auditSignedPayloads } from './board-audit';
 import type {
     DecryptionSharePayload,
     SignedPayload,
     VerifiedDecryptionSharePayload,
     VerifiedOptionDecryptionShares,
     VerifyDecryptionSharePayloadsByOptionInput,
-} from './types.js';
-import { decodeCompactProof } from './voting-codecs.js';
+} from './types';
+import { decodeCompactProof } from './voting-codecs';
 import {
     assertNonEmptyString,
     assertPhase,
@@ -24,7 +24,7 @@ import {
     buildVotingManifestContext,
     decryptionProofContext,
     DECRYPTION_SHARE_PHASE,
-} from './voting-shared.js';
+} from './voting-shared';
 
 const verifyAuditedDecryptionSharePayloadsByOption = async (input: {
     readonly aggregates: VerifyDecryptionSharePayloadsByOptionInput['aggregates'];

@@ -1,5 +1,5 @@
-import { toBufferSource } from './bytes.js';
-import { InvalidScalarError, UnsupportedSuiteError } from './errors.js';
+import { toBufferSource } from './bytes';
+import { InvalidScalarError, UnsupportedSuiteError } from './errors';
 
 const textEncoder = new TextEncoder();
 

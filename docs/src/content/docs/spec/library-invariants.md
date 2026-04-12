@@ -39,5 +39,6 @@ This page records the stable invariants of the current `1.0.0-beta` surface.
 ## Documentation scope
 
 - The generated API reference is export-driven from the root package.
+- Published protocol payloads are JSON-safe `{ payload, signature }` objects with points, scalars, proofs, and signatures already string-encoded.
 - Documentation-generation tooling lives under the top-level `typedoc/` directory.
 - Development-only helpers may remain outside `src/`, but reusable protocol logic belongs in `src/`.

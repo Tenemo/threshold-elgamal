@@ -3,21 +3,18 @@ import {
     assertValidParticipantIndex,
     sha256,
     utf8ToBytes,
-} from '../core/index.js';
-import { bytesToHex } from '../serialize/index.js';
-import {
-    importAuthPublicKey,
-    verifyPayloadSignature,
-} from '../transport/auth.js';
-import { assertSupportedTransportPublicKeyEncoding } from '../transport/key-agreement.js';
+} from '../core/index';
+import { bytesToHex } from '../serialize/index';
+import { importAuthPublicKey, verifyPayloadSignature } from '../transport/auth';
+import { assertSupportedTransportPublicKeyEncoding } from '../transport/key-agreement';
 import type {
     EncodedAuthPublicKey,
     EncodedTransportPublicKey,
-} from '../transport/types.js';
+} from '../transport/types';
 
-import { canonicalizeJson } from './canonical-json.js';
-import { canonicalUnsignedPayloadBytes } from './payloads.js';
-import type { RegistrationPayload, SignedPayload } from './types.js';
+import { canonicalizeJson } from './canonical-json';
+import { canonicalUnsignedPayloadBytes } from './payloads';
+import type { RegistrationPayload, SignedPayload } from './types';
 
 /** Roster entry used for deterministic roster hashing. */
 export type RosterEntry = {

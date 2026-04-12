@@ -1,7 +1,7 @@
-import { bytesToHex } from '../serialize/index.js';
+import { bytesToHex } from '../serialize/index';
 
-import { canonicalUnsignedPayloadBytes, payloadSlotKey } from './payloads.js';
-import type { ProtocolPayload } from './types.js';
+import { canonicalUnsignedPayloadBytes, payloadSlotKey } from './payloads';
+import type { ProtocolPayload } from './types';
 
 const compareStrings = (left: string, right: string): number => {
     if (left < right) {

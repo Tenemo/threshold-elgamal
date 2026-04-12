@@ -1,12 +1,12 @@
-import { decodePoint, decodeScalar, encodeScalar } from '../core/ristretto.js';
-import type { ElGamalCiphertext } from '../elgamal/types.js';
-import type { DLEQProof, DisjunctiveProof } from '../proofs/types.js';
+import { decodePoint, decodeScalar, encodeScalar } from '../core/ristretto';
+import type { ElGamalCiphertext } from '../elgamal/types';
+import type { DLEQProof, DisjunctiveProof } from '../proofs/types';
 
 import type {
     EncodedCiphertext,
     EncodedCompactProof,
     EncodedDisjunctiveProof,
-} from './types.js';
+} from './types';
 
 /**
  * Encodes an additive ciphertext into fixed-width protocol hex.

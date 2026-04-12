@@ -1,28 +1,28 @@
-import { InvalidPayloadError } from '../core/index.js';
-import { decodeScalar } from '../core/ristretto.js';
+import { InvalidPayloadError } from '../core/index';
+import { decodeScalar } from '../core/ristretto';
 import {
     verifyDKGTranscript,
     type VerifiedDKGTranscript,
-} from '../dkg/verification.js';
-import { combineDecryptionShares } from '../threshold/index.js';
+} from '../dkg/verification';
+import { combineDecryptionShares } from '../threshold/index';
 
-import { auditSignedPayloads, type BoardAudit } from './board-audit.js';
+import { auditSignedPayloads, type BoardAudit } from './board-audit';
 import type {
     BallotClosePayload,
     BallotSubmissionPayload,
     DecryptionSharePayload,
     ElectionManifest,
+    VerifyElectionCeremonyInput,
     VerifiedDecryptionSharePayload,
     VerifiedOptionDecryptionShares,
     VerifiedPublishedOptionVotingResult,
-    VerifyPublishedVotingResultsInput,
     SignedPayload,
     TallyPublicationPayload,
-} from './types.js';
-import type { VerifiedOptionBallotAggregation } from './voting-ballot-aggregation.js';
-import { verifyBallotClosePayload } from './voting-ballot-close.js';
-import { verifyBallotSubmissionPayloadsByOption } from './voting-ballots.js';
-import { verifyDecryptionSharePayloadsByOption } from './voting-decryption.js';
+} from './types';
+import type { VerifiedOptionBallotAggregation } from './voting-ballot-aggregation';
+import { verifyBallotClosePayload } from './voting-ballot-close';
+import { verifyBallotSubmissionPayloadsByOption } from './voting-ballots';
+import { verifyDecryptionSharePayloadsByOption } from './voting-decryption';
 import {
     assertPhase,
     assertUniqueSortedIndices,
@@ -31,7 +31,7 @@ import {
     sameNumberSet,
     TALLY_PUBLICATION_PHASE,
     verifyPayloadsAgainstRegistrations,
-} from './voting-shared.js';
+} from './voting-shared';
 
 /** Stable high-level failure codes for full ceremony verification. */
 export type ElectionVerificationErrorCode =
@@ -105,9 +105,6 @@ export type VerifiedElectionCeremony = {
     readonly dkg: VerifiedDKGTranscript;
     readonly options: readonly VerifiedPublishedOptionVotingResult[];
 };
-
-/** Input bundle for full ceremony verification across all published options. */
-export type VerifyElectionCeremonyInput = VerifyPublishedVotingResultsInput;
 
 /** Non-throwing result shape for full ceremony verification. */
 export type ElectionVerificationResult =
@@ -207,6 +204,15 @@ const findOptionDecryptionShares = (
  *
  * @param input Full public ceremony input bundle.
  * @returns Detailed verified ceremony output.
+ *
+ * @example
+ * ```ts
+ * const verified = await verifyElectionCeremony(bundle);
+ *
+ * console.log(verified.boardAudit.overall.fingerprint);
+ * console.log(verified.countedParticipantIndices);
+ * console.log(verified.perOptionTallies);
+ * ```
  */
 export const verifyElectionCeremony = async (
     input: VerifyElectionCeremonyInput,
@@ -460,6 +466,18 @@ export const verifyElectionCeremony = async (
  *
  * @param input Full public ceremony input bundle.
  * @returns Verified ceremony output or a stable structured failure.
+ *
+ * @example
+ * ```ts
+ * const result = await tryVerifyElectionCeremony(bundle);
+ *
+ * if (!result.ok) {
+ *     console.error(result.error.stage, result.error.code, result.error.reason);
+ *     return;
+ * }
+ *
+ * console.log(result.verified.qualifiedParticipantIndices);
+ * ```
  */
 export const tryVerifyElectionCeremony = async (
     input: VerifyElectionCeremonyInput,

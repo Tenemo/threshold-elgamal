@@ -1,4 +1,4 @@
-import { InvalidPayloadError } from './errors.js';
+import { InvalidPayloadError } from './errors';
 
 const hexPattern = /^[0-9a-f]+$/i;
 const defaultHexErrorMessage =

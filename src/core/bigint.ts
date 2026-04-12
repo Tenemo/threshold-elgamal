@@ -1,4 +1,4 @@
-import { InvalidScalarError } from './errors.js';
+import { InvalidScalarError } from './errors';
 
 const assertPositiveModulus = (modulus: bigint): void => {
     if (modulus <= 0n) {

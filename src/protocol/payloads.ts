@@ -1,8 +1,8 @@
-import { utf8ToBytes } from '../core/index.js';
-import { bytesToHex } from '../serialize/index.js';
+import { utf8ToBytes } from '../core/index';
+import { bytesToHex } from '../serialize/index';
 
-import { canonicalizeJson } from './canonical-json.js';
-import type { ProtocolPayload, SignedPayload } from './types.js';
+import { canonicalizeJson } from './canonical-json';
+import type { ProtocolPayload, SignedPayload } from './types';
 
 /**
  * Computes the canonical slot key used for idempotence and equivocation checks.

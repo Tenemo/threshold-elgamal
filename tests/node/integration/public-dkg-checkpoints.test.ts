@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { runVotingFlowScenario } from '../../../tools/internal/voting-flow-harness.js';
+import { runVotingFlowScenario } from '../../../tools/internal/voting-flow-harness';
 
 import {
     createFeldmanCommitmentPayload,

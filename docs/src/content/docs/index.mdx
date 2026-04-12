@@ -30,6 +30,21 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components';
     description="Use the minimal manifest, the honest-majority threshold rule, and the supported root-only import surface."
   />
   <LinkCard
+    title="Verifying a public board"
+    href="./guides/verifying-a-public-board/"
+    description="Feed the published ceremony bundle into the shipped verifier and interpret the stable result shape."
+  />
+  <LinkCard
+    title="Browser and worker usage"
+    href="./guides/browser-and-worker-usage/"
+    description="Generate keys, create signed payloads, and use transport envelopes inside browser code or workers."
+  />
+  <LinkCard
+    title="Published payload examples"
+    href="./guides/published-payload-examples/"
+    description="See concrete JSON shapes for the signed payloads you post, store, and verify."
+  />
+  <LinkCard
     title="Honest-majority voting flow"
     href="./guides/three-participant-voting-flow/"
     description="Follow the supported ceremony from manifest publication through ballot close, decryption shares, and tally verification."
@@ -55,6 +70,11 @@ import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 - fixed `1..10` score voting
 - organizer-signed `ballot-close`
 - full public-board verification
+
+Most integrations start in one of two places:
+
+- Build and publish signed protocol payloads from browser code or workers.
+- Verify a complete public board bundle with `tryVerifyElectionCeremony(...)` or `verifyElectionCeremony(...)`.
 
 ## What it does not try to do
 

@@ -1,10 +1,6 @@
-import { toBufferSource } from '../core/bytes.js';
-import { getWebCrypto, hkdfSha256, randomBytes } from '../core/index.js';
-import {
-    bytesToHex,
-    encodeForChallenge,
-    hexToBytes,
-} from '../serialize/index.js';
+import { toBufferSource } from '../core/bytes';
+import { getWebCrypto, hkdfSha256, randomBytes } from '../core/index';
+import { bytesToHex, encodeForChallenge, hexToBytes } from '../serialize/index';
 
 import {
     deriveTransportSharedSecret,
@@ -13,13 +9,13 @@ import {
     generateTransportKeyPair,
     importTransportPrivateKey,
     importTransportPublicKey,
-} from './key-agreement.js';
+} from './key-agreement';
 import type {
     EncodedTransportPrivateKey,
     EncodedTransportPublicKey,
     EncryptedEnvelope,
     EnvelopeContext,
-} from './types.js';
+} from './types';
 
 const envelopeKeySalt = (rosterHash: string): Uint8Array =>
     new TextEncoder().encode(rosterHash);

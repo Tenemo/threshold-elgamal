@@ -4,24 +4,24 @@ import {
     modQ,
     type CryptoGroup,
     type RandomBytesSource,
-} from '../core/index.js';
+} from '../core/index';
 import {
     decodePoint,
     encodePoint,
     multiplyBase,
     pointMultiply,
     pointSubtract,
-} from '../core/ristretto.js';
-import { encodeForChallenge } from '../serialize/index.js';
+} from '../core/ristretto';
+import { encodeForChallenge } from '../serialize/index';
 
 import {
     assertProofContext,
     contextElements,
     fixedPoint,
     hashChallenge,
-} from './helpers.js';
-import { hedgedNonce } from './nonces.js';
-import type { ProofContext, SchnorrProof } from './types.js';
+} from './helpers';
+import { hedgedNonce } from './nonces';
+import type { ProofContext, SchnorrProof } from './types';
 
 const nonceContext = (
     statement: string,

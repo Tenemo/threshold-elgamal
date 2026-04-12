@@ -8,7 +8,7 @@ import {
     majorityThreshold,
     modQ,
     type CryptoGroup,
-} from '../core/index.js';
+} from '../core/index';
 import {
     RISTRETTO_ZERO,
     decodePoint,
@@ -16,16 +16,16 @@ import {
     encodePoint,
     pointAdd,
     pointMultiply,
-} from '../core/ristretto.js';
-import type { EncodedPoint } from '../core/types.js';
-import type { ProofContext } from '../proofs/index.js';
-import { verifySchnorrProof } from '../proofs/index.js';
-import { auditSignedPayloads } from '../protocol/board-audit.js';
+} from '../core/ristretto';
+import type { EncodedPoint } from '../core/types';
+import type { ProofContext } from '../proofs/index';
+import { verifySchnorrProof } from '../proofs/index';
+import { auditSignedPayloads } from '../protocol/board-audit';
 import {
     hashElectionManifest,
     SHIPPED_PROTOCOL_VERSION,
-} from '../protocol/manifest.js';
-import { hashProtocolTranscript } from '../protocol/transcript.js';
+} from '../protocol/manifest';
+import { hashProtocolTranscript } from '../protocol/transcript';
 import type {
     ComplaintPayload,
     ElectionManifest,
@@ -38,25 +38,25 @@ import type {
     ProtocolMessageType,
     RegistrationPayload,
     SignedPayload,
-} from '../protocol/types.js';
+} from '../protocol/types';
 import {
     verifySignedProtocolPayloads,
     type VerifiedProtocolSignatures,
-} from '../protocol/verification.js';
+} from '../protocol/verification';
 
 import {
     assertSupportedCheckpointPayloads,
     isPhaseCheckpointPayload,
     resolveVerifiedPhaseCheckpoint,
     type FinalizedPhaseCheckpoint,
-} from './checkpoints.js';
+} from './checkpoints';
 import {
     assertEncryptedShareCoverage,
     assertPedersenCommitmentCoverage,
     buildEncryptedShareMatrix,
     parsePedersenCommitmentMap,
     verifyComplaintOutcomes,
-} from './verification-complaints.js';
+} from './verification-complaints';
 
 /** Input bundle for verifying a DKG transcript. */
 export type VerifyDKGTranscriptInput = {

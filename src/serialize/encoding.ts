@@ -2,9 +2,9 @@ import {
     bytesToBigInt,
     bytesToHex as encodeBytesToHex,
     hexToBytes as decodeHexToBytes,
-} from '../core/bytes.js';
-import { utf8ToBytes } from '../core/crypto.js';
-import { InvalidPayloadError, InvalidScalarError } from '../core/errors.js';
+} from '../core/bytes';
+import { utf8ToBytes } from '../core/crypto';
+import { InvalidPayloadError, InvalidScalarError } from '../core/errors';
 
 const encodeLength = (length: number): Uint8Array => {
     if (!Number.isInteger(length) || length < 0) {

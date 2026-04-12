@@ -41,6 +41,18 @@ npm install threshold-elgamal
 - Authentication signatures require Web Crypto `Ed25519`.
 - Transport share exchange requires Web Crypto `X25519`.
 
+## Documentation
+
+- Hosted documentation site: [tenemo.github.io/threshold-elgamal](https://tenemo.github.io/threshold-elgamal/)
+- Get started: [tenemo.github.io/threshold-elgamal/guides/getting-started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
+- Verifying a public board: [tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board](https://tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board/)
+- Browser and worker usage: [tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage](https://tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage/)
+- Published payload examples: [tenemo.github.io/threshold-elgamal/guides/published-payload-examples](https://tenemo.github.io/threshold-elgamal/guides/published-payload-examples/)
+- Honest-majority voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
+- Security boundary: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
+- Production voting safety review: [tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review](https://tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review/)
+- API docs: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
+
 ## Browser support
 
 The shipped cryptographic browser path is fixed:
@@ -79,6 +91,12 @@ The cryptographic threshold is derived internally from the accepted registration
 There is no supported `n-of-n` mode and no supported public `k-of-n` configuration.
 
 Transcript verification requires key-derivation confirmations from every qualified participant.
+
+## Choose your entry point
+
+- Verifying a public board: start with the hosted guide for `tryVerifyElectionCeremony(...)` and `verifyElectionCeremony(...)`.
+- Browser and worker usage: start with the browser guide for key generation, manifest setup, and encrypted transport envelopes.
+- Payload shapes and storage: start with the payload examples guide if you need concrete JSON, posting, or persistence patterns.
 
 ## Getting started
 
@@ -126,6 +144,34 @@ console.log(majorityThreshold(3)); // 2
 console.log(sessionId.length); // 64
 ```
 
+If your application consumes a complete public board, the shortest safe verifier entry point is:
+
+```typescript
+import {
+    tryVerifyElectionCeremony,
+    type VerifyElectionCeremonyInput,
+} from "threshold-elgamal";
+
+const bundle: VerifyElectionCeremonyInput = {
+    manifest,
+    sessionId,
+    dkgTranscript,
+    ballotPayloads,
+    ballotClosePayload,
+    decryptionSharePayloads,
+    tallyPublications,
+};
+
+const result = await tryVerifyElectionCeremony(bundle);
+
+if (!result.ok) {
+    console.error(result.error.stage, result.error.code, result.error.reason);
+} else {
+    console.log(result.verified.perOptionTallies);
+    console.log(result.verified.boardAudit.overall.fingerprint);
+}
+```
+
 The root package also exposes public builders for:
 
 - manifest publication
@@ -140,7 +186,7 @@ The root package also exposes public builders for:
 - decryption shares
 - tally publication
 
-For a full executable ceremony example, use the public node integration tests in this repository.
+For concrete integration examples, start with the hosted guides below. The repository integration harness exercises the same workflow, but it is not part of the supported public API.
 
 ## Security boundary
 
@@ -166,15 +212,6 @@ What it does not claim:
 `ballot-close` is an auditable administrative cutoff, not a fairness proof about board arrival order. The library proves what was counted, not whether the organizer waited long enough before closing.
 
 For a production-threat-model verdict that maps these boundaries to the shipped verifier and tests, read the production voting safety review in the hosted docs.
-
-## Documentation
-
-- Hosted documentation site: [tenemo.github.io/threshold-elgamal](https://tenemo.github.io/threshold-elgamal/)
-- Get started: [tenemo.github.io/threshold-elgamal/guides/getting-started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
-- Honest-majority voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
-- Security boundary: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
-- Production voting safety review: [tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review](https://tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review/)
-- API docs: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
 
 ## Development
 

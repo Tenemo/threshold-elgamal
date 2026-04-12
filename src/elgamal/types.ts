@@ -1,4 +1,4 @@
-import type { EncodedPoint } from '../core/types.js';
+import type { EncodedPoint } from '../core/types';
 
 /** Public and private key pair for the shipped Ristretto255 suite. */
 export type ElGamalKeyPair = {

@@ -1,9 +1,9 @@
-import { bytesToHex } from '../core/bytes.js';
-import { sha256, utf8ToBytes } from '../core/index.js';
+import { bytesToHex } from '../core/bytes';
+import { sha256, utf8ToBytes } from '../core/index';
 
-import { canonicalizeJson } from './canonical-json.js';
-import { sortProtocolPayloads } from './ordering.js';
-import type { ProtocolPayload } from './types.js';
+import { canonicalizeJson } from './canonical-json';
+import { sortProtocolPayloads } from './ordering';
+import type { ProtocolPayload } from './types';
 
 const isProtocolPhasePayload = (payload: ProtocolPayload): boolean =>
     payload.messageType !== 'phase-checkpoint';

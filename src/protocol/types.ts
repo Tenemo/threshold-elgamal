@@ -1,11 +1,11 @@
-import type { EncodedPoint } from '../core/types.js';
-import type { VerifiedDKGTranscript } from '../dkg/verification.js';
-import type { DecryptionShare } from '../threshold/types.js';
+import type { EncodedPoint } from '../core/types';
+import type { VerifiedDKGTranscript } from '../dkg/verification';
+import type { DecryptionShare } from '../threshold/types';
 import type {
     EncodedAuthPublicKey,
     EncodedTransportPrivateKey,
     EncodedTransportPublicKey,
-} from '../transport/types.js';
+} from '../transport/types';
 
 /** Canonical protocol payload type identifiers. */
 export type ProtocolMessageType =
@@ -241,7 +241,7 @@ export type VerifiedDecryptionSharePayload = {
 /** Verified aggregate input for one option slot. */
 export type OptionAggregateInput = {
     readonly optionIndex: number;
-    readonly aggregate: import('./voting-ballot-aggregation.js').VerifiedBallotAggregation['aggregate'];
+    readonly aggregate: import('./voting-ballot-aggregation').VerifiedBallotAggregation['aggregate'];
 };
 
 /** Verified decryption shares grouped by option slot. */
@@ -259,8 +259,8 @@ export type VerifyDecryptionSharePayloadsByOptionInput = {
     readonly sessionId: string;
 };
 
-/** Input bundle for verifying one full published tally set across all options. */
-export type VerifyPublishedVotingResultsInput = {
+/** Input bundle for full ceremony verification across all published options. */
+export type VerifyElectionCeremonyInput = {
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
     readonly dkgTranscript: readonly SignedPayload[];
@@ -273,7 +273,7 @@ export type VerifyPublishedVotingResultsInput = {
 /** Verified published tally for one option slot. */
 export type VerifiedPublishedOptionVotingResult = {
     readonly optionIndex: number;
-    readonly ballots: import('./voting-ballot-aggregation.js').VerifiedOptionBallotAggregation;
+    readonly ballots: import('./voting-ballot-aggregation').VerifiedOptionBallotAggregation;
     readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
     readonly tally: bigint;
 };

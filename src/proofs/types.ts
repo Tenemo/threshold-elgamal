@@ -1,4 +1,4 @@
-import type { GroupName } from '../core/types.js';
+import type { GroupName } from '../core/types';
 
 /** Common Fiat-Shamir context fields used by the shipped proof systems. */
 export type ProofContext = {
