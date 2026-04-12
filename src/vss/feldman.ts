@@ -1,15 +1,43 @@
-import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
 import {
     assertInSubgroup,
     assertPositiveParticipantIndex,
     assertScalarInZq,
+    modQ,
+    RISTRETTO_GROUP,
+    assertCanonicalRistrettoGroup,
     type CryptoGroup,
 } from '../core/index.js';
-import { decodePoint, encodePoint, multiplyBase } from '../core/ristretto.js';
+import {
+    decodePoint,
+    encodePoint,
+    multiplyBase,
+    pointAdd,
+    pointMultiply,
+    RISTRETTO_ZERO,
+} from '../core/ristretto.js';
+import type { EncodedPoint } from '../core/types.js';
 import type { Share } from '../threshold/types.js';
 
-import { evaluateCommitmentProduct } from './commitment-product.js';
 import type { FeldmanCommitments } from './types.js';
+
+export const evaluateCommitmentProduct = (
+    commitments: readonly EncodedPoint[],
+    index: number,
+): EncodedPoint => {
+    let result = RISTRETTO_ZERO;
+    let exponent = 1n;
+    const point = BigInt(index);
+
+    for (const commitment of commitments) {
+        result = pointAdd(
+            result,
+            pointMultiply(decodePoint(commitment), exponent),
+        );
+        exponent = modQ(exponent * point, RISTRETTO_GROUP.q);
+    }
+
+    return encodePoint(result);
+};
 
 /**
  * Computes Feldman commitments for polynomial coefficients.
@@ -45,11 +73,7 @@ export const verifyFeldmanShare = (
 
     return decodePoint(encodePoint(multiplyBase(share.value))).equals(
         decodePoint(
-            evaluateCommitmentProduct(
-                commitments.commitments,
-                share.index,
-                group,
-            ),
+            evaluateCommitmentProduct(commitments.commitments, share.index),
         ),
     );
 };

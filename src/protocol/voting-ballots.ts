@@ -1,12 +1,16 @@
 import { InvalidPayloadError } from '../core/index.js';
 
+import { auditSignedPayloads } from './board-audit.js';
+import type {
+    BallotSubmissionPayload,
+    SignedPayload,
+    VerifyBallotSubmissionPayloadsByOptionInput,
+} from './types.js';
 import {
     verifyAndAggregateBallotsByOption,
     type BallotTranscriptEntry,
     type VerifiedOptionBallotAggregation,
-} from './ballots.js';
-import { auditSignedPayloads } from './board-audit.js';
-import type { BallotSubmissionPayload } from './types.js';
+} from './voting-ballot-aggregation.js';
 import { decodeCiphertext, decodeDisjunctiveProof } from './voting-codecs.js';
 import {
     assertPhase,
@@ -14,7 +18,6 @@ import {
     buildVotingManifestContext,
     BALLOT_SUBMISSION_PHASE,
 } from './voting-shared.js';
-import type { VerifyBallotSubmissionPayloadsByOptionInput } from './voting-types.js';
 
 const decodeBallotPayload = (
     payload: BallotSubmissionPayload,
@@ -35,6 +38,37 @@ const decodeBallotPayload = (
     };
 };
 
+const verifyAuditedBallotSubmissionPayloadsByOption = async (input: {
+    readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly context: Awaited<ReturnType<typeof buildVotingManifestContext>>;
+    readonly publicKey: VerifyBallotSubmissionPayloadsByOptionInput['publicKey'];
+}): Promise<readonly VerifiedOptionBallotAggregation[]> => {
+    const ballotEntries = input.ballotPayloads.map((payload) => {
+        if (payload.payload.sessionId !== input.context.sessionId) {
+            throw new InvalidPayloadError(
+                'Ballot submission payload session does not match the verification input',
+            );
+        }
+        if (payload.payload.manifestHash !== input.context.manifestHash) {
+            throw new InvalidPayloadError(
+                'Ballot submission payload manifest hash does not match the verification input',
+            );
+        }
+
+        return decodeBallotPayload(payload.payload, input.context.optionCount);
+    });
+
+    return verifyAndAggregateBallotsByOption({
+        ballots: ballotEntries,
+        publicKey: input.publicKey,
+        validValues: input.context.scoreDomainValues,
+        protocolVersion: input.context.protocolVersion,
+        manifestHash: input.context.manifestHash,
+        sessionId: input.context.sessionId,
+        optionCount: input.context.optionCount,
+    });
+};
+
 /**
  * Verifies typed ballot-submission payloads and recomputes one aggregate tally
  * ciphertext per manifest option.
@@ -53,28 +87,10 @@ export const verifyBallotSubmissionPayloadsByOption = async (
         input.sessionId,
     );
     const auditedBallots = await auditSignedPayloads(input.ballotPayloads);
-    const ballotEntries = auditedBallots.acceptedPayloads.map((payload) => {
-        if (payload.payload.sessionId !== context.sessionId) {
-            throw new InvalidPayloadError(
-                'Ballot submission payload session does not match the verification input',
-            );
-        }
-        if (payload.payload.manifestHash !== context.manifestHash) {
-            throw new InvalidPayloadError(
-                'Ballot submission payload manifest hash does not match the verification input',
-            );
-        }
 
-        return decodeBallotPayload(payload.payload, context.optionCount);
-    });
-
-    return verifyAndAggregateBallotsByOption({
-        ballots: ballotEntries,
+    return verifyAuditedBallotSubmissionPayloadsByOption({
+        ballotPayloads: auditedBallots.acceptedPayloads,
+        context,
         publicKey: input.publicKey,
-        validValues: context.scoreDomainValues,
-        protocolVersion: context.protocolVersion,
-        manifestHash: context.manifestHash,
-        sessionId: context.sessionId,
-        optionCount: context.optionCount,
     });
 };

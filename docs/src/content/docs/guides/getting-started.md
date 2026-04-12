@@ -18,7 +18,7 @@ Use the root package. The shipped public surface is centered on one protocol sto
 ## Where to go next
 
 - For installation and the top-level package overview, read [README.md](https://github.com/Tenemo/threshold-elgamal#readme).
-- For the supported ceremony path, read [Three-participant voting flow](./three-participant-voting-flow/).
+- For the supported ceremony path, read [Honest-majority voting flow](./three-participant-voting-flow/).
 - For runtime prerequisites and platform assumptions, read [Runtime and compatibility](./runtime-and-compatibility/).
 - For the security boundary, read [Security and non-goals](./security-and-non-goals/).
 - For exact signatures and exported types, use the [API docs](../api/).

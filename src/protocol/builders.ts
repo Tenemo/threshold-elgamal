@@ -1,5 +1,5 @@
 import { encodeScalar } from '../core/ristretto.js';
-import type { ElgamalCiphertext } from '../elgamal/types.js';
+import type { ElGamalCiphertext } from '../elgamal/types.js';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types.js';
 import { signPayloadBytes } from '../transport/auth.js';
 import type {
@@ -149,7 +149,7 @@ export const createPhaseCheckpointPayload = async (
         readonly checkpointPhase: 0 | 1 | 2 | 3;
         readonly manifestHash: string;
         readonly participantIndex: number;
-        readonly qualParticipantIndices: readonly number[];
+        readonly qualifiedParticipantIndices: readonly number[];
         readonly sessionId: string;
         readonly transcript: readonly SignedPayload[];
     },
@@ -165,7 +165,7 @@ export const createPhaseCheckpointPayload = async (
             input.transcript.map((entry) => entry.payload),
             input.checkpointPhase,
         ),
-        qualParticipantIndices: [...input.qualParticipantIndices],
+        qualifiedParticipantIndices: [...input.qualifiedParticipantIndices],
     });
 
 /** Creates a signed Pedersen-commitment payload for DKG phase 1. */
@@ -224,7 +224,7 @@ export const createFeldmanCommitmentPayload = async (
                       challenge: proof.challenge,
                       response: proof.response,
                   }
-                : encodeCompactProof(proof, 32)),
+                : encodeCompactProof(proof)),
         })),
     };
 
@@ -251,7 +251,7 @@ export const createBallotSubmissionPayload = async (
     > & {
         readonly ciphertext:
             | BallotSubmissionPayload['ciphertext']
-            | ElgamalCiphertext;
+            | ElGamalCiphertext;
         readonly proof: BallotSubmissionPayload['proof'] | DisjunctiveProof;
     },
 ): Promise<SignedPayload<BallotSubmissionPayload>> => {
@@ -259,10 +259,10 @@ export const createBallotSubmissionPayload = async (
         ...input,
         phase: BALLOT_SUBMISSION_PHASE,
         messageType: 'ballot-submission',
-        ciphertext: encodeCiphertext(input.ciphertext as ElgamalCiphertext, 32),
+        ciphertext: encodeCiphertext(input.ciphertext as ElGamalCiphertext),
         proof: isEncodedDisjunctiveProof(input.proof)
             ? input.proof
-            : encodeDisjunctiveProof(input.proof, 32),
+            : encodeDisjunctiveProof(input.proof),
     };
 
     return signProtocolPayload(privateKey, payload);
@@ -273,11 +273,11 @@ export const createBallotClosePayload = async (
     privateKey: CryptoKey,
     input: Omit<BallotClosePayload, 'messageType' | 'phase'>,
 ): Promise<SignedPayload<BallotClosePayload>> => {
-    const includedParticipantIndices = [
-        ...input.includedParticipantIndices,
-    ].sort((left, right) => left - right);
+    const countedParticipantIndices = [...input.countedParticipantIndices].sort(
+        (left, right) => left - right,
+    );
     assertUniqueSortedIndices(
-        includedParticipantIndices,
+        countedParticipantIndices,
         'Ballot close participant',
     );
 
@@ -285,7 +285,7 @@ export const createBallotClosePayload = async (
         ...input,
         phase: BALLOT_CLOSE_PHASE,
         messageType: 'ballot-close',
-        includedParticipantIndices,
+        countedParticipantIndices,
     });
 };
 
@@ -302,7 +302,7 @@ export const createDecryptionSharePayload = async (
         messageType: 'decryption-share',
         proof: isEncodedCompactProof(input.proof)
             ? input.proof
-            : encodeCompactProof(input.proof, 32),
+            : encodeCompactProof(input.proof),
     };
 
     return signProtocolPayload(privateKey, payload);

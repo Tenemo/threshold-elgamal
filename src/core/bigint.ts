@@ -79,24 +79,13 @@ export const mod = (value: bigint, modulus: bigint): bigint => {
  *
  * @throws {@link InvalidScalarError} When `p` is not positive.
  */
-export const modP = (value: bigint, p: bigint): bigint => mod(value, p);
+const modP = (value: bigint, p: bigint): bigint => mod(value, p);
 /**
  * Reduces a value into the range `0..q-1`.
  *
  * @throws {@link InvalidScalarError} When `q` is not positive.
  */
 export const modQ = (value: bigint, q: bigint): bigint => mod(value, q);
-
-/**
- * Computes the multiplicative inverse of a value modulo `p`.
- *
- * @throws {@link InvalidScalarError} When `p` is not positive or the inverse
- * does not exist.
- */
-export const modInvP = (value: bigint, p: bigint): bigint => {
-    assertPositiveModulus(p);
-    return modInv(modP(value, p), p);
-};
 
 /**
  * Computes the multiplicative inverse of a value modulo `q`.

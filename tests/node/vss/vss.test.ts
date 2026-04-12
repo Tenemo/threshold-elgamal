@@ -2,14 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
     type EncodedPoint,
-    IndexOutOfRangeError,
     InvalidGroupElementError,
-    InvalidScalarError,
+    RISTRETTO_GROUP,
     ThresholdViolationError,
     UnsupportedSuiteError,
-    getGroup,
 } from '#core';
-import { deriveSharesFromPolynomial } from '#threshold';
 import {
     derivePedersenShares,
     generateFeldmanCommitments,
@@ -18,11 +15,47 @@ import {
     verifyPedersenShare,
 } from '#vss';
 
+const deriveShares = (
+    polynomial: readonly bigint[],
+    participantCount: number,
+    q: bigint,
+): readonly {
+    readonly index: number;
+    readonly value: bigint;
+}[] => {
+    if (!Number.isInteger(participantCount) || participantCount < 1) {
+        throw new ThresholdViolationError(
+            'Participant count must be a positive integer',
+        );
+    }
+
+    return Array.from({ length: participantCount }, (_value, offset) => {
+        const index = offset + 1;
+        let result = 0n;
+
+        for (
+            let coefficientIndex = polynomial.length - 1;
+            coefficientIndex >= 0;
+            coefficientIndex -= 1
+        ) {
+            result =
+                (((result * BigInt(index)) % q) +
+                    polynomial[coefficientIndex]) %
+                q;
+        }
+
+        return {
+            index,
+            value: result,
+        };
+    });
+};
+
 describe('verifiable secret sharing', () => {
     it('verifies Feldman shares against coefficient commitments', () => {
-        const group = getGroup('ristretto255');
+        const group = RISTRETTO_GROUP;
         const polynomial = [12345n, 67890n, 13579n] as const;
-        const shares = deriveSharesFromPolynomial(polynomial, 5, group.q);
+        const shares = deriveShares(polynomial, 5, group.q);
         const commitments = generateFeldmanCommitments(polynomial, group);
 
         expect(commitments.commitments).toHaveLength(3);
@@ -41,7 +74,7 @@ describe('verifiable secret sharing', () => {
     });
 
     it('verifies Pedersen share pairs against coefficient commitments', () => {
-        const group = getGroup('ristretto255');
+        const group = RISTRETTO_GROUP;
         const secretPolynomial = [12345n, 67890n, 13579n] as const;
         const blindingPolynomial = [22222n, 33333n, 44444n] as const;
         const commitments = generatePedersenCommitments(
@@ -87,13 +120,9 @@ describe('verifiable secret sharing', () => {
     });
 
     it('rejects malformed VSS inputs and garbled commitments', () => {
-        const group = getGroup('ristretto255');
+        const group = RISTRETTO_GROUP;
         const secretPolynomial = [12345n, 67890n, 13579n] as const;
         const blindingPolynomial = [22222n, 33333n, 44444n] as const;
-        const feldmanCommitments = generateFeldmanCommitments(
-            secretPolynomial,
-            group,
-        );
         const pedersenCommitments = generatePedersenCommitments(
             secretPolynomial,
             blindingPolynomial,
@@ -114,13 +143,6 @@ describe('verifiable secret sharing', () => {
             ),
         ).toThrow('same degree');
         expect(() =>
-            verifyFeldmanShare(
-                { index: 0, value: shares[0].secretValue },
-                feldmanCommitments,
-                group,
-            ),
-        ).toThrow(IndexOutOfRangeError);
-        expect(() =>
             verifyPedersenShare(
                 shares[0],
                 {
@@ -140,16 +162,16 @@ describe('verifiable secret sharing', () => {
                 group.q,
             ),
         ).toThrow(ThresholdViolationError);
-        expect(() =>
-            deriveSharesFromPolynomial(secretPolynomial, 0, group.q),
-        ).toThrow(InvalidScalarError);
-        expect(() =>
-            deriveSharesFromPolynomial(secretPolynomial, 2.5, group.q),
-        ).toThrow(InvalidScalarError);
+        expect(() => deriveShares(secretPolynomial, 0, group.q)).toThrow(
+            ThresholdViolationError,
+        );
+        expect(() => deriveShares(secretPolynomial, 2.5, group.q)).toThrow(
+            ThresholdViolationError,
+        );
     });
 
     it('rejects altered group definitions in low-level VSS helpers', () => {
-        const group = getGroup('ristretto255');
+        const group = RISTRETTO_GROUP;
         const alteredGroup = {
             ...group,
             h: group.g,

@@ -68,7 +68,7 @@ The supported boardroom flow is:
 5. Post ballot payloads for complete `1..10` score ballots.
 6. Post one organizer-signed `ballot-close` payload that freezes which complete ballots are counted.
 7. Post threshold decryption shares and tally publications for the close-selected ballot set.
-8. Verify the whole ceremony with `verifyElectionCeremonyDetailed(...)`.
+8. Verify the whole ceremony with `verifyElectionCeremony(...)`.
 
 The cryptographic threshold is derived internally from the accepted registration roster:
 
@@ -77,6 +77,8 @@ The cryptographic threshold is derived internally from the accepted registration
 - even participant counts are supported and use `k = n / 2`
 
 There is no supported `n-of-n` mode and no supported public `k-of-n` configuration.
+
+Transcript verification requires key-derivation confirmations from every qualified participant.
 
 ## Getting started
 
@@ -163,12 +165,15 @@ What it does not claim:
 
 `ballot-close` is an auditable administrative cutoff, not a fairness proof about board arrival order. The library proves what was counted, not whether the organizer waited long enough before closing.
 
+For a production-threat-model verdict that maps these boundaries to the shipped verifier and tests, read the production voting safety review in the hosted docs.
+
 ## Documentation
 
 - Hosted documentation site: [tenemo.github.io/threshold-elgamal](https://tenemo.github.io/threshold-elgamal/)
 - Get started: [tenemo.github.io/threshold-elgamal/guides/getting-started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
 - Honest-majority voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
 - Security boundary: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
+- Production voting safety review: [tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review](https://tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review/)
 - API docs: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
 
 ## Development
@@ -178,7 +183,7 @@ pnpm install
 pnpm run lint
 pnpm run tsc
 pnpm run test
-pnpm run build:skip
+pnpm run build
 ```
 
 ## License

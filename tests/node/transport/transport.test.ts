@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { exportTransportPrivateKey } from '#src/transport/key-agreement';
 import {
     assertNonZeroSharedSecret,
     decryptEnvelope,
@@ -11,10 +10,8 @@ import {
     generateTransportKeyPair,
     importAuthPublicKey,
     importTransportPublicKey,
-    resolveDealerChallenge,
     resolveDealerChallengeFromPublicKey,
     signPayloadBytes,
-    verifyComplaintPrecondition,
     verifyPayloadSignature,
 } from '#transport';
 
@@ -45,7 +42,7 @@ describe('transport and authentication', () => {
         ).resolves.toBe(false);
     });
 
-    it('encrypts, decrypts, and resolves envelope complaints', async () => {
+    it('encrypts, decrypts, and resolves public dealer challenges', async () => {
         const recipient = await generateTransportKeyPair();
         const recipientPublicKey = await exportTransportPublicKey(
             recipient.publicKey,
@@ -70,16 +67,10 @@ describe('transport and authentication', () => {
         await expect(
             decryptEnvelope(envelope, recipient.privateKey),
         ).resolves.toEqual(plaintext);
-        await expect(
-            verifyComplaintPrecondition(
-                recipient.privateKey,
-                recipientPublicKey,
-            ),
-        ).resolves.toBe(true);
 
-        const resolution = await resolveDealerChallenge(
+        const resolution = await resolveDealerChallengeFromPublicKey(
             envelope,
-            recipient.privateKey,
+            recipientPublicKey,
             ephemeralPrivateKey,
         );
 
@@ -88,48 +79,13 @@ describe('transport and authentication', () => {
         expect(resolution.plaintext).toEqual(plaintext);
     });
 
-    it('verifies complaint preconditions for exported recipient keys', async () => {
-        const recipient = await generateTransportKeyPair({
-            extractable: true,
-        });
-        const recipientPublicKey = await exportTransportPublicKey(
-            recipient.publicKey,
-        );
-        const recipientPrivateKey = await exportTransportPrivateKey(
-            recipient.privateKey,
-        );
-
-        await expect(
-            verifyComplaintPrecondition(
-                recipientPrivateKey,
-                recipientPublicKey,
-            ),
-        ).resolves.toBe(true);
-    });
-
-    it('returns false for malformed exported complaint-precondition keys', async () => {
-        const recipient = await generateTransportKeyPair();
-        const recipientPublicKey = await exportTransportPublicKey(
-            recipient.publicKey,
-        );
-
-        await expect(
-            verifyComplaintPrecondition(
-                '00'.repeat(
-                    67,
-                ) as import('#transport').EncodedTransportPrivateKey,
-                recipientPublicKey,
-            ),
-        ).resolves.toBe(false);
-    });
-
     it('treats malformed exported dealer-challenge keys as dealer faults', async () => {
         const recipient = await generateTransportKeyPair();
         const recipientPublicKey = await exportTransportPublicKey(
             recipient.publicKey,
         );
         const plaintext = new TextEncoder().encode('share-pair');
-        const { envelope, ephemeralPrivateKey } = await encryptEnvelope(
+        const { envelope } = await encryptEnvelope(
             plaintext,
             recipientPublicKey,
             {
@@ -157,28 +113,12 @@ describe('transport and authentication', () => {
             valid: false,
             fault: 'dealer',
         });
-        await expect(
-            resolveDealerChallenge(
-                envelope,
-                '00'.repeat(
-                    67,
-                ) as import('#transport').EncodedTransportPrivateKey,
-                ephemeralPrivateKey,
-            ),
-        ).resolves.toEqual({
-            valid: false,
-            fault: 'dealer',
-        });
     });
 
-    it('rejects garbled transport inputs and mismatched complaint preconditions', async () => {
+    it('rejects garbled transport inputs and malformed complaint resolutions', async () => {
         const recipient = await generateTransportKeyPair();
-        const otherRecipient = await generateTransportKeyPair();
         const recipientPublicKey = await exportTransportPublicKey(
             recipient.publicKey,
-        );
-        const otherRecipientPublicKey = await exportTransportPublicKey(
-            otherRecipient.publicKey,
         );
         const plaintext = new TextEncoder().encode('share-pair');
         const { envelope, ephemeralPrivateKey } = await encryptEnvelope(
@@ -198,26 +138,20 @@ describe('transport and authentication', () => {
         );
 
         await expect(
-            verifyComplaintPrecondition(
-                recipient.privateKey,
-                otherRecipientPublicKey,
-            ),
-        ).resolves.toBe(false);
-        await expect(
             decryptEnvelope(
                 { ...envelope, iv: corruptHexTailByte(envelope.iv) },
                 recipient.privateKey,
             ),
         ).rejects.toThrow();
         await expect(
-            resolveDealerChallenge(
+            resolveDealerChallengeFromPublicKey(
                 {
                     ...envelope,
                     ephemeralPublicKey: corruptHexTailByte(
                         envelope.ephemeralPublicKey,
                     ) as typeof envelope.ephemeralPublicKey,
                 },
-                recipient.privateKey,
+                recipientPublicKey,
                 ephemeralPrivateKey,
             ),
         ).resolves.toEqual({

@@ -1,8 +1,7 @@
 import {
     assertPositiveParticipantIndex,
-    getGroup,
     InvalidPayloadError,
-    type CryptoGroup,
+    RISTRETTO_GROUP,
 } from '../core/index.js';
 import type { ProofContext } from '../proofs/types.js';
 import {
@@ -22,19 +21,18 @@ import type {
     ProtocolPayload,
     RegistrationPayload,
     SignedPayload,
+    OptionAggregateInput,
 } from './types.js';
 import { scoreVotingDomain } from './voting-codecs.js';
-import type { OptionAggregateInput } from './voting-types.js';
 
 export const BALLOT_SUBMISSION_PHASE = 5;
 export const BALLOT_CLOSE_PHASE = 6;
 export const DECRYPTION_SHARE_PHASE = 7;
 export const TALLY_PUBLICATION_PHASE = 8;
 
-export type VotingManifestContext = {
+type VotingManifestContext = {
     readonly manifest: ElectionManifest;
     readonly manifestHash: string;
-    readonly group: CryptoGroup;
     readonly optionCount: number;
     readonly protocolVersion: string;
     readonly scoreDomainValues: readonly bigint[];
@@ -99,17 +97,6 @@ export const assertValidOptionIndex = (
     }
 };
 
-export const assertSingleOptionManifest = (
-    manifest: ElectionManifest,
-    label: string,
-): void => {
-    if (manifest.optionList.length !== 1) {
-        throw new InvalidPayloadError(
-            `${label} requires a single-option manifest; use the per-option verification helpers instead`,
-        );
-    }
-};
-
 export const buildVotingManifestContext = async (
     manifest: ElectionManifest,
     sessionId: string,
@@ -119,7 +106,6 @@ export const buildVotingManifestContext = async (
     return {
         manifest: validatedManifest,
         manifestHash: await hashElectionManifest(validatedManifest),
-        group: getGroup('ristretto255'),
         optionCount: validatedManifest.optionList.length,
         protocolVersion: SHIPPED_PROTOCOL_VERSION,
         scoreDomainValues: scoreVotingDomain(),
@@ -191,10 +177,9 @@ export const buildOptionAggregateMap = (
 export const decryptionProofContext = (
     payload: DecryptionSharePayload,
     protocolVersion: string,
-    group: CryptoGroup,
 ): ProofContext => ({
     protocolVersion,
-    suiteId: group.name,
+    suiteId: RISTRETTO_GROUP.name,
     manifestHash: payload.manifestHash,
     sessionId: payload.sessionId,
     label: 'decryption-share-dleq',

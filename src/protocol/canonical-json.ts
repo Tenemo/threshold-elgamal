@@ -2,16 +2,16 @@ import { InvalidPayloadError } from '../core/index.js';
 import { bigintToFixedHex } from '../serialize/index.js';
 
 /** Primitive value accepted by the canonical JSON serializer. */
-export type CanonicalJsonPrimitive = null | boolean | number | string | bigint;
+type CanonicalJsonPrimitive = null | boolean | number | string | bigint;
 
 /** Recursive JSON-like value accepted by the canonical JSON serializer. */
-export type CanonicalJsonValue =
+type CanonicalJsonValue =
     | CanonicalJsonPrimitive
     | readonly CanonicalJsonValue[]
     | { readonly [key: string]: CanonicalJsonValue };
 
 /** Options controlling canonical JSON serialization behavior. */
-export type CanonicalJsonOptions = {
+type CanonicalJsonOptions = {
     readonly bigintByteLength?: number;
 };
 

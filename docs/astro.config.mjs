@@ -7,9 +7,9 @@ export default defineConfig({
     base: '/threshold-elgamal',
     integrations: [
         StarlightIntegration({
-            title: 'Threshold ElGamal',
+            title: 'threshold-elgamal',
             description:
-                'Browser-native threshold ElGamal documentation for verifiable voting research prototypes.',
+                'Browser-native documentation for threshold-elgamal, a verifiable voting research library built on ElGamal.',
             disable404Route: true,
             social: [
                 {
@@ -19,10 +19,6 @@ export default defineConfig({
                 },
             ],
             customCss: ['./src/styles/custom.css'],
-            editLink: {
-                baseUrl:
-                    'https://github.com/Tenemo/threshold-elgamal/edit/master/docs/src/content/docs/',
-            },
             sidebar: [
                 {
                     label: 'Guides',

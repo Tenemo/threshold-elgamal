@@ -2,8 +2,7 @@ import { toBufferSource } from '../core/bytes.js';
 import { getWebCrypto } from '../core/index.js';
 import { hexToBytes } from '../serialize/index.js';
 
-import { deriveEnvelopeKey, encodeEnvelopeContext } from './envelope-crypto.js';
-import { decryptEnvelope } from './envelopes.js';
+import { deriveEnvelopeKey, encodeEnvelopeContext } from './envelopes.js';
 import {
     deriveTransportSharedSecret,
     importTransportPrivateKey,
@@ -35,20 +34,6 @@ const decryptEnvelopeFromSharedSecret = async (
         ),
     );
 };
-
-/**
- * Verifies that the local recipient transport key still matches the registered
- * public key before filing a transport complaint.
- *
- * @param privateKey Recipient transport private key.
- * @param expectedPublicKeyHex Registered recipient public key.
- * @returns `true` when the local key material matches the registration.
- */
-export const verifyComplaintPrecondition = async (
-    privateKey: CryptoKey | EncodedTransportPrivateKey,
-    expectedPublicKeyHex: EncodedTransportPublicKey,
-): Promise<boolean> =>
-    verifyLocalTransportKey(privateKey, expectedPublicKeyHex);
 
 /**
  * Resolves a dealer challenge using only public transcript material plus the
@@ -94,56 +79,6 @@ export const resolveDealerChallengeFromPublicKey = async (
             plaintext: await decryptEnvelopeFromSharedSecret(
                 envelope,
                 sharedSecret,
-            ),
-        };
-    } catch {
-        return {
-            valid: false,
-            fault: 'dealer',
-        };
-    }
-};
-
-/**
- * Resolves a dealer challenge by revealing the sender-ephemeral private key.
- *
- * If the revealed private key does not match the committed ephemeral public
- * key, or if the committed ciphertext still fails to decrypt, the dealer is at
- * fault. Successful decryption resolves the complaint in the dealer's favor.
- *
- * @param envelope Committed encrypted envelope.
- * @param recipientPrivateKey Recipient transport private key.
- * @param revealedEphemeralPrivateKeyHex Revealed sender-ephemeral private key.
- * @returns Complaint resolution result.
- */
-export const resolveDealerChallenge = async (
-    envelope: EncryptedEnvelope,
-    recipientPrivateKey: CryptoKey | EncodedTransportPrivateKey,
-    revealedEphemeralPrivateKeyHex: EncodedTransportPrivateKey,
-): Promise<ComplaintResolution> => {
-    try {
-        const resolvedRecipientPrivateKey =
-            typeof recipientPrivateKey === 'string'
-                ? await importTransportPrivateKey(recipientPrivateKey)
-                : recipientPrivateKey;
-        const ephemeralKeyMatches = await verifyLocalTransportKey(
-            revealedEphemeralPrivateKeyHex,
-            envelope.ephemeralPublicKey,
-        );
-
-        if (!ephemeralKeyMatches) {
-            return {
-                valid: false,
-                fault: 'dealer',
-            };
-        }
-
-        return {
-            valid: true,
-            fault: 'complainant',
-            plaintext: await decryptEnvelope(
-                envelope,
-                resolvedRecipientPrivateKey,
             ),
         };
     } catch {

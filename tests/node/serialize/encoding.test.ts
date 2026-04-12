@@ -9,7 +9,7 @@ import {
     domainSeparator,
     encodeForChallenge,
     encodeSequenceForChallenge,
-    fixedHexToBigint,
+    fixedHexToBigInt,
     hexToBytes,
 } from '#serialize';
 import {
@@ -22,7 +22,7 @@ describe('foundational encoding', () => {
         const hex = bigintToFixedHex(0x1234n, 4);
 
         expect(hex).toBe('00001234');
-        expect(fixedHexToBigint(hex)).toBe(0x1234n);
+        expect(fixedHexToBigInt(hex)).toBe(0x1234n);
         expect(Array.from(bigintToFixedBytes(0x1234n, 4))).toEqual([
             0x00, 0x00, 0x12, 0x34,
         ]);
@@ -33,8 +33,8 @@ describe('foundational encoding', () => {
         expect(() => bigintToFixedHex(0x123456789n, 4)).toThrow(
             InvalidScalarError,
         );
-        expect(() => fixedHexToBigint('xyz')).toThrow(InvalidPayloadError);
-        expect(() => fixedHexToBigint('123')).toThrow(InvalidPayloadError);
+        expect(() => fixedHexToBigInt('xyz')).toThrow(InvalidPayloadError);
+        expect(() => fixedHexToBigInt('123')).toThrow(InvalidPayloadError);
     });
 
     it('concatenates bytes deterministically', () => {

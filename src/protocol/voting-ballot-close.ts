@@ -13,7 +13,7 @@ import {
 } from './voting-shared.js';
 
 /** Verified organizer-selected ballot cutoff and the counted ballot subset. */
-export type VerifiedBallotClose = {
+type VerifiedBallotClose = {
     readonly countedBallotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly countedParticipantIndices: readonly number[];
     readonly excludedParticipantIndices: readonly number[];
@@ -87,17 +87,17 @@ export const verifyBallotClosePayload = (input: {
     }
 
     assertUniqueSortedIndices(
-        payload.includedParticipantIndices,
+        payload.countedParticipantIndices,
         'Ballot close participant',
     );
-    for (const participantIndex of payload.includedParticipantIndices) {
+    for (const participantIndex of payload.countedParticipantIndices) {
         if (participantIndex > input.participantCount) {
             throw new InvalidPayloadError(
                 `Ballot close participant ${participantIndex} exceeds the registration roster size ${input.participantCount}`,
             );
         }
     }
-    if (payload.includedParticipantIndices.length < input.threshold) {
+    if (payload.countedParticipantIndices.length < input.threshold) {
         throw new InvalidPayloadError(
             `Ballot close must include at least ${input.threshold} participants`,
         );
@@ -108,7 +108,7 @@ export const verifyBallotClosePayload = (input: {
         input.optionCount,
     );
     const completeParticipantSet = new Set(completeParticipants);
-    for (const participantIndex of payload.includedParticipantIndices) {
+    for (const participantIndex of payload.countedParticipantIndices) {
         if (!completeParticipantSet.has(participantIndex)) {
             throw new InvalidPayloadError(
                 `Ballot close requires a complete ballot from participant ${participantIndex}`,
@@ -116,7 +116,7 @@ export const verifyBallotClosePayload = (input: {
         }
     }
 
-    const countedParticipantSet = new Set(payload.includedParticipantIndices);
+    const countedParticipantSet = new Set(payload.countedParticipantIndices);
     const countedBallotPayloads = input.ballotPayloads.filter((signedPayload) =>
         countedParticipantSet.has(signedPayload.payload.participantIndex),
     );
@@ -126,7 +126,7 @@ export const verifyBallotClosePayload = (input: {
 
     return {
         countedBallotPayloads,
-        countedParticipantIndices: [...payload.includedParticipantIndices],
+        countedParticipantIndices: [...payload.countedParticipantIndices],
         excludedParticipantIndices,
         payload: closePayload,
     };

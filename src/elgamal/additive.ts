@@ -1,30 +1,55 @@
 import {
-    InvalidScalarError,
-    PlaintextDomainError,
     RISTRETTO_GROUP,
-    randomScalarInRange,
+    assertAdditiveBound,
+    assertInSubgroupOrIdentity,
+    assertPlaintextAdditive,
+    assertValidPublicKey,
+    InvalidScalarError,
 } from '../core/index.js';
 import {
     decodePoint,
     encodePoint,
     multiplyBase,
     pointAdd,
-    pointSubtract,
     pointMultiply,
 } from '../core/ristretto.js';
 
-import { babyStepGiantStep } from './bsgs.js';
-import type { ElgamalCiphertext } from './types.js';
-import {
-    assertValidAdditiveBound,
-    assertValidAdditiveCiphertext,
-    assertValidAdditivePlaintext,
-    assertValidAdditivePublicKey,
-    assertValidPrivateKey,
-} from './validation.js';
+import type { ElGamalCiphertext } from './types.js';
 
 type ResolvedAdditiveContext = {
     readonly bound: bigint;
+};
+
+/**
+ * Validates that a private key lies in the range `1..q-1`.
+ */
+export const assertValidPrivateKey = (privateKey: bigint): void => {
+    if (privateKey <= 0n || privateKey >= RISTRETTO_GROUP.q) {
+        throw new InvalidScalarError('Private key must be in the range 1..q-1');
+    }
+};
+
+/** Validates an additive-mode public key against the shipped suite. */
+export const assertValidAdditivePublicKey = (publicKey: string): void => {
+    assertValidPublicKey(publicKey);
+};
+
+/** Validates the caller-supplied additive plaintext bound. */
+export const assertValidAdditiveBound = (bound: bigint): void =>
+    assertAdditiveBound(bound, RISTRETTO_GROUP.q);
+
+/** Validates the plaintext domain and caller-supplied bound for additive mode. */
+export const assertValidAdditivePlaintext = (
+    value: bigint,
+    bound: bigint,
+): void => assertPlaintextAdditive(value, bound, RISTRETTO_GROUP.q);
+
+/** Validates an additive ciphertext that may already be an aggregate. */
+export const assertValidAdditiveCiphertext = (
+    ciphertext: ElGamalCiphertext,
+): void => {
+    assertInSubgroupOrIdentity(ciphertext.c1);
+    assertInSubgroupOrIdentity(ciphertext.c2);
 };
 
 const resolveAdditiveBound = (
@@ -65,7 +90,7 @@ const encryptAdditiveWithValidatedInputs = (
     message: bigint,
     publicKey: string,
     randomness: bigint,
-): ElgamalCiphertext => {
+): ElGamalCiphertext => {
     const publicKeyPoint = decodePoint(publicKey, 'Public key');
     const c1 = multiplyBase(randomness);
     const messageEncoding = multiplyBase(message);
@@ -79,6 +104,22 @@ const encryptAdditiveWithValidatedInputs = (
 };
 
 /**
+ * Adds two additive-mode ciphertexts component-wise.
+ */
+export const addEncryptedValues = (
+    left: ElGamalCiphertext,
+    right: ElGamalCiphertext,
+): ElGamalCiphertext => {
+    assertValidAdditiveCiphertext(left);
+    assertValidAdditiveCiphertext(right);
+
+    return {
+        c1: encodePoint(pointAdd(decodePoint(left.c1), decodePoint(right.c1))),
+        c2: encodePoint(pointAdd(decodePoint(left.c2), decodePoint(right.c2))),
+    };
+};
+
+/**
  * Encrypts an additive plaintext with caller-supplied randomness.
  */
 export const encryptAdditiveWithRandomness = (
@@ -86,7 +127,7 @@ export const encryptAdditiveWithRandomness = (
     publicKey: string,
     randomness: bigint,
     bound: bigint,
-): ElgamalCiphertext => {
+): ElGamalCiphertext => {
     const context = resolveAdditiveContext(bound, 'encryption');
 
     assertValidAdditivePlaintext(message, context.bound);
@@ -94,56 +135,4 @@ export const encryptAdditiveWithRandomness = (
     assertEncryptionRandomness(randomness);
 
     return encryptAdditiveWithValidatedInputs(message, publicKey, randomness);
-};
-
-/**
- * Encrypts an additive plaintext with fresh random `r in 1..q-1`.
- */
-export const encryptAdditive = (
-    message: bigint,
-    publicKey: string,
-    bound: bigint,
-): ElgamalCiphertext => {
-    const context = resolveAdditiveContext(bound, 'encryption');
-    const randomness = randomScalarInRange(1n, RISTRETTO_GROUP.q);
-
-    return encryptAdditiveWithRandomness(
-        message,
-        publicKey,
-        randomness,
-        context.bound,
-    );
-};
-
-/**
- * Decrypts an additive ciphertext and recovers the bounded plaintext with
- * baby-step giant-step.
- */
-export const decryptAdditive = (
-    ciphertext: ElgamalCiphertext,
-    privateKey: bigint,
-    bound: bigint,
-): bigint => {
-    const context = resolveAdditiveContext(bound, 'decryption');
-
-    assertValidPrivateKey(privateKey);
-    assertValidAdditiveCiphertext(ciphertext);
-
-    const c1 = decodePoint(ciphertext.c1, 'Ciphertext c1');
-    const c2 = decodePoint(ciphertext.c2, 'Ciphertext c2');
-    const sharedSecret = pointMultiply(c1, privateKey);
-    const encodedMessage = pointSubtract(c2, sharedSecret);
-    const message = babyStepGiantStep(
-        encodePoint(encodedMessage),
-        RISTRETTO_GROUP.g,
-        context.bound,
-    );
-
-    if (message === null) {
-        throw new PlaintextDomainError(
-            'Ciphertext decrypts to a value outside the supplied additive bound',
-        );
-    }
-
-    return message;
 };

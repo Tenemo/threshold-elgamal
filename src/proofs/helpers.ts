@@ -1,6 +1,10 @@
 import { hexToBytes } from '../core/bytes.js';
-import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
-import { InvalidProofError, modQ, type CryptoGroup } from '../core/index.js';
+import {
+    assertCanonicalRistrettoGroup,
+    InvalidProofError,
+    modQ,
+    type CryptoGroup,
+} from '../core/index.js';
 import { encodeScalar, hashChallengeToScalar } from '../core/ristretto.js';
 
 import type { ProofContext } from './types.js';
@@ -89,9 +93,6 @@ export const fixedScalar = (value: bigint, group: CryptoGroup): Uint8Array => {
     void group;
     return hexToBytes(encodeScalar(value));
 };
-
-export const negateExponent = (value: bigint, q: bigint): bigint =>
-    modQ(q - value, q);
 
 export const hashChallenge = (
     payload: Uint8Array,

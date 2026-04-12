@@ -15,14 +15,12 @@ import {
 } from './errors.js';
 import type { EncodedPoint } from './types.js';
 
-export type InternalPoint = InstanceType<typeof ristretto255.Point>;
+type InternalPoint = InstanceType<typeof ristretto255.Point>;
 
-export const RISTRETTO_GROUP_NAME = 'ristretto255';
 const RISTRETTO_POINT = ristretto255.Point;
 export const RISTRETTO_ORDER = ristretto255.Point.Fn.ORDER;
 export const RISTRETTO_BYTE_LENGTH = 32;
-export const RISTRETTO_SECURITY_ESTIMATE = 128;
-export const RISTRETTO_BASE: InternalPoint = ristretto255.Point.BASE;
+const RISTRETTO_BASE: InternalPoint = ristretto255.Point.BASE;
 export const RISTRETTO_ZERO: InternalPoint = ristretto255.Point.ZERO;
 
 const scalarByteLength = RISTRETTO_BYTE_LENGTH;
@@ -88,19 +86,6 @@ export const decodeScalar = (
     }
 
     return scalar;
-};
-
-export const assertValidPoint = (value: string, label = 'Point'): void => {
-    decodePoint(value, label);
-};
-
-export const assertNonIdentityPoint = (
-    value: string,
-    label = 'Point',
-): void => {
-    if (decodePoint(value, label).is0()) {
-        throw new InvalidGroupElementError(`${label} must not be the identity`);
-    }
 };
 
 export const pointAdd = (
