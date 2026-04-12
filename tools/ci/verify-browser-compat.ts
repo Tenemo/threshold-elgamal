@@ -155,16 +155,26 @@ const resolveTargets = (): readonly BrowserCompatibilityTarget[] => {
 
 const createContextOptions = (
     target: BrowserCompatibilityTarget,
-): BrowserContextOptions =>
-    target.deviceName === undefined
-        ? {
-              colorScheme: 'light',
-              viewport: target.viewport,
-          }
-        : {
-              ...devices[target.deviceName],
-              colorScheme: 'light',
-          };
+): BrowserContextOptions => {
+    if (target.deviceName === undefined) {
+        return {
+            colorScheme: 'light',
+            viewport: target.viewport,
+        };
+    }
+
+    const deviceDescriptor = devices[target.deviceName];
+
+    assert(
+        deviceDescriptor !== undefined,
+        `Unknown Playwright device descriptor "${target.deviceName}" for target "${target.name}". Available device names: ${Object.keys(devices).sort().join(', ')}`,
+    );
+
+    return {
+        ...deviceDescriptor,
+        colorScheme: 'light',
+    };
+};
 
 const runTarget = async (
     baseUrl: string,
