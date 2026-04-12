@@ -137,13 +137,14 @@ jobs:
             - docs
             - release-smoke
         runs-on: ubuntu-latest
+        timeout-minutes: 35
         outputs:
+            source_sha: ${{ steps.source.outputs.sha }}
             version: ${{ steps.metadata.outputs.version }}
             tag: ${{ steps.metadata.outputs.tag }}
             dist_tag: ${{ steps.metadata.outputs.dist_tag }}
             prerelease: ${{ steps.metadata.outputs.prerelease }}
-        permissions:
-            contents: read
+            package_tarball: ${{ steps.package.outputs.tarball }}
         defaults:
             run:
                 shell: bash
@@ -159,7 +160,11 @@ jobs:
               with:
                   fetch-depth: 0
                   persist-credentials: false
-                  ref: ${{ github.ref_name }}
+                  ref: ${{ github.sha }}
+
+            - name: capture source revision
+              id: source
+              run: echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
 
             - uses: pnpm/action-setup@v5.0.0
               with:
@@ -233,30 +238,42 @@ jobs:
 
             - run: pnpm install --frozen-lockfile
 
-            - run: pnpm exec playwright install --with-deps chromium
-
-            - run: pnpm run build
+            - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
             - run: pnpm run verify:docs
             - run: pnpm run docs:build:site
             - run: pnpm run smoke:pack
 
+            - name: pack release tarball
+              id: package
+              run: |
+                  rm -rf .release-artifacts
+                  mkdir .release-artifacts
+                  npm pack --ignore-scripts --pack-destination .release-artifacts >/dev/null
+
+                  PACKAGE_TARBALL=$(find .release-artifacts -maxdepth 1 -type f -name '*.tgz' -printf '%f\n')
+
+                  if [[ -z "${PACKAGE_TARBALL}" ]]; then
+                    echo "Failed to create a release tarball." >&2
+                    exit 1
+                  fi
+
+                  echo "tarball=${PACKAGE_TARBALL}" >> "${GITHUB_OUTPUT}"
+
             - uses: actions/upload-artifact@v4
               with:
-                  name: release-package
                   if-no-files-found: error
+                  name: release-workspace
                   retention-days: 1
                   path: |
                       package.json
                       pnpm-lock.yaml
-                      dist
+                      .release-artifacts/*.tgz
 
-    release:
+    push-release:
         needs:
             - prepare-release
         runs-on: ubuntu-latest
-        permissions:
-            contents: write
-            id-token: write
+        timeout-minutes: 20
         defaults:
             run:
                 shell: bash
@@ -274,17 +291,16 @@ jobs:
               with:
                   fetch-depth: 0
                   persist-credentials: true
-                  ref: ${{ github.ref_name }}
+                  ref: ${{ needs.prepare-release.outputs.source_sha }}
                   ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
 
             - uses: actions/setup-node@v6.3.0
               with:
                   node-version-file: .nvmrc
-                  registry-url: "https://registry.npmjs.org"
 
             - uses: actions/download-artifact@v4
               with:
-                  name: release-package
+                  name: release-workspace
                   path: .
 
             - name: commit release metadata
@@ -328,26 +344,70 @@ jobs:
                   git remote set-url origin "git@github.com:${{ github.repository }}.git"
                   git push --atomic origin HEAD:master "refs/tags/${{ needs.prepare-release.outputs.tag }}"
 
+    publish-npm:
+        needs:
+            - prepare-release
+            - push-release
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            id-token: write
+        defaults:
+            run:
+                shell: bash
+        steps:
+            - uses: actions/setup-node@v6.3.0
+              with:
+                  node-version-file: .nvmrc
+                  registry-url: "https://registry.npmjs.org"
+
+            - uses: actions/download-artifact@v4
+              with:
+                  name: release-workspace
+                  path: .
+
             - name: publish to npm
               run: |
-                  if [[ "${{ needs.prepare-release.outputs.dist_tag }}" == "latest" ]]; then
-                    npm publish --provenance --ignore-scripts
-                  else
-                    npm publish --provenance --ignore-scripts --tag "${{ needs.prepare-release.outputs.dist_tag }}"
+                  PACKAGE_TARBALL=".release-artifacts/${{ needs.prepare-release.outputs.package_tarball }}"
+
+                  if [[ ! -f "${PACKAGE_TARBALL}" ]]; then
+                    echo "Missing release tarball artifact: ${PACKAGE_TARBALL}" >&2
+                    exit 1
                   fi
 
+                  if [[ "${{ needs.prepare-release.outputs.dist_tag }}" == "latest" ]]; then
+                    npm publish "${PACKAGE_TARBALL}" --provenance --ignore-scripts
+                  else
+                    npm publish "${PACKAGE_TARBALL}" --provenance --ignore-scripts --tag "${{ needs.prepare-release.outputs.dist_tag }}"
+                  fi
+
+    create-github-release:
+        needs:
+            - prepare-release
+            - push-release
+            - publish-npm
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: write
+        defaults:
+            run:
+                shell: bash
+        steps:
             - name: create GitHub release
               env:
                   GH_TOKEN: ${{ github.token }}
               run: |
                   if [[ "${{ needs.prepare-release.outputs.prerelease }}" == "true" ]]; then
                     gh release create "${{ needs.prepare-release.outputs.tag }}" \
+                      --repo "${{ github.repository }}" \
                       --verify-tag \
                       --title "${{ needs.prepare-release.outputs.tag }}" \
                       --generate-notes \
                       --prerelease
                   else
                     gh release create "${{ needs.prepare-release.outputs.tag }}" \
+                      --repo "${{ github.repository }}" \
                       --verify-tag \
                       --title "${{ needs.prepare-release.outputs.tag }}" \
                       --generate-notes
