@@ -37,6 +37,7 @@
         --sl-shadow-md: 0 18px 40px hsla(0, 0%, 0%, 0.22);
         --sl-shadow-lg: 0 26px 56px hsla(0, 0%, 0%, 0.28);
         --sl-content-width: 51rem;
+        --sl-landing-width: 58rem;
         --sl-sidebar-width: 19rem;
         --sl-text-5xl: 3rem;
         --sl-text-6xl: 4rem;
@@ -90,24 +91,65 @@
         content: none;
     }
 
-    .hero {
-        max-width: 44rem;
+    html[data-has-hero] .content-panel {
+        display: grid;
+    }
+
+    html[data-has-hero] .content-panel .sl-container {
+        justify-self: center;
+        width: min(100%, var(--sl-landing-width));
+        max-width: var(--sl-landing-width);
+        margin-inline: auto;
+    }
+
+    html[data-has-hero] .hero {
+        max-width: min(var(--sl-landing-width), 100%);
         margin-inline: auto;
         padding: 0;
         border: 0;
         border-radius: 0;
         background: none;
         box-shadow: none;
+        justify-items: center;
+        text-align: center;
     }
 
-    .hero::before {
+    html[data-has-hero] .hero::before {
         content: none;
     }
 
-    .hero .tagline {
-        max-width: 38rem;
+    html[data-has-hero] .hero .stack,
+    html[data-has-hero] .hero .copy {
+        align-items: center;
+        text-align: center;
+    }
+
+    html[data-has-hero] .hero .tagline {
+        max-width: 42rem;
         margin-inline: auto;
         color: var(--sl-color-gray-2);
+    }
+
+    html[data-has-hero] .hero .actions {
+        justify-content: center;
+    }
+
+    html[data-has-hero] .sl-markdown-content > :is(.sl-heading-wrapper, p) {
+        max-width: 42rem;
+        margin-inline: auto;
+        text-align: center;
+    }
+
+    html[data-has-hero] .sl-markdown-content > ul {
+        width: fit-content;
+        max-width: min(100%, 40rem);
+        margin-inline: auto;
+        text-align: left;
+    }
+
+    html[data-has-hero] .card-grid {
+        max-width: var(--sl-landing-width);
+        margin-inline: auto;
     }
 
     .sl-link-card {
@@ -136,6 +178,18 @@
         );
     }
 
+    html[data-has-hero] .sl-link-card {
+        text-align: center;
+    }
+
+    html[data-has-hero] .sl-link-card .stack {
+        align-items: center;
+    }
+
+    html[data-has-hero] .sl-link-card .description {
+        max-width: 28ch;
+    }
+
     .sl-markdown-content blockquote {
         border-inline-start-color: var(--sl-color-gray-3);
         border-radius: 0 0.75rem 0.75rem 0;
@@ -155,31 +209,18 @@
         text-underline-offset: 0.18em;
     }
 
-    @media (min-width: 50rem) {
-        .hero .stack {
-            text-align: center;
-        }
-
-        .hero .copy {
-            align-items: center;
-        }
-
-        .hero .actions {
-            justify-content: center;
-        }
-    }
-
     @media (min-width: 72rem) {
-        [data-has-sidebar][data-has-toc] .right-sidebar-container {
+        html[data-has-sidebar][data-has-toc] .right-sidebar-container {
             width: var(--sl-sidebar-width);
             flex: 0 0 var(--sl-sidebar-width);
         }
 
-        [data-has-sidebar][data-has-toc] .main-pane {
+        html[data-has-sidebar][data-has-toc] .main-pane {
+            --sl-content-margin-inline: auto;
             width: calc(100% - var(--sl-sidebar-width));
         }
 
-        [data-has-sidebar][data-has-toc] .content-panel .sl-container {
+        html[data-has-sidebar][data-has-toc] .content-panel .sl-container {
             margin-inline: auto;
         }
     }

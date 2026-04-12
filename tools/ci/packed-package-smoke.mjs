@@ -1,6 +1,11 @@
 import {
+    SHIPPED_PROTOCOL_VERSION,
+    combineDecryptionShares,
     RISTRETTO_GROUP,
     createBallotClosePayload,
+    createDLEQProof,
+    createDecryptionShare,
+    createDecryptionSharePayload,
     createElectionManifest,
     createTallyPublicationPayload,
     decodePedersenShareEnvelope,
@@ -15,6 +20,7 @@ import {
     hashElectionManifest,
     hashRosterEntries,
     majorityThreshold,
+    verifyDLEQProof,
 } from 'threshold-elgamal';
 
 const assert = (condition, message) => {
@@ -85,6 +91,71 @@ const tallyPublication = await createTallyPublicationPayload(
     },
 );
 
+const thresholdVector = {
+    ciphertext: {
+        c1: 'f03aa76fb871dc237db54ddd77b91430a7876beb99ae7f4047545d6cd086101c',
+        c2: '805351278c30580bf6341232ffde49aab9b53b47f63c9049c16789b7fc38a83d',
+    },
+    sharePublicKey:
+        '760df7732237a40d6c5d7c5c2f19eefb7eea951648f33465bef5fa222c667a0e',
+    subsetShares: [
+        {
+            index: 1,
+            value: 93814n,
+            decryptionShare:
+                'd4d45a7b49b6885c4517095b505cc78e59c838b94cc52d9277ff4c37cc5c9964',
+        },
+        {
+            index: 3,
+            value: 338226n,
+            decryptionShare:
+                'fce0b2c12661c0c6425f663f701717092429245ecbc90d61389aefc50063da5a',
+        },
+        {
+            index: 5,
+            value: 691270n,
+            decryptionShare:
+                'a6218d12d1912db37e0f6a69c664a50ef2663a8c24b91f48a125eeff72203e5f',
+        },
+    ],
+};
+
+const computedShares = thresholdVector.subsetShares.map((share) =>
+    createDecryptionShare(thresholdVector.ciphertext, share),
+);
+const participantThreeShare = computedShares[1];
+const revealProof = await createDLEQProof(
+    thresholdVector.subsetShares[1].value,
+    {
+        publicKey: thresholdVector.sharePublicKey,
+        ciphertext: thresholdVector.ciphertext,
+        decryptionShare: participantThreeShare.value,
+    },
+    RISTRETTO_GROUP,
+    {
+        protocolVersion: SHIPPED_PROTOCOL_VERSION,
+        suiteId: RISTRETTO_GROUP.name,
+        manifestHash: 'aa'.repeat(32),
+        sessionId: 'bb'.repeat(32),
+        label: 'decryption-share-dleq',
+        participantIndex: 3,
+        optionIndex: 1,
+    },
+);
+const decryptionSharePayload = await createDecryptionSharePayload(
+    participants[2].auth.privateKey,
+    {
+        sessionId: 'bb'.repeat(32),
+        manifestHash: 'aa'.repeat(32),
+        participantIndex: 3,
+        optionIndex: 1,
+        transcriptHash: 'cc'.repeat(32),
+        ballotCount: 3,
+        decryptionShare: participantThreeShare.value,
+        proof: revealProof,
+    },
+);
+
 const encodedShareEnvelope = encodePedersenShareEnvelope(
     {
         index: 2,
@@ -126,6 +197,45 @@ assert(
 assert(
     tallyPublication.payload.decryptionParticipantIndices.join(',') === '1,2,3',
     'Packed smoke tally-publication normalization failed',
+);
+assert(
+    computedShares.every(
+        (share, index) =>
+            share.index === thresholdVector.subsetShares[index].index &&
+            share.value === thresholdVector.subsetShares[index].decryptionShare,
+    ),
+    'Packed smoke createDecryptionShare output mismatch',
+);
+assert(
+    (await verifyDLEQProof(
+        revealProof,
+        {
+            publicKey: thresholdVector.sharePublicKey,
+            ciphertext: thresholdVector.ciphertext,
+            decryptionShare: participantThreeShare.value,
+        },
+        RISTRETTO_GROUP,
+        {
+            protocolVersion: SHIPPED_PROTOCOL_VERSION,
+            suiteId: RISTRETTO_GROUP.name,
+            manifestHash: 'aa'.repeat(32),
+            sessionId: 'bb'.repeat(32),
+            label: 'decryption-share-dleq',
+            participantIndex: 3,
+            optionIndex: 1,
+        },
+    )) === true,
+    'Packed smoke DLEQ proof verification failed',
+);
+assert(
+    decryptionSharePayload.payload.decryptionShare ===
+        participantThreeShare.value,
+    'Packed smoke decryption-share payload did not preserve the computed share',
+);
+assert(
+    combineDecryptionShares(thresholdVector.ciphertext, computedShares, 20n) ===
+        13n,
+    'Packed smoke threshold reconstruction failed',
 );
 assert(
     decodedShareEnvelope.index === 2,

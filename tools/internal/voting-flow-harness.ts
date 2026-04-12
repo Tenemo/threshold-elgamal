@@ -5,6 +5,7 @@ import {
     createBallotClosePayload,
     createBallotSubmissionPayload,
     createDLEQProof,
+    createDecryptionShare,
     createDecryptionSharePayload,
     createDisjunctiveProof,
     createElectionManifest,
@@ -58,7 +59,6 @@ import {
     type TransportKeyPair,
     generateTransportKeyPair,
 } from '#root';
-import { createDecryptionShare } from '#src/threshold/decrypt';
 import type { EncodedTransportPrivateKey } from '#src/transport/types';
 
 export type VotingFlowParticipant = {

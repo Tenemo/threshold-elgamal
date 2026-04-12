@@ -13,6 +13,7 @@ Use the root package. The shipped public surface is centered on one protocol sto
 - The library derives the threshold from the accepted registration roster as `k = ceil(n / 2)`.
 - Ballots are fixed to complete `1..10` score ballots.
 - The organizer closes counting with one signed `ballot-close` payload.
+- Each trustee computes a partial reveal with `createDecryptionShare(...)` before signing `createDecryptionSharePayload(...)`.
 - Tally verification must be done against the close-selected ballot set, not against a server-supplied aggregate.
 
 ## Pick the right first guide

@@ -49,7 +49,10 @@ export type {
     TransportKeyPair,
 } from './transport/types';
 
-export { combineDecryptionShares } from './threshold/decrypt';
+export {
+    combineDecryptionShares,
+    createDecryptionShare,
+} from './threshold/decrypt';
 export type {
     DecryptionShare,
     Share,
