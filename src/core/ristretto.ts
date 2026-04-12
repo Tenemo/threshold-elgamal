@@ -6,14 +6,14 @@ import {
     bytesToBigIntLE,
     bytesToHex,
     hexToBytes,
-} from './bytes.js';
-import { utf8ToBytes } from './crypto.js';
+} from './bytes';
+import { utf8ToBytes } from './crypto';
 import {
     InvalidGroupElementError,
     InvalidPayloadError,
     InvalidScalarError,
-} from './errors.js';
-import type { EncodedPoint } from './types.js';
+} from './errors';
+import type { EncodedPoint } from './types';
 
 type InternalPoint = InstanceType<typeof ristretto255.Point>;
 

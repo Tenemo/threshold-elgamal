@@ -1,5 +1,5 @@
-import type { EncodedPoint } from '../core/types.js';
-import type { ElGamalCiphertext } from '../elgamal/types.js';
+import type { EncodedPoint } from '../core/types';
+import type { ElGamalCiphertext } from '../elgamal/types';
 
 /** A single indexed Shamir share over `Z_q`. */
 export type Share = {

@@ -1,15 +1,12 @@
-import { InvalidPayloadError } from '../core/index.js';
-import { hashProtocolPhaseSnapshot } from '../protocol/transcript.js';
-import type {
-    PhaseCheckpointPayload,
-    SignedPayload,
-} from '../protocol/types.js';
+import { InvalidPayloadError } from '../core/index';
+import { hashProtocolPhaseSnapshot } from '../protocol/transcript';
+import type { PhaseCheckpointPayload, SignedPayload } from '../protocol/types';
 
 import {
     assertIndexSubset,
     assertUniqueSortedParticipantIndices,
     type ResolvePhaseCheckpointInput,
-} from './verification.js';
+} from './verification';
 
 /** Finalized threshold-supported checkpoint for one DKG phase. */
 export type FinalizedPhaseCheckpoint = {

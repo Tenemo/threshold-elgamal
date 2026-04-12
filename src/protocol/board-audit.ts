@@ -1,12 +1,9 @@
-import { InvalidPayloadError } from '../core/index.js';
+import { InvalidPayloadError } from '../core/index';
 
-import { compareProtocolPayloads } from './ordering.js';
-import { classifySlotConflict, payloadSlotKey } from './payloads.js';
-import {
-    formatSessionFingerprint,
-    hashProtocolTranscript,
-} from './transcript.js';
-import type { ProtocolPayload, SignedPayload } from './types.js';
+import { compareProtocolPayloads } from './ordering';
+import { classifySlotConflict, payloadSlotKey } from './payloads';
+import { formatSessionFingerprint, hashProtocolTranscript } from './transcript';
+import type { ProtocolPayload, SignedPayload } from './types';
 
 /** Classification for one canonical bulletin-board slot. */
 type BoardSlotStatus = 'unique' | 'idempotent-retransmission';

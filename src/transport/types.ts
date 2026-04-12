@@ -1,4 +1,4 @@
-import type { Brand } from '../core/types.js';
+import type { Brand } from '../core/types';
 
 /** Canonical lowercase hexadecimal SPKI encoding for auth public keys. */
 export type EncodedAuthPublicKey = Brand<string, 'EncodedAuthPublicKey'>;

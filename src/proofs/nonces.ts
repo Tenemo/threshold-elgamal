@@ -1,16 +1,16 @@
-import { bytesToBigInt } from '../core/bytes.js';
+import { bytesToBigInt } from '../core/bytes';
 import {
     modQ,
     randomBytes,
     sha256,
     type CryptoGroup,
     type RandomBytesSource,
-} from '../core/index.js';
+} from '../core/index';
 import {
     bigintToFixedBytes,
     concatBytes,
     domainSeparator,
-} from '../serialize/index.js';
+} from '../serialize/index';
 
 const bitLength = (value: bigint): number =>
     value === 0n ? 0 : value.toString(2).length;

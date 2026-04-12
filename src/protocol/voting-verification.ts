@@ -1,12 +1,12 @@
-import { InvalidPayloadError } from '../core/index.js';
-import { decodeScalar } from '../core/ristretto.js';
+import { InvalidPayloadError } from '../core/index';
+import { decodeScalar } from '../core/ristretto';
 import {
     verifyDKGTranscript,
     type VerifiedDKGTranscript,
-} from '../dkg/verification.js';
-import { combineDecryptionShares } from '../threshold/index.js';
+} from '../dkg/verification';
+import { combineDecryptionShares } from '../threshold/index';
 
-import { auditSignedPayloads, type BoardAudit } from './board-audit.js';
+import { auditSignedPayloads, type BoardAudit } from './board-audit';
 import type {
     BallotClosePayload,
     BallotSubmissionPayload,
@@ -18,11 +18,11 @@ import type {
     VerifiedPublishedOptionVotingResult,
     SignedPayload,
     TallyPublicationPayload,
-} from './types.js';
-import type { VerifiedOptionBallotAggregation } from './voting-ballot-aggregation.js';
-import { verifyBallotClosePayload } from './voting-ballot-close.js';
-import { verifyBallotSubmissionPayloadsByOption } from './voting-ballots.js';
-import { verifyDecryptionSharePayloadsByOption } from './voting-decryption.js';
+} from './types';
+import type { VerifiedOptionBallotAggregation } from './voting-ballot-aggregation';
+import { verifyBallotClosePayload } from './voting-ballot-close';
+import { verifyBallotSubmissionPayloadsByOption } from './voting-ballots';
+import { verifyDecryptionSharePayloadsByOption } from './voting-decryption';
 import {
     assertPhase,
     assertUniqueSortedIndices,
@@ -31,7 +31,7 @@ import {
     sameNumberSet,
     TALLY_PUBLICATION_PHASE,
     verifyPayloadsAgainstRegistrations,
-} from './voting-shared.js';
+} from './voting-shared';
 
 /** Stable high-level failure codes for full ceremony verification. */
 export type ElectionVerificationErrorCode =

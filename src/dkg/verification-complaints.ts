@@ -1,28 +1,28 @@
-import { InvalidPayloadError, type CryptoGroup } from '../core/index.js';
-import type { EncodedPoint } from '../core/types.js';
-import { SHIPPED_PROTOCOL_VERSION } from '../protocol/manifest.js';
+import { InvalidPayloadError, type CryptoGroup } from '../core/index';
+import type { EncodedPoint } from '../core/types';
+import { SHIPPED_PROTOCOL_VERSION } from '../protocol/manifest';
 import type {
     ComplaintPayload,
     ComplaintResolutionPayload,
     EncryptedDualSharePayload,
     PedersenCommitmentPayload,
     SignedPayload,
-} from '../protocol/types.js';
-import type { VerifiedProtocolSignatures } from '../protocol/verification.js';
-import { resolveDealerChallengeFromPublicKey } from '../transport/complaints.js';
-import { verifyPedersenShare } from '../vss/pedersen.js';
+} from '../protocol/types';
+import type { VerifiedProtocolSignatures } from '../protocol/verification';
+import { resolveDealerChallengeFromPublicKey } from '../transport/complaints';
+import { verifyPedersenShare } from '../vss/pedersen';
 
-import { decodePedersenShareEnvelope } from './pedersen-share-codec.js';
+import { decodePedersenShareEnvelope } from './pedersen-share-codec';
 import type {
     EncryptedShareMatrix,
     VerifyDKGTranscriptInput,
-} from './verification.js';
+} from './verification';
 import {
     complaintResolutionKey,
     encryptedShareSlotKey,
     parseCommitmentVector,
     validateParticipantIndex,
-} from './verification.js';
+} from './verification';
 
 export const buildEncryptedShareMatrix = (
     transcript: readonly SignedPayload[],

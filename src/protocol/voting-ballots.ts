@@ -1,23 +1,23 @@
-import { InvalidPayloadError } from '../core/index.js';
+import { InvalidPayloadError } from '../core/index';
 
-import { auditSignedPayloads } from './board-audit.js';
+import { auditSignedPayloads } from './board-audit';
 import type {
     BallotSubmissionPayload,
     SignedPayload,
     VerifyBallotSubmissionPayloadsByOptionInput,
-} from './types.js';
+} from './types';
 import {
     verifyAndAggregateBallotsByOption,
     type BallotTranscriptEntry,
     type VerifiedOptionBallotAggregation,
-} from './voting-ballot-aggregation.js';
-import { decodeCiphertext, decodeDisjunctiveProof } from './voting-codecs.js';
+} from './voting-ballot-aggregation';
+import { decodeCiphertext, decodeDisjunctiveProof } from './voting-codecs';
 import {
     assertPhase,
     assertValidOptionIndex,
     buildVotingManifestContext,
     BALLOT_SUBMISSION_PHASE,
-} from './voting-shared.js';
+} from './voting-shared';
 
 const decodeBallotPayload = (
     payload: BallotSubmissionPayload,

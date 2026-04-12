@@ -7,17 +7,17 @@ import {
     modQ,
     ThresholdViolationError,
     type CryptoGroup,
-} from '../core/index.js';
+} from '../core/index';
 import {
     decodePoint,
     encodePoint,
     multiplyBase,
     pointAdd,
     pointMultiply,
-} from '../core/ristretto.js';
+} from '../core/ristretto';
 
-import { evaluateCommitmentProduct } from './feldman.js';
-import type { PedersenCommitments, PedersenShare } from './types.js';
+import { evaluateCommitmentProduct } from './feldman';
+import type { PedersenCommitments, PedersenShare } from './types';
 
 const pedersenPolynomialLengthError =
     'Secret and blinding polynomials must have the same degree';

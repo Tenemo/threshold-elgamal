@@ -1,6 +1,6 @@
 import { performance } from 'node:perf_hooks';
 
-import { runVotingFlowScenario } from '../internal/voting-flow-harness.js';
+import { runVotingFlowScenario } from '../internal/voting-flow-harness';
 
 import { verifyDKGTranscript } from '#root';
 

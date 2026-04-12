@@ -1,8 +1,8 @@
-import { toBufferSource } from '../core/bytes.js';
-import { getWebCrypto } from '../core/index.js';
-import { bytesToHex, hexToBytes } from '../serialize/index.js';
+import { toBufferSource } from '../core/bytes';
+import { getWebCrypto } from '../core/index';
+import { bytesToHex, hexToBytes } from '../serialize/index';
 
-import type { EncodedAuthPublicKey } from './types.js';
+import type { EncodedAuthPublicKey } from './types';
 
 /** Options controlling authentication-key generation. */
 export type GenerateAuthKeyPairOptions = {

@@ -7,20 +7,20 @@ import {
     randomScalarBelow,
     type CryptoGroup,
     type RandomBytesSource,
-} from '../core/index.js';
+} from '../core/index';
 import {
     decodePoint,
     encodePoint,
     multiplyBase,
     pointMultiply,
     pointSubtract,
-} from '../core/ristretto.js';
-import type { ElGamalCiphertext } from '../elgamal/types.js';
+} from '../core/ristretto';
+import type { ElGamalCiphertext } from '../elgamal/types';
 import {
     concatBytes,
     encodeForChallenge,
     encodeSequenceForChallenge,
-} from '../serialize/index.js';
+} from '../serialize/index';
 
 import {
     assertProofContext,
@@ -29,13 +29,13 @@ import {
     fixedScalar,
     hashChallenge,
     sumChallenges,
-} from './helpers.js';
-import { hedgedNonce } from './nonces.js';
+} from './helpers';
+import { hedgedNonce } from './nonces';
 import type {
     DisjunctiveBranch,
     DisjunctiveProof,
     ProofContext,
-} from './types.js';
+} from './types';
 
 const candidateEncoding = (
     ciphertext: ElGamalCiphertext,

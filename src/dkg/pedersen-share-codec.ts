@@ -1,7 +1,7 @@
-import { InvalidPayloadError, RISTRETTO_GROUP } from '../core/index.js';
-import { canonicalizeJson } from '../protocol/canonical-json.js';
-import { bigintToFixedHex, fixedHexToBigInt } from '../serialize/index.js';
-import type { PedersenShare } from '../vss/types.js';
+import { InvalidPayloadError, RISTRETTO_GROUP } from '../core/index';
+import { canonicalizeJson } from '../protocol/canonical-json';
+import { bigintToFixedHex, fixedHexToBigInt } from '../serialize/index';
+import type { PedersenShare } from '../vss/types';
 
 type PedersenShareEnvelopeRecord = {
     readonly blindingValue: string;

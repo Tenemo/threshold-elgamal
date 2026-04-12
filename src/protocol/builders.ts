@@ -1,14 +1,14 @@
-import { encodeScalar } from '../core/ristretto.js';
-import type { ElGamalCiphertext } from '../elgamal/types.js';
-import type { DLEQProof, DisjunctiveProof } from '../proofs/types.js';
-import { signPayloadBytes } from '../transport/auth.js';
+import { encodeScalar } from '../core/ristretto';
+import type { ElGamalCiphertext } from '../elgamal/types';
+import type { DLEQProof, DisjunctiveProof } from '../proofs/types';
+import { signPayloadBytes } from '../transport/auth';
 import type {
     EncodedAuthPublicKey,
     EncodedTransportPublicKey,
-} from '../transport/types.js';
+} from '../transport/types';
 
-import { canonicalUnsignedPayloadBytes } from './payloads.js';
-import { hashProtocolPhaseSnapshot } from './transcript.js';
+import { canonicalUnsignedPayloadBytes } from './payloads';
+import { hashProtocolPhaseSnapshot } from './transcript';
 import type {
     BallotClosePayload,
     BallotSubmissionPayload,
@@ -26,19 +26,19 @@ import type {
     RegistrationPayload,
     SignedPayload,
     TallyPublicationPayload,
-} from './types.js';
+} from './types';
 import {
     encodeCiphertext,
     encodeCompactProof,
     encodeDisjunctiveProof,
-} from './voting-codecs.js';
+} from './voting-codecs';
 import {
     assertUniqueSortedIndices,
     BALLOT_CLOSE_PHASE,
     BALLOT_SUBMISSION_PHASE,
     DECRYPTION_SHARE_PHASE,
     TALLY_PUBLICATION_PHASE,
-} from './voting-shared.js';
+} from './voting-shared';
 
 const isEncodedDisjunctiveProof = (
     proof: BallotSubmissionPayload['proof'] | DisjunctiveProof,

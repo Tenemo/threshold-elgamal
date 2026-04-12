@@ -5,17 +5,17 @@ import {
     sha256,
     utf8ToBytes,
     type EncodedPoint,
-} from '../core/index.js';
-import { encodePoint, RISTRETTO_ZERO } from '../core/ristretto.js';
-import { addEncryptedValues } from '../elgamal/additive.js';
-import type { ElGamalCiphertext } from '../elgamal/types.js';
-import { verifyDisjunctiveProof } from '../proofs/disjunctive.js';
-import type { DisjunctiveProof, ProofContext } from '../proofs/types.js';
-import { bytesToHex } from '../serialize/index.js';
-import { createVerifiedAggregateCiphertext } from '../threshold/types.js';
-import type { VerifiedAggregateCiphertext } from '../threshold/types.js';
+} from '../core/index';
+import { encodePoint, RISTRETTO_ZERO } from '../core/ristretto';
+import { addEncryptedValues } from '../elgamal/additive';
+import type { ElGamalCiphertext } from '../elgamal/types';
+import { verifyDisjunctiveProof } from '../proofs/disjunctive';
+import type { DisjunctiveProof, ProofContext } from '../proofs/types';
+import { bytesToHex } from '../serialize/index';
+import { createVerifiedAggregateCiphertext } from '../threshold/types';
+import type { VerifiedAggregateCiphertext } from '../threshold/types';
 
-import { canonicalizeJson } from './canonical-json.js';
+import { canonicalizeJson } from './canonical-json';
 
 const assertPositiveInteger = (value: number, label: string): void => {
     if (!Number.isInteger(value) || value < 1) {

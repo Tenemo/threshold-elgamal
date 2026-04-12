@@ -5,25 +5,25 @@ import {
     modQ,
     type CryptoGroup,
     type RandomBytesSource,
-} from '../core/index.js';
+} from '../core/index';
 import {
     decodePoint,
     encodePoint,
     multiplyBase,
     pointMultiply,
     pointSubtract,
-} from '../core/ristretto.js';
-import type { ElGamalCiphertext } from '../elgamal/types.js';
-import { encodeForChallenge } from '../serialize/index.js';
+} from '../core/ristretto';
+import type { ElGamalCiphertext } from '../elgamal/types';
+import { encodeForChallenge } from '../serialize/index';
 
 import {
     assertProofContext,
     contextElements,
     fixedPoint,
     hashChallenge,
-} from './helpers.js';
-import { hedgedNonce } from './nonces.js';
-import type { DLEQProof, ProofContext } from './types.js';
+} from './helpers';
+import { hedgedNonce } from './nonces';
+import type { DLEQProof, ProofContext } from './types';
 
 /** Statement tuple for a Chaum-Pedersen equality-of-discrete-logs proof. */
 export type DLEQStatement = {

@@ -1,12 +1,12 @@
-import { toBufferSource } from '../core/bytes.js';
-import { InvalidPayloadError, getWebCrypto } from '../core/index.js';
-import { bytesToHex, hexToBytes } from '../serialize/index.js';
+import { toBufferSource } from '../core/bytes';
+import { InvalidPayloadError, getWebCrypto } from '../core/index';
+import { bytesToHex, hexToBytes } from '../serialize/index';
 
 import type {
     EncodedTransportPrivateKey,
     EncodedTransportPublicKey,
     TransportKeyPair,
-} from './types.js';
+} from './types';
 
 const X25519_BASE_POINT = (() => {
     const bytes = new Uint8Array(32);

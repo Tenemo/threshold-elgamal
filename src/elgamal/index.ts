@@ -1,3 +1,3 @@
-export * from './additive.js';
-export * from './bsgs.js';
-export * from './types.js';
+export * from './additive';
+export * from './bsgs';
+export * from './types';

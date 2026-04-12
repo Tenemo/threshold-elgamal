@@ -1,16 +1,16 @@
-import { InvalidPayloadError } from '../core/index.js';
+import { InvalidPayloadError } from '../core/index';
 
 import type {
     BallotClosePayload,
     BallotSubmissionPayload,
     SignedPayload,
-} from './types.js';
+} from './types';
 import {
     assertPhase,
     assertUniqueSortedIndices,
     assertValidOptionIndex,
     BALLOT_CLOSE_PHASE,
-} from './voting-shared.js';
+} from './voting-shared';
 
 /** Verified organizer-selected ballot cutoff and the counted ballot subset. */
 type VerifiedBallotClose = {

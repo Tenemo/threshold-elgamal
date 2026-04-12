@@ -9,15 +9,16 @@ on:
         description: Version bump to apply
         required: true
         type: choice
+        default: patch
         options:
-          - beta next
-          - promote beta to stable
-          - beta from patch
-          - beta from minor
-          - beta from major
           - patch
           - minor
           - major
+          - beta from patch
+          - beta from minor
+          - beta from major
+          - beta next
+          - promote beta to stable
 
 permissions:
   contents: write
@@ -166,6 +167,13 @@ jobs:
 
           if git ls-remote --exit-code --tags origin "${{ steps.metadata.outputs.tag }}" >/dev/null 2>&1; then
             echo "Tag ${{ steps.metadata.outputs.tag }} already exists on origin." >&2
+            exit 1
+          fi
+
+      - name: verify npm release target
+        run: |
+          if npm view "threshold-elgamal@${{ steps.metadata.outputs.version }}" version >/dev/null 2>&1; then
+            echo "Version ${{ steps.metadata.outputs.version }} already exists on npm." >&2
             exit 1
           fi
 

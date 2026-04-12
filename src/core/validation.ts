@@ -4,8 +4,8 @@ import {
     InvalidScalarError,
     PlaintextDomainError,
     ThresholdViolationError,
-} from './errors.js';
-import { decodePoint, RISTRETTO_ORDER } from './ristretto.js';
+} from './errors';
+import { decodePoint, RISTRETTO_ORDER } from './ristretto';
 
 /** Returns `true` when the value is a non-identity valid Ristretto point. */
 export const isInSubgroup = (value: string): boolean => {

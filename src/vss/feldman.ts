@@ -6,7 +6,7 @@ import {
     RISTRETTO_GROUP,
     assertCanonicalRistrettoGroup,
     type CryptoGroup,
-} from '../core/index.js';
+} from '../core/index';
 import {
     decodePoint,
     encodePoint,
@@ -14,11 +14,11 @@ import {
     pointAdd,
     pointMultiply,
     RISTRETTO_ZERO,
-} from '../core/ristretto.js';
-import type { EncodedPoint } from '../core/types.js';
-import type { Share } from '../threshold/types.js';
+} from '../core/ristretto';
+import type { EncodedPoint } from '../core/types';
+import type { Share } from '../threshold/types';
 
-import type { FeldmanCommitments } from './types.js';
+import type { FeldmanCommitments } from './types';
 
 export const evaluateCommitmentProduct = (
     commitments: readonly EncodedPoint[],

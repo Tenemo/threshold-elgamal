@@ -41,6 +41,18 @@ npm install threshold-elgamal
 - Authentication signatures require Web Crypto `Ed25519`.
 - Transport share exchange requires Web Crypto `X25519`.
 
+## Documentation
+
+- Hosted documentation site: [tenemo.github.io/threshold-elgamal](https://tenemo.github.io/threshold-elgamal/)
+- Get started: [tenemo.github.io/threshold-elgamal/guides/getting-started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
+- Verifying a public board: [tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board](https://tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board/)
+- Browser and worker usage: [tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage](https://tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage/)
+- Published payload examples: [tenemo.github.io/threshold-elgamal/guides/published-payload-examples](https://tenemo.github.io/threshold-elgamal/guides/published-payload-examples/)
+- Honest-majority voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
+- Security boundary: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
+- Production voting safety review: [tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review](https://tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review/)
+- API docs: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
+
 ## Browser support
 
 The shipped cryptographic browser path is fixed:
@@ -200,18 +212,6 @@ What it does not claim:
 `ballot-close` is an auditable administrative cutoff, not a fairness proof about board arrival order. The library proves what was counted, not whether the organizer waited long enough before closing.
 
 For a production-threat-model verdict that maps these boundaries to the shipped verifier and tests, read the production voting safety review in the hosted docs.
-
-## Documentation
-
-- Hosted documentation site: [tenemo.github.io/threshold-elgamal](https://tenemo.github.io/threshold-elgamal/)
-- Get started: [tenemo.github.io/threshold-elgamal/guides/getting-started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
-- Verifying a public board: [tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board](https://tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board/)
-- Browser and worker usage: [tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage](https://tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage/)
-- Published payload examples: [tenemo.github.io/threshold-elgamal/guides/published-payload-examples](https://tenemo.github.io/threshold-elgamal/guides/published-payload-examples/)
-- Honest-majority voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
-- Security boundary: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
-- Production voting safety review: [tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review](https://tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review/)
-- API docs: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
 
 ## Development
 

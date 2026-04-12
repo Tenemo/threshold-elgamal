@@ -1,7 +1,7 @@
 /** Public transport key, envelope, and complaint exports. */
-export * from './auth.js';
-export * from './complaints.js';
-export * from './envelopes.js';
+export * from './auth';
+export * from './complaints';
+export * from './envelopes';
 export {
     assertNonZeroSharedSecret,
     deriveTransportPublicKey,
@@ -10,5 +10,5 @@ export {
     generateTransportKeyPair,
     type GenerateTransportKeyPairOptions,
     importTransportPublicKey,
-} from './key-agreement.js';
-export * from './types.js';
+} from './key-agreement';
+export * from './types';

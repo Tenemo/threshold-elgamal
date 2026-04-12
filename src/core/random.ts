@@ -1,7 +1,7 @@
-import { bytesToBigInt } from './bytes.js';
-import { getWebCrypto } from './crypto.js';
-import { InvalidScalarError } from './errors.js';
-import type { RandomBytesSource } from './types.js';
+import { bytesToBigInt } from './bytes';
+import { getWebCrypto } from './crypto';
+import { InvalidScalarError } from './errors';
+import type { RandomBytesSource } from './types';
 
 const bitLength = (value: bigint): number =>
     value === 0n ? 0 : value.toString(2).length;
