@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import {
     createBallotClosePayload,
     createElectionManifest,
@@ -15,9 +17,7 @@ import {
     hashElectionManifest,
     hashRosterEntries,
     scoreVotingDomain,
-} from 'threshold-elgamal';
-
-import { describe, expect, it } from 'vitest';
+} from '#root';
 
 describe('browser public surface', () => {
     it('round-trips the shipped browser ceremony primitives through the root package', async () => {
@@ -96,7 +96,7 @@ describe('browser public surface', () => {
                 sessionId,
                 manifestHash,
                 participantIndex: participants[0].index,
-                includedParticipantIndices: [3, 1, 2],
+                countedParticipantIndices: [3, 1, 2],
             },
         );
         const tallyPublication = await createTallyPublicationPayload(
@@ -138,7 +138,7 @@ describe('browser public surface', () => {
         );
         expect(registration.payload.messageType).toBe('registration');
         expect(acceptance.payload.messageType).toBe('manifest-acceptance');
-        expect(ballotClose.payload.includedParticipantIndices).toEqual([
+        expect(ballotClose.payload.countedParticipantIndices).toEqual([
             1, 2, 3,
         ]);
         expect(tallyPublication.payload.decryptionParticipantIndices).toEqual([

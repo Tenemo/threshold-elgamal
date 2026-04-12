@@ -36,3 +36,5 @@ sidebar:
 ## Scope boundary
 
 The intended model is honest-origin, honest-client, and static adversary. If the server can deliver malicious JavaScript to the browser, the cryptographic guarantees are gone regardless of how carefully the protocol payloads are verified afterward.
+
+For a production-threat-model verdict that maps these limits onto the shipped verifier and test suite, read [Production voting safety review](./production-voting-safety-review/).

@@ -1,9 +1,10 @@
-import { assertCanonicalRistrettoGroup } from '../core/group-invariants.js';
 import {
+    assertCanonicalRistrettoGroup,
     assertInSubgroup,
     assertPositiveParticipantIndex,
     assertScalarInZq,
     InvalidPayloadError,
+    modQ,
     ThresholdViolationError,
     type CryptoGroup,
 } from '../core/index.js';
@@ -14,16 +15,28 @@ import {
     pointAdd,
     pointMultiply,
 } from '../core/ristretto.js';
-import {
-    evaluatePolynomial,
-    type Polynomial,
-} from '../threshold/polynomial.js';
 
-import { evaluateCommitmentProduct } from './commitment-product.js';
+import { evaluateCommitmentProduct } from './feldman.js';
 import type { PedersenCommitments, PedersenShare } from './types.js';
 
 const pedersenPolynomialLengthError =
     'Secret and blinding polynomials must have the same degree';
+
+type Polynomial = readonly bigint[];
+
+const evaluatePolynomial = (
+    polynomial: Polynomial,
+    x: bigint,
+    q: bigint,
+): bigint => {
+    let result = 0n;
+
+    for (let index = polynomial.length - 1; index >= 0; index -= 1) {
+        result = modQ(modQ(result * x, q) + polynomial[index], q);
+    }
+
+    return result;
+};
 
 /**
  * Computes Pedersen commitments for matching secret and blinding polynomials.
@@ -116,11 +129,7 @@ export const verifyPedersenShare = (
 
     return expected.equals(
         decodePoint(
-            evaluateCommitmentProduct(
-                commitments.commitments,
-                share.index,
-                group,
-            ),
+            evaluateCommitmentProduct(commitments.commitments, share.index),
         ),
     );
 };

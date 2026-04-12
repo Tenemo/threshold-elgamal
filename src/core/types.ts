@@ -14,9 +14,6 @@ export type GroupIdentifier = GroupName;
 /** Canonical 32-byte Ristretto point encoding exposed at the public boundary. */
 export type EncodedPoint = Brand<string, 'EncodedPoint'>;
 
-/** Scalar value intended to live in the prime-order field `Z_q`. */
-export type ScalarQ = Brand<bigint, 'ScalarQ'>;
-
 /** @internal Immutable built-in group definition for the shipped suite. */
 export type CryptoGroup = {
     /** Canonical suite name. */

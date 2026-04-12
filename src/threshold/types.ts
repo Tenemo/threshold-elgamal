@@ -1,5 +1,5 @@
 import type { EncodedPoint } from '../core/types.js';
-import type { ElgamalCiphertext } from '../elgamal/types.js';
+import type { ElGamalCiphertext } from '../elgamal/types.js';
 
 /** A single indexed Shamir share over `Z_q`. */
 export type Share = {
@@ -26,7 +26,7 @@ export type VerifiedAggregateCiphertext = {
     /** Canonical transcript hash that anchors the accepted ballot log. */
     readonly transcriptHash: string;
     /** Aggregate ciphertext recomputed from the accepted ballot log. */
-    readonly ciphertext: ElgamalCiphertext;
+    readonly ciphertext: ElGamalCiphertext;
     /** Number of accepted ciphertexts that contributed to the aggregate. */
     readonly ballotCount: number;
     /** Opaque brand preventing arbitrary object-literal construction. */
@@ -39,7 +39,7 @@ export type VerifiedAggregateCiphertext = {
  */
 export const createVerifiedAggregateCiphertext = (
     transcriptHash: string,
-    ciphertext: ElgamalCiphertext,
+    ciphertext: ElGamalCiphertext,
     ballotCount: number,
 ): VerifiedAggregateCiphertext =>
     Object.freeze(

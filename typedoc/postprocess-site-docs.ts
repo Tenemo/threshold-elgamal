@@ -125,11 +125,35 @@ const rewriteSentenceCase = (content: string): string => {
     return rewritten;
 };
 
+const normalizeNavigationTitles = (
+    items: readonly NavigationItem[],
+): NavigationItem[] =>
+    items.map((item) => ({
+        ...item,
+        ...(typeof item.title === 'string'
+            ? {
+                  title: rewriteSentenceCase(item.title),
+              }
+            : {}),
+        ...(Array.isArray(item.children)
+            ? {
+                  children: normalizeNavigationTitles(item.children),
+              }
+            : {}),
+    }));
+
 const main = async (): Promise<void> => {
-    const navigation = JSON.parse(
-        await fs.readFile(navigationPath, 'utf8'),
-    ) as NavigationItem[];
+    const navigation = normalizeNavigationTitles(
+        JSON.parse(
+            await fs.readFile(navigationPath, 'utf8'),
+        ) as NavigationItem[],
+    );
     const titleByPath = new Map<string, string>();
+
+    await fs.writeFile(
+        navigationPath,
+        `${JSON.stringify(navigation, null, 2)}\n`,
+    );
 
     const visitNavigation = (items: readonly NavigationItem[]): void => {
         for (const item of items) {

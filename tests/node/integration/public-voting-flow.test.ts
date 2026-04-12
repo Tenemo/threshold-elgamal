@@ -1,15 +1,14 @@
-import {
-    createDecryptionSharePayload,
-    createElectionManifest,
-    createTallyPublicationPayload,
-    majorityThreshold,
-    signProtocolPayload,
-    verifyElectionCeremonyDetailed,
-} from 'threshold-elgamal';
-
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { runVotingFlowScenario } from '../../../tools/internal/voting-flow-harness.js';
+
+import {
+    createDecryptionSharePayload,
+    createTallyPublicationPayload,
+    majorityThreshold,
+    signProtocolPayload,
+    verifyElectionCeremony,
+} from '#root';
 
 const fixtureTimeoutMs = 240_000;
 
@@ -93,7 +92,7 @@ const positiveScenarios = [
     },
 ] as const;
 
-describe('public voting flow', () => {
+describe('honest-majority voting flow', () => {
     let fullFixture: Awaited<ReturnType<typeof runVotingFlowScenario>>;
     let partialFixture: Awaited<ReturnType<typeof runVotingFlowScenario>>;
 
@@ -203,18 +202,6 @@ describe('public voting flow', () => {
         ).rejects.toThrow();
     });
 
-    it('rejects manifest option metadata that no longer belongs on the public manifest', () => {
-        expect(() =>
-            createElectionManifest({
-                rosterHash: 'roster-hash',
-                optionList: ['Alpha', 'Beta'],
-                participantCount: 3,
-            } as unknown as Parameters<typeof createElectionManifest>[0]),
-        ).toThrow(
-            'Legacy manifest field "participantCount" is not supported on the Ristretto beta line',
-        );
-    });
-
     it('rejects ballot close payloads signed by a non-organizer', async () => {
         const forgedBallotClosePayload = await signProtocolPayload(
             fullFixture.participants[1].auth.privateKey,
@@ -224,13 +211,13 @@ describe('public voting flow', () => {
                 phase: 6,
                 participantIndex: fullFixture.participants[1].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices:
+                countedParticipantIndices:
                     fullFixture.countedParticipantIndices,
             },
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
@@ -251,7 +238,7 @@ describe('public voting flow', () => {
                 phase: 6,
                 participantIndex: fullFixture.participants[0].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices: [1, 2, 2, 3],
+                countedParticipantIndices: [1, 2, 2, 3],
             },
         );
         const unsortedBallotClosePayload = await signProtocolPayload(
@@ -262,12 +249,12 @@ describe('public voting flow', () => {
                 phase: 6,
                 participantIndex: fullFixture.participants[0].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices: [1, 3, 2, 4, 5],
+                countedParticipantIndices: [1, 3, 2, 4, 5],
             },
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
@@ -278,7 +265,7 @@ describe('public voting flow', () => {
             }),
         ).rejects.toThrow('Ballot close participant indices must be unique');
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
@@ -301,12 +288,12 @@ describe('public voting flow', () => {
                 phase: 6,
                 participantIndex: fullFixture.participants[0].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices: [1],
+                countedParticipantIndices: [1],
             },
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
@@ -327,12 +314,12 @@ describe('public voting flow', () => {
                 phase: 6,
                 participantIndex: partialFixture.participants[0].index,
                 messageType: 'ballot-close',
-                includedParticipantIndices: [1, 2, 4],
+                countedParticipantIndices: [1, 2, 4],
             },
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: partialFixture.manifest,
                 sessionId: partialFixture.sessionId,
                 dkgTranscript: partialFixture.dkgTranscript,
@@ -356,7 +343,7 @@ describe('public voting flow', () => {
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
@@ -373,6 +360,27 @@ describe('public voting flow', () => {
         );
     });
 
+    it('requires key-derivation confirmations', async () => {
+        const transcriptWithoutConfirmations = fullFixture.dkgTranscript.filter(
+            (entry) =>
+                entry.payload.messageType !== 'key-derivation-confirmation',
+        );
+
+        await expect(
+            verifyElectionCeremony({
+                manifest: fullFixture.manifest,
+                sessionId: fullFixture.sessionId,
+                dkgTranscript: transcriptWithoutConfirmations,
+                ballotPayloads: fullFixture.ballotPayloads,
+                ballotClosePayload: fullFixture.ballotClosePayload,
+                decryptionSharePayloads: fullFixture.decryptionSharePayloads,
+                tallyPublications: fullFixture.tallyPublications,
+            }),
+        ).rejects.toThrow(
+            'Expected at least 4 key-derivation confirmations, received 0',
+        );
+    });
+
     it('rejects tally publications that do not match the recomputed close-selected tally', async () => {
         const forgedTallyPublication = await createTallyPublicationPayload(
             fullFixture.participants[0].auth.privateKey,
@@ -383,7 +391,7 @@ describe('public voting flow', () => {
         );
 
         await expect(
-            verifyElectionCeremonyDetailed({
+            verifyElectionCeremony({
                 manifest: fullFixture.manifest,
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,

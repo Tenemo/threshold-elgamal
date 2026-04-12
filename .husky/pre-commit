@@ -1,11 +1,4 @@
-pnpm run lint || exit 1
-pnpm run typecheck || exit 1
-pnpm run guard:no-math-random || exit 1
-pnpm run verify:h-derivation || exit 1
-pnpm run build:skip || exit 1
-pnpm exec vitest --project node --run || exit 1
-pnpm exec vitest --project browser --run || exit 1
+pnpm run build || exit 1
 pnpm run verify:docs || exit 1
 pnpm run docs:build:site || exit 1
-pnpm run verify:vectors || exit 1
 pnpm run smoke:pack || exit 1

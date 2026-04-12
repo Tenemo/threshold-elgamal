@@ -98,7 +98,7 @@ export const bigintToFixedBytes = (
  *
  * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
  */
-export const fixedHexToBigint = (hex: string): bigint => {
+export const fixedHexToBigInt = (hex: string): bigint => {
     const bytes = decodeHexToBytes(
         hex,
         'Fixed-width hex input must be a non-empty even-length hexadecimal string',

@@ -1,10 +1,7 @@
 import { performance } from 'node:perf_hooks';
 
-import { getGroup, utf8ToBytes } from '#core';
-import {
-    generateParametersWithPrivateKey,
-    encryptAdditiveWithRandomness,
-} from '#elgamal';
+import { RISTRETTO_GROUP, utf8ToBytes } from '#core';
+import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDisjunctiveProof,
     createSchnorrProof,
@@ -12,6 +9,7 @@ import {
     verifySchnorrProof,
     type ProofContext,
 } from '#proofs';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
 import {
     decryptEnvelope,
     encryptEnvelope,
@@ -44,9 +42,9 @@ const measure = async (
     };
 };
 const main = async (): Promise<void> => {
-    const group = getGroup('ristretto255');
-    const publicKey = generateParametersWithPrivateKey(123n).publicKey;
-    const schnorrStatement = generateParametersWithPrivateKey(77n).publicKey;
+    const group = RISTRETTO_GROUP;
+    const publicKey = encodePoint(multiplyBase(123n));
+    const schnorrStatement = encodePoint(multiplyBase(77n));
     const proofContext: ProofContext = {
         protocolVersion: 'v1',
         suiteId: 'ristretto255',

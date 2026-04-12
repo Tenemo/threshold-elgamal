@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../tools/internal/deterministic.js';
 
-import { InvalidProofError, InvalidScalarError, getGroup } from '#core';
+import { InvalidProofError, InvalidScalarError, RISTRETTO_GROUP } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDLEQProof,
@@ -17,7 +17,7 @@ import {
     pointMultiply,
 } from '#src/core/ristretto';
 describe('DLEQ proofs', () => {
-    const group = getGroup('ristretto255');
+    const group = RISTRETTO_GROUP;
     const secret = 12345n;
     const publicKey = encodePoint(multiplyBase(secret));
     const ciphertext = encryptAdditiveWithRandomness(7n, publicKey, 42n, 20n);

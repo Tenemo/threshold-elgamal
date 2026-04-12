@@ -1,6 +1,6 @@
 import { UnsupportedSuiteError } from './errors.js';
 import { derivePedersenGenerator, RISTRETTO_BYTE_LENGTH } from './ristretto.js';
-import type { CryptoGroup, GroupIdentifier } from './types.js';
+import type { CryptoGroup } from './types.js';
 
 /** Immutable definition of the shipped Ristretto255 tally group. */
 export const RISTRETTO_GROUP: CryptoGroup = Object.freeze({
@@ -15,21 +15,25 @@ export const RISTRETTO_GROUP: CryptoGroup = Object.freeze({
     securityEstimate: 128,
 });
 
-const GROUPS = Object.freeze([RISTRETTO_GROUP]);
+const sameCanonicalRistrettoGroup = (group: CryptoGroup): boolean =>
+    group.name === RISTRETTO_GROUP.name &&
+    group.byteLength === RISTRETTO_GROUP.byteLength &&
+    group.scalarByteLength === RISTRETTO_GROUP.scalarByteLength &&
+    group.q === RISTRETTO_GROUP.q &&
+    group.g === RISTRETTO_GROUP.g &&
+    group.h === RISTRETTO_GROUP.h &&
+    group.securityEstimate === RISTRETTO_GROUP.securityEstimate;
 
-/** @internal Returns the immutable built-in Ristretto255 group definition. */
-export const getGroup = (identifier: GroupIdentifier): CryptoGroup => {
-    if (identifier !== RISTRETTO_GROUP.name) {
+export const assertCanonicalRistrettoGroup = (
+    group: CryptoGroup,
+    label = 'Group',
+): void => {
+    const normalizedLabel =
+        label.length > 0 ? `${label[0].toLowerCase()}${label.slice(1)}` : label;
+
+    if (!sameCanonicalRistrettoGroup(group)) {
         throw new UnsupportedSuiteError(
-            `Unsupported group: ${String(identifier)}`,
+            `${normalizedLabel} must match the shipped canonical ristretto255 group definition`,
         );
     }
-
-    return RISTRETTO_GROUP;
 };
-
-/** @internal Lists the immutable built-in group definitions. */
-export const listGroups = (): readonly CryptoGroup[] => GROUPS;
-
-/** Returns the canonical deterministic secondary generator encoding. */
-export const deriveH = (): string => RISTRETTO_GROUP.h;

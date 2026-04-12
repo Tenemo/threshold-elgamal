@@ -7,15 +7,13 @@ import {
     type EncodedPoint,
 } from '../core/index.js';
 import { encodePoint, RISTRETTO_ZERO } from '../core/ristretto.js';
-import { addEncryptedValues } from '../elgamal/ciphertext.js';
-import type { ElgamalCiphertext } from '../elgamal/types.js';
+import { addEncryptedValues } from '../elgamal/additive.js';
+import type { ElGamalCiphertext } from '../elgamal/types.js';
 import { verifyDisjunctiveProof } from '../proofs/disjunctive.js';
 import type { DisjunctiveProof, ProofContext } from '../proofs/types.js';
 import { bytesToHex } from '../serialize/index.js';
-import {
-    createVerifiedAggregateCiphertext,
-    type VerifiedAggregateCiphertext,
-} from '../threshold/types.js';
+import { createVerifiedAggregateCiphertext } from '../threshold/types.js';
+import type { VerifiedAggregateCiphertext } from '../threshold/types.js';
 
 import { canonicalizeJson } from './canonical-json.js';
 
@@ -40,7 +38,7 @@ const compareBallotEntries = (
 export type BallotTranscriptEntry = {
     readonly voterIndex: number;
     readonly optionIndex: number;
-    readonly ciphertext: ElgamalCiphertext;
+    readonly ciphertext: ElGamalCiphertext;
     readonly proof: DisjunctiveProof;
 };
 
@@ -57,13 +55,13 @@ export type VerifiedOptionBallotAggregation = VerifiedBallotAggregation & {
 };
 
 /** Grouped view of one accepted voter's ballot across all option slots. */
-export type VoterBallot = {
+type VoterBallot = {
     readonly voterIndex: number;
     readonly ballots: readonly BallotTranscriptEntry[];
 };
 
 /** Input bundle for ballot verification and aggregation. */
-export type VerifyAndAggregateBallotsInput = {
+type VerifyAndAggregateBallotsInput = {
     readonly ballots: readonly BallotTranscriptEntry[];
     readonly publicKey: EncodedPoint;
     readonly validValues: readonly bigint[];
@@ -74,10 +72,9 @@ export type VerifyAndAggregateBallotsInput = {
 };
 
 /** Input bundle for per-option ballot verification and aggregation. */
-export type VerifyAndAggregateBallotsByOptionInput =
-    VerifyAndAggregateBallotsInput & {
-        readonly optionCount: number;
-    };
+type VerifyAndAggregateBallotsByOptionInput = VerifyAndAggregateBallotsInput & {
+    readonly optionCount: number;
+};
 
 const canonicalBallotJson = (
     ballots: readonly BallotTranscriptEntry[],
@@ -172,7 +169,7 @@ const groupBallotsByVoter = (
  * @param ballots Verified ballot records.
  * @returns Lowercase hexadecimal transcript hash.
  */
-export const hashAcceptedBallots = async (
+const hashAcceptedBallots = async (
     ballots: readonly BallotTranscriptEntry[],
 ): Promise<string> =>
     bytesToHex(await sha256(utf8ToBytes(canonicalBallotJson(ballots))));
@@ -225,7 +222,7 @@ export const verifyAndAggregateBallots = async (
         {
             c1: encodePoint(RISTRETTO_ZERO),
             c2: encodePoint(RISTRETTO_ZERO),
-        } satisfies ElgamalCiphertext,
+        } satisfies ElGamalCiphertext,
     );
     const transcriptHash = await hashAcceptedBallots(sortedBallots);
     const aggregate = createVerifiedAggregateCiphertext(

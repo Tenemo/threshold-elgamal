@@ -88,6 +88,15 @@ export default [
             ...eslintJs.configs.recommended.rules,
             'arrow-parens': [ERROR, 'always', { requireForBlockBody: false }],
             'no-restricted-exports': OFF,
+            'no-restricted-properties': [
+                ERROR,
+                {
+                    object: 'Math',
+                    property: 'random',
+                    message:
+                        'Use the project crypto-backed randomness helpers instead.',
+                },
+            ],
             'no-shadow': OFF, // duplicated by @typescript-eslint/no-shadow
 
             // @typescript-eslint/eslint-plugin

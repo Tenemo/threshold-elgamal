@@ -1,4 +1,6 @@
 import type { EncodedPoint } from '../core/types.js';
+import type { VerifiedDKGTranscript } from '../dkg/verification.js';
+import type { DecryptionShare } from '../threshold/types.js';
 import type {
     EncodedAuthPublicKey,
     EncodedTransportPrivateKey,
@@ -60,12 +62,6 @@ export type EncodedDisjunctiveProof = {
     readonly branches: readonly EncodedDisjunctiveBranch[];
 };
 
-/** Supported completeness policy for grouped per-option voter ballots. */
-export type BallotCompletenessPolicy = 'ALL_OPTIONS_REQUIRED';
-
-/** Supported score domain policy for the shipped score-voting workflow. */
-export type ScoreDomainPolicy = '1..10';
-
 /** Registration payload carrying ceremony auth and transport keys. */
 export type RegistrationPayload = BaseProtocolPayload & {
     readonly messageType: 'registration';
@@ -87,7 +83,7 @@ export type PhaseCheckpointPayload = BaseProtocolPayload & {
     readonly messageType: 'phase-checkpoint';
     readonly checkpointPhase: 0 | 1 | 2 | 3;
     readonly checkpointTranscriptHash: string;
-    readonly qualParticipantIndices: readonly number[];
+    readonly qualifiedParticipantIndices: readonly number[];
 };
 
 /** Broadcast payload carrying Pedersen coefficient commitments. */
@@ -139,10 +135,12 @@ export type FeldmanCommitmentPayload = BaseProtocolPayload & {
     }[];
 };
 
-/** Optional final key-derivation confirmation payload for the derived joint key. */
+/**
+ * Final key-derivation confirmation payload for the derived joint key.
+ */
 export type KeyDerivationConfirmation = BaseProtocolPayload & {
     readonly messageType: 'key-derivation-confirmation';
-    readonly qualHash: string;
+    readonly dkgTranscriptHash: string;
     readonly publicKey: EncodedPoint;
 };
 
@@ -163,7 +161,7 @@ export type BallotSubmissionPayload = BaseProtocolPayload & {
 /** Signed organizer payload that freezes which participants are counted. */
 export type BallotClosePayload = BaseProtocolPayload & {
     readonly messageType: 'ballot-close';
-    readonly includedParticipantIndices: readonly number[];
+    readonly countedParticipantIndices: readonly number[];
 };
 
 /**
@@ -218,4 +216,64 @@ export type SignedPayload<TPayload extends ProtocolPayload = ProtocolPayload> =
 export type ElectionManifest = {
     readonly rosterHash: string;
     readonly optionList: readonly string[];
+};
+
+/**
+ * Input bundle for verifying typed ballot payloads.
+ */
+type VerifyBallotSubmissionPayloadsInput = {
+    readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly publicKey: EncodedPoint;
+    readonly manifest: ElectionManifest;
+    readonly sessionId: string;
+};
+
+/** Input bundle for verifying typed ballot payloads across all options. */
+export type VerifyBallotSubmissionPayloadsByOptionInput =
+    VerifyBallotSubmissionPayloadsInput;
+
+/** Verified typed decryption-share payload. */
+export type VerifiedDecryptionSharePayload = {
+    readonly payload: SignedPayload<DecryptionSharePayload>;
+    readonly share: DecryptionShare;
+};
+
+/** Verified aggregate input for one option slot. */
+export type OptionAggregateInput = {
+    readonly optionIndex: number;
+    readonly aggregate: import('./voting-ballot-aggregation.js').VerifiedBallotAggregation['aggregate'];
+};
+
+/** Verified decryption shares grouped by option slot. */
+export type VerifiedOptionDecryptionShares = {
+    readonly optionIndex: number;
+    readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
+};
+
+/** Input bundle for verifying typed decryption-share payloads by option. */
+export type VerifyDecryptionSharePayloadsByOptionInput = {
+    readonly aggregates: readonly OptionAggregateInput[];
+    readonly dkg: VerifiedDKGTranscript;
+    readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
+    readonly manifest: ElectionManifest;
+    readonly sessionId: string;
+};
+
+/** Input bundle for verifying one full published tally set across all options. */
+export type VerifyPublishedVotingResultsInput = {
+    readonly manifest: ElectionManifest;
+    readonly sessionId: string;
+    readonly dkgTranscript: readonly SignedPayload[];
+    readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
+    readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
+    readonly tallyPublications?: readonly SignedPayload<TallyPublicationPayload>[];
+};
+
+/** Verified published tally for one option slot. */
+export type VerifiedPublishedOptionVotingResult = {
+    readonly optionIndex: number;
+    readonly ballots: import('./voting-ballot-aggregation.js').VerifiedOptionBallotAggregation;
+    readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
+    readonly tally: bigint;
 };

@@ -15,7 +15,7 @@ import {
     pointMultiply,
     pointSubtract,
 } from '../core/ristretto.js';
-import type { ElgamalCiphertext } from '../elgamal/types.js';
+import type { ElGamalCiphertext } from '../elgamal/types.js';
 import {
     concatBytes,
     encodeForChallenge,
@@ -38,7 +38,7 @@ import type {
 } from './types.js';
 
 const candidateEncoding = (
-    ciphertext: ElgamalCiphertext,
+    ciphertext: ElGamalCiphertext,
     candidateValue: bigint,
     group: CryptoGroup,
 ): string =>
@@ -62,7 +62,7 @@ const commitmentSequence = (
     );
 
 const challengePayload = (
-    ciphertext: ElgamalCiphertext,
+    ciphertext: ElGamalCiphertext,
     publicKey: string,
     validValues: readonly bigint[],
     commitments: readonly { a1: string; a2: string }[],
@@ -99,7 +99,7 @@ const challengePayload = (
 export const createDisjunctiveProof = async (
     plaintext: bigint,
     randomness: bigint,
-    ciphertext: ElgamalCiphertext,
+    ciphertext: ElGamalCiphertext,
     publicKey: string,
     validValues: readonly bigint[],
     group: CryptoGroup,
@@ -228,7 +228,7 @@ export const createDisjunctiveProof = async (
  */
 export const verifyDisjunctiveProof = async (
     proof: DisjunctiveProof,
-    ciphertext: ElgamalCiphertext,
+    ciphertext: ElGamalCiphertext,
     publicKey: string,
     validValues: readonly bigint[],
     group: CryptoGroup,

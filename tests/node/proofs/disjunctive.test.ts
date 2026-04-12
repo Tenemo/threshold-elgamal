@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../../tools/internal/deterministic.js';
 
-import { InvalidProofError, getGroup } from '#core';
+import { InvalidProofError, RISTRETTO_GROUP } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDisjunctiveProof,
@@ -11,7 +11,7 @@ import {
 } from '#proofs';
 import { encodePoint, multiplyBase } from '#src/core/ristretto';
 describe('disjunctive proofs', () => {
-    const group = getGroup('ristretto255');
+    const group = RISTRETTO_GROUP;
     const secret = 12345n;
     const publicKey = encodePoint(multiplyBase(secret));
     const validValues = [1n, 2n, 3n, 4n, 5n, 6n, 7n, 8n, 9n, 10n] as const;

@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises';
 
 import { createDeterministicSource } from './internal/deterministic.js';
 
-import { getGroup } from '#core';
+import { RISTRETTO_GROUP } from '#core';
 import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDLEQProof,
@@ -38,7 +38,7 @@ const buildBallot = async (
     randomness: bigint,
     publicKey: string,
     protocolVersion: string,
-    group = getGroup('ristretto255'),
+    group = RISTRETTO_GROUP,
 ): Promise<BallotTranscriptEntry> => {
     const ciphertext = encryptAdditiveWithRandomness(
         vote,
@@ -74,7 +74,7 @@ const buildBallot = async (
     };
 };
 const main = async (): Promise<void> => {
-    const group = getGroup('ristretto255');
+    const group = RISTRETTO_GROUP;
     const manifest: ElectionManifest = createElectionManifest({
         rosterHash: 'roster-hash',
         optionList: ['Alpha', 'Beta'],

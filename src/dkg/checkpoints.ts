@@ -1,7 +1,15 @@
+import { InvalidPayloadError } from '../core/index.js';
+import { hashProtocolPhaseSnapshot } from '../protocol/transcript.js';
 import type {
     PhaseCheckpointPayload,
     SignedPayload,
 } from '../protocol/types.js';
+
+import {
+    assertIndexSubset,
+    assertUniqueSortedParticipantIndices,
+    type ResolvePhaseCheckpointInput,
+} from './verification.js';
 
 /** Finalized threshold-supported checkpoint for one DKG phase. */
 export type FinalizedPhaseCheckpoint = {
@@ -18,10 +26,16 @@ const checkpointKey = (payload: PhaseCheckpointPayload): string =>
         messageType: payload.messageType,
         checkpointPhase: payload.checkpointPhase,
         checkpointTranscriptHash: payload.checkpointTranscriptHash,
-        qualParticipantIndices: payload.qualParticipantIndices,
+        qualifiedParticipantIndices: payload.qualifiedParticipantIndices,
     });
 
 const compareNumbers = (left: number, right: number): number => left - right;
+const sameParticipantIndexList = (
+    left: readonly number[],
+    right: readonly number[],
+): boolean =>
+    left.length === right.length &&
+    left.every((participantIndex, index) => participantIndex === right[index]);
 
 /** Returns `true` when the signed payload is a phase checkpoint. */
 export const isPhaseCheckpointPayload = (
@@ -29,15 +43,9 @@ export const isPhaseCheckpointPayload = (
 ): payload is SignedPayload<PhaseCheckpointPayload> =>
     payload.payload.messageType === 'phase-checkpoint';
 
-/** Returns the required checkpoint phases for the shipped GJKR reducer. */
-export const requiredCheckpointPhases = (): readonly number[] => [0, 1, 2, 3];
+const requiredCheckpointPhases = (): readonly number[] => [0, 1, 2, 3];
 
-/** Returns the last required checkpoint phase for the shipped GJKR reducer. */
-export const finalCheckpointPhase = (): number =>
-    requiredCheckpointPhases()[requiredCheckpointPhases().length - 1] ?? 0;
-
-/** Groups all checkpoint variants observed for one closed DKG phase. */
-export const collectCheckpointVariants = (
+const collectCheckpointVariants = (
     transcript: readonly SignedPayload[],
     checkpointPhase: number,
 ): readonly FinalizedPhaseCheckpoint[] => {
@@ -76,18 +84,97 @@ export const collectCheckpointVariants = (
 };
 
 /**
- * Returns the unique threshold-supported checkpoint variant for one phase, or
- * `null` when no unique threshold-supported checkpoint exists yet.
+ * Rejects phase-checkpoint payloads outside the shipped GJKR checkpoint plan.
  */
-export const resolveFinalizedPhaseCheckpoint = (
+export const assertSupportedCheckpointPayloads = (
     transcript: readonly SignedPayload[],
-    checkpointPhase: number,
-    threshold: number,
-): FinalizedPhaseCheckpoint | null => {
-    const supported = collectCheckpointVariants(
-        transcript,
-        checkpointPhase,
-    ).filter((entry) => entry.signatures.length >= threshold);
+): void => {
+    for (const signedPayload of transcript) {
+        if (
+            isPhaseCheckpointPayload(signedPayload) &&
+            !requiredCheckpointPhases().includes(
+                signedPayload.payload.checkpointPhase,
+            )
+        ) {
+            throw new InvalidPayloadError(
+                `Checkpoint phase ${signedPayload.payload.checkpointPhase} is not part of the GJKR phase plan`,
+            );
+        }
+    }
+};
 
-    return supported.length === 1 ? supported[0] : null;
+/**
+ * Resolves and validates the unique threshold-supported checkpoint for one
+ * closed DKG phase.
+ */
+export const resolveVerifiedPhaseCheckpoint = async (
+    input: ResolvePhaseCheckpointInput,
+): Promise<FinalizedPhaseCheckpoint> => {
+    const supported = collectCheckpointVariants(
+        input.transcript,
+        input.checkpointPhase,
+    ).filter((entry) => entry.signatures.length >= input.threshold);
+
+    if (supported.length === 0) {
+        throw new InvalidPayloadError(
+            `Missing threshold-supported phase checkpoint for phase ${input.checkpointPhase}`,
+        );
+    }
+    if (supported.length > 1) {
+        throw new InvalidPayloadError(
+            `Observed multiple threshold-supported phase checkpoints for phase ${input.checkpointPhase}`,
+        );
+    }
+
+    const checkpoint = supported[0];
+    const qualifiedParticipantIndices =
+        checkpoint.payload.qualifiedParticipantIndices;
+
+    assertUniqueSortedParticipantIndices(
+        qualifiedParticipantIndices,
+        input.participantCount,
+        `Phase ${input.checkpointPhase} checkpoint qualified participant`,
+    );
+    if (
+        !sameParticipantIndexList(
+            qualifiedParticipantIndices,
+            input.expectedQualifiedParticipantIndices,
+        )
+    ) {
+        throw new InvalidPayloadError(
+            `Phase ${input.checkpointPhase} checkpoint qualified participant set does not match the verifier-computed active participant set`,
+        );
+    }
+    if (qualifiedParticipantIndices.length < input.threshold) {
+        throw new InvalidPayloadError(
+            `Checkpoint qualified participant set for phase ${input.checkpointPhase} must contain at least ${input.threshold} participants`,
+        );
+    }
+
+    const expectedSnapshotHash = await hashProtocolPhaseSnapshot(
+        input.transcript.map((entry) => entry.payload),
+        input.checkpointPhase,
+    );
+    if (checkpoint.payload.checkpointTranscriptHash !== expectedSnapshotHash) {
+        throw new InvalidPayloadError(
+            `Phase ${input.checkpointPhase} checkpoint transcript hash does not match the signed transcript snapshot`,
+        );
+    }
+
+    assertIndexSubset(
+        checkpoint.signers,
+        input.signerUniverse,
+        `Phase ${input.checkpointPhase} checkpoint signer`,
+    );
+
+    const qualifiedParticipantSet = new Set(qualifiedParticipantIndices);
+    for (const signer of checkpoint.signers) {
+        if (!qualifiedParticipantSet.has(signer)) {
+            throw new InvalidPayloadError(
+                `Phase ${input.checkpointPhase} checkpoint signer ${signer} is not part of the checkpoint qualified participant set`,
+            );
+        }
+    }
+
+    return checkpoint;
 };

@@ -49,10 +49,7 @@ export type {
     TransportKeyPair,
 } from './transport/types.js';
 
-export {
-    combineDecryptionShares,
-    createVerifiedDecryptionShare,
-} from './threshold/decrypt.js';
+export { combineDecryptionShares } from './threshold/decrypt.js';
 export type {
     DecryptionShare,
     Share,
@@ -71,7 +68,7 @@ export {
 export type {
     VerifyDKGTranscriptInput,
     VerifiedDKGTranscript,
-} from './dkg/verification-types.js';
+} from './dkg/verification.js';
 
 export {
     generateFeldmanCommitments,
@@ -114,15 +111,15 @@ export {
 export { hashRosterEntries } from './protocol/verification.js';
 export { hashProtocolTranscript } from './protocol/transcript.js';
 export {
-    verifyElectionCeremonyDetailed,
-    verifyElectionCeremonyDetailedResult,
+    verifyElectionCeremony,
+    tryVerifyElectionCeremony,
     type ElectionVerificationErrorCode,
     type ElectionVerificationFailure,
     type ElectionVerificationResult,
     type ElectionVerificationStage,
-    type VerifiedElectionCeremonyDetailed,
-    type VerifyElectionCeremonyDetailedInput,
-} from './protocol/election-verification.js';
+    type VerifiedElectionCeremony,
+    type VerifyElectionCeremonyInput,
+} from './protocol/voting-verification.js';
 export { verifyBallotSubmissionPayloadsByOption } from './protocol/voting-ballots.js';
 export { scoreVotingDomain } from './protocol/voting-codecs.js';
 export type {
