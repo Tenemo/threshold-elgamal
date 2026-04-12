@@ -25,7 +25,6 @@ import {
     hashElectionManifest,
     SHIPPED_PROTOCOL_VERSION,
 } from '../protocol/manifest.js';
-import { classifySlotConflict } from '../protocol/payloads.js';
 import { hashProtocolTranscript } from '../protocol/transcript.js';
 import type {
     ComplaintPayload,
@@ -150,26 +149,6 @@ const expectedDkgPhase = (
     messageType === 'phase-checkpoint'
         ? (payload?.checkpointPhase ?? null)
         : GJKR_PHASE_PLAN[messageType];
-
-const assertUniqueSlots = (transcript: readonly SignedPayload[]): void => {
-    for (let leftIndex = 0; leftIndex < transcript.length; leftIndex += 1) {
-        for (
-            let rightIndex = leftIndex + 1;
-            rightIndex < transcript.length;
-            rightIndex += 1
-        ) {
-            const relation = classifySlotConflict(
-                transcript[leftIndex],
-                transcript[rightIndex],
-            );
-            if (relation === 'equivocation') {
-                throw new InvalidPayloadError(
-                    'A different payload for the same canonical slot was observed',
-                );
-            }
-        }
-    }
-};
 
 const groupByParticipant = <
     TPayload extends { readonly participantIndex: number },
@@ -438,8 +417,6 @@ const verifySignedRoster = async (
     transcript: readonly SignedPayload[],
     expectedRosterHash: string,
 ): Promise<VerifiedProtocolSignatures> => {
-    assertUniqueSlots(transcript);
-
     const verifiedSignatures = await verifySignedProtocolPayloads(transcript);
     if (verifiedSignatures.rosterHash !== expectedRosterHash) {
         throw new InvalidPayloadError(
