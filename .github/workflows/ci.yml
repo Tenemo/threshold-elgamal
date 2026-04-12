@@ -28,23 +28,6 @@ jobs:
       - run: pnpm run test:node
       - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
 
-  browser-tests:
-    name: browser tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v6.0.2
-      - uses: pnpm/action-setup@v5.0.0
-        with:
-          run_install: false
-      - uses: actions/setup-node@v6.3.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm run test:browser
-
   coverage:
     name: coverage
     runs-on: ubuntu-latest
@@ -61,20 +44,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run coverage:node
 
-  browser-compat:
-    name: browser compatibility (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            playwright_browsers: chromium firefox
-            probe_targets: desktop-chromium,desktop-firefox,mobile-android-chromium
-          - os: macos-latest
-            playwright_browsers: webkit
-            probe_targets: desktop-webkit,mobile-ios-webkit,mobile-ipados-webkit
+  browser:
+    name: browser
+    runs-on: macos-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: pnpm/action-setup@v5.0.0
@@ -85,8 +58,9 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps ${{ matrix.playwright_browsers }}
-      - run: pnpm exec tsx ./tools/ci/verify-browser-compat.ts --target=${{ matrix.probe_targets }}
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - run: pnpm run test:browser
+      - run: pnpm exec tsx ./tools/ci/verify-browser-compat.ts
 
   docs:
     name: docs
