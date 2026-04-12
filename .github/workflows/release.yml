@@ -3,206 +3,431 @@ name: release
 run-name: release ${{ inputs.release_type }} from ${{ github.ref_name }}
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_type:
-        description: Version bump to apply
-        required: true
-        type: choice
-        default: patch
-        options:
-          - patch
-          - minor
-          - major
-          - beta from patch
-          - beta from minor
-          - beta from major
-          - beta next
-          - promote beta to stable
+    workflow_dispatch:
+        inputs:
+            release_type:
+                description: Version bump to apply
+                required: true
+                type: choice
+                default: patch
+                options:
+                    - patch
+                    - minor
+                    - major
+                    - beta from patch
+                    - beta from minor
+                    - beta from major
+                    - beta next
+                    - promote beta to stable
 
 permissions:
-  contents: write
-  id-token: write
+    contents: read
 
 concurrency:
-  group: release
-  cancel-in-progress: false
+    group: release
+    cancel-in-progress: false
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - name: ensure master dispatch
-        run: |
-          if [[ "${GITHUB_REF_TYPE}" != "branch" || "${GITHUB_REF_NAME}" != "master" ]]; then
-            echo "Releases must be started from the master branch." >&2
-            exit 1
-          fi
+    validate-dispatch:
+        name: validate dispatch
+        runs-on: ubuntu-latest
+        timeout-minutes: 5
+        defaults:
+            run:
+                shell: bash
+        steps:
+            - name: ensure master dispatch
+              run: |
+                  if [[ "${GITHUB_REF_TYPE}" != "branch" || "${GITHUB_REF_NAME}" != "master" ]]; then
+                    echo "Releases must be started from the master branch." >&2
+                    exit 1
+                  fi
 
-      - name: verify release deploy key secret
-        env:
-          RELEASE_DEPLOY_KEY: ${{ secrets.RELEASE_DEPLOY_KEY }}
-        run: |
-          if [[ -z "${RELEASE_DEPLOY_KEY}" ]]; then
-            echo "Missing RELEASE_DEPLOY_KEY repository secret." >&2
-            exit 1
-          fi
+    verify:
+        name: verify
+        needs:
+            - validate-dispatch
+        runs-on: ubuntu-latest
+        timeout-minutes: 35
+        steps:
+            - uses: actions/checkout@v6.0.2
+              with:
+                  persist-credentials: false
+            - uses: pnpm/action-setup@v5.0.0
+              with:
+                  run_install: false
+            - uses: actions/setup-node@v6.3.0
+              with:
+                  node-version-file: .nvmrc
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm run check
+            - run: pnpm run test:node
+            - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
 
-      - uses: actions/checkout@v6.0.2
-        with:
-          fetch-depth: 0
-          persist-credentials: true
-          ref: ${{ github.ref_name }}
-          ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+    coverage:
+        name: coverage
+        needs:
+            - validate-dispatch
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        steps:
+            - uses: actions/checkout@v6.0.2
+              with:
+                  persist-credentials: false
+            - uses: pnpm/action-setup@v5.0.0
+              with:
+                  run_install: false
+            - uses: actions/setup-node@v6.3.0
+              with:
+                  node-version-file: .nvmrc
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm run coverage:node
 
-      - uses: pnpm/action-setup@v5.0.0
-        with:
-          run_install: false
+    browser:
+        name: browser
+        needs:
+            - validate-dispatch
+        runs-on: macos-latest
+        timeout-minutes: 45
+        steps:
+            - uses: actions/checkout@v6.0.2
+              with:
+                  persist-credentials: false
+            - uses: pnpm/action-setup@v5.0.0
+              with:
+                  run_install: false
+            - uses: actions/setup-node@v6.3.0
+              with:
+                  node-version-file: .nvmrc
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm exec playwright install --with-deps chromium firefox webkit
+            - run: pnpm run test:browser
+            - run: pnpm exec tsx ./tools/ci/verify-browser-compat.ts
 
-      - uses: actions/setup-node@v6.3.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-          registry-url: 'https://registry.npmjs.org'
+    docs:
+        name: docs
+        needs:
+            - validate-dispatch
+        runs-on: ubuntu-latest
+        timeout-minutes: 25
+        steps:
+            - uses: actions/checkout@v6.0.2
+              with:
+                  persist-credentials: false
+            - uses: pnpm/action-setup@v5.0.0
+              with:
+                  run_install: false
+            - uses: actions/setup-node@v6.3.0
+              with:
+                  node-version-file: .nvmrc
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm run verify:docs
+            - run: pnpm run docs:build:site
 
-      - name: bump release version
-        id: metadata
-        run: |
-          CURRENT_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version)")
-          RELEASE_TYPE="${{ inputs.release_type }}"
+    release-smoke:
+        name: release smoke
+        needs:
+            - validate-dispatch
+        runs-on: ubuntu-latest
+        timeout-minutes: 60
+        steps:
+            - uses: actions/checkout@v6.0.2
+              with:
+                  persist-credentials: false
+            - uses: pnpm/action-setup@v5.0.0
+              with:
+                  run_install: false
+            - uses: actions/setup-node@v6.3.0
+              with:
+                  node-version-file: .nvmrc
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
+            - run: pnpm run verify:docs
+            - run: pnpm run docs:build:site
+            - run: pnpm run smoke:pack
 
-          case "${RELEASE_TYPE}" in
-            "beta next")
-              if [[ ! "${CURRENT_VERSION}" =~ -beta\.[0-9]+$ ]]; then
-                echo "beta next requires an existing beta version." >&2
-                exit 1
-              fi
-              npm version prerelease --preid beta --no-git-tag-version
-              ;;
-            "promote beta to stable")
-              if [[ ! "${CURRENT_VERSION}" =~ -beta\.[0-9]+$ ]]; then
-                echo "promote beta to stable requires an existing beta version." >&2
-                exit 1
-              fi
-              npm version "${CURRENT_VERSION%%-*}" --no-git-tag-version
-              ;;
-            "beta from patch")
-              npm version prepatch --preid beta --no-git-tag-version
-              ;;
-            "beta from minor")
-              npm version preminor --preid beta --no-git-tag-version
-              ;;
-            "beta from major")
-              npm version premajor --preid beta --no-git-tag-version
-              ;;
-            "patch" | "minor" | "major")
-              npm version "${RELEASE_TYPE}" --no-git-tag-version
-              ;;
-            *)
-              echo "Unsupported release type: ${RELEASE_TYPE}" >&2
-              exit 1
-              ;;
-          esac
+    prepare-release:
+        needs:
+            - validate-dispatch
+            - verify
+            - coverage
+            - browser
+            - docs
+            - release-smoke
+        runs-on: ubuntu-latest
+        timeout-minutes: 35
+        outputs:
+            source_sha: ${{ steps.source.outputs.sha }}
+            version: ${{ steps.metadata.outputs.version }}
+            tag: ${{ steps.metadata.outputs.tag }}
+            dist_tag: ${{ steps.metadata.outputs.dist_tag }}
+            prerelease: ${{ steps.metadata.outputs.prerelease }}
+            package_tarball: ${{ steps.package.outputs.tarball }}
+        defaults:
+            run:
+                shell: bash
+        steps:
+            - uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 0
+                  persist-credentials: false
+                  ref: ${{ github.sha }}
 
-          VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version)")
+            - name: capture source revision
+              id: source
+              run: echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
 
-          if [[ "${VERSION}" == "${CURRENT_VERSION}" ]]; then
-            echo "Release version did not change." >&2
-            exit 1
-          fi
+            - uses: pnpm/action-setup@v5.0.0
+              with:
+                  run_install: false
 
-          if [[ "${VERSION}" == *-* ]]; then
-            DIST_TAG="${VERSION#*-}"
-            DIST_TAG="${DIST_TAG%%.*}"
-            PRERELEASE=true
-          else
-            DIST_TAG=latest
-            PRERELEASE=false
-          fi
+            - uses: actions/setup-node@v6.3.0
+              with:
+                  node-version-file: .nvmrc
+                  cache: pnpm
 
-          echo "previous_version=${CURRENT_VERSION}" >> "${GITHUB_OUTPUT}"
-          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
-          echo "tag=v${VERSION}" >> "${GITHUB_OUTPUT}"
-          echo "dist_tag=${DIST_TAG}" >> "${GITHUB_OUTPUT}"
-          echo "prerelease=${PRERELEASE}" >> "${GITHUB_OUTPUT}"
+            - name: bump release version
+              id: metadata
+              run: |
+                  CURRENT_VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version)")
+                  RELEASE_TYPE="${{ inputs.release_type }}"
 
-      - run: pnpm install --frozen-lockfile
+                  case "${RELEASE_TYPE}" in
+                    "beta next")
+                      if [[ ! "${CURRENT_VERSION}" =~ -beta\.[0-9]+$ ]]; then
+                        echo "beta next requires an existing beta version." >&2
+                        exit 1
+                      fi
+                      npm version prerelease --preid beta --no-git-tag-version
+                      ;;
+                    "promote beta to stable")
+                      if [[ ! "${CURRENT_VERSION}" =~ -beta\.[0-9]+$ ]]; then
+                        echo "promote beta to stable requires an existing beta version." >&2
+                        exit 1
+                      fi
+                      npm version "${CURRENT_VERSION%%-*}" --no-git-tag-version
+                      ;;
+                    "beta from patch")
+                      npm version prepatch --preid beta --no-git-tag-version
+                      ;;
+                    "beta from minor")
+                      npm version preminor --preid beta --no-git-tag-version
+                      ;;
+                    "beta from major")
+                      npm version premajor --preid beta --no-git-tag-version
+                      ;;
+                    "patch" | "minor" | "major")
+                      npm version "${RELEASE_TYPE}" --no-git-tag-version
+                      ;;
+                    *)
+                      echo "Unsupported release type: ${RELEASE_TYPE}" >&2
+                      exit 1
+                      ;;
+                  esac
 
-      - run: pnpm exec playwright install --with-deps chromium
+                  VERSION=$(node -e "console.log(JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version)")
 
-      - run: pnpm run build
-      - run: pnpm run verify:docs
-      - run: pnpm run docs:build:site
-      - run: pnpm run smoke:pack
+                  if [[ "${VERSION}" == "${CURRENT_VERSION}" ]]; then
+                    echo "Release version did not change." >&2
+                    exit 1
+                  fi
 
-      - name: commit release metadata
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                  if [[ "${VERSION}" == *-* ]]; then
+                    DIST_TAG="${VERSION#*-}"
+                    DIST_TAG="${DIST_TAG%%.*}"
+                    PRERELEASE=true
+                  else
+                    DIST_TAG=latest
+                    PRERELEASE=false
+                  fi
 
-          git add package.json pnpm-lock.yaml
+                  echo "previous_version=${CURRENT_VERSION}" >> "${GITHUB_OUTPUT}"
+                  echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+                  echo "tag=v${VERSION}" >> "${GITHUB_OUTPUT}"
+                  echo "dist_tag=${DIST_TAG}" >> "${GITHUB_OUTPUT}"
+                  echo "prerelease=${PRERELEASE}" >> "${GITHUB_OUTPUT}"
 
-          if git diff --cached --quiet; then
-            echo "No release metadata changes were staged." >&2
-            exit 1
-          fi
+            - run: pnpm install --frozen-lockfile
 
-          git commit -m "chore(release): ${{ steps.metadata.outputs.tag }}"
-          git tag -a "${{ steps.metadata.outputs.tag }}" -m "Release ${{ steps.metadata.outputs.tag }}"
+            - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
+            - run: pnpm run verify:docs
+            - run: pnpm run docs:build:site
+            - run: pnpm run smoke:pack
 
-      - name: verify remote release target
-        run: |
-          git fetch origin master --tags
+            - name: pack release tarball
+              id: package
+              run: |
+                  rm -rf .release-artifacts
+                  mkdir .release-artifacts
+                  npm pack --ignore-scripts --pack-destination .release-artifacts >/dev/null
 
-          if [[ "$(git rev-parse HEAD^)" != "$(git rev-parse origin/master)" ]]; then
-            echo "origin/master moved during the release run. Start a new release from the updated master." >&2
-            exit 1
-          fi
+                  PACKAGE_TARBALL=$(find .release-artifacts -maxdepth 1 -type f -name '*.tgz' -printf '%f\n')
 
-          if git ls-remote --exit-code --tags origin "${{ steps.metadata.outputs.tag }}" >/dev/null 2>&1; then
-            echo "Tag ${{ steps.metadata.outputs.tag }} already exists on origin." >&2
-            exit 1
-          fi
+                  if [[ -z "${PACKAGE_TARBALL}" ]]; then
+                    echo "Failed to create a release tarball." >&2
+                    exit 1
+                  fi
 
-      - name: verify npm release target
-        run: |
-          if npm view "threshold-elgamal@${{ steps.metadata.outputs.version }}" version >/dev/null 2>&1; then
-            echo "Version ${{ steps.metadata.outputs.version }} already exists on npm." >&2
-            exit 1
-          fi
+                  echo "tarball=${PACKAGE_TARBALL}" >> "${GITHUB_OUTPUT}"
 
-      - name: push release commit and tag
-        run: |
-          git remote set-url origin "git@github.com:${{ github.repository }}.git"
-          git push --atomic origin HEAD:master "refs/tags/${{ steps.metadata.outputs.tag }}"
+            - uses: actions/upload-artifact@v4
+              with:
+                  if-no-files-found: error
+                  name: release-workspace
+                  retention-days: 1
+                  path: |
+                      package.json
+                      pnpm-lock.yaml
+                      .release-artifacts/*.tgz
 
-      - name: publish to npm
-        run: |
-          if [[ "${{ steps.metadata.outputs.dist_tag }}" == "latest" ]]; then
-            npm publish --provenance
-          else
-            npm publish --provenance --tag "${{ steps.metadata.outputs.dist_tag }}"
-          fi
+    push-release:
+        needs:
+            - prepare-release
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        defaults:
+            run:
+                shell: bash
+        steps:
+            - name: verify release deploy key secret
+              env:
+                  RELEASE_DEPLOY_KEY: ${{ secrets.RELEASE_DEPLOY_KEY }}
+              run: |
+                  if [[ -z "${RELEASE_DEPLOY_KEY}" ]]; then
+                    echo "Missing RELEASE_DEPLOY_KEY repository secret." >&2
+                    exit 1
+                  fi
 
-      - name: create GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [[ "${{ steps.metadata.outputs.prerelease }}" == "true" ]]; then
-            gh release create "${{ steps.metadata.outputs.tag }}" \
-              --verify-tag \
-              --title "${{ steps.metadata.outputs.tag }}" \
-              --generate-notes \
-              --prerelease
-          else
-            gh release create "${{ steps.metadata.outputs.tag }}" \
-              --verify-tag \
-              --title "${{ steps.metadata.outputs.tag }}" \
-              --generate-notes
-          fi
+            - uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 0
+                  persist-credentials: true
+                  ref: ${{ needs.prepare-release.outputs.source_sha }}
+                  ssh-key: ${{ secrets.RELEASE_DEPLOY_KEY }}
+
+            - uses: actions/setup-node@v6.3.0
+              with:
+                  node-version-file: .nvmrc
+
+            - uses: actions/download-artifact@v4
+              with:
+                  name: release-workspace
+                  path: .
+
+            - name: commit release metadata
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+                  git add package.json pnpm-lock.yaml
+
+                  if git diff --cached --quiet; then
+                    echo "No release metadata changes were staged." >&2
+                    exit 1
+                  fi
+
+                  git commit -m "chore(release): ${{ needs.prepare-release.outputs.tag }}"
+                  git tag -a "${{ needs.prepare-release.outputs.tag }}" -m "Release ${{ needs.prepare-release.outputs.tag }}"
+
+            - name: verify remote release target
+              run: |
+                  git fetch origin master --tags
+
+                  if [[ "$(git rev-parse HEAD^)" != "$(git rev-parse origin/master)" ]]; then
+                    echo "origin/master moved during the release run. Start a new release from the updated master." >&2
+                    exit 1
+                  fi
+
+                  if git ls-remote --exit-code --tags origin "${{ needs.prepare-release.outputs.tag }}" >/dev/null 2>&1; then
+                    echo "Tag ${{ needs.prepare-release.outputs.tag }} already exists on origin." >&2
+                    exit 1
+                  fi
+
+            - name: verify npm release target
+              run: |
+                  if npm view "threshold-elgamal@${{ needs.prepare-release.outputs.version }}" version >/dev/null 2>&1; then
+                    echo "Version ${{ needs.prepare-release.outputs.version }} already exists on npm." >&2
+                    exit 1
+                  fi
+
+            - name: push release commit and tag
+              run: |
+                  git remote set-url origin "git@github.com:${{ github.repository }}.git"
+                  git push --atomic origin HEAD:master "refs/tags/${{ needs.prepare-release.outputs.tag }}"
+
+    publish-npm:
+        needs:
+            - prepare-release
+            - push-release
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        permissions:
+            id-token: write
+        defaults:
+            run:
+                shell: bash
+        steps:
+            - uses: actions/setup-node@v6.3.0
+              with:
+                  node-version-file: .nvmrc
+                  registry-url: "https://registry.npmjs.org"
+
+            - uses: actions/download-artifact@v4
+              with:
+                  name: release-workspace
+                  path: .
+
+            - name: publish to npm
+              run: |
+                  PACKAGE_TARBALL=".release-artifacts/${{ needs.prepare-release.outputs.package_tarball }}"
+
+                  if [[ ! -f "${PACKAGE_TARBALL}" ]]; then
+                    echo "Missing release tarball artifact: ${PACKAGE_TARBALL}" >&2
+                    exit 1
+                  fi
+
+                  if [[ "${{ needs.prepare-release.outputs.dist_tag }}" == "latest" ]]; then
+                    npm publish "${PACKAGE_TARBALL}" --provenance --ignore-scripts
+                  else
+                    npm publish "${PACKAGE_TARBALL}" --provenance --ignore-scripts --tag "${{ needs.prepare-release.outputs.dist_tag }}"
+                  fi
+
+    create-github-release:
+        needs:
+            - prepare-release
+            - push-release
+            - publish-npm
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            contents: write
+        defaults:
+            run:
+                shell: bash
+        steps:
+            - name: create GitHub release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  if [[ "${{ needs.prepare-release.outputs.prerelease }}" == "true" ]]; then
+                    gh release create "${{ needs.prepare-release.outputs.tag }}" \
+                      --repo "${{ github.repository }}" \
+                      --verify-tag \
+                      --title "${{ needs.prepare-release.outputs.tag }}" \
+                      --generate-notes \
+                      --prerelease
+                  else
+                    gh release create "${{ needs.prepare-release.outputs.tag }}" \
+                      --repo "${{ github.repository }}" \
+                      --verify-tag \
+                      --title "${{ needs.prepare-release.outputs.tag }}" \
+                      --generate-notes
+                  fi
