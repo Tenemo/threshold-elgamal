@@ -21,6 +21,7 @@ docs/src/content/docs/api/reference/
 __pycache__/
 temp/
 temp.*
+temp-preview-*.txt
 
 # env
 .env
