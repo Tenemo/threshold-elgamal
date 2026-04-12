@@ -1,5 +1,5 @@
 import { encodeScalar } from '../core/ristretto.js';
-import type { ElgamalCiphertext } from '../elgamal/types.js';
+import type { ElGamalCiphertext } from '../elgamal/types.js';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types.js';
 import { signPayloadBytes } from '../transport/auth.js';
 import type {
@@ -251,7 +251,7 @@ export const createBallotSubmissionPayload = async (
     > & {
         readonly ciphertext:
             | BallotSubmissionPayload['ciphertext']
-            | ElgamalCiphertext;
+            | ElGamalCiphertext;
         readonly proof: BallotSubmissionPayload['proof'] | DisjunctiveProof;
     },
 ): Promise<SignedPayload<BallotSubmissionPayload>> => {
@@ -259,7 +259,7 @@ export const createBallotSubmissionPayload = async (
         ...input,
         phase: BALLOT_SUBMISSION_PHASE,
         messageType: 'ballot-submission',
-        ciphertext: encodeCiphertext(input.ciphertext as ElgamalCiphertext),
+        ciphertext: encodeCiphertext(input.ciphertext as ElGamalCiphertext),
         proof: isEncodedDisjunctiveProof(input.proof)
             ? input.proof
             : encodeDisjunctiveProof(input.proof),

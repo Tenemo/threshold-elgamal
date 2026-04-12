@@ -302,7 +302,7 @@ const publicReflectionKinds =
     ReflectionKind.Interface |
     ReflectionKind.Variable;
 
-const verifyTypedocSummaries = async (): Promise<string[]> => {
+const verifyTypeDocSummaries = async (): Promise<string[]> => {
     const app = await Application.bootstrapWithPlugins(config);
     const project = await app.convert();
 
@@ -348,7 +348,7 @@ const main = async (): Promise<void> => {
     const linkFailures = await verifyLinks();
     const baseAwareFailures = await verifyBaseAwareLinks();
     const apiFailures = await verifyApiEntryPages();
-    const summaryFailures = await verifyTypedocSummaries();
+    const summaryFailures = await verifyTypeDocSummaries();
 
     const failures: string[] = [];
 

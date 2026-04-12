@@ -1,6 +1,6 @@
 import { InvalidPayloadError, RISTRETTO_GROUP } from '../core/index.js';
 import { canonicalizeJson } from '../protocol/canonical-json.js';
-import { bigintToFixedHex, fixedHexToBigint } from '../serialize/index.js';
+import { bigintToFixedHex, fixedHexToBigInt } from '../serialize/index.js';
 import type { PedersenShare } from '../vss/types.js';
 
 type PedersenShareEnvelopeRecord = {
@@ -53,7 +53,7 @@ const parseCanonicalFixedHex = (
         );
     }
 
-    const decoded = fixedHexToBigint(value);
+    const decoded = fixedHexToBigInt(value);
     if (bigintToFixedHex(decoded, byteLength) !== value) {
         throw new InvalidPayloadError(
             `${label} must use canonical fixed-width hexadecimal encoding`,
@@ -171,7 +171,7 @@ export const decodePedersenShareEnvelope = (
 
     return {
         index: parsed.index,
-        secretValue: fixedHexToBigint(parsed.secretValue),
-        blindingValue: fixedHexToBigint(parsed.blindingValue),
+        secretValue: fixedHexToBigInt(parsed.secretValue),
+        blindingValue: fixedHexToBigInt(parsed.blindingValue),
     };
 };

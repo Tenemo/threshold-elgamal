@@ -135,7 +135,10 @@ jobs:
 
       - run: pnpm exec playwright install --with-deps chromium
 
-      - run: bash .husky/pre-commit
+      - run: pnpm run build
+      - run: pnpm run verify:docs
+      - run: pnpm run docs:build:site
+      - run: pnpm run smoke:pack
 
       - name: commit release metadata
         run: |

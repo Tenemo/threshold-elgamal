@@ -138,7 +138,7 @@ const expectFailure = async (
     expect(result.error.reason).toContain(expected.reasonFragment);
 };
 
-describe('public voting flow adversarial coverage', () => {
+describe('honest-majority voting flow adversarial coverage', () => {
     let fullFixture: VotingFlowFixture;
     let complaintFixture: VotingFlowFixture;
 

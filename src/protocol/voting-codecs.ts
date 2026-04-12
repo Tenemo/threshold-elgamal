@@ -1,5 +1,5 @@
 import { decodePoint, decodeScalar, encodeScalar } from '../core/ristretto.js';
-import type { ElgamalCiphertext } from '../elgamal/types.js';
+import type { ElGamalCiphertext } from '../elgamal/types.js';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types.js';
 
 import type {
@@ -15,7 +15,7 @@ import type {
  * @returns Protocol ciphertext encoding.
  */
 export const encodeCiphertext = (
-    ciphertext: ElgamalCiphertext,
+    ciphertext: ElGamalCiphertext,
 ): EncodedCiphertext => ({
     c1: ciphertext.c1,
     c2: ciphertext.c2,
@@ -29,13 +29,13 @@ export const encodeCiphertext = (
  */
 export const decodeCiphertext = (
     ciphertext: EncodedCiphertext,
-): ElgamalCiphertext => {
+): ElGamalCiphertext => {
     decodePoint(ciphertext.c1, 'Ciphertext c1');
     decodePoint(ciphertext.c2, 'Ciphertext c2');
 
     return {
-        c1: ciphertext.c1 as ElgamalCiphertext['c1'],
-        c2: ciphertext.c2 as ElgamalCiphertext['c2'],
+        c1: ciphertext.c1 as ElGamalCiphertext['c1'],
+        c2: ciphertext.c2 as ElGamalCiphertext['c2'],
     };
 };
 

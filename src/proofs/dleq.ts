@@ -13,7 +13,7 @@ import {
     pointMultiply,
     pointSubtract,
 } from '../core/ristretto.js';
-import type { ElgamalCiphertext } from '../elgamal/types.js';
+import type { ElGamalCiphertext } from '../elgamal/types.js';
 import { encodeForChallenge } from '../serialize/index.js';
 
 import {
@@ -30,7 +30,7 @@ export type DLEQStatement = {
     /** Transcript-derived trustee verification key. */
     readonly publicKey: string;
     /** Ciphertext being partially decrypted. */
-    readonly ciphertext: ElgamalCiphertext;
+    readonly ciphertext: ElGamalCiphertext;
     /** Partial decryption share `d_j = c1^{x_j} mod p`. */
     readonly decryptionShare: string;
 };

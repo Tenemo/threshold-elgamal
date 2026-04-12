@@ -142,7 +142,7 @@ const GJKR_PHASE_PLAN: Readonly<Record<ProtocolMessageType, number | null>> = {
     'tally-publication': null,
 };
 
-const expectedDkgPhase = (
+const expectedDKGPhase = (
     messageType: ProtocolMessageType,
     payload?: PhaseCheckpointPayload,
 ): number | null =>
@@ -269,7 +269,7 @@ const validateTranscriptShape = (
     manifestHash: string,
 ): void => {
     for (const signedPayload of input.transcript) {
-        const expected = expectedDkgPhase(
+        const expected = expectedDKGPhase(
             signedPayload.payload.messageType,
             isPhaseCheckpointPayload(signedPayload)
                 ? signedPayload.payload

@@ -14,7 +14,7 @@ import {
     pointMultiply,
 } from '../core/ristretto.js';
 
-import type { ElgamalCiphertext } from './types.js';
+import type { ElGamalCiphertext } from './types.js';
 
 type ResolvedAdditiveContext = {
     readonly bound: bigint;
@@ -46,7 +46,7 @@ export const assertValidAdditivePlaintext = (
 
 /** Validates an additive ciphertext that may already be an aggregate. */
 export const assertValidAdditiveCiphertext = (
-    ciphertext: ElgamalCiphertext,
+    ciphertext: ElGamalCiphertext,
 ): void => {
     assertInSubgroupOrIdentity(ciphertext.c1);
     assertInSubgroupOrIdentity(ciphertext.c2);
@@ -90,7 +90,7 @@ const encryptAdditiveWithValidatedInputs = (
     message: bigint,
     publicKey: string,
     randomness: bigint,
-): ElgamalCiphertext => {
+): ElGamalCiphertext => {
     const publicKeyPoint = decodePoint(publicKey, 'Public key');
     const c1 = multiplyBase(randomness);
     const messageEncoding = multiplyBase(message);
@@ -107,9 +107,9 @@ const encryptAdditiveWithValidatedInputs = (
  * Adds two additive-mode ciphertexts component-wise.
  */
 export const addEncryptedValues = (
-    left: ElgamalCiphertext,
-    right: ElgamalCiphertext,
-): ElgamalCiphertext => {
+    left: ElGamalCiphertext,
+    right: ElGamalCiphertext,
+): ElGamalCiphertext => {
     assertValidAdditiveCiphertext(left);
     assertValidAdditiveCiphertext(right);
 
@@ -127,7 +127,7 @@ export const encryptAdditiveWithRandomness = (
     publicKey: string,
     randomness: bigint,
     bound: bigint,
-): ElgamalCiphertext => {
+): ElGamalCiphertext => {
     const context = resolveAdditiveContext(bound, 'encryption');
 
     assertValidAdditivePlaintext(message, context.bound);

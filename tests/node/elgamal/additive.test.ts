@@ -10,7 +10,7 @@ import {
     assertValidAdditiveCiphertext,
     babyStepGiantStep,
     encryptAdditiveWithRandomness,
-    type ElgamalCiphertext,
+    type ElGamalCiphertext,
 } from '#elgamal';
 import {
     decodePoint,
@@ -23,17 +23,17 @@ import {
 const privateKey = 12345n;
 const publicKey = encodePoint(multiplyBase(privateKey));
 
-const additiveIdentity = (): ElgamalCiphertext => {
+const additiveIdentity = (): ElGamalCiphertext => {
     const identity = encodePoint(multiplyBase(0n));
 
     return {
         c1: identity,
         c2: identity,
-    } as ElgamalCiphertext;
+    } as ElGamalCiphertext;
 };
 
 const decryptWithPrivateKey = (
-    ciphertext: ElgamalCiphertext,
+    ciphertext: ElGamalCiphertext,
     bound: bigint,
 ): bigint => {
     const encodedMessage = encodePoint(

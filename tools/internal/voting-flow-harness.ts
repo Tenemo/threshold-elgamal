@@ -69,7 +69,7 @@ export type VotingFlowParticipant = {
     readonly transportPublicKey: EncodedTransportPublicKey;
 };
 
-type DkgComplaintScenario = {
+type DKGComplaintScenario = {
     readonly complainantIndex: number;
     readonly dealerIndex: number;
     readonly outcome?: 'accepted' | 'rejected';
@@ -96,7 +96,7 @@ type DealerArtifacts = {
 
 export type VotingFlowScenario = {
     readonly closeParticipantIndices?: readonly number[];
-    readonly dkgComplaint?: DkgComplaintScenario;
+    readonly dkgComplaint?: DKGComplaintScenario;
     readonly includePhaseCheckpoints?: boolean;
     readonly optionCount?: number;
     readonly optionList?: readonly string[];
@@ -290,7 +290,7 @@ const buildDealerArtifacts = async (
     manifestHash: string,
     rosterHash: string,
     threshold: number,
-    complaintScenario?: DkgComplaintScenario,
+    complaintScenario?: DKGComplaintScenario,
 ): Promise<DealerArtifacts> => {
     const secretPolynomial = buildPolynomial(
         participant.index,
@@ -437,7 +437,7 @@ const buildDealerArtifacts = async (
 };
 
 const createComplaintPayloads = async (input: {
-    readonly complaintScenario: DkgComplaintScenario;
+    readonly complaintScenario: DKGComplaintScenario;
     readonly dealerArtifacts: readonly DealerArtifacts[];
     readonly manifestHash: string;
     readonly participants: readonly VotingFlowParticipant[];

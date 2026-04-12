@@ -92,7 +92,7 @@ const positiveScenarios = [
     },
 ] as const;
 
-describe('public voting flow', () => {
+describe('honest-majority voting flow', () => {
     let fullFixture: Awaited<ReturnType<typeof runVotingFlowScenario>>;
     let partialFixture: Awaited<ReturnType<typeof runVotingFlowScenario>>;
 

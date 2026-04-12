@@ -17,7 +17,7 @@ import {
     RISTRETTO_ZERO,
 } from '../core/ristretto.js';
 import { babyStepGiantStep } from '../elgamal/bsgs.js';
-import type { ElgamalCiphertext } from '../elgamal/types.js';
+import type { ElGamalCiphertext } from '../elgamal/types.js';
 
 import type { DecryptionShare, Share } from './types.js';
 
@@ -78,7 +78,7 @@ export const lagrangeCoefficient = (
  * Creates a partial decryption share `d_i = x_i C_1`.
  */
 export const createDecryptionShare = (
-    ciphertext: ElgamalCiphertext,
+    ciphertext: ElGamalCiphertext,
     share: Share,
 ): DecryptionShare => {
     assertPositiveIndex(share.index, 'Share');
@@ -97,7 +97,7 @@ export const createDecryptionShare = (
  * Combines indexed decryption shares via Lagrange interpolation at `x = 0`.
  */
 export const combineDecryptionShares = (
-    ciphertext: ElgamalCiphertext,
+    ciphertext: ElGamalCiphertext,
     decryptionShares: readonly DecryptionShare[],
     bound: bigint,
 ): bigint => {

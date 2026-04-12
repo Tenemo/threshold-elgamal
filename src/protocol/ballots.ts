@@ -8,7 +8,7 @@ import {
 } from '../core/index.js';
 import { encodePoint, RISTRETTO_ZERO } from '../core/ristretto.js';
 import { addEncryptedValues } from '../elgamal/additive.js';
-import type { ElgamalCiphertext } from '../elgamal/types.js';
+import type { ElGamalCiphertext } from '../elgamal/types.js';
 import { verifyDisjunctiveProof } from '../proofs/disjunctive.js';
 import type { DisjunctiveProof, ProofContext } from '../proofs/types.js';
 import { bytesToHex } from '../serialize/index.js';
@@ -38,7 +38,7 @@ const compareBallotEntries = (
 export type BallotTranscriptEntry = {
     readonly voterIndex: number;
     readonly optionIndex: number;
-    readonly ciphertext: ElgamalCiphertext;
+    readonly ciphertext: ElGamalCiphertext;
     readonly proof: DisjunctiveProof;
 };
 
@@ -222,7 +222,7 @@ export const verifyAndAggregateBallots = async (
         {
             c1: encodePoint(RISTRETTO_ZERO),
             c2: encodePoint(RISTRETTO_ZERO),
-        } satisfies ElgamalCiphertext,
+        } satisfies ElGamalCiphertext,
     );
     const transcriptHash = await hashAcceptedBallots(sortedBallots);
     const aggregate = createVerifiedAggregateCiphertext(
