@@ -18,6 +18,14 @@ Use the root package for all supported public imports. The package does not ship
 - tally verification
 - full ceremony verification
 
+## Common starting points
+
+- manifest and session setup: `createElectionManifest`, `hashRosterEntries`, `hashElectionManifest`, `deriveSessionId`
+- browser-side key material: `generateAuthKeyPair`, `exportAuthPublicKey`, `generateTransportKeyPair`, `exportTransportPublicKey`
+- encrypted share transport: `encryptEnvelope`, `decryptEnvelope`
+- public board verification: `tryVerifyElectionCeremony`, `verifyElectionCeremony`
+- published payload construction: `createManifestPublicationPayload`, `createRegistrationPayload`, `createManifestAcceptancePayload`, `createBallotSubmissionPayload`, `createBallotClosePayload`, `createDecryptionSharePayload`, `createTallyPublicationPayload`
+
 ## Typical import style
 
 ```typescript
@@ -36,6 +44,13 @@ import {
 - you want the shipped `ristretto255` voting workflow
 - you want the minimal manifest and derived majority-threshold rules
 - you want public builders and verifiers that match the published package exports
+
+## Pair it with these guides
+
+- [Get started](../guides/getting-started/) for the quickest route into the public surface
+- [Verifying a public board](../guides/verifying-a-public-board/) for the verifier entry points and failure handling
+- [Browser and worker usage](../guides/browser-and-worker-usage/) for browser-native setup and transport envelopes
+- [Published payload examples](../guides/published-payload-examples/) for exact JSON shapes
 
 ## Explore the generated reference when
 

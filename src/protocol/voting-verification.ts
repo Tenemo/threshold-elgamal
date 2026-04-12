@@ -12,10 +12,10 @@ import type {
     BallotSubmissionPayload,
     DecryptionSharePayload,
     ElectionManifest,
+    VerifyElectionCeremonyInput,
     VerifiedDecryptionSharePayload,
     VerifiedOptionDecryptionShares,
     VerifiedPublishedOptionVotingResult,
-    VerifyPublishedVotingResultsInput,
     SignedPayload,
     TallyPublicationPayload,
 } from './types.js';
@@ -105,9 +105,6 @@ export type VerifiedElectionCeremony = {
     readonly dkg: VerifiedDKGTranscript;
     readonly options: readonly VerifiedPublishedOptionVotingResult[];
 };
-
-/** Input bundle for full ceremony verification across all published options. */
-export type VerifyElectionCeremonyInput = VerifyPublishedVotingResultsInput;
 
 /** Non-throwing result shape for full ceremony verification. */
 export type ElectionVerificationResult =
@@ -207,6 +204,15 @@ const findOptionDecryptionShares = (
  *
  * @param input Full public ceremony input bundle.
  * @returns Detailed verified ceremony output.
+ *
+ * @example
+ * ```ts
+ * const verified = await verifyElectionCeremony(bundle);
+ *
+ * console.log(verified.boardAudit.overall.fingerprint);
+ * console.log(verified.countedParticipantIndices);
+ * console.log(verified.perOptionTallies);
+ * ```
  */
 export const verifyElectionCeremony = async (
     input: VerifyElectionCeremonyInput,
@@ -460,6 +466,18 @@ export const verifyElectionCeremony = async (
  *
  * @param input Full public ceremony input bundle.
  * @returns Verified ceremony output or a stable structured failure.
+ *
+ * @example
+ * ```ts
+ * const result = await tryVerifyElectionCeremony(bundle);
+ *
+ * if (!result.ok) {
+ *     console.error(result.error.stage, result.error.code, result.error.reason);
+ *     return;
+ * }
+ *
+ * console.log(result.verified.qualifiedParticipantIndices);
+ * ```
  */
 export const tryVerifyElectionCeremony = async (
     input: VerifyElectionCeremonyInput,

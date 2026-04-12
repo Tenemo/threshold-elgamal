@@ -118,7 +118,6 @@ export {
     type ElectionVerificationResult,
     type ElectionVerificationStage,
     type VerifiedElectionCeremony,
-    type VerifyElectionCeremonyInput,
 } from './protocol/voting-verification.js';
 export { verifyBallotSubmissionPayloadsByOption } from './protocol/voting-ballots.js';
 export { scoreVotingDomain } from './protocol/voting-codecs.js';
@@ -142,4 +141,5 @@ export type {
     RegistrationPayload,
     SignedPayload,
     TallyPublicationPayload,
+    VerifyElectionCeremonyInput,
 } from './protocol/types.js';

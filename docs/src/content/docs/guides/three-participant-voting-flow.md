@@ -18,6 +18,14 @@ This guide describes the supported ceremony shape on the current beta line:
 
 The public package is root-only. Import everything from `threshold-elgamal`.
 
+## What your application should keep
+
+- the frozen `rosterHash`
+- the published `manifest` and `manifestHash`
+- the derived `sessionId`
+- the signed public payloads exactly as posted on the board
+- the organizer’s final `countedParticipantIndices` from `ballot-close`
+
 ## Minimal manifest
 
 ```typescript
@@ -81,6 +89,17 @@ The root package exposes public builders for the standard ceremony payloads:
 - `createDecryptionSharePayload(...)`
 - `createTallyPublicationPayload(...)`
 
+In practice, most integrations split them by phase:
+
+- phase `0`: `createManifestPublicationPayload(...)`, `createRegistrationPayload(...)`, `createManifestAcceptancePayload(...)`
+- phases `1` to `4`: DKG commitments, encrypted shares, Feldman commitments, and key-derivation confirmations
+- phase `5`: `createBallotSubmissionPayload(...)`
+- phase `6`: `createBallotClosePayload(...)`
+- phase `7`: `createDecryptionSharePayload(...)`
+- phase `8`: `createTallyPublicationPayload(...)`
+
+These builders sign and encode published payloads. Your application still owns participant key custody, local trustee state, bulletin-board posting, and the orchestration that decides when each phase is complete.
+
 ## Ballot close
 
 `ballot-close` is mandatory before decryption and tally verification.
@@ -95,6 +114,26 @@ Its rules are:
 
 This is an administrative cutoff, not a fairness proof about waiting long enough.
 
+## Late ballots and excluded voters
+
+The verifier keeps a public distinction between ballots that were posted and ballots that were counted.
+
+```typescript
+const ballotClosePayload = await createBallotClosePayload(organizerPrivateKey, {
+    sessionId,
+    manifestHash,
+    participantIndex: 1,
+    countedParticipantIndices: [1, 2, 3, 4],
+});
+
+const verified = await verifyElectionCeremony(bundle);
+
+console.log(verified.countedParticipantIndices); // [1, 2, 3, 4]
+console.log(verified.excludedParticipantIndices); // for example [5, 6]
+```
+
+Participants `5` and `6` may still have posted otherwise valid ballots. They stay visible on the board, but the verifier excludes them from aggregate recomputation because the organizer omitted them from the signed close payload.
+
 ## End-to-end verification
 
 Use `verifyElectionCeremony(...)` to replay the public ceremony from manifest publication through tally publication in one pass. The verifier checks:
@@ -108,4 +147,4 @@ Use `verifyElectionCeremony(...)` to replay the public ceremony from manifest pu
 - tally publications
 - board-consistency digests and audit metadata
 
-For an executable example, inspect the root-only public node integration tests in this repository.
+For verifier-first integration code, start with [Verifying a public board](./verifying-a-public-board/). For exact payload JSON, use [Published payload examples](./published-payload-examples/). The repository integration tests exercise the same flow, but the harness is not part of the supported public API.

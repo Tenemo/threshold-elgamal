@@ -11,6 +11,8 @@ The shipped workflow is browser-native and assumes:
 - Web Crypto with `crypto.subtle` and `crypto.getRandomValues`
 - ESM imports
 
+For a concrete browser-native setup example, read [Browser and worker usage](./browser-and-worker-usage/).
+
 ## Supported environments
 
 - Modern browsers must expose Web Crypto and `bigint`
@@ -43,6 +45,8 @@ Keep these concerns outside the library:
 - local plaintext vote staging before DKG completion
 
 The library is designed to be imported inside workers, but it does not spawn or manage them itself.
+
+If you keep participant keys inside a worker, keep the `CryptoKey` objects in that worker unless you have verified cross-thread transfer in your target runtimes.
 
 ## Practical performance expectations
 

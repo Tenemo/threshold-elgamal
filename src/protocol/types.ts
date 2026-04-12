@@ -259,8 +259,8 @@ export type VerifyDecryptionSharePayloadsByOptionInput = {
     readonly sessionId: string;
 };
 
-/** Input bundle for verifying one full published tally set across all options. */
-export type VerifyPublishedVotingResultsInput = {
+/** Input bundle for full ceremony verification across all published options. */
+export type VerifyElectionCeremonyInput = {
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
     readonly dkgTranscript: readonly SignedPayload[];
