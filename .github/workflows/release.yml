@@ -284,6 +284,7 @@ jobs:
                   name: release-workspace
                   retention-days: 1
                   path: |
+                      .nvmrc
                       package.json
                       pnpm-lock.yaml
                       .release-artifacts/*.tgz
@@ -375,15 +376,15 @@ jobs:
             run:
                 shell: bash
         steps:
-            - uses: actions/setup-node@v6.3.0
-              with:
-                  node-version-file: .nvmrc
-                  registry-url: "https://registry.npmjs.org"
-
             - uses: actions/download-artifact@v4
               with:
                   name: release-workspace
                   path: .
+
+            - uses: actions/setup-node@v6.3.0
+              with:
+                  node-version-file: .nvmrc
+                  registry-url: "https://registry.npmjs.org"
 
             - name: publish to npm
               run: |
