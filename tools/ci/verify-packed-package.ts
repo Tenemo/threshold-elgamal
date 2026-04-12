@@ -29,21 +29,42 @@ const resolvePackageManagerEntrypoint = (
         return pnpmEntrypoint;
     }
 
-    const resolvedNpmCliEntrypoint = join(
-        dirname(process.execPath),
-        'node_modules',
-        'npm',
-        'bin',
-        'npm-cli.js',
-    );
+    const npmCliEntrypointCandidates = [
+        join(
+            dirname(process.execPath),
+            'node_modules',
+            'npm',
+            'bin',
+            'npm-cli.js',
+        ),
+        join(
+            dirname(process.execPath),
+            '..',
+            'lib',
+            'node_modules',
+            'npm',
+            'bin',
+            'npm-cli.js',
+        ),
+        join(
+            dirname(process.execPath),
+            '..',
+            'node_modules',
+            'npm',
+            'bin',
+            'npm-cli.js',
+        ),
+    ];
 
-    if (!existsSync(resolvedNpmCliEntrypoint)) {
-        throw new Error(
-            `Unable to locate the npm CLI entrypoint at ${resolvedNpmCliEntrypoint}`,
-        );
+    for (const npmCliEntrypointCandidate of npmCliEntrypointCandidates) {
+        if (existsSync(npmCliEntrypointCandidate)) {
+            return npmCliEntrypointCandidate;
+        }
     }
 
-    return resolvedNpmCliEntrypoint;
+    throw new Error(
+        `Unable to locate the npm CLI entrypoint. Searched: ${npmCliEntrypointCandidates.join(', ')}`,
+    );
 };
 
 const runPackageManager = (
