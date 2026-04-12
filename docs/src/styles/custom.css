@@ -91,7 +91,12 @@
         content: none;
     }
 
+    html[data-has-hero] .content-panel {
+        display: grid;
+    }
+
     html[data-has-hero] .content-panel .sl-container {
+        justify-self: center;
         width: min(100%, var(--sl-landing-width));
         max-width: var(--sl-landing-width);
         margin-inline: auto;

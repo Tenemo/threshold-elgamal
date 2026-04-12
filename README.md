@@ -41,6 +41,8 @@ npm install threshold-elgamal
 - Authentication signatures require Web Crypto `Ed25519`.
 - Transport share exchange requires Web Crypto `X25519`.
 
+See [Runtime and compatibility](https://tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility/) for the tested browser and Node matrix.
+
 ## Start here
 
 - [Verifying a public board](https://tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board/): start here for `tryVerifyElectionCeremony(...)` and `verifyElectionCeremony(...)`.
@@ -100,6 +102,8 @@ There is no supported `n-of-n` mode and no supported public `k-of-n` configurati
 
 Transcript verification requires key-derivation confirmations from every qualified participant.
 
+See [Honest-majority voting flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/) for the full phase-by-phase transcript.
+
 ## Getting started
 
 ```typescript
@@ -146,7 +150,7 @@ console.log(majorityThreshold(3)); // 2
 console.log(sessionId.length); // 64
 ```
 
-If your application consumes a complete public board, move directly to the verifier entry point:
+If your application consumes a complete public board, start with [Verifying a public board](https://tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board/) and then move directly to the verifier entry point:
 
 ```typescript
 import {
@@ -195,6 +199,8 @@ For the reveal path, the public root surface is intentionally two-step:
 - prove and publish it with `createDLEQProof(...)` and `createDecryptionSharePayload(...)`
 
 After collecting a threshold subset, recover the tally with `combineDecryptionShares(...)`.
+
+For concrete posted JSON shapes, use [Published payload examples](https://tenemo.github.io/threshold-elgamal/guides/published-payload-examples/).
 
 ## Security boundary
 
