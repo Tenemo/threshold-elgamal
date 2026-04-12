@@ -86,6 +86,7 @@ The root package exposes public builders for the standard ceremony payloads:
 - `createKeyDerivationConfirmationPayload(...)`
 - `createBallotSubmissionPayload(...)`
 - `createBallotClosePayload(...)`
+- `createDecryptionShare(...)`
 - `createDecryptionSharePayload(...)`
 - `createTallyPublicationPayload(...)`
 
@@ -95,10 +96,62 @@ In practice, most integrations split them by phase:
 - phases `1` to `4`: DKG commitments, encrypted shares, Feldman commitments, and key-derivation confirmations
 - phase `5`: `createBallotSubmissionPayload(...)`
 - phase `6`: `createBallotClosePayload(...)`
-- phase `7`: `createDecryptionSharePayload(...)`
-- phase `8`: `createTallyPublicationPayload(...)`
+- phase `7`: `createDecryptionShare(...)`, `createDLEQProof(...)`, `createDecryptionSharePayload(...)`
+- phase `8`: `combineDecryptionShares(...)`, `createTallyPublicationPayload(...)`
 
 These builders sign and encode published payloads. Your application still owns participant key custody, local trustee state, bulletin-board posting, and the orchestration that decides when each phase is complete.
+
+For the reveal path, phase `7` is not a single builder call. Each trustee first computes the partial share against the accepted aggregate ciphertext, proves it against the trustee verification key, and only then signs the `decryption-share` payload.
+
+```typescript
+import {
+    RISTRETTO_GROUP,
+    SHIPPED_PROTOCOL_VERSION,
+    createDLEQProof,
+    createDecryptionShare,
+    createDecryptionSharePayload,
+    deriveTranscriptVerificationKey,
+} from "threshold-elgamal";
+
+const decryptionShare = createDecryptionShare(optionAggregate.ciphertext, share);
+
+const proof = await createDLEQProof(
+    share.value,
+    {
+        publicKey: deriveTranscriptVerificationKey(
+            qualifiedDealerCommitments,
+            participantIndex,
+            RISTRETTO_GROUP,
+        ),
+        ciphertext: optionAggregate.ciphertext,
+        decryptionShare: decryptionShare.value,
+    },
+    RISTRETTO_GROUP,
+    {
+        protocolVersion: SHIPPED_PROTOCOL_VERSION,
+        suiteId: RISTRETTO_GROUP.name,
+        manifestHash,
+        sessionId,
+        label: "decryption-share-dleq",
+        participantIndex,
+        optionIndex: optionAggregate.optionIndex,
+    },
+);
+
+const decryptionSharePayload = await createDecryptionSharePayload(
+    authPrivateKey,
+    {
+        sessionId,
+        manifestHash,
+        participantIndex,
+        optionIndex: optionAggregate.optionIndex,
+        transcriptHash: optionAggregate.transcriptHash,
+        ballotCount: optionAggregate.ballotCount,
+        decryptionShare: decryptionShare.value,
+        proof,
+    },
+);
+```
 
 ## Ballot close
 

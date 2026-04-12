@@ -143,6 +143,8 @@ The builder sorts and validates the participant indices before signing. Feed it 
 }
 ```
 
+The signed payload does not derive the partial share for you. Compute the share with `createDecryptionShare(...)`, build the matching DLEQ proof with `createDLEQProof(...)`, and then sign the published object with `createDecryptionSharePayload(...)`.
+
 ## Tally publication
 
 ```json

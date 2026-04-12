@@ -25,6 +25,7 @@ Use the root package for all supported public imports. The package does not ship
 - encrypted share transport: `encryptEnvelope`, `decryptEnvelope`
 - public board verification: `tryVerifyElectionCeremony`, `verifyElectionCeremony`
 - published payload construction: `createManifestPublicationPayload`, `createRegistrationPayload`, `createManifestAcceptancePayload`, `createBallotSubmissionPayload`, `createBallotClosePayload`, `createDecryptionSharePayload`, `createTallyPublicationPayload`
+- threshold reveal primitives: `createDecryptionShare`, `createDLEQProof`, `combineDecryptionShares`
 
 ## Typical import style
 
@@ -35,6 +36,8 @@ import {
     createRegistrationPayload,
     createManifestAcceptancePayload,
     createBallotClosePayload,
+    createDecryptionShare,
+    createDecryptionSharePayload,
     verifyElectionCeremony,
 } from "threshold-elgamal";
 ```

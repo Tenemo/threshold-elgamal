@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+    combineDecryptionShares,
     createBallotClosePayload,
+    createDLEQProof,
+    createDecryptionShare,
+    createDecryptionSharePayload,
     createElectionManifest,
     createManifestAcceptancePayload,
     createManifestPublicationPayload,
@@ -16,8 +20,51 @@ import {
     generateTransportKeyPair,
     hashElectionManifest,
     hashRosterEntries,
+    RISTRETTO_GROUP,
+    SHIPPED_PROTOCOL_VERSION,
     scoreVotingDomain,
+    type EncodedPoint,
+    verifyDLEQProof,
 } from '#root';
+
+const asEncodedPoint = (value: string): EncodedPoint => value as EncodedPoint;
+
+const thresholdVector = {
+    ciphertext: {
+        c1: asEncodedPoint(
+            'f03aa76fb871dc237db54ddd77b91430a7876beb99ae7f4047545d6cd086101c',
+        ),
+        c2: asEncodedPoint(
+            '805351278c30580bf6341232ffde49aab9b53b47f63c9049c16789b7fc38a83d',
+        ),
+    },
+    sharePublicKey: asEncodedPoint(
+        '760df7732237a40d6c5d7c5c2f19eefb7eea951648f33465bef5fa222c667a0e',
+    ),
+    subsetShares: [
+        {
+            index: 1,
+            value: 93814n,
+            decryptionShare: asEncodedPoint(
+                'd4d45a7b49b6885c4517095b505cc78e59c838b94cc52d9277ff4c37cc5c9964',
+            ),
+        },
+        {
+            index: 3,
+            value: 338226n,
+            decryptionShare: asEncodedPoint(
+                'fce0b2c12661c0c6425f663f701717092429245ecbc90d61389aefc50063da5a',
+            ),
+        },
+        {
+            index: 5,
+            value: 691270n,
+            decryptionShare: asEncodedPoint(
+                'a6218d12d1912db37e0f6a69c664a50ef2663a8c24b91f48a125eeff72203e5f',
+            ),
+        },
+    ],
+} as const;
 
 describe('browser public surface', () => {
     it('round-trips the shipped browser ceremony primitives through the root package', async () => {
@@ -174,5 +221,89 @@ describe('browser public surface', () => {
                 tally: 7n,
             }),
         ).rejects.toThrow('Decryption participant indices must be unique');
+    });
+
+    it('builds the decryption-share reveal path through the root package only', async () => {
+        const auth = await generateAuthKeyPair({ extractable: true });
+        const computedShares = thresholdVector.subsetShares.map((share) =>
+            createDecryptionShare(thresholdVector.ciphertext, share),
+        );
+        const participantThreeShare = computedShares[1];
+        const proof = await createDLEQProof(
+            thresholdVector.subsetShares[1].value,
+            {
+                publicKey: thresholdVector.sharePublicKey,
+                ciphertext: thresholdVector.ciphertext,
+                decryptionShare: participantThreeShare.value,
+            },
+            RISTRETTO_GROUP,
+            {
+                protocolVersion: SHIPPED_PROTOCOL_VERSION,
+                suiteId: RISTRETTO_GROUP.name,
+                manifestHash: 'aa'.repeat(32),
+                sessionId: 'bb'.repeat(32),
+                label: 'decryption-share-dleq',
+                participantIndex: 3,
+                optionIndex: 1,
+            },
+        );
+        const signedPayload = await createDecryptionSharePayload(
+            auth.privateKey,
+            {
+                sessionId: 'bb'.repeat(32),
+                manifestHash: 'aa'.repeat(32),
+                participantIndex: 3,
+                optionIndex: 1,
+                transcriptHash: 'cc'.repeat(32),
+                ballotCount: 3,
+                decryptionShare: participantThreeShare.value,
+                proof,
+            },
+        );
+
+        expect(computedShares).toEqual([
+            {
+                index: 1,
+                value: thresholdVector.subsetShares[0].decryptionShare,
+            },
+            {
+                index: 3,
+                value: thresholdVector.subsetShares[1].decryptionShare,
+            },
+            {
+                index: 5,
+                value: thresholdVector.subsetShares[2].decryptionShare,
+            },
+        ]);
+        await expect(
+            verifyDLEQProof(
+                proof,
+                {
+                    publicKey: thresholdVector.sharePublicKey,
+                    ciphertext: thresholdVector.ciphertext,
+                    decryptionShare: participantThreeShare.value,
+                },
+                RISTRETTO_GROUP,
+                {
+                    protocolVersion: SHIPPED_PROTOCOL_VERSION,
+                    suiteId: RISTRETTO_GROUP.name,
+                    manifestHash: 'aa'.repeat(32),
+                    sessionId: 'bb'.repeat(32),
+                    label: 'decryption-share-dleq',
+                    participantIndex: 3,
+                    optionIndex: 1,
+                },
+            ),
+        ).resolves.toBe(true);
+        expect(signedPayload.payload.decryptionShare).toBe(
+            participantThreeShare.value,
+        );
+        expect(
+            combineDecryptionShares(
+                thresholdVector.ciphertext,
+                computedShares,
+                20n,
+            ),
+        ).toBe(13n);
     });
 });
