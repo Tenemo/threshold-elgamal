@@ -170,7 +170,6 @@ jobs:
             tag: ${{ steps.metadata.outputs.tag }}
             dist_tag: ${{ steps.metadata.outputs.dist_tag }}
             prerelease: ${{ steps.metadata.outputs.prerelease }}
-            package_tarball: ${{ steps.package.outputs.tarball }}
         defaults:
             run:
                 shell: bash
@@ -262,31 +261,15 @@ jobs:
             - run: pnpm run docs:build:site
             - run: pnpm run smoke:pack
 
-            - name: pack release tarball
-              id: package
-              run: |
-                  rm -rf release-artifacts
-                  mkdir release-artifacts
-                  npm pack --ignore-scripts --pack-destination release-artifacts >/dev/null
-
-                  PACKAGE_TARBALL=$(find release-artifacts -maxdepth 1 -type f -name '*.tgz' -printf '%f\n')
-
-                  if [[ -z "${PACKAGE_TARBALL}" ]]; then
-                    echo "Failed to create a release tarball." >&2
-                    exit 1
-                  fi
-
-                  echo "tarball=${PACKAGE_TARBALL}" >> "${GITHUB_OUTPUT}"
-
-            - uses: actions/upload-artifact@v4
+            - uses: actions/upload-artifact@v4.6.2
               with:
                   if-no-files-found: error
-                  name: release-workspace
+                  name: release-package
                   retention-days: 1
                   path: |
                       package.json
                       pnpm-lock.yaml
-                      release-artifacts/*.tgz
+                      dist
 
     push-release:
         needs:
@@ -317,9 +300,9 @@ jobs:
               with:
                   node-version-file: .nvmrc
 
-            - uses: actions/download-artifact@v4
+            - uses: actions/download-artifact@v5.0.0
               with:
-                  name: release-workspace
+                  name: release-package
                   path: .
 
             - name: commit release metadata
@@ -386,24 +369,17 @@ jobs:
                   node-version-file: .nvmrc
                   registry-url: "https://registry.npmjs.org"
 
-            - uses: actions/download-artifact@v4
+            - uses: actions/download-artifact@v5.0.0
               with:
-                  name: release-workspace
+                  name: release-package
                   path: .
 
             - name: publish to npm
               run: |
-                  PACKAGE_TARBALL="release-artifacts/${{ needs.prepare-release.outputs.package_tarball }}"
-
-                  if [[ ! -f "${PACKAGE_TARBALL}" ]]; then
-                    echo "Missing release tarball artifact: ${PACKAGE_TARBALL}" >&2
-                    exit 1
-                  fi
-
                   if [[ "${{ needs.prepare-release.outputs.dist_tag }}" == "latest" ]]; then
-                    npm publish "${PACKAGE_TARBALL}" --provenance --ignore-scripts
+                    npm publish --provenance --ignore-scripts
                   else
-                    npm publish "${PACKAGE_TARBALL}" --provenance --ignore-scripts --tag "${{ needs.prepare-release.outputs.dist_tag }}"
+                    npm publish --provenance --ignore-scripts --tag "${{ needs.prepare-release.outputs.dist_tag }}"
                   fi
 
     create-github-release:
