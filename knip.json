@@ -4,7 +4,7 @@
         "tests/**/*.ts",
         "tools/**/*.ts",
         "typedoc/**/*.ts",
-        "docs/astro.config.mjs",
+        "docs/astro.config.ts",
         "docs/src/content.config.ts"
     ],
     "project": [

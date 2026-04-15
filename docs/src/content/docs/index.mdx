@@ -6,6 +6,42 @@ editUrl: false
 hero:
   title: threshold-elgamal
   tagline: Browser-native honest-majority voting workflows for verifiable research prototypes.
+  image:
+    html: |
+      <div class="landing-hero-panel">
+        <div class="landing-hero-panel__card">
+          <p class="landing-hero-panel__eyebrow">Shipped workflow</p>
+          <p class="landing-hero-panel__title">One supported ceremony</p>
+          <ol class="landing-hero-panel__list">
+            <li>Publish the manifest and accepted roster.</li>
+            <li>Run honest-majority GJKR DKG with verifiable checkpoints.</li>
+            <li>Accept fixed <code>1..10</code> score ballots and a signed <code>ballot-close</code>.</li>
+            <li>Publish decryption shares, tally, and verify the full board.</li>
+          </ol>
+        </div>
+        <div class="landing-hero-panel__facts">
+          <div class="landing-hero-panel__fact">
+            <span class="landing-hero-panel__label">Threshold</span>
+            <strong>Derived majority rule</strong>
+            <small><code>ceil(n / 2)</code></small>
+          </div>
+          <div class="landing-hero-panel__fact">
+            <span class="landing-hero-panel__label">Ballots</span>
+            <strong>Fixed score ballots</strong>
+            <small><code>1..10</code> on every contest</small>
+          </div>
+          <div class="landing-hero-panel__fact">
+            <span class="landing-hero-panel__label">Runtime</span>
+            <strong>Browser-native TypeScript</strong>
+            <small>Workers and modern Node are supported</small>
+          </div>
+          <div class="landing-hero-panel__fact">
+            <span class="landing-hero-panel__label">Verifier</span>
+            <strong>Public-board focused</strong>
+            <small>Stable failures and full ceremony checks</small>
+          </div>
+        </div>
+      </div>
   actions:
     - text: Get started
       link: ./guides/getting-started/
@@ -19,63 +55,160 @@ hero:
       variant: minimal
 ---
 
-import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+import {
+  Card,
+  CardGrid,
+  LinkButton,
+  LinkCard,
+  Steps,
+} from '@astrojs/starlight/components';
 
-## Start here
+<section class="landing-section landing-section--flat">
+  <div class="landing-section__header">
+    <h2>Start with the job you need to do</h2>
+    <p>
+      Good docs home pages route readers into concrete tasks immediately.
+      These are the task paths that match the shipped public surface of this
+      library.
+    </p>
+  </div>
 
-<CardGrid stagger>
-  <LinkCard
-    title="Get started"
-    href="./guides/getting-started/"
-    description="Use the minimal manifest, the honest-majority threshold rule, and the supported root-only import surface."
-  />
-  <LinkCard
-    title="Verifying a public board"
-    href="./guides/verifying-a-public-board/"
-    description="Feed the published ceremony bundle into the shipped verifier and interpret the stable result shape."
-  />
-  <LinkCard
-    title="Browser and worker usage"
-    href="./guides/browser-and-worker-usage/"
-    description="Generate keys, create signed payloads, and use transport envelopes inside browser code or workers."
-  />
-  <LinkCard
-    title="Published payload examples"
-    href="./guides/published-payload-examples/"
-    description="See concrete JSON shapes for the signed payloads you post, store, and verify."
-  />
-  <LinkCard
-    title="Honest-majority voting flow"
-    href="./guides/three-participant-voting-flow/"
-    description="Follow the supported ceremony from manifest publication through ballot close, decryption shares, and tally verification."
-  />
-  <LinkCard
-    title="Security and non-goals"
-    href="./guides/security-and-non-goals/"
-    description="See the actual boundary of the library and the guarantees that still belong to the application."
-  />
-  <LinkCard
-    title="API docs"
-    href="./api/"
-    description="Use the curated API pages first, then the generated reference when you need exact contracts."
-  />
-</CardGrid>
+  <CardGrid>
+    <LinkCard
+      title="Get started"
+      href="./guides/getting-started/"
+      description="Use the minimal manifest, the derived majority threshold rule, and the supported root-only import surface."
+    />
+    <LinkCard
+      title="Verify a public board"
+      href="./guides/verifying-a-public-board/"
+      description="Feed the published ceremony bundle into the verifier and inspect a stable result shape."
+    />
+    <LinkCard
+      title="Browser and worker usage"
+      href="./guides/browser-and-worker-usage/"
+      description="Generate keys, signed payloads, and transport envelopes inside browser code or workers."
+    />
+    <LinkCard
+      title="Honest-majority voting flow"
+      href="./guides/three-participant-voting-flow/"
+      description="Follow the supported ceremony from manifest publication through tally verification."
+    />
+    <LinkCard
+      title="Published payload examples"
+      href="./guides/published-payload-examples/"
+      description="See the concrete JSON shapes that move across the public board."
+    />
+    <LinkCard
+      title="API docs"
+      href="./api/"
+      description="Use the curated API pages first, then the generated reference when you need exact contracts."
+    />
+  </CardGrid>
+</section>
 
-## What this library is for
+<section class="landing-section">
+  <div class="landing-section__header">
+    <h2>Use the library in one of two ways</h2>
+    <p>
+      Most integrations either publish signed protocol payloads or verify a
+      complete public board bundle end to end.
+    </p>
+  </div>
 
-`threshold-elgamal` is a browser-native TypeScript library for one shipped workflow:
+  <div class="landing-split-grid">
+    <Card title="Build protocol payloads from browser code">
+      <p>
+        Use the root package to create manifests, signed protocol messages,
+        ballots, transport envelopes, and decryption material inside browser
+        code or workers.
+      </p>
+      <ul>
+        <li>Stay on the supported root import surface.</li>
+        <li>Publish JSON-safe payloads that match the verifier.</li>
+        <li>Keep signing, transport, and serialization in one runtime story.</li>
+      </ul>
+      <div class="landing-card-actions">
+        <LinkButton href="./guides/browser-and-worker-usage/" variant="secondary">
+          Browser and worker usage
+        </LinkButton>
+      </div>
+    </Card>
 
-- additive ElGamal on `ristretto255`
-- honest-majority GJKR DKG
-- fixed `1..10` score voting
-- organizer-signed `ballot-close`
-- full public-board verification
+    <Card title="Verify a complete public board">
+      <p>
+        Use the shipped verifier to validate the ceremony transcript, accepted
+        roster, encrypted ballots, threshold shares, and final tally from a
+        published board bundle.
+      </p>
+      <ul>
+        <li>Choose throwing or non-throwing verification entry points.</li>
+        <li>Handle stable failure codes instead of ad hoc string parsing.</li>
+        <li>Keep audit tooling separate from the voting client.</li>
+      </ul>
+      <div class="landing-card-actions">
+        <LinkButton href="./guides/verifying-a-public-board/" variant="secondary">
+          Verifying a public board
+        </LinkButton>
+      </div>
+    </Card>
+  </div>
+</section>
 
-Most integrations start in one of two places:
+<section class="landing-section landing-section--flow">
+  <div class="landing-section__header">
+    <h2>Follow the supported ceremony</h2>
+    <p>
+      The library is intentionally opinionated. The supported path is short,
+      explicit, and fully documented from manifest publication to final tally.
+    </p>
+  </div>
 
-- Build and publish signed protocol payloads from browser code or workers.
-- Verify a complete public board bundle with `tryVerifyElectionCeremony(...)` or `verifyElectionCeremony(...)`.
+  <div class="landing-steps-shell">
+    <Steps>
+      1. **Publish the manifest and accepted roster.**
+         The public manifest surface is intentionally minimal: `rosterHash` and
+         `optionList`.
+      2. **Run honest-majority DKG.**
+         The threshold is derived from the accepted roster as `ceil(n / 2)` and
+         backed by verifiable checkpoints.
+      3. **Accept fixed score ballots and close the board.**
+         Ballots always use complete `1..10` score assignments and the organizer
+         closes counting with a signed `ballot-close`.
+      4. **Publish shares, tally, and verify the board.**
+         The verifier checks the full ceremony transcript instead of isolated
+         payload fragments.
+    </Steps>
+  </div>
+</section>
 
-## What it does not try to do
+<section class="landing-section">
+  <div class="landing-section__header">
+    <h2>Keep the security boundary explicit</h2>
+    <p>
+      The library solves a narrow research problem. The homepage should make the
+      supported guarantees and the missing guarantees obvious before anyone
+      reaches the API reference.
+    </p>
+  </div>
 
-This is a hardened research prototype, not audited production voting software. It does not claim coercion resistance, cast-as-intended guarantees against a compromised client, or constant-time JavaScript `bigint` arithmetic.
+  <div class="landing-split-grid landing-split-grid--balanced">
+    <Card title="Built for">
+      <ul>
+        <li>Browser-native TypeScript integrations and worker-based flows.</li>
+        <li>Verifiable honest-majority voting research prototypes.</li>
+        <li>Publishing and auditing signed public-board payloads.</li>
+        <li>Stable ceremony verification over the shipped workflow.</li>
+      </ul>
+    </Card>
+
+    <Card title="Not promised">
+      <ul>
+        <li>Coercion resistance or full production election guarantees.</li>
+        <li>Arbitrary ballot formats outside the shipped score-voting model.</li>
+        <li>A generic threshold cryptography framework with unlimited knobs.</li>
+        <li>Constant-time JavaScript `bigint` arithmetic or audited deployment claims.</li>
+      </ul>
+    </Card>
+  </div>
+</section>

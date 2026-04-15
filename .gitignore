@@ -20,9 +20,10 @@ docs/src/content/docs/api/reference/
 __pycache__/
 
 # Temporary files
+temp-preview-*.txt
 temp/
 temp.*
-temp-preview-*.txt
+temp-*
 tmp/
 tmp.*
 tmp-*

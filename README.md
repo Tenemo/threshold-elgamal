@@ -43,17 +43,13 @@ npm install threshold-elgamal
 
 See [Runtime and compatibility](https://tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility/) for the tested browser and Node matrix.
 
-## Start here
-
-- [Verifying a public board](https://tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board/): start here for `tryVerifyElectionCeremony(...)` and `verifyElectionCeremony(...)`.
-- [Browser and worker usage](https://tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage/): start here for key generation, manifest setup, and encrypted transport envelopes.
-- [Published payload examples](https://tenemo.github.io/threshold-elgamal/guides/published-payload-examples/): start here if you need concrete JSON, posting, or persistence patterns.
-- [Honest-majority voting flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/): read this for the supported phase-by-phase transcript story.
-
 ## Documentation
 
-- Hosted documentation site: [tenemo.github.io/threshold-elgamal](https://tenemo.github.io/threshold-elgamal/)
-- Get started: [tenemo.github.io/threshold-elgamal/guides/getting-started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
+- Homepage: [tenemo.github.io/threshold-elgamal](https://tenemo.github.io/threshold-elgamal/)
+- Getting started: [tenemo.github.io/threshold-elgamal/guides/getting-started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
+
+---
+
 - Verifying a public board: [tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board](https://tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board/)
 - Browser and worker usage: [tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage](https://tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage/)
 - Published payload examples: [tenemo.github.io/threshold-elgamal/guides/published-payload-examples](https://tenemo.github.io/threshold-elgamal/guides/published-payload-examples/)
@@ -61,6 +57,9 @@ See [Runtime and compatibility](https://tenemo.github.io/threshold-elgamal/guide
 - Runtime and compatibility: [tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility](https://tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility/)
 - Security boundary: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
 - Production voting safety review: [tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review](https://tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review/)
+
+---
+
 - API docs: [tenemo.github.io/threshold-elgamal/api](https://tenemo.github.io/threshold-elgamal/api/)
 
 ## Browser support
