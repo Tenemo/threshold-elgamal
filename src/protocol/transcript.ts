@@ -1,3 +1,7 @@
+/**
+ * Transcript hashing and fingerprint helpers for full protocol logs and
+ * individual phase snapshots.
+ */
 import { bytesToHex } from '../core/bytes';
 import { sha256, utf8ToBytes } from '../core/index';
 

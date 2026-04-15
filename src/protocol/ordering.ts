@@ -1,3 +1,9 @@
+/**
+ * Deterministic ordering helpers for protocol payloads.
+ *
+ * Transcript hashing and board audit both rely on this ordering so all
+ * observers hash the same payload set in the same way.
+ */
 import { bytesToHex } from '../core/bytes';
 
 import { canonicalUnsignedPayloadBytes, payloadSlotKey } from './payloads';

@@ -1,3 +1,10 @@
+/**
+ * Shared invariant checks for points, scalars, thresholds, and participant
+ * indices.
+ *
+ * These helpers sit underneath every higher-level subsystem: proofs, VSS, DKG,
+ * ballot handling, and the full ceremony verifier all route through them.
+ */
 import {
     IndexOutOfRangeError,
     InvalidGroupElementError,
@@ -7,7 +14,11 @@ import {
 } from './errors';
 import { decodePoint, RISTRETTO_ORDER } from './ristretto';
 
-/** Returns `true` when the value is a non-identity valid Ristretto point. */
+/**
+ * Returns `true` when the value is a canonical non-identity Ristretto point.
+ *
+ * This is the predicate used for public keys and most commitment elements.
+ */
 export const isInSubgroup = (value: string): boolean => {
     try {
         return !decodePoint(value).is0();
@@ -16,7 +27,13 @@ export const isInSubgroup = (value: string): boolean => {
     }
 };
 
-/** Returns `true` when the value is a valid Ristretto point, including identity. */
+/**
+ * Returns `true` when the value is a canonical Ristretto point, including the
+ * identity element.
+ *
+ * This variant is used for ciphertext components and transcript values that
+ * are allowed to land on the identity.
+ */
 export const isInSubgroupOrIdentity = (value: string): boolean => {
     try {
         decodePoint(value);
@@ -106,11 +123,11 @@ export const assertThreshold = (
 };
 
 /**
- * Derives the GJKR honest-majority threshold `ceil(n / 2)`.
+ * Derives the supported honest-majority threshold `ceil(n / 2)`.
  *
- * For odd `n` this matches the usual strict-majority value. For even `n` the
- * library uses the maximal honest-majority instantiation proved for
- * GJKR, which yields `k = n / 2`.
+ * This is the threshold policy used by the package's DKG and full voting flow.
+ * Callers do not choose a custom `k`; the verifier derives it from the
+ * accepted registration roster.
  */
 export const majorityThreshold = (participantCount: number): number => {
     if (!Number.isInteger(participantCount) || participantCount < 1) {
@@ -148,7 +165,12 @@ export const assertMajorityThreshold = (
     return threshold;
 };
 
-/** Validates a 1-based participant index without assuming a fixed count. */
+/**
+ * Validates a 1-based participant index without assuming a fixed participant
+ * count.
+ *
+ * The package consistently numbers trustees and voters from `1`.
+ */
 export const assertPositiveParticipantIndex = (index: number): void => {
     if (!Number.isInteger(index)) {
         throw new IndexOutOfRangeError('Participant index must be an integer');
@@ -161,7 +183,12 @@ export const assertPositiveParticipantIndex = (index: number): void => {
     }
 };
 
-/** Validates a 1-based participant index for a fixed participant count. */
+/**
+ * Validates a 1-based participant index against a fixed participant count.
+ *
+ * This is the usual check for published payloads that already sit inside a
+ * frozen roster.
+ */
 export const assertValidParticipantIndex = (
     index: number,
     participantCount: number,
@@ -185,7 +212,11 @@ export const assertValidParticipantIndex = (
     }
 };
 
-/** Validates that a value is a non-identity valid Ristretto point. */
+/**
+ * Validates that a value is a canonical non-identity Ristretto point.
+ *
+ * This is the assertion form of {@link isInSubgroup}.
+ */
 export const assertInSubgroup = (value: string): void => {
     if (!isInSubgroup(value)) {
         throw new InvalidGroupElementError(
@@ -194,7 +225,11 @@ export const assertInSubgroup = (value: string): void => {
     }
 };
 
-/** Validates that a value is a valid Ristretto point, including identity. */
+/**
+ * Validates that a value is a canonical Ristretto point, including identity.
+ *
+ * This is the assertion form of {@link isInSubgroupOrIdentity}.
+ */
 export const assertInSubgroupOrIdentity = (value: string): void => {
     if (!isInSubgroupOrIdentity(value)) {
         throw new InvalidGroupElementError(
@@ -203,7 +238,12 @@ export const assertInSubgroupOrIdentity = (value: string): void => {
     }
 };
 
-/** Validates a public key as a non-identity Ristretto point. */
+/**
+ * Validates a public key as a canonical non-identity Ristretto point.
+ *
+ * Public keys, verification keys, and commitment generators all route through
+ * this helper.
+ */
 export const assertValidPublicKey = (value: string): void => {
     if (!isInSubgroup(value)) {
         throw new InvalidGroupElementError(

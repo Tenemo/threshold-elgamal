@@ -1,3 +1,10 @@
+/**
+ * Deterministic encoding for Pedersen share pairs before transport encryption.
+ *
+ * Dealers use this module to turn one recipient's share pair into canonical
+ * JSON bytes that can be encrypted into an envelope and later revalidated by
+ * the recipient or the verifier.
+ */
 import { InvalidPayloadError, RISTRETTO_GROUP } from '../core/index';
 import { canonicalizeJson } from '../protocol/canonical-json';
 import { bigintToFixedHex, fixedHexToBigInt } from '../serialize/encoding';
@@ -114,7 +121,12 @@ const parsePedersenShareEnvelopeRecord = (
     };
 };
 
-/** Encodes one Pedersen share pair for encrypted dealer-to-recipient transport. */
+/**
+ * Encodes one Pedersen share pair for encrypted dealer-to-recipient transport.
+ *
+ * The output is canonical JSON so the decrypted plaintext can later be audited
+ * byte-for-byte.
+ */
 export const encodePedersenShareEnvelope = (
     share: PedersenShare,
     byteLength: number,
@@ -130,7 +142,12 @@ export const encodePedersenShareEnvelope = (
         },
     );
 
-/** Decodes one encrypted Pedersen share pair after envelope decryption. */
+/**
+ * Decodes one encrypted Pedersen share pair after envelope decryption.
+ *
+ * Recipients use this after envelope decryption, and transcript verification
+ * uses the same rules when resolving complaints.
+ */
 export const decodePedersenShareEnvelope = (
     plaintext: Uint8Array,
     expectedParticipantIndex: number,

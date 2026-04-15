@@ -1,3 +1,9 @@
+/**
+ * Ballot transcript verification and additive aggregation helpers.
+ *
+ * This module turns verified ballot ciphertexts into per-option aggregates that
+ * the decryption and tally stages can consume.
+ */
 import { bytesToHex } from '../core/bytes';
 import {
     InvalidPayloadError,
@@ -42,14 +48,22 @@ export type BallotTranscriptEntry = {
     readonly proof: DisjunctiveProof;
 };
 
-/** Result of verifying and aggregating a ballot transcript. */
+/**
+ * Result of verifying and aggregating a ballot transcript.
+ *
+ * This is the bridge between ballot verification and threshold decryption.
+ */
 export type VerifiedBallotAggregation = {
     readonly aggregate: VerifiedAggregateCiphertext;
     readonly ballots: readonly BallotTranscriptEntry[];
     readonly transcriptHash: string;
 };
 
-/** Verified additive ballot aggregation for one manifest option slot. */
+/**
+ * Verified additive ballot aggregation for one manifest option slot.
+ *
+ * The full ceremony verifier works one option at a time at this stage.
+ */
 export type VerifiedOptionBallotAggregation = VerifiedBallotAggregation & {
     readonly optionIndex: number;
 };

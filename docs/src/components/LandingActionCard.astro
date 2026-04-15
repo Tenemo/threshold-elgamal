@@ -9,7 +9,7 @@ interface Props {
     title: string;
 }
 
-const { bullets, cta, description, href, title } = Astro.props;
+const { bullets, cta, description, href, title } = Astro.props as Props;
 ---
 
 <Card title={title}>

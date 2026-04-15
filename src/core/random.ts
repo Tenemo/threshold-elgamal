@@ -1,3 +1,7 @@
+/**
+ * Randomness helpers used by proof generation, envelope encryption, and other
+ * cryptographic sampling paths.
+ */
 import { bytesToBigInt } from './bytes';
 import { getWebCrypto } from './crypto';
 import { InvalidScalarError } from './errors';

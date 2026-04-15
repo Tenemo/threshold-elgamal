@@ -1,3 +1,9 @@
+/**
+ * Additive ElGamal primitives over the built-in Ristretto255 suite.
+ *
+ * Ballot payload construction, ciphertext aggregation, and threshold decryption
+ * all depend on this layer.
+ */
 import {
     RISTRETTO_GROUP,
     assertAdditiveBound,
@@ -33,7 +39,12 @@ const assertValidAdditiveBound = (bound: bigint): void =>
 const assertValidAdditivePlaintext = (value: bigint, bound: bigint): void =>
     assertPlaintextAdditive(value, bound, RISTRETTO_GROUP.q);
 
-/** Validates an additive ciphertext that may already be an aggregate. */
+/**
+ * Validates an additive ciphertext that may already represent an aggregate.
+ *
+ * Both raw ballot ciphertexts and summed ciphertexts share the same structural
+ * requirements.
+ */
 export const assertValidAdditiveCiphertext = (
     ciphertext: ElGamalCiphertext,
 ): void => {
@@ -93,7 +104,10 @@ const encryptAdditiveWithValidatedInputs = (
 };
 
 /**
- * Adds two additive-mode ciphertexts component-wise.
+ * Adds two additive ciphertexts component-wise.
+ *
+ * This is the homomorphic step behind ballot aggregation and tally
+ * recomputation.
  */
 export const addEncryptedValues = (
     left: ElGamalCiphertext,
@@ -109,7 +123,11 @@ export const addEncryptedValues = (
 };
 
 /**
- * Encrypts an additive plaintext with caller-supplied randomness.
+ * Encrypts one additive plaintext with caller-supplied randomness.
+ *
+ * Public ballot builders usually sit one layer above this helper, but advanced
+ * consumers and tests can use it directly when they need explicit control over
+ * the randomness input and plaintext bound.
  */
 export const encryptAdditiveWithRandomness = (
     message: bigint,

@@ -1,3 +1,9 @@
+/**
+ * Schnorr proof helpers used for knowledge-of-discrete-log statements.
+ *
+ * In the supported workflow this is primarily used for Feldman coefficient
+ * proofs inside the DKG transcript.
+ */
 import {
     assertInSubgroup,
     assertScalarInZq,
@@ -50,12 +56,8 @@ const challengePayload = (
 /**
  * Creates a compact additive-form Schnorr proof of knowledge.
  *
- * @param secret Witness scalar.
- * @param statement Statement element `g^secret mod p`.
- * @param group Resolved group definition.
- * @param context Fiat-Shamir binding context.
- * @param randomSource Optional random source used for deterministic tests.
- * @returns Compact Schnorr proof `(challenge, response)`.
+ * This is the proof format used when a trustee needs to show knowledge of a
+ * secret coefficient without revealing it.
  */
 export const createSchnorrProof = async (
     secret: bigint,
@@ -89,11 +91,8 @@ export const createSchnorrProof = async (
 /**
  * Verifies a compact additive-form Schnorr proof.
  *
- * @param proof Compact Schnorr proof `(challenge, response)`.
- * @param statement Statement element `g^secret mod p`.
- * @param group Resolved group definition.
- * @param context Fiat-Shamir binding context.
- * @returns `true` when the proof verifies.
+ * DKG transcript verification uses this to validate Feldman coefficient proofs
+ * before accepting the published commitment set.
  */
 export const verifySchnorrProof = async (
     proof: SchnorrProof,

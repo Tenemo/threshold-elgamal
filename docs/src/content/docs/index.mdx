@@ -1,71 +1,115 @@
 ---
-title: threshold-elgamal documentation
+title: threshold-elgamal
 description: Browser-native documentation for threshold-elgamal, a verifiable voting research library built on ElGamal.
 template: splash
 editUrl: false
+head:
+    - tag: title
+      content: threshold-elgamal
 hero:
-  title: threshold-elgamal
-  tagline: Browser-native honest-majority voting workflows for verifiable research prototypes.
-  image:
-    html: |
-      <div class="landing-hero-panel">
-        <div class="landing-hero-panel__card">
-          <p class="landing-hero-panel__eyebrow">Supported workflow</p>
-          <p class="landing-hero-panel__title">One supported ceremony</p>
-          <ol class="landing-hero-panel__list">
-            <li>Publish the manifest and accepted roster.</li>
-            <li>Run honest-majority GJKR DKG with verifiable checkpoints.</li>
-            <li>Accept fixed <code>1..10</code> score ballots and a signed <code>ballot-close</code>.</li>
-            <li>Publish decryption shares, tally, and verify the full board.</li>
-          </ol>
-        </div>
-        <div class="landing-hero-panel__facts">
-          <div class="landing-hero-panel__fact">
-            <span class="landing-hero-panel__label">Threshold</span>
-            <strong>Derived majority rule</strong>
-            <small><code>ceil(n / 2)</code></small>
-          </div>
-          <div class="landing-hero-panel__fact">
-            <span class="landing-hero-panel__label">Ballots</span>
-            <strong>Fixed score ballots</strong>
-            <small><code>1..10</code> on every contest</small>
-          </div>
-          <div class="landing-hero-panel__fact">
-            <span class="landing-hero-panel__label">Runtime</span>
-            <strong>Browser-native TypeScript</strong>
-            <small>Workers and modern Node are supported</small>
-          </div>
-          <div class="landing-hero-panel__fact">
-            <span class="landing-hero-panel__label">Verifier</span>
-            <strong>Public-board focused</strong>
-            <small>Stable failures and full ceremony checks</small>
-          </div>
-        </div>
-      </div>
-  actions:
-    - text: Get started
-      link: ./guides/getting-started/
-      icon: right-arrow
-      variant: primary
-    - text: Honest-majority voting flow
-      link: ./guides/three-participant-voting-flow/
-      variant: secondary
-    - text: Browse the API
-      link: ./api/
-      variant: minimal
+    title: threshold-elgamal
+    tagline: Browser-native honest-majority voting workflows for verifiable research prototypes.
+    image:
+        html: |
+            <div class="landing-hero-panel">
+              <div class="landing-hero-panel__card">
+                <p class="landing-hero-panel__eyebrow">Supported workflow</p>
+                <p class="landing-hero-panel__title">One supported ceremony</p>
+                <ol class="landing-hero-panel__list">
+                  <li>Publish the manifest and accepted roster.</li>
+                  <li>Run honest-majority GJKR DKG with verifiable checkpoints.</li>
+                  <li>Accept fixed <code>1..10</code> score ballots and a signed <code>ballot-close</code>.</li>
+                  <li>Publish decryption shares, tally, and verify the full board.</li>
+                </ol>
+              </div>
+              <div class="landing-hero-panel__facts">
+                <div class="landing-hero-panel__fact">
+                  <span class="landing-hero-panel__label">Threshold</span>
+                  <strong>Derived majority rule</strong>
+                  <small><code>ceil(n / 2)</code></small>
+                </div>
+                <div class="landing-hero-panel__fact">
+                  <span class="landing-hero-panel__label">Ballots</span>
+                  <strong>Fixed score ballots</strong>
+                  <small><code>1..10</code> on every contest</small>
+                </div>
+                <div class="landing-hero-panel__fact">
+                  <span class="landing-hero-panel__label">Runtime</span>
+                  <strong>Browser-native TypeScript</strong>
+                  <small>Workers and modern Node are supported</small>
+                </div>
+                <div class="landing-hero-panel__fact">
+                  <span class="landing-hero-panel__label">Verifier</span>
+                  <strong>Public-board focused</strong>
+                  <small>Stable failures and full ceremony checks</small>
+                </div>
+              </div>
+            </div>
+    actions:
+        - text: Get started
+          link: ./guides/getting-started/
+          icon: right-arrow
+          variant: primary
+        - text: Honest-majority voting flow
+          link: ./guides/three-participant-voting-flow/
+          variant: secondary
+        - text: Browse the API
+          link: ./api/
+          variant: minimal
 ---
 
-import {
-  Card,
-  CardGrid,
-  LinkCard,
-  Steps,
-} from '@astrojs/starlight/components';
-import LandingActionCard from '../../components/LandingActionCard.astro';
+import { Card, CardGrid, LinkCard, Steps } from "@astrojs/starlight/components";
+import LandingActionCard from "../../components/LandingActionCard.astro";
 
 <section class="landing-section not-content">
   <div class="landing-section__header">
-    <h2>Start with the job you need to do</h2>
+    <h2>What this library does</h2>
+    <p>
+      It gives you the cryptographic building blocks for a verifiable vote:
+      encrypted ballots, signed protocol messages, threshold decryption, and a
+      way to audit the published board afterward.
+    </p>
+  </div>
+
+  <div class="landing-split-grid">
+    <Card title="In plain terms">
+      <div class="landing-card-copy">
+        <p>
+          This library helps a group run a vote where ballots stay secret while
+          voting is open, no single person can reveal the result alone, and the
+          final public record can be checked by auditors or the voters themselves.
+        </p>
+        <p>
+          You can think of it as the cryptographic engine behind a public vote:
+          it creates the locked ballots, the signed messages that move between
+          steps, and the proof material needed to trust the published tally.
+        </p>
+      </div>
+    </Card>
+
+    <Card title="Technical details">
+      <div class="landing-card-copy">
+        <p>
+          <code>threshold-elgamal</code> is a browser-native TypeScript library
+          for additive ElGamal over Ristretto255, signed protocol payloads,
+          deterministic serialization, and honest-majority threshold
+          decryption.
+        </p>
+        <p>
+          The supported workflow covers minimal manifest publication, GJKR DKG
+          with verifiable checkpoints, fixed <code>1..10</code> score ballots,
+          ciphertext aggregation, decryption-share publication, and full
+          public-board verification.
+        </p>
+      </div>
+    </Card>
+
+  </div>
+</section>
+
+<section class="landing-section not-content">
+  <div class="landing-section__header">
+    <h2>Quick start links</h2>
     <p>
       Use these entry points to reach the supported setup, publishing,
       verification, and payload workflows directly.
@@ -77,11 +121,6 @@ import LandingActionCard from '../../components/LandingActionCard.astro';
       title="Get started"
       href="./guides/getting-started/"
       description="Use the minimal manifest, the derived majority threshold rule, and the supported root-only import surface."
-    />
-    <LinkCard
-      title="Verify a public board"
-      href="./guides/verifying-a-public-board/"
-      description="Feed the published ceremony bundle into the verifier and inspect a stable result shape."
     />
     <LinkCard
       title="Browser and worker usage"
@@ -99,47 +138,16 @@ import LandingActionCard from '../../components/LandingActionCard.astro';
       description="See the concrete JSON shapes that move across the public board."
     />
     <LinkCard
+      title="Verify a public board"
+      href="./guides/verifying-a-public-board/"
+      description="Feed the published ceremony bundle into the verifier and inspect a stable result shape."
+    />
+    <LinkCard
       title="API docs"
       href="./api/"
       description="Browse the exported contracts, types, and symbols for the supported surface."
     />
   </CardGrid>
-</section>
-
-<section class="landing-section not-content">
-  <div class="landing-section__header">
-    <h2>Use the library in one of two ways</h2>
-    <p>
-      Most integrations either publish signed protocol payloads or verify a
-      complete public board bundle end to end.
-    </p>
-  </div>
-
-  <div class="landing-split-grid">
-    <LandingActionCard
-      title="Build protocol payloads from browser code"
-      description="Use the root package to create manifests, signed protocol messages, ballots, transport envelopes, and decryption material inside browser code or workers."
-      bullets={[
-        'Stay on the supported root import surface.',
-        'Publish JSON-safe payloads that match the verifier.',
-        'Keep signing, transport, and serialization in one runtime story.',
-      ]}
-      href="./guides/browser-and-worker-usage/"
-      cta="Browser and worker usage"
-    />
-
-    <LandingActionCard
-      title="Verify a complete public board"
-      description="Use the verifier to validate the ceremony transcript, accepted roster, encrypted ballots, threshold shares, and final tally from a published board bundle."
-      bullets={[
-        'Choose throwing or non-throwing verification entry points.',
-        'Handle stable failure codes instead of ad hoc string parsing.',
-        'Keep audit tooling separate from the voting client.',
-      ]}
-      href="./guides/verifying-a-public-board/"
-      cta="Verifying a public board"
-    />
-  </div>
 </section>
 
 <section class="landing-section not-content">
@@ -197,5 +205,6 @@ import LandingActionCard from '../../components/LandingActionCard.astro';
         <li>Constant-time JavaScript `bigint` arithmetic or audited deployment claims.</li>
       </ul>
     </Card>
+
   </div>
 </section>

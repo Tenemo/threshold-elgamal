@@ -1,3 +1,9 @@
+/**
+ * X25519 transport-key helpers used for encrypted DKG share delivery.
+ *
+ * These functions stay lower-level than the protocol builders so applications
+ * and tests can manage key export, import, and local verification directly.
+ */
 import { bytesToHex, hexToBytes, toBufferSource } from '../core/bytes';
 import { InvalidPayloadError, getWebCrypto } from '../core/index';
 
@@ -59,8 +65,8 @@ export const assertNonZeroSharedSecret = (sharedSecret: Uint8Array): void => {
 /**
  * Generates an X25519 transport key pair.
  *
- * @param options Generation options.
- * @returns Transport key pair tagged with the X25519 suite.
+ * Trustees publish the public half in their registration payloads and keep the
+ * private half for decrypting inbound dealer envelopes.
  */
 export const generateTransportKeyPair = async (
     options: GenerateTransportKeyPairOptions = {},
@@ -79,10 +85,8 @@ export const generateTransportKeyPair = async (
 };
 
 /**
- * Exports a transport public key as raw lowercase hexadecimal bytes.
- *
- * @param publicKey Transport public key.
- * @returns Lowercase hexadecimal public key bytes.
+ * Exports a transport public key as raw lowercase hexadecimal bytes so it can
+ * be published in a registration payload.
  */
 export const exportTransportPublicKey = async (
     publicKey: CryptoKey,
@@ -94,8 +98,7 @@ export const exportTransportPublicKey = async (
 /**
  * Exports a transport private key as PKCS#8 lowercase hexadecimal bytes.
  *
- * @param privateKey Transport private key.
- * @returns Lowercase hexadecimal PKCS#8 bytes.
+ * This is mainly useful for persistence and tests.
  */
 export const exportTransportPrivateKey = async (
     privateKey: CryptoKey,
@@ -107,10 +110,8 @@ export const exportTransportPrivateKey = async (
     ) as EncodedTransportPrivateKey;
 
 /**
- * Imports a transport public key from raw hexadecimal bytes.
- *
- * @param publicKeyHex Lowercase hexadecimal public key bytes.
- * @returns Imported transport public key.
+ * Imports a transport public key from the canonical raw hexadecimal encoding
+ * published on the board.
  */
 export const importTransportPublicKey = async (
     publicKeyHex: EncodedTransportPublicKey,
@@ -145,10 +146,8 @@ export const assertSupportedTransportPublicKeyEncoding = (
 };
 
 /**
- * Imports a transport private key from PKCS#8 hexadecimal bytes.
- *
- * @param privateKeyHex Lowercase hexadecimal PKCS#8 bytes.
- * @returns Imported transport private key.
+ * Imports a transport private key from the canonical PKCS#8 hexadecimal
+ * encoding.
  */
 export const importTransportPrivateKey = async (
     privateKeyHex: EncodedTransportPrivateKey,
@@ -164,9 +163,8 @@ export const importTransportPrivateKey = async (
 /**
  * Derives a raw shared secret for X25519.
  *
- * @param privateKey Local transport private key.
- * @param publicKey Peer transport public key.
- * @returns Raw shared secret bytes.
+ * Envelope encryption and decryption both route through this shared-secret
+ * derivation step before expanding the result with HKDF.
  */
 export const deriveTransportSharedSecret = async (
     privateKey: CryptoKey,
@@ -206,11 +204,11 @@ const deriveTransportPublicKey = async (
 };
 
 /**
- * Verifies that a local transport private key matches the registered public key.
+ * Verifies that a local transport private key matches the registered public
+ * key.
  *
- * @param privateKey Local transport private key.
- * @param expectedPublicKeyHex Registered public key bytes.
- * @returns `true` when the private key expands to `expectedPublicKeyHex`.
+ * This is useful when loading persisted local key material for an already
+ * published registration record.
  */
 export const verifyLocalTransportKey = async (
     privateKey: CryptoKey | EncodedTransportPrivateKey,

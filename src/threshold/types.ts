@@ -1,3 +1,7 @@
+/**
+ * Threshold-decryption types that bridge verified ballot aggregates, indexed
+ * shares, and the final bounded plaintext reconstruction step.
+ */
 import type { EncodedPoint } from '../core/types';
 import type { ElGamalCiphertext } from '../elgamal/types';
 
@@ -9,7 +13,12 @@ export type Share = {
     readonly value: bigint;
 };
 
-/** A participant's partial decryption contribution. */
+/**
+ * A participant's partial decryption contribution for one verified aggregate.
+ *
+ * These values are the low-level shares later wrapped into signed
+ * `decryption-share` protocol payloads.
+ */
 export type DecryptionShare = {
     /** 1-based participant index matching the source share. */
     readonly index: number;
@@ -21,7 +30,12 @@ const verifiedAggregateBrand: unique symbol = Symbol(
     'verifiedAggregateCiphertext',
 );
 
-/** A threshold aggregate tied to a verified additive ciphertext. */
+/**
+ * A threshold aggregate tied to a verified additive ciphertext.
+ *
+ * The branding step prevents callers from skipping ballot verification and
+ * constructing arbitrary objects that merely look like verified aggregates.
+ */
 export type VerifiedAggregateCiphertext = {
     /** Canonical transcript hash that anchors the accepted ballot log. */
     readonly transcriptHash: string;
@@ -33,7 +47,12 @@ export type VerifiedAggregateCiphertext = {
     readonly [verifiedAggregateBrand]: true;
 };
 
-/** Public context needed to prepare a verified aggregate for decryption. */
+/**
+ * Public context needed to prepare a verified aggregate for decryption.
+ *
+ * This binds the rerandomization corner case to the exact ceremony, manifest,
+ * and option slot being processed.
+ */
 export type AggregateDecryptionPreparationInput = {
     /** Verified aggregate recomputed from the accepted ballot transcript. */
     readonly aggregate: VerifiedAggregateCiphertext;

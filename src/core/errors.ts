@@ -1,3 +1,9 @@
+/**
+ * Shared error taxonomy for the package.
+ *
+ * Public helpers throw these errors when callers violate mathematical,
+ * encoding, transcript, or workflow invariants.
+ */
 class ThresholdElGamalError extends Error {
     public constructor(message: string) {
         super(message);
@@ -6,25 +12,58 @@ class ThresholdElGamalError extends Error {
     }
 }
 
-/** Raised when a scalar value falls outside the expected mathematical domain. */
+/**
+ * Raised when a scalar value falls outside the expected field or subgroup
+ * domain for the current operation.
+ */
 export class InvalidScalarError extends ThresholdElGamalError {}
-/** Raised when a group element is not valid for the selected suite. */
+/**
+ * Raised when a point or public key is not a canonical member of the selected
+ * cryptographic group.
+ */
 export class InvalidGroupElementError extends ThresholdElGamalError {}
-/** Raised when a participant index falls outside the valid `1..n` range. */
+/**
+ * Raised when a participant index falls outside the supported `1..n`
+ * numbering scheme used across the protocol.
+ */
 export class IndexOutOfRangeError extends ThresholdElGamalError {}
-/** Raised when serialized payload bytes do not satisfy the required encoding. */
+/**
+ * Raised when a payload, transcript field, manifest field, or serialized value
+ * does not satisfy the package's canonical encoding rules.
+ */
 export class InvalidPayloadError extends ThresholdElGamalError {}
-/** Raised when a proof transcript or response fails verification. */
+/**
+ * Raised when a Schnorr, DLEQ, or disjunctive proof transcript fails
+ * structural checks or cryptographic verification.
+ */
 export class InvalidProofError extends ThresholdElGamalError {}
-/** Raised when the requested suite or runtime capability is unavailable. */
+/**
+ * Raised when the requested suite or required runtime capability is unavailable
+ * in the current environment.
+ */
 export class UnsupportedSuiteError extends ThresholdElGamalError {}
-/** Raised when a plaintext lies outside the allowed domain for the chosen mode. */
+/**
+ * Raised when an additive plaintext falls outside the explicitly bounded domain
+ * that the current workflow promised to support.
+ */
 export class PlaintextDomainError extends ThresholdElGamalError {}
-/** Raised when a serialized or reconstructed share fails validation. */
+/**
+ * Raised when a serialized share, decrypted share envelope, or reconstructed
+ * share set fails threshold-specific validation.
+ */
 export class InvalidShareError extends ThresholdElGamalError {}
-/** Raised when a protocol step transition violates the state machine rules. */
+/**
+ * Raised when a published payload claims to belong to a protocol phase that
+ * does not match the supported ceremony state machine.
+ */
 export class PhaseViolationError extends ThresholdElGamalError {}
-/** Raised when threshold parameters do not satisfy `1 <= k <= n`. */
+/**
+ * Raised when threshold parameters or participant counts violate the supported
+ * `1 <= k <= n` relationship or the package's honest-majority policy.
+ */
 export class ThresholdViolationError extends ThresholdElGamalError {}
-/** Raised when transcript hashes or canonical bytes do not match expectations. */
+/**
+ * Raised when transcript hashes, manifest hashes, or other canonical digest
+ * commitments do not match the values claimed by published payloads.
+ */
 export class TranscriptMismatchError extends ThresholdElGamalError {}

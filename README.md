@@ -45,14 +45,14 @@ See [Runtime and compatibility](https://tenemo.github.io/threshold-elgamal/guide
 
 - Homepage: [tenemo.github.io/threshold-elgamal](https://tenemo.github.io/threshold-elgamal/)
 - Getting started: [tenemo.github.io/threshold-elgamal/guides/getting-started](https://tenemo.github.io/threshold-elgamal/guides/getting-started/)
+- Runtime and compatibility: [tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility](https://tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility/)
+- Browser and worker usage: [tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage](https://tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage/)
+- Honest-majority voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
+- Published payload examples: [tenemo.github.io/threshold-elgamal/guides/published-payload-examples](https://tenemo.github.io/threshold-elgamal/guides/published-payload-examples/)
 
 ---
 
 - Verifying a public board: [tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board](https://tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board/)
-- Browser and worker usage: [tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage](https://tenemo.github.io/threshold-elgamal/guides/browser-and-worker-usage/)
-- Published payload examples: [tenemo.github.io/threshold-elgamal/guides/published-payload-examples](https://tenemo.github.io/threshold-elgamal/guides/published-payload-examples/)
-- Honest-majority voting flow: [tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/)
-- Runtime and compatibility: [tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility](https://tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility/)
 - Security boundary: [tenemo.github.io/threshold-elgamal/guides/security-and-non-goals](https://tenemo.github.io/threshold-elgamal/guides/security-and-non-goals/)
 - Production voting safety review: [tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review](https://tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review/)
 

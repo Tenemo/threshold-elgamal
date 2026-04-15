@@ -1,3 +1,7 @@
+/**
+ * Registration-roster hashing and signature verification for published
+ * protocol payloads.
+ */
 import { bytesToHex } from '../core/bytes';
 import {
     InvalidPayloadError,
@@ -17,14 +21,23 @@ import { assertSupportedProtocolVersion } from './manifest';
 import { signedProtocolPayloadBytes } from './payloads';
 import type { RegistrationPayload, SignedPayload } from './types';
 
-/** Roster entry used for deterministic roster hashing. */
+/**
+ * Roster entry used for deterministic roster hashing.
+ *
+ * This is the minimal frozen identity view derived from accepted registrations.
+ */
 export type RosterEntry = {
     readonly participantIndex: number;
     readonly authPublicKey: EncodedAuthPublicKey;
     readonly transportPublicKey: EncodedTransportPublicKey;
 };
 
-/** Verified protocol-signature result with the frozen registration roster. */
+/**
+ * Verified protocol-signature result with the frozen registration roster.
+ *
+ * Downstream verifiers reuse this result instead of rebuilding the roster map
+ * for every phase.
+ */
 export type VerifiedProtocolSignatures = {
     readonly participantCount: number;
     readonly registrations: readonly SignedPayload<RegistrationPayload>[];
@@ -106,8 +119,7 @@ const canonicalizeRosterEntries = (
 /**
  * Hashes a deterministic roster view with SHA-256.
  *
- * @param rosterEntries Deterministic roster entries.
- * @returns Lowercase hexadecimal roster hash.
+ * Manifest creation and registration verification both depend on this digest.
  */
 export const hashRosterEntries = async (
     rosterEntries: readonly RosterEntry[],
@@ -164,9 +176,8 @@ const registrationKey = (payload: RegistrationPayload): RosterEntry => ({
  * same registration payload. Every later payload is verified against the
  * registered auth key for its participant index.
  *
- * @param signedPayloads Signed protocol payloads.
- * @param participantCount Optional expected participant count.
- * @returns Verified registration roster and derived roster hash.
+ * This is the signature gate that stands between raw board data and every
+ * later semantic verifier.
  */
 export const verifySignedProtocolPayloads = async (
     signedPayloads: readonly SignedPayload[],

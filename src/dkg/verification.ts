@@ -1,3 +1,10 @@
+/**
+ * Full GJKR DKG transcript verification and derived-key extraction.
+ *
+ * This module is responsible for turning a signed public DKG transcript into a
+ * qualified participant set, transcript-derived trustee verification keys, and
+ * the final joint public key used by the voting flow.
+ */
 import {
     InvalidPayloadError,
     RISTRETTO_GROUP,
@@ -53,14 +60,24 @@ import { verifyPedersenShare } from '../vss/pedersen';
 
 import { decodePedersenShareEnvelope } from './pedersen-share-codec';
 
-/** Input bundle for verifying a DKG transcript. */
+/**
+ * Input bundle for verifying a DKG transcript.
+ *
+ * This is the DKG-only verifier input used directly by advanced consumers and
+ * indirectly by the full ceremony verifier.
+ */
 export type VerifyDKGTranscriptInput = {
     readonly transcript: readonly SignedPayload[];
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
 };
 
-/** Verified DKG transcript result with reusable derived ceremony material. */
+/**
+ * Verified DKG transcript result with reusable derived ceremony material.
+ *
+ * Later ballot and decryption verification stages consume this output rather
+ * than replaying the DKG from scratch.
+ */
 export type VerifiedDKGTranscript = {
     readonly acceptedComplaints: readonly ComplaintPayload[];
     readonly jointPublicKey: EncodedPoint;
@@ -303,7 +320,12 @@ const assertIndexSubset = (
     }
 };
 
-/** Finalized threshold-supported checkpoint for one DKG phase. */
+/**
+ * Finalized threshold-supported checkpoint for one DKG phase.
+ *
+ * This represents the accepted checkpoint record after signer-set and
+ * transcript-hash validation.
+ */
 export type FinalizedPhaseCheckpoint = {
     readonly payload: PhaseCheckpointPayload;
     readonly signatures: readonly SignedPayload<PhaseCheckpointPayload>[];
@@ -826,10 +848,8 @@ const deriveTranscriptVerificationKeyInternal = (
  * Derives the transcript verification key `Y_j` for one participant index from
  * published Feldman commitments.
  *
- * @param feldmanCommitments Qualified dealer commitment vectors.
- * @param participantIndex Participant index whose key will be derived.
- * @param group Selected group.
- * @returns Transcript-derived verification key `Y_j`.
+ * Decryption-share verification uses this key as the public statement side of
+ * each trustee's DLEQ proof.
  */
 export const deriveTranscriptVerificationKey = (
     feldmanCommitments: readonly {
@@ -849,9 +869,8 @@ export const deriveTranscriptVerificationKey = (
  * Derives the qualified joint public key from the constant Feldman
  * commitments.
  *
- * @param feldmanCommitments Qualified dealer commitment vectors.
- * @param group Selected group.
- * @returns Derived joint public key.
+ * Ballot encryption and tally verification both depend on this derived public
+ * key.
  */
 export const deriveJointPublicKey = (
     feldmanCommitments: readonly {
@@ -1466,12 +1485,12 @@ const verifyCheckpointedDKGTranscript = async (
 };
 
 /**
- * Verifies a DKG transcript, its signatures, Feldman extraction proofs,
- * the exact claimed threshold degree, accepted complaint outcomes, the DKG
+ * Verifies a DKG transcript, its signatures, Feldman extraction proofs, the
+ * exact claimed threshold degree, accepted complaint outcomes, the DKG
  * transcript hash, and the announced joint public key.
  *
- * @param input Transcript verification input.
- * @returns Verified transcript metadata and derived ceremony material.
+ * This is the DKG-specific verifier that the full ceremony verifier delegates
+ * to before it touches ballots or tally material.
  */
 export const verifyDKGTranscript = async (
     input: VerifyDKGTranscriptInput,

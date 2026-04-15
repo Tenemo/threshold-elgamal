@@ -1,3 +1,10 @@
+/**
+ * Bounded baby-step giant-step discrete-log solver for additive ElGamal
+ * plaintext recovery.
+ *
+ * The threshold reconstruction path uses this only after all cryptographic
+ * checks have passed and only within an explicit caller-supplied bound.
+ */
 import { InvalidScalarError } from '../core/index';
 import {
     decodePoint,

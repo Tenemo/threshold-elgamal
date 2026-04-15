@@ -1,3 +1,10 @@
+/**
+ * Threshold decryption and bounded tally-recovery helpers.
+ *
+ * These functions are used after ballot aggregation has produced a verified
+ * additive ciphertext and before tally publication or verifier-side tally
+ * recomputation.
+ */
 import { hexToBytes } from '../core/bytes';
 import {
     assertInSubgroupOrIdentity,
@@ -130,7 +137,10 @@ export const lagrangeCoefficient = (
 };
 
 /**
- * Creates a partial decryption share `d_i = x_i C_1`.
+ * Creates one trustee's partial decryption share `d_i = x_i C_1`.
+ *
+ * This is the low-level share value that applications typically prove with
+ * DLEQ and then publish inside a signed `decryption-share` payload.
  */
 export const createDecryptionShare = (
     ciphertext: ElGamalCiphertext,
@@ -149,13 +159,14 @@ export const createDecryptionShare = (
 };
 
 /**
- * Prepares a verified aggregate for decryption.
+ * Prepares a verified aggregate for decryption-share generation and DLEQ
+ * proving.
  *
  * When the accepted aggregate has identity `c1`, the raw DLEQ statement would
  * degenerate because every participant would obtain the same identity-valued
- * partial share. This helper deterministically adds a public encryption of zero
- * in that corner case so the plaintext stays unchanged while the decryption
- * proof statement remains meaningful.
+ * partial share. This helper deterministically adds a public encryption of
+ * zero in that corner case so the plaintext stays unchanged while the
+ * decryption proof statement remains meaningful.
  */
 export const prepareAggregateForDecryption = (
     input: AggregateDecryptionPreparationInput,
@@ -190,6 +201,10 @@ export const prepareAggregateForDecryption = (
 
 /**
  * Combines indexed decryption shares via Lagrange interpolation at `x = 0`.
+ *
+ * This is the final bounded plaintext-recovery step. In the supported voting
+ * workflow it runs only after the transcript, ballot aggregation, and
+ * decryption-share proofs have already been verified.
  */
 export const combineDecryptionShares = (
     ciphertext: ElGamalCiphertext,

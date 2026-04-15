@@ -1,3 +1,7 @@
+/**
+ * Feldman commitment helpers used during DKG publication and transcript
+ * verification.
+ */
 import {
     assertInSubgroup,
     assertPositiveParticipantIndex,
@@ -40,7 +44,10 @@ export const evaluateCommitmentProduct = (
 };
 
 /**
- * Computes Feldman commitments for polynomial coefficients.
+ * Computes Feldman commitments for one secret polynomial.
+ *
+ * Dealers publish these commitments so everyone can later verify the shares
+ * they received.
  */
 export const generateFeldmanCommitments = (
     polynomial: readonly bigint[],
@@ -58,6 +65,9 @@ export const generateFeldmanCommitments = (
 
 /**
  * Verifies a Feldman share against the published coefficient commitments.
+ *
+ * DKG verification uses this to reject dealers whose shares do not match the
+ * commitments they broadcast.
  */
 export const verifyFeldmanShare = (
     share: Share,

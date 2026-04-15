@@ -18,10 +18,10 @@ Use the root package. The public surface is centered on one protocol story: hone
 
 ## Choose the workflow you need
 
-- If you already have a complete public board bundle, start with [Verifying a public board](./verifying-a-public-board/).
 - If you are building browser clients or worker code that creates payloads, start with [Browser and worker usage](./browser-and-worker-usage/).
-- If you need exact JSON wire shapes, start with [Published payload examples](./published-payload-examples/).
 - If you want the full phase-by-phase ceremony story, read [Honest-majority voting flow](./three-participant-voting-flow/).
+- If you need exact JSON wire shapes, start with [Published payload examples](./published-payload-examples/).
+- If you already have a complete public board bundle, start with [Verifying a public board](./verifying-a-public-board/).
 
 ## Verification quickstart
 
@@ -64,10 +64,11 @@ Use `verifyElectionCeremony(...)` when you want the same checks but prefer excep
 ## Related pages
 
 - For installation and the top-level package overview, read [README.md](https://github.com/Tenemo/threshold-elgamal#readme).
-- For the supported ceremony path, read [Honest-majority voting flow](./three-participant-voting-flow/).
-- For verifier usage and stable failure handling, read [Verifying a public board](./verifying-a-public-board/).
-- For browser-native setup and worker patterns, read [Browser and worker usage](./browser-and-worker-usage/).
-- For concrete JSON payload shapes, read [Published payload examples](./published-payload-examples/).
 - For runtime prerequisites and platform assumptions, read [Runtime and compatibility](./runtime-and-compatibility/).
+- For browser-native setup and worker patterns, read [Browser and worker usage](./browser-and-worker-usage/).
+- For the supported ceremony path, read [Honest-majority voting flow](./three-participant-voting-flow/).
+- For concrete JSON payload shapes, read [Published payload examples](./published-payload-examples/).
+- For verifier usage and stable failure handling, read [Verifying a public board](./verifying-a-public-board/).
 - For the security boundary, read [Security and non-goals](./security-and-non-goals/).
+- For a production-threat-model verdict, read [Production voting safety review](./production-voting-safety-review/).
 - The [API docs](../api/) list exact signatures and exported types.

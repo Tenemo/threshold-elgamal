@@ -1,3 +1,7 @@
+/**
+ * Pedersen commitment and share helpers used during the dealer side of DKG and
+ * later transcript verification.
+ */
 import {
     assertCanonicalRistrettoGroup,
     assertInSubgroup,
@@ -40,6 +44,9 @@ const evaluatePolynomial = (
 
 /**
  * Computes Pedersen commitments for matching secret and blinding polynomials.
+ *
+ * This is the hiding commitment layer used before Feldman commitments are
+ * revealed and checked.
  */
 export const generatePedersenCommitments = (
     secretPolynomial: readonly bigint[],
@@ -71,6 +78,9 @@ export const generatePedersenCommitments = (
 /**
  * Derives indexed Pedersen share pairs from matching secret and blinding
  * polynomials.
+ *
+ * Dealers use these share pairs before encoding and encrypting them for each
+ * recipient.
  */
 export const derivePedersenShares = (
     secretPolynomial: Polynomial,
@@ -107,6 +117,9 @@ export const derivePedersenShares = (
 
 /**
  * Verifies a Pedersen share pair against the published commitments.
+ *
+ * This is the low-level consistency check behind complaint validation and
+ * transcript replay.
  */
 export const verifyPedersenShare = (
     share: PedersenShare,

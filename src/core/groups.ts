@@ -1,8 +1,19 @@
+/**
+ * Built-in group definitions and suite guard rails.
+ *
+ * The public API is intentionally tied to one canonical suite,
+ * `ristretto255`, and this module makes that choice explicit.
+ */
 import { UnsupportedSuiteError } from './errors';
 import { derivePedersenGenerator, RISTRETTO_BYTE_LENGTH } from './ristretto';
 import type { CryptoGroup } from './types';
 
-/** Immutable definition of the Ristretto255 tally group. */
+/**
+ * Immutable definition of the built-in `ristretto255` tally group.
+ *
+ * Every public cryptographic workflow in this package ultimately routes
+ * through this suite definition.
+ */
 export const RISTRETTO_GROUP: CryptoGroup = Object.freeze({
     name: 'ristretto255',
     byteLength: RISTRETTO_BYTE_LENGTH,

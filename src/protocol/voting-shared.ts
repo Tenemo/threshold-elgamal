@@ -1,3 +1,9 @@
+/**
+ * Shared voting-workflow validation and context helpers.
+ *
+ * Ballot verification, decryption-share verification, tally verification, and
+ * the full ceremony verifier all reuse this layer.
+ */
 import {
     assertPositiveParticipantIndex,
     InvalidPayloadError,

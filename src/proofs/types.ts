@@ -1,6 +1,18 @@
+/**
+ * Shared proof types and transcript context bindings.
+ *
+ * Every proof in the package binds itself to the same core ceremony context so
+ * proofs cannot be replayed across manifests, sessions, participants, or
+ * option slots.
+ */
 import type { GroupName } from '../core/types';
 
-/** Common Fiat-Shamir context fields used by the proof systems. */
+/**
+ * Common Fiat-Shamir context fields used by the proof systems.
+ *
+ * Higher-level modules derive these fields from the manifest, transcript, and
+ * payload slot currently being proved or verified.
+ */
 export type ProofContext = {
     /** Protocol namespace string bound into the transcript. */
     readonly protocolVersion: string;
@@ -22,13 +34,21 @@ export type ProofContext = {
     readonly optionIndex?: number;
 };
 
-/** Compact Schnorr proof encoded as challenge and response only. */
+/**
+ * Compact Schnorr proof encoded as challenge and response only.
+ *
+ * Used primarily for Feldman coefficient proofs in the DKG flow.
+ */
 export type SchnorrProof = {
     readonly challenge: bigint;
     readonly response: bigint;
 };
 
-/** Compact Chaum-Pedersen proof encoded as challenge and response only. */
+/**
+ * Compact Chaum-Pedersen proof encoded as challenge and response only.
+ *
+ * Used for decryption-share correctness proofs.
+ */
 export type DLEQProof = {
     readonly challenge: bigint;
     readonly response: bigint;
@@ -40,7 +60,12 @@ export type DisjunctiveBranch = {
     readonly response: bigint;
 };
 
-/** A disjunctive proof over an ordered set of valid plaintext values. */
+/**
+ * A disjunctive proof over an ordered set of valid plaintext values.
+ *
+ * Ballot payloads use this to prove that an encrypted score came from the
+ * allowed score domain without revealing which value was chosen.
+ */
 export type DisjunctiveProof = {
     readonly branches: readonly DisjunctiveBranch[];
 };

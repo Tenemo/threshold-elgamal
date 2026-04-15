@@ -1,3 +1,7 @@
+/**
+ * Canonical protocol-payload attachment, serialization, and slot-classification
+ * helpers shared by payload builders, board audit, and verification.
+ */
 import { bytesToHex } from '../core/bytes';
 import { utf8ToBytes } from '../core/index';
 import { encodeForChallenge } from '../serialize/encoding';

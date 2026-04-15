@@ -1,3 +1,7 @@
+/**
+ * Deterministic JSON serialization for manifests, protocol payloads, and
+ * other transcript-bound objects.
+ */
 import { InvalidPayloadError } from '../core/index';
 import { bigintToFixedHex } from '../serialize/encoding';
 

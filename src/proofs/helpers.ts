@@ -1,3 +1,7 @@
+/**
+ * Shared Fiat-Shamir transcript helpers used by the Schnorr, DLEQ, and
+ * disjunctive proof implementations.
+ */
 import { hexToBytes } from '../core/bytes';
 import {
     assertCanonicalRistrettoGroup,

@@ -1,8 +1,13 @@
 /**
  * Safe root package exports for the public API.
  *
- * Use this entry point for group definitions, additive ElGamal, validation
- * helpers, protocol helpers, transport helpers, and serialization helpers.
+ * Use this entry point for group definitions, additive ElGamal, proof helpers,
+ * transport helpers, threshold helpers, DKG verification, and the protocol
+ * layer.
+ *
+ * Most application code only needs the manifest helpers, protocol payload
+ * builders, and the ceremony verifier. Lower-level exports remain public for
+ * advanced integrations, audits, and the package's own end-to-end scenarios.
  *
  * @module threshold-elgamal
  * @packageDocumentation
