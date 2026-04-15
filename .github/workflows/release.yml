@@ -153,7 +153,7 @@ jobs:
             - run: pnpm run verify:docs
             - run: pnpm run docs:build:site
             - run: pnpm run smoke:pack
-            - run: npm publish --dry-run --ignore-scripts
+            - run: npm pack --dry-run --ignore-scripts
 
     prepare-release:
         needs:
