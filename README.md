@@ -1,13 +1,13 @@
 # threshold-elgamal
 
-[![npm version](https://badge.fury.io/js/threshold-elgamal.svg)](https://www.npmjs.com/package/threshold-elgamal)
-[![npm downloads](https://img.shields.io/npm/dm/threshold-elgamal)](https://www.npmjs.com/package/threshold-elgamal)
+[![npm version](https://img.shields.io/npm/v/threshold-elgamal?color=5FA04E)](https://www.npmjs.com/package/threshold-elgamal)
+[![npm downloads](https://img.shields.io/npm/dm/threshold-elgamal?color=5FA04E)](https://www.npmjs.com/package/threshold-elgamal)
 
 ---
 
-[![CI](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/ci.yml?branch=master&label=passing%20tests)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/ci.yml?branch=master&label=passing%20tests&color=5FA04E)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/ci.yml)
 [![Tests coverage](https://img.shields.io/endpoint?url=https://tenemo.github.io/threshold-elgamal/coverage-badge.json)](https://tenemo.github.io/threshold-elgamal/coverage-summary.json)
-[![Documentation build](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/pages.yml?branch=master&label=docs)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/pages.yml)
+[![Documentation build](https://img.shields.io/github/actions/workflow/status/Tenemo/threshold-elgamal/pages.yml?branch=master&label=docs&color=5FA04E)](https://github.com/Tenemo/threshold-elgamal/actions/workflows/pages.yml)
 
 ---
 

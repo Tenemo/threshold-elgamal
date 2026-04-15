@@ -38,12 +38,11 @@ const summaryOutputPath = path.resolve(
     'docs/public/coverage-summary.json',
 );
 
+const softGreen = '5FA04E';
+
 const colorForCoverage = (percent: number): string => {
-    if (percent >= 95) {
-        return 'brightgreen';
-    }
     if (percent >= 90) {
-        return 'green';
+        return softGreen;
     }
     if (percent >= 80) {
         return 'yellowgreen';
