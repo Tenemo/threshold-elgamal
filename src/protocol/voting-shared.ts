@@ -8,10 +8,11 @@ import { importAuthPublicKey, verifyPayloadSignature } from '../transport/auth';
 
 import {
     hashElectionManifest,
+    assertSupportedProtocolVersion,
     SHIPPED_PROTOCOL_VERSION,
     validateElectionManifest,
 } from './manifest';
-import { canonicalUnsignedPayloadBytes } from './payloads';
+import { signedProtocolPayloadBytes } from './payloads';
 import type {
     DecryptionSharePayload,
     ElectionManifest,
@@ -131,9 +132,13 @@ export const verifyPayloadsAgainstRegistrations = async (
             );
         }
 
+        assertSupportedProtocolVersion(
+            payload.payload.protocolVersion,
+            'Protocol payload version',
+        );
         const valid = await verifyPayloadSignature(
             publicKey,
-            canonicalUnsignedPayloadBytes(payload.payload),
+            signedProtocolPayloadBytes(payload.payload),
             payload.signature,
         );
         if (!valid) {

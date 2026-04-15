@@ -14,6 +14,32 @@ const assertNonEmptyString = (value: string, label: string): void => {
     }
 };
 
+/** Validates that a protocol version string is present. */
+export const assertValidProtocolVersion = (
+    protocolVersion: string,
+    label = 'Protocol version',
+): string => {
+    assertNonEmptyString(protocolVersion, label);
+
+    return protocolVersion;
+};
+
+/** Validates that a protocol version matches the shipped verifier line. */
+export const assertSupportedProtocolVersion = (
+    protocolVersion: string,
+    label = 'Protocol version',
+): string => {
+    assertValidProtocolVersion(protocolVersion, label);
+
+    if (protocolVersion !== SHIPPED_PROTOCOL_VERSION) {
+        throw new InvalidPayloadError(
+            `${label} must equal ${SHIPPED_PROTOCOL_VERSION}`,
+        );
+    }
+
+    return protocolVersion;
+};
+
 /**
  * Validates the supported election-manifest invariants for the shipped
  * score-voting workflow.
@@ -104,6 +130,7 @@ export const hashElectionManifest = async (
  * @param rosterHash Canonical roster hash.
  * @param randomNonce Public random nonce.
  * @param timestamp Timestamp string included in the derivation.
+ * @param protocolVersion Protocol version namespace for the derived session.
  * @returns Lowercase hexadecimal SHA-256 digest.
  */
 export const deriveSessionId = async (
@@ -111,10 +138,15 @@ export const deriveSessionId = async (
     rosterHash: string,
     randomNonce: string,
     timestamp: string,
+    protocolVersion = SHIPPED_PROTOCOL_VERSION,
 ): Promise<string> =>
     bytesToHex(
         await sha256(
             encodeForChallenge(
+                assertValidProtocolVersion(
+                    protocolVersion,
+                    'Session protocol version',
+                ),
                 manifestHash,
                 rosterHash,
                 randomNonce,

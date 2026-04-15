@@ -32,6 +32,7 @@ export type ComplaintReason =
 
 /** Shared fields present on every unsigned protocol payload. */
 export type BaseProtocolPayload = {
+    readonly protocolVersion: string;
     readonly sessionId: string;
     readonly manifestHash: string;
     readonly phase: number;

@@ -14,13 +14,14 @@ All public protocol builders return the same outer shape:
 }
 ```
 
-The `payload` object is already JSON-safe. Group elements, scalars, proofs, and signatures are string-encoded before publication. The examples below use shortened placeholder strings for readability.
+The `payload` object is already JSON-safe. Group elements, scalars, proofs, and signatures are string-encoded before publication. Every signed payload also carries the bound protocol version. The examples below use shortened placeholder strings for readability.
 
 ## Manifest publication
 
 ```json
 {
   "payload": {
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 0,
@@ -40,6 +41,7 @@ The `payload` object is already JSON-safe. Group elements, scalars, proofs, and 
 ```json
 {
   "payload": {
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 0,
@@ -58,6 +60,7 @@ The `payload` object is already JSON-safe. Group elements, scalars, proofs, and 
 ```json
 {
   "payload": {
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 0,
@@ -75,6 +78,7 @@ The `payload` object is already JSON-safe. Group elements, scalars, proofs, and 
 ```json
 {
   "payload": {
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 5,
@@ -107,6 +111,7 @@ The `payload` object is already JSON-safe. Group elements, scalars, proofs, and 
 ```json
 {
   "payload": {
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 6,
@@ -125,6 +130,7 @@ The builder sorts and validates the participant indices before signing. Feed it 
 ```json
 {
   "payload": {
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 7,
@@ -150,6 +156,7 @@ The signed payload does not derive the partial share for you. Compute the share 
 ```json
 {
   "payload": {
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 8,
