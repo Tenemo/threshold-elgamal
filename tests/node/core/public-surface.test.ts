@@ -5,6 +5,7 @@ import * as publicApi from '#root';
 describe('public package surface', () => {
     it('exports the supported root verification and reveal helpers', () => {
         expect(publicApi).toHaveProperty('createDecryptionShare');
+        expect(publicApi).toHaveProperty('prepareAggregateForDecryption');
         expect(publicApi).toHaveProperty('verifyDKGTranscript');
         expect(publicApi).toHaveProperty('verifyElectionCeremony');
     });

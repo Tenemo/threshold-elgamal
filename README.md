@@ -193,12 +193,13 @@ The root package also exposes builders for the signed protocol payloads used acr
 - decryption shares
 - tally publication
 
-For the reveal path, the public root surface is intentionally two-step:
+For the reveal path, the public root surface is intentionally three-step:
 
+- prepare the accepted aggregate with `prepareAggregateForDecryption(...)`
 - compute each partial share with `createDecryptionShare(...)`
 - prove and publish it with `createDLEQProof(...)` and `createDecryptionSharePayload(...)`
 
-After collecting a threshold subset, recover the tally with `combineDecryptionShares(...)`.
+After collecting a threshold subset, recover the tally with `combineDecryptionShares(...)` against the prepared aggregate ciphertext.
 
 For concrete posted JSON shapes, use [Published payload examples](https://tenemo.github.io/threshold-elgamal/guides/published-payload-examples/).
 

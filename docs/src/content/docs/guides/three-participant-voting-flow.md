@@ -86,6 +86,7 @@ The root package exposes public builders for the standard ceremony payloads:
 - `createKeyDerivationConfirmationPayload(...)`
 - `createBallotSubmissionPayload(...)`
 - `createBallotClosePayload(...)`
+- `prepareAggregateForDecryption(...)`
 - `createDecryptionShare(...)`
 - `createDecryptionSharePayload(...)`
 - `createTallyPublicationPayload(...)`
@@ -96,12 +97,12 @@ In practice, most integrations split them by phase:
 - phases `1` to `4`: DKG commitments, encrypted shares, Feldman commitments, and key-derivation confirmations
 - phase `5`: `createBallotSubmissionPayload(...)`
 - phase `6`: `createBallotClosePayload(...)`
-- phase `7`: `createDecryptionShare(...)`, `createDLEQProof(...)`, `createDecryptionSharePayload(...)`
+- phase `7`: `prepareAggregateForDecryption(...)`, `createDecryptionShare(...)`, `createDLEQProof(...)`, `createDecryptionSharePayload(...)`
 - phase `8`: `combineDecryptionShares(...)`, `createTallyPublicationPayload(...)`
 
 These builders sign and encode published payloads. Your application still owns participant key custody, local trustee state, bulletin-board posting, and the orchestration that decides when each phase is complete.
 
-For the reveal path, phase `7` is not a single builder call. Each trustee first computes the partial share against the accepted aggregate ciphertext, proves it against the trustee verification key, and only then signs the `decryption-share` payload.
+For the reveal path, phase `7` is not a single builder call. Each trustee first prepares the accepted aggregate for decryption, then computes the partial share against that prepared ciphertext, proves it against the trustee verification key, and only then signs the `decryption-share` payload.
 
 ```typescript
 import {
@@ -111,9 +112,22 @@ import {
     createDecryptionShare,
     createDecryptionSharePayload,
     deriveTranscriptVerificationKey,
+    prepareAggregateForDecryption,
 } from "threshold-elgamal";
 
-const decryptionShare = createDecryptionShare(optionAggregate.ciphertext, share);
+const preparedAggregate = prepareAggregateForDecryption({
+    aggregate: optionAggregation.aggregate,
+    publicKey: jointPublicKey,
+    protocolVersion: SHIPPED_PROTOCOL_VERSION,
+    manifestHash,
+    sessionId,
+    optionIndex: optionAggregation.optionIndex,
+});
+
+const decryptionShare = createDecryptionShare(
+    preparedAggregate.ciphertext,
+    share,
+);
 
 const proof = await createDLEQProof(
     share.value,
@@ -123,7 +137,7 @@ const proof = await createDLEQProof(
             participantIndex,
             RISTRETTO_GROUP,
         ),
-        ciphertext: optionAggregate.ciphertext,
+        ciphertext: preparedAggregate.ciphertext,
         decryptionShare: decryptionShare.value,
     },
     RISTRETTO_GROUP,
@@ -134,7 +148,7 @@ const proof = await createDLEQProof(
         sessionId,
         label: "decryption-share-dleq",
         participantIndex,
-        optionIndex: optionAggregate.optionIndex,
+        optionIndex: optionAggregation.optionIndex,
     },
 );
 
@@ -144,14 +158,16 @@ const decryptionSharePayload = await createDecryptionSharePayload(
         sessionId,
         manifestHash,
         participantIndex,
-        optionIndex: optionAggregate.optionIndex,
-        transcriptHash: optionAggregate.transcriptHash,
-        ballotCount: optionAggregate.ballotCount,
+        optionIndex: optionAggregation.optionIndex,
+        transcriptHash: optionAggregation.aggregate.transcriptHash,
+        ballotCount: optionAggregation.aggregate.ballotCount,
         decryptionShare: decryptionShare.value,
         proof,
     },
 );
 ```
+
+`prepareAggregateForDecryption(...)` returns the original aggregate when `c1` is already non-identity. If an accepted aggregate lands on identity `c1`, it deterministically adds a public encryption of zero so the tally stays the same while the DLEQ statement remains meaningful.
 
 ## Ballot close
 

@@ -3,5 +3,6 @@ export {
     combineDecryptionShares,
     createDecryptionShare,
     lagrangeCoefficient,
+    prepareAggregateForDecryption,
 } from './decrypt';
 export * from './types';

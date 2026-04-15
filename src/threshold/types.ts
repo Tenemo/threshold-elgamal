@@ -33,6 +33,22 @@ export type VerifiedAggregateCiphertext = {
     readonly [verifiedAggregateBrand]: true;
 };
 
+/** Public context needed to prepare a verified aggregate for decryption. */
+export type AggregateDecryptionPreparationInput = {
+    /** Verified aggregate recomputed from the accepted ballot transcript. */
+    readonly aggregate: VerifiedAggregateCiphertext;
+    /** Joint public key used to encrypt the original ballots. */
+    readonly publicKey: EncodedPoint;
+    /** Bound protocol version carried by the ceremony transcript. */
+    readonly protocolVersion: string;
+    /** Manifest hash that anchors the ceremony context. */
+    readonly manifestHash: string;
+    /** Session identifier that binds the ceremony instance. */
+    readonly sessionId: string;
+    /** 1-based manifest option index for the aggregate slot. */
+    readonly optionIndex: number;
+};
+
 /**
  * Brands a locally recomputed aggregate ciphertext as verified without making
  * the brand property part of the public serialized shape.

@@ -38,6 +38,7 @@ import {
     InvalidShareError,
     majorityThreshold,
     modQ,
+    prepareAggregateForDecryption,
     RISTRETTO_GROUP,
     scoreVotingDomain,
     SHIPPED_PROTOCOL_VERSION,
@@ -95,6 +96,7 @@ type DealerArtifacts = {
 };
 
 export type VotingFlowScenario = {
+    readonly ballotRandomness?: readonly (readonly bigint[])[];
     readonly closeParticipantIndices?: readonly number[];
     readonly dkgComplaint?: DKGComplaintScenario;
     readonly includePhaseCheckpoints?: boolean;
@@ -173,6 +175,11 @@ const buildDefaultParticipantVotes = (
         ),
     );
 
+const defaultBallotRandomness = (
+    participantIndex: number,
+    optionIndex: number,
+): bigint => BigInt(1000 + participantIndex * 97 + optionIndex * 31);
+
 const normalizeOptionList = (
     scenario: VotingFlowScenario,
 ): readonly string[] => {
@@ -229,6 +236,33 @@ const normalizeParticipantVotes = (
     });
 
     return participantVotes;
+};
+
+const normalizeBallotRandomness = (
+    scenario: VotingFlowScenario,
+    optionCount: number,
+): readonly (readonly bigint[])[] | undefined => {
+    const ballotRandomness = scenario.ballotRandomness;
+
+    if (ballotRandomness === undefined) {
+        return undefined;
+    }
+
+    if (ballotRandomness.length !== scenario.participantCount) {
+        throw new Error(
+            `Voting flow scenario requires exactly ${scenario.participantCount} ballot-randomness rows`,
+        );
+    }
+
+    ballotRandomness.forEach((randomnessRow, participantOffset) => {
+        if (randomnessRow.length !== optionCount) {
+            throw new Error(
+                `Participant ${participantOffset + 1} ballot-randomness row must include exactly ${optionCount} option values`,
+            );
+        }
+    });
+
+    return ballotRandomness;
 };
 
 const normalizeParticipantIndices = (
@@ -551,6 +585,7 @@ const transposeParticipantVotes = (
     );
 
 const createBallotPayloads = async (input: {
+    readonly ballotRandomness: readonly (readonly bigint[])[] | undefined;
     readonly participants: readonly VotingFlowParticipant[];
     readonly publicKey: EncodedPoint;
     readonly manifestHash: string;
@@ -570,9 +605,10 @@ const createBallotPayloads = async (input: {
             optionIndex += 1
         ) {
             const vote = votes[optionIndex - 1];
-            const randomness = BigInt(
-                1000 + participantIndex * 97 + optionIndex * 31,
-            );
+            const randomness =
+                input.ballotRandomness?.[participantIndex - 1]?.[
+                    optionIndex - 1
+                ] ?? defaultBallotRandomness(participantIndex, optionIndex);
             const ciphertext = encryptAdditiveWithRandomness(
                 vote,
                 input.publicKey,
@@ -629,6 +665,7 @@ export const runVotingFlowScenario = async (
     const optionList = normalizeOptionList(scenario);
     const optionCount = optionList.length;
     const participantVotes = normalizeParticipantVotes(scenario, optionCount);
+    const ballotRandomness = normalizeBallotRandomness(scenario, optionCount);
     const votingParticipantIndices = normalizeParticipantIndices(
         scenario.votingParticipantIndices ??
             Array.from(
@@ -842,6 +879,7 @@ export const runVotingFlowScenario = async (
         ),
     }));
     const ballotPayloads = await createBallotPayloads({
+        ballotRandomness,
         participants,
         publicKey: jointPublicKey,
         manifestHash,
@@ -880,6 +918,14 @@ export const runVotingFlowScenario = async (
     const tallyPublications: SignedPayload<TallyPublicationPayload>[] = [];
 
     for (const optionBallots of verifiedBallots) {
+        const preparedAggregate = prepareAggregateForDecryption({
+            aggregate: optionBallots.aggregate,
+            publicKey: jointPublicKey,
+            protocolVersion: SHIPPED_PROTOCOL_VERSION,
+            manifestHash,
+            sessionId,
+            optionIndex: optionBallots.optionIndex,
+        });
         const optionSharePayloads = await Promise.all(
             selectedParticipants.map(async (participantIndex) => {
                 const share = finalShares[participantIndex - 1];
@@ -898,7 +944,7 @@ export const runVotingFlowScenario = async (
                 }
 
                 const verifiedShare = createDecryptionShare(
-                    optionBallots.aggregate.ciphertext,
+                    preparedAggregate.ciphertext,
                     share,
                 );
                 const statement: DLEQStatement = {
@@ -907,7 +953,7 @@ export const runVotingFlowScenario = async (
                         participantIndex,
                         RISTRETTO_GROUP,
                     ),
-                    ciphertext: optionBallots.aggregate.ciphertext,
+                    ciphertext: preparedAggregate.ciphertext,
                     decryptionShare: verifiedShare.value,
                 };
                 const context: ProofContext = {
@@ -946,7 +992,7 @@ export const runVotingFlowScenario = async (
             }),
         );
         const tally = combineDecryptionShares(
-            optionBallots.aggregate.ciphertext,
+            preparedAggregate.ciphertext,
             optionSharePayloads.map((entry) => entry.share),
             BigInt(optionBallots.aggregate.ballotCount) * 10n,
         );

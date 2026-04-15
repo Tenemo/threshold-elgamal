@@ -52,8 +52,10 @@ export type {
 export {
     combineDecryptionShares,
     createDecryptionShare,
+    prepareAggregateForDecryption,
 } from './threshold/decrypt';
 export type {
+    AggregateDecryptionPreparationInput,
     DecryptionShare,
     Share,
     VerifiedAggregateCiphertext,

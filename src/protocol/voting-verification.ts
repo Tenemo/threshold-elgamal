@@ -4,7 +4,10 @@ import {
     verifyDKGTranscript,
     type VerifiedDKGTranscript,
 } from '../dkg/verification';
-import { combineDecryptionShares } from '../threshold/index';
+import {
+    combineDecryptionShares,
+    prepareAggregateForDecryption,
+} from '../threshold/index';
 
 import { auditSignedPayloads, type BoardAudit } from './board-audit';
 import type {
@@ -133,15 +136,29 @@ const wrapStageError = (
     );
 };
 
-const recomputePublishedTally = (
-    ballots: VerifiedOptionBallotAggregation,
-    decryptionShares: readonly VerifiedDecryptionSharePayload[],
-): bigint =>
-    combineDecryptionShares(
-        ballots.aggregate.ciphertext,
-        decryptionShares.map((entry) => entry.share),
-        BigInt(ballots.aggregate.ballotCount) * 10n,
+const recomputePublishedTally = (input: {
+    readonly ballots: VerifiedOptionBallotAggregation;
+    readonly decryptionShares: readonly VerifiedDecryptionSharePayload[];
+    readonly jointPublicKey: VerifiedDKGTranscript['jointPublicKey'];
+    readonly protocolVersion: string;
+    readonly manifestHash: string;
+    readonly sessionId: string;
+}): bigint => {
+    const preparedAggregate = prepareAggregateForDecryption({
+        aggregate: input.ballots.aggregate,
+        publicKey: input.jointPublicKey,
+        protocolVersion: input.protocolVersion,
+        manifestHash: input.manifestHash,
+        sessionId: input.sessionId,
+        optionIndex: input.ballots.optionIndex,
+    });
+
+    return combineDecryptionShares(
+        preparedAggregate.ciphertext,
+        input.decryptionShares.map((entry) => entry.share),
+        BigInt(input.ballots.aggregate.ballotCount) * 10n,
     );
+};
 
 const verifyPublishedTallyPayload = (
     payload: TallyPublicationPayload,
@@ -400,10 +417,14 @@ export const verifyElectionCeremony = async (
                 decryptionShares,
                 optionIndex,
             );
-            const tally = recomputePublishedTally(
-                optionBallots,
-                optionDecryptionShares,
-            );
+            const tally = recomputePublishedTally({
+                ballots: optionBallots,
+                decryptionShares: optionDecryptionShares,
+                jointPublicKey: dkg.jointPublicKey,
+                protocolVersion: context.protocolVersion,
+                manifestHash: context.manifestHash,
+                sessionId: context.sessionId,
+            });
             const publication = tallyPublicationMap.get(optionIndex);
 
             if (tallyAudit !== undefined && publication === undefined) {

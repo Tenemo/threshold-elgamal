@@ -13,7 +13,7 @@ The current package draws a hard boundary between the shipped cryptographic libr
 - Honest-majority threshold derivation from the accepted registration roster
 - Typed payload builders for manifest publication, registration, acceptance, DKG messages, ballots, ballot close, decryption shares, and tally publication
 - Transport and authentication helpers used by the shipped ceremony flow
-- Ristretto255-based ballot encryption, proof generation, threshold share handling, and tally recovery helpers
+- Ristretto255-based ballot encryption, proof generation, decryption-aggregate preparation, threshold share handling, and tally recovery helpers
 - GJKR transcript verification over the signed public log
 - Organizer-signed `ballot-close` verification and counted-ballot selection
 - Full-ceremony verification that replays the DKG transcript, recomputes the counted ballot aggregates locally, verifies decryption-share proofs, checks tally publications, and returns board-audit metadata

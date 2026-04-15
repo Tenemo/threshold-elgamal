@@ -5,7 +5,10 @@ import {
 } from '../core/index';
 import { deriveTranscriptVerificationKey } from '../dkg/verification';
 import { verifyDLEQProof, type DLEQStatement } from '../proofs/dleq';
-import type { DecryptionShare } from '../threshold/index';
+import {
+    prepareAggregateForDecryption,
+    type DecryptionShare,
+} from '../threshold/index';
 
 import { auditSignedPayloads } from './board-audit';
 import type {
@@ -77,6 +80,14 @@ const verifyAuditedDecryptionSharePayloadsByOption = async (input: {
                 `Missing verified aggregate for option ${optionIndex}`,
             );
         }
+        const preparedAggregate = prepareAggregateForDecryption({
+            aggregate: optionAggregate.aggregate,
+            publicKey: input.dkg.jointPublicKey,
+            protocolVersion: input.context.protocolVersion,
+            manifestHash: input.context.manifestHash,
+            sessionId: input.context.sessionId,
+            optionIndex,
+        });
         if (optionPayloads.length < input.dkg.threshold) {
             throw new InvalidPayloadError(
                 `At least ${input.dkg.threshold} decryption shares are required for option ${optionIndex}`,
@@ -138,7 +149,7 @@ const verifyAuditedDecryptionSharePayloadsByOption = async (input: {
                     payload.participantIndex,
                     RISTRETTO_GROUP,
                 ),
-                ciphertext: optionAggregate.aggregate.ciphertext,
+                ciphertext: preparedAggregate.ciphertext,
                 decryptionShare: decryptionShare.value,
             };
             const proof = decodeCompactProof(payload.proof);

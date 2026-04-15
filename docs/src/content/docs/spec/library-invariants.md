@@ -29,6 +29,7 @@ This page records the stable invariants of the current `1.0.0-beta` surface.
 - Every included participant in `ballot-close` must have a complete ballot.
 - The close-selected participant set must contain at least `k` participants.
 - Published tallies are verified against aggregates recomputed from the close-selected ballot set.
+- If an accepted aggregate lands on identity `c1`, the shipped reveal path deterministically adds a public encryption of zero before DLEQ proof generation and verification so the plaintext stays unchanged.
 
 ## Verification rules
 

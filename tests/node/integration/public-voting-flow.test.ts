@@ -6,9 +6,11 @@ import {
     createDecryptionSharePayload,
     createTallyPublicationPayload,
     majorityThreshold,
+    RISTRETTO_GROUP,
     signProtocolPayload,
     verifyElectionCeremony,
 } from '#root';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
 
 const fixtureTimeoutMs = 240_000;
 
@@ -90,6 +92,26 @@ const positiveScenarios = [
         expectedExcluded: [],
         expectedAcceptedCount: 5,
     },
+    {
+        name: 'verifies a ceremony when an accepted aggregate lands on identity c1',
+        scenario: {
+            participantCount: 3,
+            optionList: ['Alpha', 'Beta'],
+            participantVotes: [
+                [1n, 2n],
+                [3n, 4n],
+                [5n, 6n],
+            ],
+            ballotRandomness: [
+                [7n, 101n],
+                [11n, 131n],
+                [RISTRETTO_GROUP.q - 18n, 167n],
+            ],
+        },
+        expectedExcluded: [],
+        expectedAcceptedCount: 3,
+        identityOptionIndices: [1],
+    },
 ] as const;
 
 describe('honest-majority voting flow', () => {
@@ -127,6 +149,10 @@ describe('honest-majority voting flow', () => {
         '$name',
         async (entry) => {
             const result = await runVotingFlowScenario(entry.scenario);
+            const identityOptionIndices: readonly number[] =
+                'identityOptionIndices' in entry
+                    ? (entry.identityOptionIndices ?? [])
+                    : [];
 
             expect(result.threshold).toBe(
                 majorityThreshold(entry.scenario.participantCount),
@@ -154,6 +180,17 @@ describe('honest-majority voting flow', () => {
             expect(
                 result.verified.perOptionTallies.map((option) => option.tally),
             ).toEqual(result.expectedTallies);
+            expect(
+                result.verified.options
+                    .filter((option) =>
+                        identityOptionIndices.includes(option.optionIndex),
+                    )
+                    .map((option) => option.ballots.aggregate.ciphertext.c1),
+            ).toEqual(
+                Array.from({ length: identityOptionIndices.length }, () =>
+                    encodePoint(multiplyBase(0n)),
+                ),
+            );
             expect(
                 result.verified.boardAudit.ballotClose.acceptedPayloads,
             ).toHaveLength(1);
