@@ -1,11 +1,11 @@
 import { toBufferSource } from '../core/bytes';
 import { getWebCrypto } from '../core/index';
-import { bytesToHex, hexToBytes } from '../serialize/index';
+import { bytesToHex, hexToBytes } from '../serialize/encoding';
 
 import type { EncodedAuthPublicKey } from './types';
 
 /** Options controlling authentication-key generation. */
-export type GenerateAuthKeyPairOptions = {
+type GenerateAuthKeyPairOptions = {
     /** Whether the generated private key should be extractable. Defaults to `false`. */
     readonly extractable?: boolean;
 };

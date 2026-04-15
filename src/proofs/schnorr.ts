@@ -12,7 +12,7 @@ import {
     pointMultiply,
     pointSubtract,
 } from '../core/ristretto';
-import { encodeForChallenge } from '../serialize/index';
+import { encodeForChallenge } from '../serialize/encoding';
 
 import {
     assertProofContext,

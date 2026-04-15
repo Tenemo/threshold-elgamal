@@ -1,6 +1,6 @@
 import { bytesToHex } from '../core/bytes';
 import { InvalidPayloadError, sha256, utf8ToBytes } from '../core/index';
-import { encodeForChallenge } from '../serialize/index';
+import { encodeForChallenge } from '../serialize/encoding';
 
 import { canonicalizeJson } from './canonical-json';
 import type { ElectionManifest } from './types';

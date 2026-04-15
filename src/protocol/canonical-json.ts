@@ -1,5 +1,5 @@
 import { InvalidPayloadError } from '../core/index';
-import { bigintToFixedHex } from '../serialize/index';
+import { bigintToFixedHex } from '../serialize/encoding';
 
 /** Primitive value accepted by the canonical JSON serializer. */
 type CanonicalJsonPrimitive = null | boolean | number | string | bigint;

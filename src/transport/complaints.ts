@@ -1,6 +1,6 @@
 import { toBufferSource } from '../core/bytes';
 import { getWebCrypto } from '../core/index';
-import { hexToBytes } from '../serialize/index';
+import { hexToBytes } from '../serialize/encoding';
 
 import { deriveEnvelopeKey, encodeEnvelopeContext } from './envelopes';
 import {
@@ -10,11 +10,16 @@ import {
     verifyLocalTransportKey,
 } from './key-agreement';
 import type {
-    ComplaintResolution,
     EncodedTransportPrivateKey,
     EncodedTransportPublicKey,
     EncryptedEnvelope,
 } from './types';
+
+type ComplaintResolution = {
+    readonly valid: boolean;
+    readonly fault: 'dealer' | 'complainant';
+    readonly plaintext?: Uint8Array;
+};
 
 const decryptEnvelopeFromSharedSecret = async (
     envelope: EncryptedEnvelope,

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { createDeterministicSource } from '../../../tools/internal/deterministic';
+import { createDeterministicSource } from '../../helpers/deterministic';
 
 import { InvalidProofError, RISTRETTO_GROUP } from '#core';
-import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDisjunctiveProof,
+    encryptAdditiveWithRandomness,
     verifyDisjunctiveProof,
     type ProofContext,
-} from '#proofs';
+} from '#root';
 import { encodePoint, multiplyBase } from '#src/core/ristretto';
 describe('disjunctive proofs', () => {
     const group = RISTRETTO_GROUP;

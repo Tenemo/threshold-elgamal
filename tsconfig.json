@@ -6,8 +6,7 @@
             "threshold-elgamal": ["./src/index.ts"],
             "#root": ["./src/index.ts"],
             "#core": ["./src/core/index.ts"],
-            "#elgamal": ["./src/elgamal/index.ts"],
-            "#serialize": ["./src/serialize/index.ts"],
+            "#serialize": ["./src/serialize/encoding.ts"],
             "#src/*": ["./src/*"]
         },
         "target": "ES2020",

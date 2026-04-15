@@ -6,19 +6,19 @@ import {
     RISTRETTO_GROUP,
 } from '#core';
 import {
-    addEncryptedValues,
-    assertValidAdditiveCiphertext,
-    babyStepGiantStep,
-    encryptAdditiveWithRandomness,
-    type ElGamalCiphertext,
-} from '#elgamal';
-import {
     decodePoint,
     encodePoint,
     multiplyBase,
     pointMultiply,
     pointSubtract,
 } from '#src/core/ristretto';
+import {
+    addEncryptedValues,
+    assertValidAdditiveCiphertext,
+    encryptAdditiveWithRandomness,
+} from '#src/elgamal/additive';
+import { babyStepGiantStep } from '#src/elgamal/bsgs';
+import type { ElGamalCiphertext } from '#src/elgamal/types';
 
 const privateKey = 12345n;
 const publicKey = encodePoint(multiplyBase(privateKey));

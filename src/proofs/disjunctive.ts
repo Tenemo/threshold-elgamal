@@ -20,7 +20,7 @@ import {
     concatBytes,
     encodeForChallenge,
     encodeSequenceForChallenge,
-} from '../serialize/index';
+} from '../serialize/encoding';
 
 import {
     assertProofContext,

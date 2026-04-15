@@ -1,4 +1,4 @@
-export * from './bigint';
+export { modInvQ, modQ } from './bigint';
 export * from './crypto';
 export * from './errors';
 export * from './groups';

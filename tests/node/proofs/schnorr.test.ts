@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createDeterministicSource } from '../../../tools/internal/deterministic';
+import { createDeterministicSource } from '../../helpers/deterministic';
 
 import { InvalidProofError, InvalidScalarError, RISTRETTO_GROUP } from '#core';
 import {

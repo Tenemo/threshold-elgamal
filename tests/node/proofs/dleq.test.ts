@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { createDeterministicSource } from '../../../tools/internal/deterministic';
+import { createDeterministicSource } from '../../helpers/deterministic';
 
 import { InvalidProofError, InvalidScalarError, RISTRETTO_GROUP } from '#core';
-import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDLEQProof,
+    encryptAdditiveWithRandomness,
     verifyDLEQProof,
     type DLEQStatement,
     type ProofContext,
-} from '#proofs';
+} from '#root';
 import {
     decodePoint,
     encodePoint,

@@ -4,7 +4,7 @@ import {
     sha256,
     utf8ToBytes,
 } from '../core/index';
-import { bytesToHex } from '../serialize/index';
+import { bytesToHex } from '../serialize/encoding';
 import { importAuthPublicKey, verifyPayloadSignature } from '../transport/auth';
 import { assertSupportedTransportPublicKeyEncoding } from '../transport/key-agreement';
 import type {

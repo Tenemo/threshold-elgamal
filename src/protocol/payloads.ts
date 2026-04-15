@@ -1,5 +1,5 @@
 import { utf8ToBytes } from '../core/index';
-import { bytesToHex, encodeForChallenge } from '../serialize/index';
+import { bytesToHex, encodeForChallenge } from '../serialize/encoding';
 
 import { canonicalizeJson } from './canonical-json';
 import {
@@ -9,7 +9,7 @@ import {
 import type { ProtocolPayload, SignedPayload } from './types';
 
 /** Fixed domain separator for protocol-payload signatures. */
-export const PROTOCOL_SIGNATURE_DOMAIN = 'threshold-elgamal/protocol-signature';
+const PROTOCOL_SIGNATURE_DOMAIN = 'threshold-elgamal/protocol-signature';
 
 export type ProtocolPayloadInput<
     TPayload extends ProtocolPayload = ProtocolPayload,

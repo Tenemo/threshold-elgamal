@@ -1,21 +1,20 @@
 import { performance } from 'node:perf_hooks';
 
 import { RISTRETTO_GROUP, utf8ToBytes } from '#core';
-import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDisjunctiveProof,
     createSchnorrProof,
-    verifyDisjunctiveProof,
-    verifySchnorrProof,
-    type ProofContext,
-} from '#proofs';
-import { encodePoint, multiplyBase } from '#src/core/ristretto';
-import {
     decryptEnvelope,
+    encryptAdditiveWithRandomness,
     encryptEnvelope,
     exportTransportPublicKey,
     generateTransportKeyPair,
-} from '#transport';
+    verifyDisjunctiveProof,
+    verifySchnorrProof,
+    type ProofContext,
+} from '#root';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
+
 type BenchmarkRow = {
     readonly averageMs: number;
     readonly iterations: number;

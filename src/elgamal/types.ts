@@ -1,13 +1,5 @@
 import type { EncodedPoint } from '../core/types';
 
-/** Public and private key pair for the shipped Ristretto255 suite. */
-export type ElGamalKeyPair = {
-    /** Public key `Y = xG` encoded as a canonical Ristretto point. */
-    readonly publicKey: EncodedPoint;
-    /** Private scalar `x` in the range `1..q-1`. */
-    readonly privateKey: bigint;
-};
-
 /** Standard additive ElGamal ciphertext pair `(c1, c2)` encoded as points. */
 export type ElGamalCiphertext = {
     /** Ephemeral component `rG`. */

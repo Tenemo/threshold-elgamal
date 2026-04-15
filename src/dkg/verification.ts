@@ -25,15 +25,20 @@ import {
     hashElectionManifest,
     SHIPPED_PROTOCOL_VERSION,
 } from '../protocol/manifest';
-import { hashProtocolTranscript } from '../protocol/transcript';
+import {
+    hashProtocolPhaseSnapshot,
+    hashProtocolTranscript,
+} from '../protocol/transcript';
 import type {
     ComplaintPayload,
+    ComplaintResolutionPayload,
     ElectionManifest,
     EncryptedDualSharePayload,
     FeldmanCommitmentPayload,
     KeyDerivationConfirmation,
     ManifestAcceptancePayload,
     ManifestPublicationPayload,
+    PedersenCommitmentPayload,
     PhaseCheckpointPayload,
     ProtocolMessageType,
     RegistrationPayload,
@@ -43,20 +48,10 @@ import {
     verifySignedProtocolPayloads,
     type VerifiedProtocolSignatures,
 } from '../protocol/verification';
+import { resolveDealerChallengeFromPublicKey } from '../transport/complaints';
+import { verifyPedersenShare } from '../vss/pedersen';
 
-import {
-    assertSupportedCheckpointPayloads,
-    isPhaseCheckpointPayload,
-    resolveVerifiedPhaseCheckpoint,
-    type FinalizedPhaseCheckpoint,
-} from './checkpoints';
-import {
-    assertEncryptedShareCoverage,
-    assertPedersenCommitmentCoverage,
-    buildEncryptedShareMatrix,
-    parsePedersenCommitmentMap,
-    verifyComplaintOutcomes,
-} from './verification-complaints';
+import { decodePedersenShareEnvelope } from './pedersen-share-codec';
 
 /** Input bundle for verifying a DKG transcript. */
 export type VerifyDKGTranscriptInput = {
@@ -84,7 +79,7 @@ export type VerifiedDKGTranscript = {
     readonly threshold: number;
 };
 
-export type EncryptedShareMatrix = {
+type EncryptedShareMatrix = {
     readonly encryptedShares: readonly SignedPayload<EncryptedDualSharePayload>[];
     readonly bySlot: ReadonlyMap<
         string,
@@ -102,7 +97,7 @@ type ParsedFeldmanCommitment = {
     readonly payload: FeldmanCommitmentPayload;
 };
 
-export type ResolvePhaseCheckpointInput = {
+type ResolvePhaseCheckpointInput = {
     readonly transcript: readonly SignedPayload[];
     readonly checkpointPhase: number;
     readonly threshold: number;
@@ -169,7 +164,7 @@ const requireExactlyOnePayload = <TPayload>(
     return payloads[0];
 };
 
-export const parseCommitmentVector = (
+const parseCommitmentVector = (
     commitments: readonly string[],
     expectedLength: number,
     label: string,
@@ -209,13 +204,13 @@ const buildSchnorrContext = (
     coefficientIndex,
 });
 
-export const complaintResolutionKey = (
+const complaintResolutionKey = (
     complainantIndex: number,
     dealerIndex: number,
     envelopeId: string,
 ): string => `${complainantIndex}:${dealerIndex}:${envelopeId}`;
 
-export const encryptedShareSlotKey = (
+const encryptedShareSlotKey = (
     dealerIndex: number,
     recipientIndex: number,
 ): string => `${dealerIndex}:${recipientIndex}`;
@@ -223,7 +218,7 @@ export const encryptedShareSlotKey = (
 const allParticipantIndices = (participantCount: number): readonly number[] =>
     Array.from({ length: participantCount }, (_value, index) => index + 1);
 
-export const validateParticipantIndex = (
+const validateParticipantIndex = (
     index: number,
     participantCount: number,
     label: string,
@@ -235,7 +230,7 @@ export const validateParticipantIndex = (
     }
 };
 
-export const assertUniqueSortedParticipantIndices = (
+const assertUniqueSortedParticipantIndices = (
     indices: readonly number[],
     participantCount: number,
     label: string,
@@ -257,6 +252,13 @@ export const assertUniqueSortedParticipantIndices = (
         previous = index;
     }
 };
+
+/** Returns `true` when the signed payload is a phase checkpoint. */
+function isPhaseCheckpointPayload(
+    payload: SignedPayload,
+): payload is SignedPayload<PhaseCheckpointPayload> {
+    return payload.payload.messageType === 'phase-checkpoint';
+}
 
 const validateTranscriptShape = (
     input: VerifyDKGTranscriptInput,
@@ -287,7 +289,7 @@ const validateTranscriptShape = (
     }
 };
 
-export const assertIndexSubset = (
+const assertIndexSubset = (
     indices: readonly number[],
     allowed: ReadonlySet<number>,
     label: string,
@@ -299,6 +301,492 @@ export const assertIndexSubset = (
             );
         }
     }
+};
+
+/** Finalized threshold-supported checkpoint for one DKG phase. */
+export type FinalizedPhaseCheckpoint = {
+    readonly payload: PhaseCheckpointPayload;
+    readonly signatures: readonly SignedPayload<PhaseCheckpointPayload>[];
+    readonly signers: readonly number[];
+};
+
+const checkpointKey = (payload: PhaseCheckpointPayload): string =>
+    JSON.stringify({
+        sessionId: payload.sessionId,
+        manifestHash: payload.manifestHash,
+        phase: payload.phase,
+        messageType: payload.messageType,
+        checkpointPhase: payload.checkpointPhase,
+        checkpointTranscriptHash: payload.checkpointTranscriptHash,
+        qualifiedParticipantIndices: payload.qualifiedParticipantIndices,
+    });
+
+const compareNumbers = (left: number, right: number): number => left - right;
+const sameParticipantIndexList = (
+    left: readonly number[],
+    right: readonly number[],
+): boolean =>
+    left.length === right.length &&
+    left.every((participantIndex, index) => participantIndex === right[index]);
+
+const requiredCheckpointPhases = (): readonly number[] => [0, 1, 2, 3];
+
+const collectCheckpointVariants = (
+    transcript: readonly SignedPayload[],
+    checkpointPhase: number,
+): readonly FinalizedPhaseCheckpoint[] => {
+    const grouped = new Map<
+        string,
+        Map<number, SignedPayload<PhaseCheckpointPayload>>
+    >();
+
+    for (const signedPayload of transcript) {
+        if (
+            !isPhaseCheckpointPayload(signedPayload) ||
+            signedPayload.payload.checkpointPhase !== checkpointPhase
+        ) {
+            continue;
+        }
+
+        const key = checkpointKey(signedPayload.payload);
+        const existing =
+            grouped.get(key) ??
+            new Map<number, SignedPayload<PhaseCheckpointPayload>>();
+        existing.set(signedPayload.payload.participantIndex, signedPayload);
+        grouped.set(key, existing);
+    }
+
+    return [...grouped.values()].map((signatureMap) => {
+        const signatures = [...signatureMap.values()];
+
+        return {
+            payload: signatures[0].payload,
+            signatures,
+            signers: signatures
+                .map((entry) => entry.payload.participantIndex)
+                .sort(compareNumbers),
+        };
+    });
+};
+
+/**
+ * Rejects phase-checkpoint payloads outside the shipped GJKR checkpoint plan.
+ */
+const assertSupportedCheckpointPayloads = (
+    transcript: readonly SignedPayload[],
+): void => {
+    for (const signedPayload of transcript) {
+        if (
+            isPhaseCheckpointPayload(signedPayload) &&
+            !requiredCheckpointPhases().includes(
+                signedPayload.payload.checkpointPhase,
+            )
+        ) {
+            throw new InvalidPayloadError(
+                `Checkpoint phase ${signedPayload.payload.checkpointPhase} is not part of the GJKR phase plan`,
+            );
+        }
+    }
+};
+
+/**
+ * Resolves and validates the unique threshold-supported checkpoint for one
+ * closed DKG phase.
+ */
+const resolveVerifiedPhaseCheckpoint = async (
+    input: ResolvePhaseCheckpointInput,
+): Promise<FinalizedPhaseCheckpoint> => {
+    const supported = collectCheckpointVariants(
+        input.transcript,
+        input.checkpointPhase,
+    ).filter((entry) => entry.signatures.length >= input.threshold);
+
+    if (supported.length === 0) {
+        throw new InvalidPayloadError(
+            `Missing threshold-supported phase checkpoint for phase ${input.checkpointPhase}`,
+        );
+    }
+    if (supported.length > 1) {
+        throw new InvalidPayloadError(
+            `Observed multiple threshold-supported phase checkpoints for phase ${input.checkpointPhase}`,
+        );
+    }
+
+    const checkpoint = supported[0];
+    const qualifiedParticipantIndices =
+        checkpoint.payload.qualifiedParticipantIndices;
+
+    assertUniqueSortedParticipantIndices(
+        qualifiedParticipantIndices,
+        input.participantCount,
+        `Phase ${input.checkpointPhase} checkpoint qualified participant`,
+    );
+    if (
+        !sameParticipantIndexList(
+            qualifiedParticipantIndices,
+            input.expectedQualifiedParticipantIndices,
+        )
+    ) {
+        throw new InvalidPayloadError(
+            `Phase ${input.checkpointPhase} checkpoint qualified participant set does not match the verifier-computed active participant set`,
+        );
+    }
+    if (qualifiedParticipantIndices.length < input.threshold) {
+        throw new InvalidPayloadError(
+            `Checkpoint qualified participant set for phase ${input.checkpointPhase} must contain at least ${input.threshold} participants`,
+        );
+    }
+
+    const expectedSnapshotHash = await hashProtocolPhaseSnapshot(
+        input.transcript.map((entry) => entry.payload),
+        input.checkpointPhase,
+    );
+    if (checkpoint.payload.checkpointTranscriptHash !== expectedSnapshotHash) {
+        throw new InvalidPayloadError(
+            `Phase ${input.checkpointPhase} checkpoint transcript hash does not match the signed transcript snapshot`,
+        );
+    }
+
+    assertIndexSubset(
+        checkpoint.signers,
+        input.signerUniverse,
+        `Phase ${input.checkpointPhase} checkpoint signer`,
+    );
+
+    const qualifiedParticipantSet = new Set(qualifiedParticipantIndices);
+    for (const signer of checkpoint.signers) {
+        if (!qualifiedParticipantSet.has(signer)) {
+            throw new InvalidPayloadError(
+                `Phase ${input.checkpointPhase} checkpoint signer ${signer} is not part of the checkpoint qualified participant set`,
+            );
+        }
+    }
+
+    return checkpoint;
+};
+
+const buildEncryptedShareMatrix = (
+    transcript: readonly SignedPayload[],
+    participantCount: number,
+): EncryptedShareMatrix => {
+    const encryptedShares = transcript.filter(
+        (payload): payload is SignedPayload<EncryptedDualSharePayload> =>
+            payload.payload.messageType === 'encrypted-dual-share',
+    );
+
+    const bySlot = new Map<string, SignedPayload<EncryptedDualSharePayload>>();
+    const byComplaintKey = new Map<
+        string,
+        SignedPayload<EncryptedDualSharePayload>
+    >();
+
+    for (const payload of encryptedShares) {
+        const dealerIndex = payload.payload.participantIndex;
+        const recipientIndex = payload.payload.recipientIndex;
+
+        validateParticipantIndex(
+            dealerIndex,
+            participantCount,
+            'Encrypted share dealer index',
+        );
+        validateParticipantIndex(
+            recipientIndex,
+            participantCount,
+            'Encrypted share recipient index',
+        );
+
+        if (dealerIndex === recipientIndex) {
+            throw new InvalidPayloadError(
+                `Encrypted share payload for dealer ${dealerIndex} must target a different recipient`,
+            );
+        }
+
+        const slotKey = encryptedShareSlotKey(dealerIndex, recipientIndex);
+        if (bySlot.has(slotKey)) {
+            throw new InvalidPayloadError(
+                `Duplicate encrypted share payload for dealer ${dealerIndex} and recipient ${recipientIndex}`,
+            );
+        }
+        bySlot.set(slotKey, payload);
+
+        const complaintKey = complaintResolutionKey(
+            recipientIndex,
+            dealerIndex,
+            payload.payload.envelopeId,
+        );
+        if (byComplaintKey.has(complaintKey)) {
+            throw new InvalidPayloadError(
+                `Duplicate encrypted share envelope ${payload.payload.envelopeId} for dealer ${dealerIndex} and recipient ${recipientIndex}`,
+            );
+        }
+        byComplaintKey.set(complaintKey, payload);
+    }
+
+    return {
+        encryptedShares,
+        bySlot,
+        byComplaintKey,
+    };
+};
+
+const assertEncryptedShareCoverage = (
+    encryptedShareMatrix: EncryptedShareMatrix,
+    participantIndices: readonly number[],
+): void => {
+    for (const dealerIndex of participantIndices) {
+        for (const recipientIndex of participantIndices) {
+            if (dealerIndex === recipientIndex) {
+                continue;
+            }
+
+            if (
+                !encryptedShareMatrix.bySlot.has(
+                    encryptedShareSlotKey(dealerIndex, recipientIndex),
+                )
+            ) {
+                throw new InvalidPayloadError(
+                    `Missing encrypted share payload for dealer ${dealerIndex} and recipient ${recipientIndex}`,
+                );
+            }
+        }
+    }
+};
+
+const parsePedersenCommitmentMap = (
+    transcript: readonly SignedPayload[],
+    threshold: number,
+): ReadonlyMap<number, readonly EncodedPoint[]> => {
+    const pedersenCommitments = transcript.filter(
+        (payload): payload is SignedPayload<PedersenCommitmentPayload> =>
+            payload.payload.messageType === 'pedersen-commitment',
+    );
+    const pedersenCommitmentMap = new Map<number, readonly EncodedPoint[]>();
+    for (const payload of pedersenCommitments) {
+        if (pedersenCommitmentMap.has(payload.payload.participantIndex)) {
+            throw new InvalidPayloadError(
+                `Pedersen commitment requires exactly one payload for participant ${payload.payload.participantIndex}`,
+            );
+        }
+        pedersenCommitmentMap.set(
+            payload.payload.participantIndex,
+            parseCommitmentVector(
+                payload.payload.commitments,
+                threshold,
+                'Pedersen commitment payload',
+            ),
+        );
+    }
+
+    return pedersenCommitmentMap;
+};
+
+const assertPedersenCommitmentCoverage = (
+    pedersenCommitmentMap: ReadonlyMap<number, readonly EncodedPoint[]>,
+    dealerIndices: readonly number[],
+): void => {
+    for (const dealerIndex of dealerIndices) {
+        if (!pedersenCommitmentMap.has(dealerIndex)) {
+            throw new InvalidPayloadError(
+                `Missing Pedersen commitment payload for dealer ${dealerIndex}`,
+            );
+        }
+    }
+};
+
+const buildComplaintResolutionPayloadMap = (
+    transcript: readonly SignedPayload[],
+): {
+    readonly complaintResolutionPayloads: readonly ComplaintResolutionPayload[];
+    readonly resolutionPayloadMap: ReadonlyMap<
+        string,
+        ComplaintResolutionPayload
+    >;
+} => {
+    const complaintResolutionPayloads = transcript
+        .filter(
+            (payload): payload is SignedPayload<ComplaintResolutionPayload> =>
+                payload.payload.messageType === 'complaint-resolution',
+        )
+        .map((payload) => payload.payload);
+    const resolutionPayloadMap = new Map<string, ComplaintResolutionPayload>();
+
+    for (const resolutionPayload of complaintResolutionPayloads) {
+        if (
+            resolutionPayload.participantIndex !== resolutionPayload.dealerIndex
+        ) {
+            throw new InvalidPayloadError(
+                `Complaint resolution for envelope ${resolutionPayload.envelopeId} must be authored by dealer ${resolutionPayload.dealerIndex}`,
+            );
+        }
+
+        const key = complaintResolutionKey(
+            resolutionPayload.complainantIndex,
+            resolutionPayload.dealerIndex,
+            resolutionPayload.envelopeId,
+        );
+        if (resolutionPayloadMap.has(key)) {
+            throw new InvalidPayloadError(
+                `Duplicate complaint resolution for envelope ${resolutionPayload.envelopeId}`,
+            );
+        }
+        resolutionPayloadMap.set(key, resolutionPayload);
+    }
+
+    return {
+        complaintResolutionPayloads,
+        resolutionPayloadMap,
+    };
+};
+
+const verifyComplaintOutcomes = async (
+    input: VerifyDKGTranscriptInput,
+    verifiedSignatures: VerifiedProtocolSignatures,
+    encryptedShareMatrix: EncryptedShareMatrix,
+    pedersenCommitmentMap: ReadonlyMap<number, readonly EncodedPoint[]>,
+    group: CryptoGroup,
+    allowedParticipants: ReadonlySet<number>,
+): Promise<readonly ComplaintPayload[]> => {
+    const complaints = input.transcript
+        .filter(
+            (payload): payload is SignedPayload<ComplaintPayload> =>
+                payload.payload.messageType === 'complaint',
+        )
+        .map((payload) => payload.payload);
+    const { complaintResolutionPayloads, resolutionPayloadMap } =
+        buildComplaintResolutionPayloadMap(input.transcript);
+    const rosterEntryMap = new Map(
+        verifiedSignatures.rosterEntries.map((entry) => [
+            entry.participantIndex,
+            entry,
+        ]),
+    );
+    const acceptedComplaints: ComplaintPayload[] = [];
+    const usedResolutionKeys = new Set<string>();
+
+    for (const complaint of complaints) {
+        if (
+            !allowedParticipants.has(complaint.participantIndex) ||
+            !allowedParticipants.has(complaint.dealerIndex)
+        ) {
+            throw new InvalidPayloadError(
+                `Complaint participants must belong to the active DKG set for phase ${complaint.phase}`,
+            );
+        }
+
+        const resolutionKey = complaintResolutionKey(
+            complaint.participantIndex,
+            complaint.dealerIndex,
+            complaint.envelopeId,
+        );
+        const matchingEnvelope =
+            encryptedShareMatrix.byComplaintKey.get(resolutionKey);
+        if (matchingEnvelope === undefined) {
+            throw new InvalidPayloadError(
+                `Complaint references an unknown envelope ${complaint.envelopeId} for dealer ${complaint.dealerIndex} and complainant ${complaint.participantIndex}`,
+            );
+        }
+
+        const resolutionPayload = resolutionPayloadMap.get(resolutionKey);
+        if (resolutionPayload === undefined) {
+            acceptedComplaints.push(complaint);
+            continue;
+        }
+
+        usedResolutionKeys.add(resolutionKey);
+
+        if (resolutionPayload.suite !== matchingEnvelope.payload.suite) {
+            acceptedComplaints.push(complaint);
+            continue;
+        }
+
+        const complainantRosterEntry = rosterEntryMap.get(
+            complaint.participantIndex,
+        );
+        if (complainantRosterEntry === undefined) {
+            throw new InvalidPayloadError(
+                `Missing roster entry for complainant ${complaint.participantIndex}`,
+            );
+        }
+        const dealerCommitments = pedersenCommitmentMap.get(
+            complaint.dealerIndex,
+        );
+        if (dealerCommitments === undefined) {
+            throw new InvalidPayloadError(
+                `Missing Pedersen commitments for dealer ${complaint.dealerIndex}`,
+            );
+        }
+
+        try {
+            const resolution = await resolveDealerChallengeFromPublicKey(
+                {
+                    ...matchingEnvelope.payload,
+                    dealerIndex: matchingEnvelope.payload.participantIndex,
+                    rosterHash: input.manifest.rosterHash,
+                    payloadType: 'encrypted-dual-share',
+                    protocolVersion: SHIPPED_PROTOCOL_VERSION,
+                },
+                complainantRosterEntry.transportPublicKey,
+                resolutionPayload.revealedEphemeralPrivateKey,
+            );
+            if (
+                resolution.valid !== true ||
+                resolution.plaintext === undefined
+            ) {
+                acceptedComplaints.push(complaint);
+                continue;
+            }
+
+            const decryptedShare = decodePedersenShareEnvelope(
+                resolution.plaintext,
+                complaint.participantIndex,
+                'Complaint resolution',
+            );
+            if (
+                !verifyPedersenShare(
+                    decryptedShare,
+                    {
+                        commitments: dealerCommitments,
+                    },
+                    group,
+                )
+            ) {
+                acceptedComplaints.push(complaint);
+                continue;
+            }
+        } catch (error) {
+            if (error instanceof InvalidPayloadError) {
+                acceptedComplaints.push(complaint);
+                continue;
+            }
+
+            throw error;
+        }
+    }
+
+    for (const resolutionPayload of complaintResolutionPayloads) {
+        if (
+            !allowedParticipants.has(resolutionPayload.participantIndex) ||
+            !allowedParticipants.has(resolutionPayload.dealerIndex) ||
+            !allowedParticipants.has(resolutionPayload.complainantIndex)
+        ) {
+            throw new InvalidPayloadError(
+                `Complaint resolution participants must belong to the active DKG set for phase ${resolutionPayload.phase}`,
+            );
+        }
+
+        const key = complaintResolutionKey(
+            resolutionPayload.complainantIndex,
+            resolutionPayload.dealerIndex,
+            resolutionPayload.envelopeId,
+        );
+        if (!usedResolutionKeys.has(key)) {
+            throw new InvalidPayloadError(
+                `Complaint resolution for envelope ${resolutionPayload.envelopeId} does not match any complaint`,
+            );
+        }
+    }
+
+    return acceptedComplaints;
 };
 
 const deriveTranscriptVerificationKeyInternal = (

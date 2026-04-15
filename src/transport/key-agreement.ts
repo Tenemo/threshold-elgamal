@@ -1,6 +1,6 @@
 import { toBufferSource } from '../core/bytes';
 import { InvalidPayloadError, getWebCrypto } from '../core/index';
-import { bytesToHex, hexToBytes } from '../serialize/index';
+import { bytesToHex, hexToBytes } from '../serialize/encoding';
 
 import type {
     EncodedTransportPrivateKey,
@@ -38,7 +38,7 @@ const assertValidX25519PublicKeyBytes = (
 const x25519Algorithm = { name: 'X25519' } as const;
 
 /** Options controlling transport-key generation. */
-export type GenerateTransportKeyPairOptions = {
+type GenerateTransportKeyPairOptions = {
     /** Whether the generated private key should be extractable. Defaults to `false`. */
     readonly extractable?: boolean;
 };
@@ -194,7 +194,7 @@ export const deriveTransportSharedSecret = async (
  * @param privateKey Transport private key.
  * @returns Lowercase hexadecimal public key bytes.
  */
-export const deriveTransportPublicKey = async (
+const deriveTransportPublicKey = async (
     privateKey: CryptoKey,
 ): Promise<EncodedTransportPublicKey> => {
     const basePoint = await importTransportPublicKey(

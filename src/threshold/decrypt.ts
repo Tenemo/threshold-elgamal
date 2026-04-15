@@ -24,7 +24,7 @@ import {
 } from '../elgamal/additive';
 import { babyStepGiantStep } from '../elgamal/bsgs';
 import type { ElGamalCiphertext } from '../elgamal/types';
-import { encodeForChallenge, hexToBytes } from '../serialize/index';
+import { encodeForChallenge, hexToBytes } from '../serialize/encoding';
 
 import {
     createVerifiedAggregateCiphertext,

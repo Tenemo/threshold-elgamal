@@ -1,32 +1,32 @@
 import { writeFile } from 'node:fs/promises';
 
-import { createDeterministicSource } from './internal/deterministic';
+import { createDeterministicSource } from '../tests/helpers/deterministic';
 
 import { RISTRETTO_GROUP } from '#core';
-import { encryptAdditiveWithRandomness } from '#elgamal';
 import {
     createDLEQProof,
     createDisjunctiveProof,
     createSchnorrProof,
-    type DLEQStatement,
-    type ProofContext,
-} from '#proofs';
-import {
     canonicalizeElectionManifest,
     createElectionManifest,
     deriveSessionId,
+    encryptAdditiveWithRandomness,
     hashElectionManifest,
     SHIPPED_PROTOCOL_VERSION,
-    verifyAndAggregateBallots,
-    type BallotTranscriptEntry,
+    type DLEQStatement,
     type ElectionManifest,
-} from '#protocol';
+    type ProofContext,
+} from '#root';
 import {
     decodePoint,
     encodePoint,
     multiplyBase,
     pointMultiply,
 } from '#src/core/ristretto';
+import {
+    verifyAndAggregateBallots,
+    type BallotTranscriptEntry,
+} from '#src/protocol/voting-ballot-aggregation';
 const bigintReplacer = (_key: string, value: unknown): unknown =>
     typeof value === 'bigint' ? value.toString() : value;
 const validScores = Array.from({ length: 10 }, (_value, index) =>

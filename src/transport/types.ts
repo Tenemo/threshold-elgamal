@@ -41,10 +41,3 @@ export type EncryptedEnvelope = EnvelopeContext & {
     readonly iv: string;
     readonly ciphertext: string;
 };
-
-/** Dealer-challenge complaint resolution outcome. */
-export type ComplaintResolution = {
-    readonly valid: boolean;
-    readonly fault: 'dealer' | 'complainant';
-    readonly plaintext?: Uint8Array;
-};
