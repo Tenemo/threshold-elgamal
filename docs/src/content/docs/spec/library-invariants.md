@@ -37,9 +37,6 @@ This page records the library invariants.
 - Board auditing produces per-phase digests, an overall ceremony digest, slot-audit metadata, and a short fingerprint.
 - The full verifier replays the DKG transcript, counted ballots, decryption shares, and tally publications from signed public payloads.
 
-## Documentation scope
+## Public payload encoding
 
-- The generated API reference is export-driven from the root package.
 - Published protocol payloads are JSON-safe `{ payload, signature }` objects with points, scalars, proofs, and signatures already string-encoded.
-- Documentation-generation tooling lives under the top-level `typedoc/` directory.
-- Development-only helpers may remain outside `src/`, but reusable protocol logic belongs in `src/`.

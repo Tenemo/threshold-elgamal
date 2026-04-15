@@ -59,4 +59,4 @@ If you keep participant keys inside a worker, keep the `CryptoKey` objects in th
 - Do not mix `number` and `bigint` in arithmetic
 - Serialize values explicitly when crossing process or network boundaries
 
-For exact function contracts, use the [API docs](../api/).
+The [API docs](../api/) list exact function contracts.

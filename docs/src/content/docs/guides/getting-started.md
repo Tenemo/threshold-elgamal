@@ -16,7 +16,7 @@ Use the root package. The public surface is centered on one protocol story: hone
 - Each trustee prepares the accepted aggregate with `prepareAggregateForDecryption(...)` and then computes a partial reveal with `createDecryptionShare(...)` before signing `createDecryptionSharePayload(...)`.
 - Tally verification must be done against the close-selected ballot set, not against a server-supplied aggregate.
 
-## Pick the right first guide
+## Choose the workflow you need
 
 - If you already have a complete public board bundle, start with [Verifying a public board](./verifying-a-public-board/).
 - If you are building browser clients or worker code that creates payloads, start with [Browser and worker usage](./browser-and-worker-usage/).
@@ -61,7 +61,7 @@ Use `verifyElectionCeremony(...)` when you want the same checks but prefer excep
 - Persist the signed board payloads exactly as published. The verifier expects the original `{ payload, signature }` objects.
 - If you store verifier output, convert `bigint` values such as tallies to strings first.
 
-## Where to go next
+## Related pages
 
 - For installation and the top-level package overview, read [README.md](https://github.com/Tenemo/threshold-elgamal#readme).
 - For the supported ceremony path, read [Honest-majority voting flow](./three-participant-voting-flow/).
@@ -70,4 +70,4 @@ Use `verifyElectionCeremony(...)` when you want the same checks but prefer excep
 - For concrete JSON payload shapes, read [Published payload examples](./published-payload-examples/).
 - For runtime prerequisites and platform assumptions, read [Runtime and compatibility](./runtime-and-compatibility/).
 - For the security boundary, read [Security and non-goals](./security-and-non-goals/).
-- For exact signatures and exported types, use the [API docs](../api/).
+- The [API docs](../api/) list exact signatures and exported types.
