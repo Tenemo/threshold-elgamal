@@ -153,6 +153,7 @@ jobs:
             - run: pnpm run verify:docs
             - run: pnpm run docs:build:site
             - run: pnpm run smoke:pack
+            - run: npm publish --dry-run --ignore-scripts
 
     prepare-release:
         needs:
@@ -260,6 +261,7 @@ jobs:
             - run: pnpm run verify:docs
             - run: pnpm run docs:build:site
             - run: pnpm run smoke:pack
+            - run: npm publish --dry-run --ignore-scripts
 
             - uses: actions/upload-artifact@v4.6.2
               with:

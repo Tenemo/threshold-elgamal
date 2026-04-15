@@ -10,7 +10,7 @@ import {
     bigintToFixedBytes,
     concatBytes,
     domainSeparator,
-} from '../serialize/index';
+} from '../serialize/encoding';
 
 const bitLength = (value: bigint): number =>
     value === 0n ? 0 : value.toString(2).length;

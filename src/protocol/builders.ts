@@ -7,7 +7,8 @@ import type {
     EncodedTransportPublicKey,
 } from '../transport/types';
 
-import { canonicalUnsignedPayloadBytes } from './payloads';
+import type { ProtocolPayloadInput } from './payloads';
+import { attachProtocolVersion, signedProtocolPayloadBytes } from './payloads';
 import { hashProtocolPhaseSnapshot } from './transcript';
 import type {
     BallotClosePayload,
@@ -22,6 +23,7 @@ import type {
     ManifestPublicationPayload,
     PedersenCommitmentPayload,
     PhaseCheckpointPayload,
+    ProtocolMessageType,
     ProtocolPayload,
     RegistrationPayload,
     SignedPayload,
@@ -61,17 +63,30 @@ const isEncodedFeldmanProofEntry = (
 ): proof is FeldmanCommitmentPayload['proofs'][number] =>
     typeof proof.challenge === 'string';
 
+type ProtocolPayloadByMessageType<TMessageType extends ProtocolMessageType> =
+    Extract<ProtocolPayload, { readonly messageType: TMessageType }>;
+
 /** Signs one canonical protocol payload with a participant auth key. */
-export const signProtocolPayload = async <TPayload extends ProtocolPayload>(
+export const signProtocolPayload = async <
+    TMessageType extends ProtocolMessageType,
+>(
     privateKey: CryptoKey,
-    payload: TPayload,
-): Promise<SignedPayload<TPayload>> => ({
-    payload,
-    signature: await signPayloadBytes(
-        privateKey,
-        canonicalUnsignedPayloadBytes(payload),
-    ),
-});
+    payload: ProtocolPayloadInput<
+        ProtocolPayloadByMessageType<TMessageType>
+    > & {
+        readonly messageType: TMessageType;
+    },
+): Promise<SignedPayload<ProtocolPayloadByMessageType<TMessageType>>> => {
+    const signedPayload = attachProtocolVersion(payload);
+
+    return {
+        payload: signedPayload,
+        signature: await signPayloadBytes(
+            privateKey,
+            signedProtocolPayloadBytes(signedPayload),
+        ),
+    };
+};
 
 /** Creates a signed manifest-publication payload. */
 export const createManifestPublicationPayload = async (
@@ -80,10 +95,12 @@ export const createManifestPublicationPayload = async (
         readonly manifest: ElectionManifest;
         readonly manifestHash: string;
         readonly participantIndex: number;
+        readonly protocolVersion?: string;
         readonly sessionId: string;
     },
 ): Promise<SignedPayload<ManifestPublicationPayload>> =>
     signProtocolPayload(privateKey, {
+        protocolVersion: input.protocolVersion,
         sessionId: input.sessionId,
         manifestHash: input.manifestHash,
         phase: 0,
@@ -99,12 +116,14 @@ export const createRegistrationPayload = async (
         readonly authPublicKey: EncodedAuthPublicKey;
         readonly manifestHash: string;
         readonly participantIndex: number;
+        readonly protocolVersion?: string;
         readonly rosterHash: string;
         readonly sessionId: string;
         readonly transportPublicKey: EncodedTransportPublicKey;
     },
 ): Promise<SignedPayload<RegistrationPayload>> =>
     signProtocolPayload(privateKey, {
+        protocolVersion: input.protocolVersion,
         sessionId: input.sessionId,
         manifestHash: input.manifestHash,
         phase: 0,
@@ -123,11 +142,13 @@ export const createManifestAcceptancePayload = async (
         readonly assignedParticipantIndex: number;
         readonly manifestHash: string;
         readonly participantIndex: number;
+        readonly protocolVersion?: string;
         readonly rosterHash: string;
         readonly sessionId: string;
     },
 ): Promise<SignedPayload<ManifestAcceptancePayload>> =>
     signProtocolPayload(privateKey, {
+        protocolVersion: input.protocolVersion,
         sessionId: input.sessionId,
         manifestHash: input.manifestHash,
         phase: 0,
@@ -149,12 +170,14 @@ export const createPhaseCheckpointPayload = async (
         readonly checkpointPhase: 0 | 1 | 2 | 3;
         readonly manifestHash: string;
         readonly participantIndex: number;
+        readonly protocolVersion?: string;
         readonly qualifiedParticipantIndices: readonly number[];
         readonly sessionId: string;
         readonly transcript: readonly SignedPayload[];
     },
 ): Promise<SignedPayload<PhaseCheckpointPayload>> =>
     signProtocolPayload(privateKey, {
+        protocolVersion: input.protocolVersion,
         sessionId: input.sessionId,
         manifestHash: input.manifestHash,
         phase: input.checkpointPhase,
@@ -171,7 +194,12 @@ export const createPhaseCheckpointPayload = async (
 /** Creates a signed Pedersen-commitment payload for DKG phase 1. */
 export const createPedersenCommitmentPayload = async (
     privateKey: CryptoKey,
-    input: Omit<PedersenCommitmentPayload, 'messageType' | 'phase'>,
+    input: Omit<
+        PedersenCommitmentPayload,
+        'messageType' | 'phase' | 'protocolVersion'
+    > & {
+        readonly protocolVersion?: string;
+    },
 ): Promise<SignedPayload<PedersenCommitmentPayload>> =>
     signProtocolPayload(privateKey, {
         ...input,
@@ -183,7 +211,12 @@ export const createPedersenCommitmentPayload = async (
 /** Creates a signed encrypted dual-share payload for DKG phase 1. */
 export const createEncryptedDualSharePayload = async (
     privateKey: CryptoKey,
-    input: Omit<EncryptedDualSharePayload, 'messageType' | 'phase'>,
+    input: Omit<
+        EncryptedDualSharePayload,
+        'messageType' | 'phase' | 'protocolVersion'
+    > & {
+        readonly protocolVersion?: string;
+    },
 ): Promise<SignedPayload<EncryptedDualSharePayload>> =>
     signProtocolPayload(privateKey, {
         ...input,
@@ -196,8 +229,9 @@ export const createFeldmanCommitmentPayload = async (
     privateKey: CryptoKey,
     input: Omit<
         FeldmanCommitmentPayload,
-        'messageType' | 'phase' | 'proofs'
+        'messageType' | 'phase' | 'proofs' | 'protocolVersion'
     > & {
+        readonly protocolVersion?: string;
         readonly proofs:
             | FeldmanCommitmentPayload['proofs']
             | readonly (
@@ -212,7 +246,7 @@ export const createFeldmanCommitmentPayload = async (
               )[];
     },
 ): Promise<SignedPayload<FeldmanCommitmentPayload>> => {
-    const payload: FeldmanCommitmentPayload = {
+    const payload: ProtocolPayloadInput<FeldmanCommitmentPayload> = {
         ...input,
         phase: 3,
         messageType: 'feldman-commitment',
@@ -234,7 +268,12 @@ export const createFeldmanCommitmentPayload = async (
 /** Creates a signed key-derivation-confirmation payload for DKG phase 4. */
 export const createKeyDerivationConfirmationPayload = async (
     privateKey: CryptoKey,
-    input: Omit<KeyDerivationConfirmation, 'messageType' | 'phase'>,
+    input: Omit<
+        KeyDerivationConfirmation,
+        'messageType' | 'phase' | 'protocolVersion'
+    > & {
+        readonly protocolVersion?: string;
+    },
 ): Promise<SignedPayload<KeyDerivationConfirmation>> =>
     signProtocolPayload(privateKey, {
         ...input,
@@ -247,15 +286,16 @@ export const createBallotSubmissionPayload = async (
     privateKey: CryptoKey,
     input: Omit<
         BallotSubmissionPayload,
-        'messageType' | 'phase' | 'ciphertext' | 'proof'
+        'messageType' | 'phase' | 'ciphertext' | 'proof' | 'protocolVersion'
     > & {
+        readonly protocolVersion?: string;
         readonly ciphertext:
             | BallotSubmissionPayload['ciphertext']
             | ElGamalCiphertext;
         readonly proof: BallotSubmissionPayload['proof'] | DisjunctiveProof;
     },
 ): Promise<SignedPayload<BallotSubmissionPayload>> => {
-    const payload: BallotSubmissionPayload = {
+    const payload: ProtocolPayloadInput<BallotSubmissionPayload> = {
         ...input,
         phase: BALLOT_SUBMISSION_PHASE,
         messageType: 'ballot-submission',
@@ -271,7 +311,12 @@ export const createBallotSubmissionPayload = async (
 /** Creates the organizer-signed ballot cutoff payload. */
 export const createBallotClosePayload = async (
     privateKey: CryptoKey,
-    input: Omit<BallotClosePayload, 'messageType' | 'phase'>,
+    input: Omit<
+        BallotClosePayload,
+        'messageType' | 'phase' | 'protocolVersion'
+    > & {
+        readonly protocolVersion?: string;
+    },
 ): Promise<SignedPayload<BallotClosePayload>> => {
     const countedParticipantIndices = [...input.countedParticipantIndices].sort(
         (left, right) => left - right,
@@ -292,11 +337,15 @@ export const createBallotClosePayload = async (
 /** Creates a signed threshold decryption-share payload for one option slot. */
 export const createDecryptionSharePayload = async (
     privateKey: CryptoKey,
-    input: Omit<DecryptionSharePayload, 'messageType' | 'phase' | 'proof'> & {
+    input: Omit<
+        DecryptionSharePayload,
+        'messageType' | 'phase' | 'proof' | 'protocolVersion'
+    > & {
+        readonly protocolVersion?: string;
         readonly proof: DecryptionSharePayload['proof'] | DLEQProof;
     },
 ): Promise<SignedPayload<DecryptionSharePayload>> => {
-    const payload: DecryptionSharePayload = {
+    const payload: ProtocolPayloadInput<DecryptionSharePayload> = {
         ...input,
         phase: DECRYPTION_SHARE_PHASE,
         messageType: 'decryption-share',
@@ -311,7 +360,11 @@ export const createDecryptionSharePayload = async (
 /** Creates a signed tally-publication payload for one option slot. */
 export const createTallyPublicationPayload = async (
     privateKey: CryptoKey,
-    input: Omit<TallyPublicationPayload, 'messageType' | 'phase' | 'tally'> & {
+    input: Omit<
+        TallyPublicationPayload,
+        'messageType' | 'phase' | 'tally' | 'protocolVersion'
+    > & {
+        readonly protocolVersion?: string;
         readonly tally: TallyPublicationPayload['tally'] | bigint;
     },
 ): Promise<SignedPayload<TallyPublicationPayload>> => {

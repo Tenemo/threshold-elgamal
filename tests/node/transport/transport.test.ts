@@ -1,19 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-    assertNonZeroSharedSecret,
-    decryptEnvelope,
-    encryptEnvelope,
     exportAuthPublicKey,
-    exportTransportPublicKey,
     generateAuthKeyPair,
-    generateTransportKeyPair,
     importAuthPublicKey,
-    importTransportPublicKey,
-    resolveDealerChallengeFromPublicKey,
     signPayloadBytes,
     verifyPayloadSignature,
-} from '#transport';
+} from '#src/transport/auth';
+import { resolveDealerChallengeFromPublicKey } from '#src/transport/complaints';
+import { decryptEnvelope, encryptEnvelope } from '#src/transport/envelopes';
+import {
+    assertNonZeroSharedSecret,
+    exportTransportPublicKey,
+    generateTransportKeyPair,
+    importTransportPublicKey,
+} from '#src/transport/key-agreement';
 
 const corruptHexTailByte = (value: string): string => {
     const lastByte = Number.parseInt(value.slice(-2), 16);
@@ -107,7 +108,7 @@ describe('transport and authentication', () => {
                 recipientPublicKey,
                 '00'.repeat(
                     67,
-                ) as import('#transport').EncodedTransportPrivateKey,
+                ) as import('#src/transport/types').EncodedTransportPrivateKey,
             ),
         ).resolves.toEqual({
             valid: false,
@@ -178,7 +179,7 @@ describe('transport and authentication', () => {
             importTransportPublicKey(
                 '00'.repeat(
                     32,
-                ) as import('#transport').EncodedTransportPublicKey,
+                ) as import('#src/transport/types').EncodedTransportPublicKey,
             ),
         ).rejects.toThrow(
             'Transport public key must not be the all-zero X25519 public key',

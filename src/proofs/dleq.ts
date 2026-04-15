@@ -14,7 +14,7 @@ import {
     pointSubtract,
 } from '../core/ristretto';
 import type { ElGamalCiphertext } from '../elgamal/types';
-import { encodeForChallenge } from '../serialize/index';
+import { encodeForChallenge } from '../serialize/encoding';
 
 import {
     assertProofContext,

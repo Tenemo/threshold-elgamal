@@ -1,6 +1,6 @@
 import { InvalidPayloadError, RISTRETTO_GROUP } from '../core/index';
 import { canonicalizeJson } from '../protocol/canonical-json';
-import { bigintToFixedHex, fixedHexToBigInt } from '../serialize/index';
+import { bigintToFixedHex, fixedHexToBigInt } from '../serialize/encoding';
 import type { PedersenShare } from '../vss/types';
 
 type PedersenShareEnvelopeRecord = {

@@ -1,8 +1,32 @@
 import { utf8ToBytes } from '../core/index';
-import { bytesToHex } from '../serialize/index';
+import { bytesToHex, encodeForChallenge } from '../serialize/encoding';
 
 import { canonicalizeJson } from './canonical-json';
+import {
+    assertValidProtocolVersion,
+    SHIPPED_PROTOCOL_VERSION,
+} from './manifest';
 import type { ProtocolPayload, SignedPayload } from './types';
+
+/** Fixed domain separator for protocol-payload signatures. */
+const PROTOCOL_SIGNATURE_DOMAIN = 'threshold-elgamal/protocol-signature';
+
+export type ProtocolPayloadInput<
+    TPayload extends ProtocolPayload = ProtocolPayload,
+> = Omit<TPayload, 'protocolVersion'> & {
+    readonly protocolVersion?: string;
+};
+
+export const attachProtocolVersion = <TPayload extends ProtocolPayload>(
+    payload: ProtocolPayloadInput<TPayload>,
+): TPayload =>
+    ({
+        ...payload,
+        protocolVersion: assertValidProtocolVersion(
+            payload.protocolVersion ?? SHIPPED_PROTOCOL_VERSION,
+            'Protocol payload version',
+        ),
+    }) as TPayload;
 
 /**
  * Computes the canonical slot key used for idempotence and equivocation checks.
@@ -45,6 +69,33 @@ export const canonicalUnsignedPayloadBytes = (
     payload: ProtocolPayload,
     bigintByteLength?: number,
 ): Uint8Array => utf8ToBytes(canonicalizeJson(payload, { bigintByteLength }));
+
+/**
+ * Serializes the payload bytes that are covered by the outer Ed25519 signature.
+ *
+ * The signature preimage is domain-separated and version-bound so that protocol
+ * payload signatures are not re-used across transcript families or protocol
+ * revisions.
+ *
+ * @param payload Unsigned protocol payload.
+ * @param bigintByteLength Fixed byte width used for any bigint fields.
+ * @returns Canonical signature preimage bytes.
+ */
+export const signedProtocolPayloadBytes = (
+    payload: ProtocolPayload,
+    bigintByteLength?: number,
+): Uint8Array => {
+    assertValidProtocolVersion(
+        payload.protocolVersion,
+        'Protocol payload version',
+    );
+
+    return encodeForChallenge(
+        PROTOCOL_SIGNATURE_DOMAIN,
+        payload.protocolVersion,
+        canonicalUnsignedPayloadBytes(payload, bigintByteLength),
+    );
+};
 
 /**
  * Classifies how two signed payloads for the same slot relate to one another.

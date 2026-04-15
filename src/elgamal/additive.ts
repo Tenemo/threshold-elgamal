@@ -20,29 +20,18 @@ type ResolvedAdditiveContext = {
     readonly bound: bigint;
 };
 
-/**
- * Validates that a private key lies in the range `1..q-1`.
- */
-export const assertValidPrivateKey = (privateKey: bigint): void => {
-    if (privateKey <= 0n || privateKey >= RISTRETTO_GROUP.q) {
-        throw new InvalidScalarError('Private key must be in the range 1..q-1');
-    }
-};
-
 /** Validates an additive-mode public key against the shipped suite. */
-export const assertValidAdditivePublicKey = (publicKey: string): void => {
+const assertValidAdditivePublicKey = (publicKey: string): void => {
     assertValidPublicKey(publicKey);
 };
 
 /** Validates the caller-supplied additive plaintext bound. */
-export const assertValidAdditiveBound = (bound: bigint): void =>
+const assertValidAdditiveBound = (bound: bigint): void =>
     assertAdditiveBound(bound, RISTRETTO_GROUP.q);
 
 /** Validates the plaintext domain and caller-supplied bound for additive mode. */
-export const assertValidAdditivePlaintext = (
-    value: bigint,
-    bound: bigint,
-): void => assertPlaintextAdditive(value, bound, RISTRETTO_GROUP.q);
+const assertValidAdditivePlaintext = (value: bigint, bound: bigint): void =>
+    assertPlaintextAdditive(value, bound, RISTRETTO_GROUP.q);
 
 /** Validates an additive ciphertext that may already be an aggregate. */
 export const assertValidAdditiveCiphertext = (

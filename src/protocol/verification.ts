@@ -4,7 +4,7 @@ import {
     sha256,
     utf8ToBytes,
 } from '../core/index';
-import { bytesToHex } from '../serialize/index';
+import { bytesToHex } from '../serialize/encoding';
 import { importAuthPublicKey, verifyPayloadSignature } from '../transport/auth';
 import { assertSupportedTransportPublicKeyEncoding } from '../transport/key-agreement';
 import type {
@@ -13,7 +13,8 @@ import type {
 } from '../transport/types';
 
 import { canonicalizeJson } from './canonical-json';
-import { canonicalUnsignedPayloadBytes } from './payloads';
+import { assertSupportedProtocolVersion } from './manifest';
+import { signedProtocolPayloadBytes } from './payloads';
 import type { RegistrationPayload, SignedPayload } from './types';
 
 /** Roster entry used for deterministic roster hashing. */
@@ -61,11 +62,35 @@ const assertNonEmptyHex = (value: string, label: string): void => {
 const canonicalizeRosterEntries = (
     rosterEntries: readonly RosterEntry[],
 ): string => {
-    for (const entry of rosterEntries) {
+    const authKeyOwners = new Map<EncodedAuthPublicKey, number>();
+    const transportKeyOwners = new Map<EncodedTransportPublicKey, number>();
+
+    for (const entry of [...rosterEntries].sort(compareRosterEntries)) {
         assertNonEmptyHex(entry.authPublicKey, 'Roster auth public key');
         assertSupportedTransportPublicKeyEncoding(
             entry.transportPublicKey,
             'Roster transport public key',
+        );
+
+        const authKeyOwner = authKeyOwners.get(entry.authPublicKey);
+        if (authKeyOwner !== undefined) {
+            throw new InvalidPayloadError(
+                `Duplicate roster auth public key for participants ${authKeyOwner} and ${entry.participantIndex}`,
+            );
+        }
+        authKeyOwners.set(entry.authPublicKey, entry.participantIndex);
+
+        const transportKeyOwner = transportKeyOwners.get(
+            entry.transportPublicKey,
+        );
+        if (transportKeyOwner !== undefined) {
+            throw new InvalidPayloadError(
+                `Duplicate roster transport public key for participants ${transportKeyOwner} and ${entry.participantIndex}`,
+            );
+        }
+        transportKeyOwners.set(
+            entry.transportPublicKey,
+            entry.participantIndex,
         );
     }
 
@@ -172,6 +197,11 @@ export const verifySignedProtocolPayloads = async (
         );
     }
 
+    const rosterEntries = registrations.map((registration) =>
+        registrationKey(registration.payload),
+    );
+    canonicalizeRosterEntries(rosterEntries);
+
     const authKeyMap = new Map<number, CryptoKey>();
     for (const registration of registrations) {
         assertNonEmptyHex(
@@ -187,12 +217,16 @@ export const verifySignedProtocolPayloads = async (
             'Registration transport public key',
         );
 
+        assertSupportedProtocolVersion(
+            registration.payload.protocolVersion,
+            'Protocol payload version',
+        );
         const publicKey = await importAuthPublicKey(
             registration.payload.authPublicKey,
         );
         const valid = await verifyPayloadSignature(
             publicKey,
-            canonicalUnsignedPayloadBytes(registration.payload),
+            signedProtocolPayloadBytes(registration.payload),
             registration.signature,
         );
 
@@ -219,9 +253,13 @@ export const verifySignedProtocolPayloads = async (
             );
         }
 
+        assertSupportedProtocolVersion(
+            signedPayload.payload.protocolVersion,
+            'Protocol payload version',
+        );
         const valid = await verifyPayloadSignature(
             publicKey,
-            canonicalUnsignedPayloadBytes(signedPayload.payload),
+            signedProtocolPayloadBytes(signedPayload.payload),
             signedPayload.signature,
         );
         if (!valid) {
@@ -231,10 +269,8 @@ export const verifySignedProtocolPayloads = async (
         }
     }
 
-    const rosterEntries = registrations
-        .map((registration) => registrationKey(registration.payload))
-        .sort(compareRosterEntries);
-    const rosterHash = await hashRosterEntries(rosterEntries);
+    const sortedRosterEntries = [...rosterEntries].sort(compareRosterEntries);
+    const rosterHash = await hashRosterEntries(sortedRosterEntries);
 
     for (const registration of registrations) {
         if (registration.payload.rosterHash !== rosterHash) {
@@ -247,7 +283,7 @@ export const verifySignedProtocolPayloads = async (
     return {
         participantCount: registrationIndices.length,
         registrations,
-        rosterEntries,
+        rosterEntries: sortedRosterEntries,
         rosterHash,
     };
 };

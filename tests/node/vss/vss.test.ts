@@ -13,7 +13,7 @@ import {
     generatePedersenCommitments,
     verifyFeldmanShare,
     verifyPedersenShare,
-} from '#vss';
+} from '#root';
 
 const deriveShares = (
     polynomial: readonly bigint[],

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { InvalidScalarError, mod, modInvQ, modPowP, modQ } from '#core';
+import { InvalidScalarError, modInvQ, modQ } from '#core';
+import { mod, modPowP } from '#src/core/bigint';
 
 describe('core scalar helpers', () => {
     it('normalizes values into the field', () => {

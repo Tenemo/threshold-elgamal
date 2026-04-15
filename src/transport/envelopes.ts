@@ -1,6 +1,10 @@
 import { toBufferSource } from '../core/bytes';
 import { getWebCrypto, hkdfSha256, randomBytes } from '../core/index';
-import { bytesToHex, encodeForChallenge, hexToBytes } from '../serialize/index';
+import {
+    bytesToHex,
+    encodeForChallenge,
+    hexToBytes,
+} from '../serialize/encoding';
 
 import {
     deriveTransportSharedSecret,
