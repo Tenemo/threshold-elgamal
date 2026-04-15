@@ -1,6 +1,6 @@
 ---
 title: Honest-majority voting flow
-description: The supported root-only ceremony flow.
+description: The supported ceremony flow with the root package and advanced submodules.
 sidebar:
   order: 3
 ---
@@ -16,7 +16,7 @@ This guide describes the supported ceremony shape:
 7. Publish decryption shares and tallies for the close-selected ballot set.
 8. Verify the entire ceremony from the public board.
 
-The public package is root-only. Import everything from `threshold-elgamal`.
+Use `threshold-elgamal` for the workflow-facing builders and verifier. Manual proof, threshold, DKG, and VSS steps use the public submodules when you need them.
 
 ## What your application should keep
 
@@ -75,7 +75,7 @@ The manifest does not carry `participantCount`, `reconstructionThreshold`, publi
 
 ## Supported public builders
 
-The root package exposes public builders for the standard ceremony payloads:
+The root package exposes the workflow-facing builders for the standard ceremony payloads:
 
 - `createManifestPublicationPayload(...)`
 - `createRegistrationPayload(...)`
@@ -86,8 +86,6 @@ The root package exposes public builders for the standard ceremony payloads:
 - `createKeyDerivationConfirmationPayload(...)`
 - `createBallotSubmissionPayload(...)`
 - `createBallotClosePayload(...)`
-- `prepareAggregateForDecryption(...)`
-- `createDecryptionShare(...)`
 - `createDecryptionSharePayload(...)`
 - `createTallyPublicationPayload(...)`
 
@@ -97,8 +95,8 @@ In practice, most integrations split them by phase:
 - phases `1` to `4`: DKG commitments, encrypted shares, Feldman commitments, and key-derivation confirmations
 - phase `5`: `createBallotSubmissionPayload(...)`
 - phase `6`: `createBallotClosePayload(...)`
-- phase `7`: `prepareAggregateForDecryption(...)`, `createDecryptionShare(...)`, `createDLEQProof(...)`, `createDecryptionSharePayload(...)`
-- phase `8`: `combineDecryptionShares(...)`, `createTallyPublicationPayload(...)`
+- phase `7`: `prepareAggregateForDecryption(...)` from `threshold-elgamal/threshold`, `createDecryptionShare(...)` from `threshold-elgamal/threshold`, `createDLEQProof(...)` from `threshold-elgamal/proofs`, `createDecryptionSharePayload(...)` from `threshold-elgamal`
+- phase `8`: `combineDecryptionShares(...)` from `threshold-elgamal/threshold`, `createTallyPublicationPayload(...)` from `threshold-elgamal`
 
 These builders sign and encode published payloads. Your application still owns participant key custody, local trustee state, bulletin-board posting, and the orchestration that decides when each phase is complete.
 
@@ -106,14 +104,16 @@ For the reveal path, phase `7` is not a single builder call. Each trustee first 
 
 ```typescript
 import {
-    RISTRETTO_GROUP,
     SHIPPED_PROTOCOL_VERSION,
-    createDLEQProof,
-    createDecryptionShare,
     createDecryptionSharePayload,
-    deriveTranscriptVerificationKey,
-    prepareAggregateForDecryption,
 } from "threshold-elgamal";
+import { RISTRETTO_GROUP } from "threshold-elgamal/core";
+import { createDLEQProof } from "threshold-elgamal/proofs";
+import {
+    createDecryptionShare,
+    prepareAggregateForDecryption,
+} from "threshold-elgamal/threshold";
+import { deriveTranscriptVerificationKey } from "threshold-elgamal/dkg";
 
 const preparedAggregate = prepareAggregateForDecryption({
     aggregate: optionAggregation.aggregate,
@@ -207,7 +207,7 @@ Participants `5` and `6` may still have posted otherwise valid ballots. They sta
 
 ## End-to-end verification
 
-Use `verifyElectionCeremony(...)` to replay the public ceremony from manifest publication through tally publication in one pass. The verifier checks:
+Use `verifyElectionCeremony(...)` to replay the public ceremony from manifest publication through tally publication in one pass. For manual transcript construction, use the public submodules for proofs, threshold reconstruction, DKG replay, and VSS helpers. The verifier checks:
 
 - the frozen manifest and session context
 - registrations and manifest acceptances

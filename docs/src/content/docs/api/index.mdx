@@ -1,29 +1,29 @@
 ---
 title: API docs
-description: Public API entry points and generated symbol reference for the supported surface.
+description: Public API entry points and generated symbol reference for the workflow root and advanced submodules.
 editUrl: false
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-These entry points cover the supported import surface, verifier surface,
-payload shapes, and generated symbols for the root package.
+These entry points cover the workflow-facing root package, the advanced public
+submodules, the verifier surface, and the generated symbol reference.
 
 <CardGrid>
   <LinkCard
     title="Root package"
     href="./root-package/"
-    description="Use the root package as the only supported import surface for the voting workflow."
+    description="Use the root package as the workflow-facing import surface for the supported voting flow."
+  />
+  <LinkCard
+    title="Generated reference"
+    href="./reference/"
+    description="Browse the exact exports for the root package and every public submodule."
   />
   <LinkCard
     title="Verifying a public board"
     href="../guides/verifying-a-public-board/"
     description="Start here if your application consumes a published ceremony bundle and needs a verifier entry point."
-  />
-  <LinkCard
-    title="Generated reference"
-    href="./reference/threshold-elgamal/"
-    description="Browse exact types, signatures, and symbol-level details for the root export surface."
   />
   <LinkCard
     title="Published payload examples"

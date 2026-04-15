@@ -1,6 +1,15 @@
 /** @type {import('typedoc').TypeDocOptions} */
 const config = {
-    entryPoints: ['src/index.ts'],
+    entryPoints: [
+        'src/index.ts',
+        'src/protocol/public.ts',
+        'src/threshold/public.ts',
+        'src/proofs/public.ts',
+        'src/dkg/public.ts',
+        'src/vss/public.ts',
+        'src/elgamal/public.ts',
+        'src/core/public.ts',
+    ],
     entryPointStrategy: 'resolve',
     alwaysCreateEntryPointModule: true,
     plugin: ['typedoc-plugin-markdown'],

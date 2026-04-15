@@ -1,13 +1,9 @@
 import { TextEncoder } from 'node:util';
 
 import {
-    combineDecryptionShares,
     createBallotClosePayload,
     createBallotSubmissionPayload,
-    createDLEQProof,
-    createDecryptionShare,
     createDecryptionSharePayload,
-    createDisjunctiveProof,
     createElectionManifest,
     createEncryptedDualSharePayload,
     createFeldmanCommitmentPayload,
@@ -17,50 +13,66 @@ import {
     createPhaseCheckpointPayload,
     createPedersenCommitmentPayload,
     createRegistrationPayload,
-    createSchnorrProof,
-    signProtocolPayload,
     createTallyPublicationPayload,
-    deriveJointPublicKey,
-    derivePedersenShares,
     deriveSessionId,
-    deriveTranscriptVerificationKey,
-    encodePedersenShareEnvelope,
-    encryptAdditiveWithRandomness,
     encryptEnvelope,
     exportAuthPublicKey,
     exportTransportPublicKey,
     generateAuthKeyPair,
-    generateFeldmanCommitments,
-    generatePedersenCommitments,
     hashElectionManifest,
-    hashProtocolTranscript,
     hashRosterEntries,
-    InvalidShareError,
     majorityThreshold,
-    modQ,
-    prepareAggregateForDecryption,
-    RISTRETTO_GROUP,
-    scoreVotingDomain,
     SHIPPED_PROTOCOL_VERSION,
-    verifyBallotSubmissionPayloadsByOption,
     verifyElectionCeremony,
     type BallotClosePayload,
     type BallotSubmissionPayload,
     type DecryptionSharePayload,
-    type DLEQStatement,
     type ElectionManifest,
     type EncodedAuthPublicKey,
-    type EncodedPoint,
     type EncodedTransportPublicKey,
     type EncryptedDualSharePayload,
     type KeyDerivationConfirmation,
-    type ProofContext,
     type SignedPayload,
     type TallyPublicationPayload,
     type TransportKeyPair,
     generateTransportKeyPair,
 } from '#root';
+import {
+    type EncodedPoint,
+    InvalidShareError,
+    modQ,
+    RISTRETTO_GROUP,
+} from '#src/core/public';
+import {
+    deriveJointPublicKey,
+    deriveTranscriptVerificationKey,
+    encodePedersenShareEnvelope,
+} from '#src/dkg/public';
+import { encryptAdditiveWithRandomness } from '#src/elgamal/public';
+import {
+    createDLEQProof,
+    createDisjunctiveProof,
+    createSchnorrProof,
+    type DLEQStatement,
+    type ProofContext,
+} from '#src/proofs/public';
+import {
+    hashProtocolTranscript,
+    scoreVotingDomain,
+    signProtocolPayload,
+    verifyBallotSubmissionPayloadsByOption,
+} from '#src/protocol/public';
+import {
+    combineDecryptionShares,
+    createDecryptionShare,
+    prepareAggregateForDecryption,
+} from '#src/threshold/public';
 import type { EncodedTransportPrivateKey } from '#src/transport/types';
+import {
+    derivePedersenShares,
+    generateFeldmanCommitments,
+    generatePedersenCommitments,
+} from '#src/vss/public';
 
 export type VotingFlowParticipant = {
     readonly auth: CryptoKeyPair;

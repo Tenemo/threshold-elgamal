@@ -5,7 +5,11 @@ sidebar:
   order: 1
 ---
 
-Use the root package for all supported public imports. The package does not expose public subpath entrypoints.
+Use the root package for the supported voting workflow. Advanced cryptographic
+and transcript primitives also have public subpath entrypoints such as
+`threshold-elgamal/proofs`, `threshold-elgamal/threshold`,
+`threshold-elgamal/dkg`, `threshold-elgamal/vss`, `threshold-elgamal/elgamal`,
+`threshold-elgamal/protocol`, and `threshold-elgamal/core`.
 
 ## What lives here
 
@@ -13,9 +17,7 @@ Use the root package for all supported public imports. The package does not expo
 - roster hashing and session derivation
 - transport and authentication helpers
 - public builders for the standard ceremony payloads
-- GJKR transcript verification
-- ballot verification
-- tally verification
+- full public-board verification
 - full ceremony verification
 
 ## Common starting points
@@ -25,7 +27,7 @@ Use the root package for all supported public imports. The package does not expo
 - encrypted share transport: `encryptEnvelope`, `decryptEnvelope`
 - public board verification: `tryVerifyElectionCeremony`, `verifyElectionCeremony`
 - published payload construction: `createManifestPublicationPayload`, `createRegistrationPayload`, `createManifestAcceptancePayload`, `createBallotSubmissionPayload`, `createBallotClosePayload`, `createDecryptionSharePayload`, `createTallyPublicationPayload`
-- threshold reveal primitives: `createDecryptionShare`, `createDLEQProof`, `combineDecryptionShares`
+- advanced reveal primitives: `prepareAggregateForDecryption` and `combineDecryptionShares` from `threshold-elgamal/threshold`, plus `createDLEQProof` from `threshold-elgamal/proofs`
 
 ## Typical import style
 
@@ -36,7 +38,6 @@ import {
     createRegistrationPayload,
     createManifestAcceptancePayload,
     createBallotClosePayload,
-    createDecryptionShare,
     createDecryptionSharePayload,
     verifyElectionCeremony,
 } from "threshold-elgamal";
@@ -46,7 +47,16 @@ import {
 
 - you want the `ristretto255` voting workflow
 - you want the minimal manifest and derived majority-threshold rules
-- you want public builders and verifiers that match the published package exports
+- you want the workflow-facing builders and verifiers without importing the lower-level proof, threshold, DKG, or VSS modules directly
+
+## Use the submodules when
+
+- you need direct proof helpers such as `createDLEQProof(...)` or `createSchnorrProof(...)`
+- you need direct threshold helpers such as `prepareAggregateForDecryption(...)` or `combineDecryptionShares(...)`
+- you need DKG transcript replay or trustee verification-key derivation
+- you need generic protocol signing, transcript hashing, ballot-proof verification, or protocol payload types
+- you need Feldman or Pedersen commitment/share helpers
+- you need low-level additive ElGamal, explicit error classes, or core arithmetic/constants
 
 ## Related workflows
 
@@ -61,3 +71,4 @@ import {
 
 - exact signatures, types, and return shapes for the exported surface
 - contract-level detail for the full ceremony types
+- module-level separation between the workflow root package and the advanced public submodules

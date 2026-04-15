@@ -2,7 +2,7 @@ import { performance } from 'node:perf_hooks';
 
 import { runVotingFlowScenario } from '../internal/voting-flow-harness';
 
-import { verifyDKGTranscript } from '#root';
+import { verifyDKGTranscript } from '#src/dkg/public';
 
 type BenchmarkRow = {
     readonly optionCount: number;

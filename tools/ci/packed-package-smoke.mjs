@@ -1,17 +1,11 @@
 import {
     SHIPPED_PROTOCOL_VERSION,
-    combineDecryptionShares,
-    RISTRETTO_GROUP,
     createBallotClosePayload,
-    createDLEQProof,
-    createDecryptionShare,
     createDecryptionSharePayload,
     createElectionManifest,
     createTallyPublicationPayload,
-    decodePedersenShareEnvelope,
     decryptEnvelope,
     deriveSessionId,
-    encodePedersenShareEnvelope,
     encryptEnvelope,
     exportAuthPublicKey,
     exportTransportPublicKey,
@@ -20,8 +14,22 @@ import {
     hashElectionManifest,
     hashRosterEntries,
     majorityThreshold,
-    verifyDLEQProof,
 } from 'threshold-elgamal';
+
+const packageName = 'threshold-elgamal';
+/** @type {typeof import('../../src/core/public.ts')} */
+const coreModule = await import(`${packageName}/core`);
+/** @type {typeof import('../../src/proofs/public.ts')} */
+const proofsModule = await import(`${packageName}/proofs`);
+/** @type {typeof import('../../src/threshold/public.ts')} */
+const thresholdModule = await import(`${packageName}/threshold`);
+/** @type {typeof import('../../src/dkg/public.ts')} */
+const dkgModule = await import(`${packageName}/dkg`);
+
+const { RISTRETTO_GROUP } = coreModule;
+const { createDLEQProof, verifyDLEQProof } = proofsModule;
+const { combineDecryptionShares, createDecryptionShare } = thresholdModule;
+const { decodePedersenShareEnvelope, encodePedersenShareEnvelope } = dkgModule;
 
 const assert = (condition, message) => {
     if (!condition) {

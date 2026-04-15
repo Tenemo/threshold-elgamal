@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-Use the root package. The public surface is centered on one protocol story: honest-majority GJKR, fixed `1..10` score ballots, `ballot-close`, and full ceremony verification.
+Start with the root package. It is the workflow-facing surface for one protocol story: honest-majority GJKR, fixed `1..10` score ballots, `ballot-close`, and full ceremony verification.
 
 ## Start with these rules
 
@@ -13,7 +13,7 @@ Use the root package. The public surface is centered on one protocol story: hone
 - The library derives the threshold from the accepted registration roster as `k = ceil(n / 2)`.
 - Ballots are fixed to complete `1..10` score ballots.
 - The organizer closes counting with one signed `ballot-close` payload.
-- Each trustee prepares the accepted aggregate with `prepareAggregateForDecryption(...)` and then computes a partial reveal with `createDecryptionShare(...)` before signing `createDecryptionSharePayload(...)`.
+- Each trustee prepares the accepted aggregate with `prepareAggregateForDecryption(...)` from `threshold-elgamal/threshold`, computes a partial reveal with `createDecryptionShare(...)` from the same module, proves it with `createDLEQProof(...)` from `threshold-elgamal/proofs`, and then signs `createDecryptionSharePayload(...)` from the root package.
 - Tally verification must be done against the close-selected ballot set, not against a server-supplied aggregate.
 
 ## Choose the workflow you need

@@ -1,6 +1,13 @@
 {
     "$schema": "https://unpkg.com/knip@5/schema.json",
     "entry": [
+        "src/core/public.ts",
+        "src/elgamal/public.ts",
+        "src/proofs/public.ts",
+        "src/threshold/public.ts",
+        "src/dkg/public.ts",
+        "src/vss/public.ts",
+        "src/protocol/public.ts",
         "tests/**/*.ts",
         "tools/**/*.ts",
         "typedoc/**/*.ts",

@@ -9,8 +9,8 @@ import {
     generateTransportKeyPair,
     hashRosterEntries,
     SHIPPED_PROTOCOL_VERSION,
-    signProtocolPayload,
 } from '#root';
+import { signProtocolPayload } from '#src/protocol/public';
 import { verifySignedProtocolPayloads } from '#src/protocol/verification';
 
 const manifestHash = 'aa'.repeat(32);

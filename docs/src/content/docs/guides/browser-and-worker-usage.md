@@ -1,11 +1,11 @@
 ---
 title: Browser and worker usage
-description: Browser-native key generation, manifest setup, and transport-envelope usage from the supported root package.
+description: Browser-native key generation, manifest setup, and transport-envelope usage from the workflow-facing root package.
 sidebar:
   order: 3
 ---
 
-The workflow is browser-native. Use the root package directly inside the browser or inside Web Workers.
+The workflow is browser-native. Use the root package directly inside the browser or inside Web Workers for the common manifest, key, and envelope flow. Advanced proof or threshold primitives live in the public submodules.
 
 ## Minimal browser flow
 

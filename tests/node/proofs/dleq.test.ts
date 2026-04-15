@@ -2,20 +2,24 @@ import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../helpers/deterministic';
 
-import { InvalidProofError, InvalidScalarError, RISTRETTO_GROUP } from '#core';
 import {
-    createDLEQProof,
-    encryptAdditiveWithRandomness,
-    verifyDLEQProof,
-    type DLEQStatement,
-    type ProofContext,
-} from '#root';
+    InvalidProofError,
+    InvalidScalarError,
+    RISTRETTO_GROUP,
+} from '#src/core/public';
 import {
     decodePoint,
     encodePoint,
     multiplyBase,
     pointMultiply,
 } from '#src/core/ristretto';
+import { encryptAdditiveWithRandomness } from '#src/elgamal/public';
+import {
+    createDLEQProof,
+    type DLEQStatement,
+    type ProofContext,
+    verifyDLEQProof,
+} from '#src/proofs/public';
 describe('DLEQ proofs', () => {
     const group = RISTRETTO_GROUP;
     const secret = 12345n;

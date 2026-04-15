@@ -4,18 +4,12 @@ import { createDeterministicSource } from '../tests/helpers/deterministic';
 
 import { RISTRETTO_GROUP } from '#core';
 import {
-    createDLEQProof,
-    createDisjunctiveProof,
-    createSchnorrProof,
     canonicalizeElectionManifest,
     createElectionManifest,
     deriveSessionId,
-    encryptAdditiveWithRandomness,
     hashElectionManifest,
     SHIPPED_PROTOCOL_VERSION,
-    type DLEQStatement,
     type ElectionManifest,
-    type ProofContext,
 } from '#root';
 import {
     decodePoint,
@@ -23,6 +17,14 @@ import {
     multiplyBase,
     pointMultiply,
 } from '#src/core/ristretto';
+import { encryptAdditiveWithRandomness } from '#src/elgamal/public';
+import {
+    createDLEQProof,
+    createDisjunctiveProof,
+    createSchnorrProof,
+    type DLEQStatement,
+    type ProofContext,
+} from '#src/proofs/public';
 import {
     verifyAndAggregateBallots,
     type BallotTranscriptEntry,
