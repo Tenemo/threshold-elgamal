@@ -2,7 +2,7 @@ import { UnsupportedSuiteError } from './errors';
 import { derivePedersenGenerator, RISTRETTO_BYTE_LENGTH } from './ristretto';
 import type { CryptoGroup } from './types';
 
-/** Immutable definition of the shipped Ristretto255 tally group. */
+/** Immutable definition of the Ristretto255 tally group. */
 export const RISTRETTO_GROUP: CryptoGroup = Object.freeze({
     name: 'ristretto255',
     byteLength: RISTRETTO_BYTE_LENGTH,
@@ -33,7 +33,7 @@ export const assertCanonicalRistrettoGroup = (
 
     if (!sameCanonicalRistrettoGroup(group)) {
         throw new UnsupportedSuiteError(
-            `${normalizedLabel} must match the shipped canonical ristretto255 group definition`,
+            `${normalizedLabel} must match the canonical ristretto255 group definition`,
         );
     }
 };

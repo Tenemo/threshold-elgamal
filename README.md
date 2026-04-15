@@ -1,6 +1,5 @@
 # threshold-elgamal
 
-[![npm version](https://img.shields.io/npm/v/threshold-elgamal?color=5FA04E)](https://www.npmjs.com/package/threshold-elgamal)
 [![npm downloads](https://img.shields.io/npm/dm/threshold-elgamal?color=5FA04E)](https://www.npmjs.com/package/threshold-elgamal)
 
 ---
@@ -11,10 +10,9 @@
 
 ---
 
-[![Node version](https://img.shields.io/badge/node-%E2%89%A524.14.1-5FA04E?logo=node.js&logoColor=white)](https://nodejs.org/)
 [![License](https://img.shields.io/github/license/Tenemo/threshold-elgamal)](LICENSE)
 
-`threshold-elgamal` is a browser-native TypeScript library for verifiable score-voting research prototypes. The shipped beta line is focused on one workflow only:
+`threshold-elgamal` is a browser-native TypeScript library for verifiable score-voting research prototypes. It focuses on one workflow:
 
 - additive ElGamal on `ristretto255`
 - honest-majority GJKR DKG
@@ -37,11 +35,11 @@ npm install threshold-elgamal
 
 - Use ESM imports such as `import { createElectionManifest } from 'threshold-elgamal'`.
 - Browsers need native `bigint` together with Web Crypto.
-- Node requires version `24.14.1` or newer with `globalThis.crypto`.
+- Node must satisfy the package `engines.node` requirement and expose `globalThis.crypto`.
 - Authentication signatures require Web Crypto `Ed25519`.
 - Transport share exchange requires Web Crypto `X25519`.
 
-See [Runtime and compatibility](https://tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility/) for the tested browser and Node matrix.
+See [Runtime and compatibility](https://tenemo.github.io/threshold-elgamal/guides/runtime-and-compatibility/) for environment requirements.
 
 ## Documentation
 
@@ -64,17 +62,13 @@ See [Runtime and compatibility](https://tenemo.github.io/threshold-elgamal/guide
 
 ## Browser support
 
-The shipped cryptographic browser path is fixed:
+The cryptographic browser path is fixed:
 
 - `Ed25519` for protocol payload signatures
 - `X25519` for encrypted share transport
 
-Practical browser baseline for the public workflow:
-
-- Chrome and Edge `137+`
-- Firefox `130+`
-- Safari `18.4+`
-- iOS and iPadOS browsers on the Safari `18.4+` WebKit generation
+- Use modern browsers that expose Web Crypto `Ed25519`, Web Crypto `X25519`, and native `bigint`
+- Validate your target environments with `pnpm exec tsx ./tools/ci/verify-browser-compat.ts` before deployment
 
 Older browsers, stale embedded webviews, and runtimes without Web Crypto `X25519` support are not supported.
 
@@ -177,7 +171,7 @@ if (!result.ok) {
 }
 ```
 
-The root package also exposes builders for the signed protocol payloads used across the shipped ceremony, including:
+The root package also exposes builders for the signed protocol payloads used across the documented ceremony, including:
 
 - manifest publication
 - registration
@@ -223,9 +217,9 @@ What it does not claim:
 - constant-time JavaScript `bigint` execution
 - production readiness
 
-`ballot-close` is an auditable administrative cutoff, not a fairness proof about board arrival order. The library proves what was counted, not whether the organizer waited long enough before closing.
+`ballot-close` is an auditable administrative cutoff, not a fairness proof about board arrival order. The library proves which ballots count, not whether the organizer waited long enough before closing.
 
-For a production-threat-model verdict that maps these boundaries to the shipped verifier and tests, read the [production voting safety review](https://tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review/).
+For a production-threat-model verdict that maps these boundaries to the verifier and tests, read the [production voting safety review](https://tenemo.github.io/threshold-elgamal/guides/production-voting-safety-review/).
 
 ## Development
 

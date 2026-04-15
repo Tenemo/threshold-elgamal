@@ -20,7 +20,7 @@ type ResolvedAdditiveContext = {
     readonly bound: bigint;
 };
 
-/** Validates an additive-mode public key against the shipped suite. */
+/** Validates an additive-mode public key against the built-in suite. */
 const assertValidAdditivePublicKey = (publicKey: string): void => {
     assertValidPublicKey(publicKey);
 };

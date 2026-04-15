@@ -1,15 +1,15 @@
 ---
 title: Library invariants
-description: Stable rules for the shipped cryptographic surface and protocol flow.
+description: Stable rules for the cryptographic surface and protocol flow.
 sidebar:
   order: 1
 ---
 
-This page records the stable invariants of the current `1.0.0-beta` surface.
+This page records the library invariants.
 
 ## Cryptographic surface
 
-- The shipped tally path is additive-only.
+- The tally path is additive-only.
 - The built-in tally group is `ristretto255`.
 - The score domain is fixed to `1..10`.
 - The grouped ballot rule is fixed to complete ballots only.
@@ -29,7 +29,7 @@ This page records the stable invariants of the current `1.0.0-beta` surface.
 - Every included participant in `ballot-close` must have a complete ballot.
 - The close-selected participant set must contain at least `k` participants.
 - Published tallies are verified against aggregates recomputed from the close-selected ballot set.
-- If an accepted aggregate lands on identity `c1`, the shipped reveal path deterministically adds a public encryption of zero before DLEQ proof generation and verification so the plaintext stays unchanged.
+- If an accepted aggregate lands on identity `c1`, the reveal path deterministically adds a public encryption of zero before DLEQ proof generation and verification so the plaintext stays unchanged.
 
 ## Verification rules
 

@@ -39,7 +39,7 @@ export type AggregateDecryptionPreparationInput = {
     readonly aggregate: VerifiedAggregateCiphertext;
     /** Joint public key used to encrypt the original ballots. */
     readonly publicKey: EncodedPoint;
-    /** Bound protocol version carried by the ceremony transcript. */
+    /** Protocol namespace carried by the ceremony transcript. */
     readonly protocolVersion: string;
     /** Manifest hash that anchors the ceremony context. */
     readonly manifestHash: string;

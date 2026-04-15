@@ -1,7 +1,6 @@
 # Generated reference
 
-This section is the export-driven symbol reference for the current package
-surface.
+This section is the export-driven symbol reference for the public API.
 
 Use these generated pages as a type-and-contract reference after reading the
 manual guides and curated API pages. They are not meant to replace the guides

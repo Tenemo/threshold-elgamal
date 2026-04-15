@@ -89,7 +89,7 @@ export const decodeDisjunctiveProof = (
 });
 
 /**
- * Returns the fixed shipped score-voting domain `1..10`.
+ * Returns the fixed score-voting domain `1..10`.
  */
 export const scoreVotingDomain = (): readonly bigint[] =>
     Object.freeze(

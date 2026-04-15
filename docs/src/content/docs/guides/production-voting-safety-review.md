@@ -1,28 +1,26 @@
 ---
 title: Production voting safety review
-description: A production-threat-model verdict for the shipped verifier, tests, and documented security boundary.
+description: A production-threat-model verdict for the verifier, tests, and documented security boundary.
 sidebar:
   order: 7
 ---
 
-This review was verified against the repository state on `2026-04-11`.
-
 Short verdict:
 
-- The current integration flow verifies transcript-level correctness strongly.
-- It does not verify everything a production voting system needs from each voter’s perspective.
+- The integration flow verifies transcript-level correctness strongly.
+- It does not verify everything a production voting system needs from each voter's perspective.
 - Following this implementation `1:1` is not enough to claim production-grade cryptographic safety.
 
 ## Coverage matrix
 
 | Property | Status | Repo evidence | Why |
 | --- | --- | --- | --- |
-| DKG correctness | `covered` | `src/protocol/voting-verification.ts`, `src/dkg/verification.ts`, `tests/node/integration/public-dkg-checkpoints.test.ts`, `tests/node/integration/public-voting-flow-adversarial.test.ts` | The verifier replays registrations, manifest publication and acceptance, Pedersen commitments, encrypted shares, complaints, qualified participant set reduction, Feldman proofs, key derivation, and checkpoint snapshots before trusting the joint public key. This is aligned with the shipped GJKR transcript-verification goal. |
+| DKG correctness | `covered` | `src/protocol/voting-verification.ts`, `src/dkg/verification.ts`, `tests/node/integration/public-dkg-checkpoints.test.ts`, `tests/node/integration/public-voting-flow-adversarial.test.ts` | The verifier replays registrations, manifest publication and acceptance, Pedersen commitments, encrypted shares, complaints, qualified participant set reduction, Feldman proofs, key derivation, and checkpoint snapshots before trusting the joint public key. This is aligned with the GJKR transcript-verification goal. |
 | Ballot well-formedness | `covered` | `src/protocol/voting-ballot-aggregation.ts`, `src/protocol/voting-ballots.ts`, `tests/node/integration/public-voting-flow.test.ts`, `tests/node/integration/public-voting-flow-adversarial.test.ts` | Each counted slot must be unique, complete across all options, inside the fixed `1..10` score domain, and bound by a disjunctive proof to manifest, session, voter, and option context. |
 | Tally correctness | `covered` | `src/protocol/voting-verification.ts`, `src/protocol/voting-decryption.ts`, `tests/node/integration/public-voting-flow.test.ts`, `tests/node/integration/public-voting-flow-adversarial.test.ts` | The verifier recomputes accepted ballot aggregates, verifies threshold decryption shares, recombines them locally, and rejects mismatched tally publications or mismatched decryption-share sets. |
 | Recorded as published | `partially covered` | `src/protocol/board-audit.ts`, `src/protocol/voting-verification.ts`, `tests/node/integration/public-voting-flow-adversarial.test.ts` | Independent verifiers can detect equivocation and can replay the public board deterministically, but this still assumes the voter can retrieve the same public board and that the board is durably published. |
 | Counted as recorded | `covered` | `src/protocol/voting-verification.ts`, `tests/node/integration/public-voting-flow.test.ts` | The verifier proves which complete ballots were counted after `ballot-close` and recomputes the exact tallies from that counted subset. |
-| Cast as intended | `not covered` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly does not claim cast-as-intended against a compromised client, and the shipped tests do not provide a voter challenge or independent ballot-construction check. |
+| Cast as intended | `not covered` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly does not claim cast-as-intended against a compromised client, and the test suite does not provide a voter challenge or independent ballot-construction check. |
 | Ballot privacy under an active server | `partially covered` | `src/protocol/voting-ballot-aggregation.ts`, `src/protocol/voting-verification.ts`, `docs/src/content/docs/guides/security-and-non-goals.md` | The public verifier checks zero-knowledge proofs and tally recomputation, but privacy still depends on honest client delivery, bulletin-board behavior, and operational controls outside the library. |
 | Coercion resistance | `explicitly out of scope` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly says it does not provide coercion resistance. |
 | Receipt-freeness | `explicitly out of scope` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly says it does not provide receipt-freeness. |
@@ -30,12 +28,12 @@ Short verdict:
 | Bulletin-board integrity and availability | `not covered` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The verifier assumes access to the public transcript. It does not provide storage integrity, censorship resistance, ordering fairness, availability, or independent publication guarantees. |
 | RNG and nonce safety | `partially covered` | `src/proofs/disjunctive.ts`, `src/proofs/dleq.ts`, `src/proofs/nonces.ts`, `tests/node/proofs/disjunctive.test.ts`, `tests/node/proofs/dleq.test.ts`, `eslint.config.js` | The repo uses hedged Fiat-Shamir nonce construction and forbids `Math.random` through linting, but there is still no external audit of implementation quality or runtime entropy quality. |
 | Side-channel resistance | `explicitly out of scope` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly says JavaScript `bigint` execution is not made constant-time. |
-| Adaptive-adversary resilience | `not covered` | `docs/src/content/docs/guides/security-and-non-goals.md`, `src/dkg/verification.ts` | The shipped model is static-adversary only. The verifier does not claim the adaptive-security upgrades discussed in later threshold-crypto literature. |
+| Adaptive-adversary resilience | `not covered` | `docs/src/content/docs/guides/security-and-non-goals.md`, `src/dkg/verification.ts` | The documented model is static-adversary only. The verifier does not claim the adaptive-security upgrades discussed in threshold-crypto literature. |
 | CCA resistance | `explicitly out of scope` | `docs/src/content/docs/guides/security-and-non-goals.md`, `README.md` | The repo explicitly says it does not make ElGamal IND-CCA secure. |
 
 ## Hard blockers
 
-- No voter-side cast-as-intended mechanism is shipped or tested. A verifier can prove that published ciphertexts and tallies are internally consistent, but it cannot prove that the browser encrypted the voter’s intended selections.
+- The repository does not provide or test a voter-side cast-as-intended mechanism. A verifier can prove that published ciphertexts and tallies are internally consistent, but it cannot prove that the browser encrypted the voter's intended selections.
 - The documented threat model is `honest-origin, honest-client, static adversary`, which is materially weaker than a production Internet voting threat model.
 - The library does not solve identity binding, bulletin-board integrity, availability, or delivery hardening. Those are application and deployment requirements, not verifier details.
 - Remote voting coercion and receipt-freeness are explicitly outside scope.
@@ -43,9 +41,9 @@ Short verdict:
 
 ## Narrower claims that are defensible
 
-- Inside the shipped threat model, the verifier provides strong public evidence that the accepted transcript, counted ballot set, threshold decryption shares, and final tallies are mutually consistent.
+- Inside the documented threat model, the verifier provides strong public evidence that the accepted transcript, counted ballot set, threshold decryption shares, and final tallies are mutually consistent.
 - Any voter or observer who obtains the same public transcript can rerun `verifyElectionCeremony(...)` and check the same qualified participant set, counted voter set, transcript hashes, decryption participants, and tallies.
-- The current suite now exercises happy paths, checkpointed DKG, complaint-based dealer exclusion, replay-bound ballot proofs, replay-bound decryption-share proofs, tally-subset mismatches, and deterministic multi-verifier replays.
+- The suite exercises happy paths, checkpointed DKG, complaint-based dealer exclusion, replay-bound ballot proofs, replay-bound decryption-share proofs, tally-subset mismatches, and deterministic multi-verifier replays.
 
 ## Why the production answer is still no
 

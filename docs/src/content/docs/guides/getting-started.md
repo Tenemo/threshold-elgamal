@@ -1,11 +1,11 @@
 ---
 title: Get started
-description: The shortest safe path into the shipped root package, public-board verifier, and browser-native workflow.
+description: The shortest safe path into the root package, public-board verifier, and browser-native workflow.
 sidebar:
   order: 1
 ---
 
-Use the root package. The shipped public surface is centered on one protocol story: honest-majority GJKR, fixed `1..10` score ballots, `ballot-close`, and full ceremony verification.
+Use the root package. The public surface is centered on one protocol story: honest-majority GJKR, fixed `1..10` score ballots, `ballot-close`, and full ceremony verification.
 
 ## Start with these rules
 

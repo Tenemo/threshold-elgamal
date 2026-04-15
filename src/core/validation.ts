@@ -106,10 +106,10 @@ export const assertThreshold = (
 };
 
 /**
- * Derives the shipped GJKR honest-majority threshold `ceil(n / 2)`.
+ * Derives the GJKR honest-majority threshold `ceil(n / 2)`.
  *
  * For odd `n` this matches the usual strict-majority value. For even `n` the
- * shipped protocol uses the maximal honest-majority instantiation proved for
+ * library uses the maximal honest-majority instantiation proved for
  * GJKR, which yields `k = n / 2`.
  */
 export const majorityThreshold = (participantCount: number): number => {
@@ -123,7 +123,7 @@ export const majorityThreshold = (participantCount: number): number => {
 };
 
 /**
- * Validates that the supplied threshold matches the shipped GJKR
+ * Validates that the supplied threshold matches the library's GJKR
  * honest-majority policy.
  */
 export const assertMajorityThreshold = (

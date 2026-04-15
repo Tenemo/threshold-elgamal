@@ -1,18 +1,18 @@
 ---
 title: API contract
-description: The hard boundary between shipped library responsibilities and surrounding application responsibilities.
+description: The hard boundary between library responsibilities and surrounding application responsibilities.
 sidebar:
   order: 2
 ---
 
-The current package draws a hard boundary between the shipped cryptographic library and the surrounding application.
+The package draws a hard boundary between the cryptographic library and the surrounding application.
 
 ## Library responsibilities
 
 - The minimal public manifest with `rosterHash` and `optionList`
 - Honest-majority threshold derivation from the accepted registration roster
 - Typed payload builders for manifest publication, registration, acceptance, DKG messages, ballots, ballot close, decryption shares, and tally publication
-- Transport and authentication helpers used by the shipped ceremony flow
+- Transport and authentication helpers used by the ceremony flow
 - Ristretto255-based ballot encryption, proof generation, decryption-aggregate preparation, threshold share handling, and tally recovery helpers
 - GJKR transcript verification over the signed public log
 - Organizer-signed `ballot-close` verification and counted-ballot selection

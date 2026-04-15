@@ -74,9 +74,9 @@ export const canonicalUnsignedPayloadBytes = (
 /**
  * Serializes the payload bytes that are covered by the outer Ed25519 signature.
  *
- * The signature preimage is domain-separated and version-bound so that protocol
- * payload signatures are not re-used across transcript families or protocol
- * revisions.
+ * The signature preimage is domain-separated and protocol-bound so that
+ * protocol payload signatures are not re-used across transcript families or
+ * protocol namespaces.
  *
  * @param payload Unsigned protocol payload.
  * @param bigintByteLength Fixed byte width used for any bigint fields.

@@ -5,7 +5,7 @@ sidebar:
   order: 3
 ---
 
-The shipped workflow is browser-native. Use the root package directly inside the browser or inside Web Workers.
+The workflow is browser-native. Use the root package directly inside the browser or inside Web Workers.
 
 ## Minimal browser flow
 
@@ -112,7 +112,7 @@ const encrypted = await encryptEnvelope(
         recipientIndex: 2,
         envelopeId: "env-1-2",
         payloadType: "encrypted-dual-share",
-        protocolVersion: "v1",
+        protocolVersion: manifestPublication.payload.protocolVersion,
         suite: "X25519",
     },
 );

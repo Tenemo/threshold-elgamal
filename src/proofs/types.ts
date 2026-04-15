@@ -1,8 +1,8 @@
 import type { GroupName } from '../core/types';
 
-/** Common Fiat-Shamir context fields used by the shipped proof systems. */
+/** Common Fiat-Shamir context fields used by the proof systems. */
 export type ProofContext = {
-    /** Protocol version string bound into the transcript. */
+    /** Protocol namespace string bound into the transcript. */
     readonly protocolVersion: string;
     /** Group suite name bound into the transcript. */
     readonly suiteId: GroupName;

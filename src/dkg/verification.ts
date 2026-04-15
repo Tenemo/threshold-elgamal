@@ -370,7 +370,7 @@ const collectCheckpointVariants = (
 };
 
 /**
- * Rejects phase-checkpoint payloads outside the shipped GJKR checkpoint plan.
+ * Rejects phase-checkpoint payloads outside the GJKR checkpoint plan.
  */
 const assertSupportedCheckpointPayloads = (
     transcript: readonly SignedPayload[],

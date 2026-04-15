@@ -1,11 +1,11 @@
 ---
 title: Honest-majority voting flow
-description: The supported root-only ceremony flow on the current beta line.
+description: The supported root-only ceremony flow.
 sidebar:
   order: 3
 ---
 
-This guide describes the supported ceremony shape on the current beta line:
+This guide describes the supported ceremony shape:
 
 1. Freeze the roster in the application and hash it.
 2. Publish the minimal manifest.
@@ -24,7 +24,7 @@ The public package is root-only. Import everything from `threshold-elgamal`.
 - the published `manifest` and `manifestHash`
 - the derived `sessionId`
 - the signed public payloads exactly as posted on the board
-- the organizer’s final `countedParticipantIndices` from `ballot-close`
+- the organizer's final `countedParticipantIndices` from `ballot-close`
 
 ## Minimal manifest
 
@@ -107,7 +107,6 @@ For the reveal path, phase `7` is not a single builder call. Each trustee first 
 ```typescript
 import {
     RISTRETTO_GROUP,
-    SHIPPED_PROTOCOL_VERSION,
     createDLEQProof,
     createDecryptionShare,
     createDecryptionSharePayload,
@@ -115,10 +114,11 @@ import {
     prepareAggregateForDecryption,
 } from "threshold-elgamal";
 
+const protocolVersion = "<protocol-namespace>";
 const preparedAggregate = prepareAggregateForDecryption({
     aggregate: optionAggregation.aggregate,
     publicKey: jointPublicKey,
-    protocolVersion: SHIPPED_PROTOCOL_VERSION,
+    protocolVersion,
     manifestHash,
     sessionId,
     optionIndex: optionAggregation.optionIndex,
@@ -142,7 +142,7 @@ const proof = await createDLEQProof(
     },
     RISTRETTO_GROUP,
     {
-        protocolVersion: SHIPPED_PROTOCOL_VERSION,
+        protocolVersion,
         suiteId: RISTRETTO_GROUP.name,
         manifestHash,
         sessionId,
@@ -166,6 +166,8 @@ const decryptionSharePayload = await createDecryptionSharePayload(
     },
 );
 ```
+
+Reuse the same non-empty `protocolVersion` string everywhere in one ceremony.
 
 `prepareAggregateForDecryption(...)` returns the original aggregate when `c1` is already non-identity. If an accepted aggregate lands on identity `c1`, it deterministically adds a public encryption of zero so the tally stays the same while the DLEQ statement remains meaningful.
 

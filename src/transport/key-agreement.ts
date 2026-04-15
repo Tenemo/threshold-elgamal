@@ -60,7 +60,7 @@ export const assertNonZeroSharedSecret = (sharedSecret: Uint8Array): void => {
  * Generates an X25519 transport key pair.
  *
  * @param options Generation options.
- * @returns Transport key pair tagged with the shipped X25519 suite.
+ * @returns Transport key pair tagged with the X25519 suite.
  */
 export const generateTransportKeyPair = async (
     options: GenerateTransportKeyPairOptions = {},

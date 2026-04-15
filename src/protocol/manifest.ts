@@ -5,7 +5,7 @@ import { encodeForChallenge } from '../serialize/encoding';
 import { canonicalizeJson } from './canonical-json';
 import type { ElectionManifest } from './types';
 
-/** Fixed transcript version string for the shipped beta protocol. */
+/** @internal Default protocol namespace used by the built-in helpers. */
 export const SHIPPED_PROTOCOL_VERSION = 'v1';
 
 const assertNonEmptyString = (value: string, label: string): void => {
@@ -24,7 +24,7 @@ export const assertValidProtocolVersion = (
     return protocolVersion;
 };
 
-/** Validates that a protocol version matches the shipped verifier line. */
+/** Validates that a protocol version matches the verifier namespace. */
 export const assertSupportedProtocolVersion = (
     protocolVersion: string,
     label = 'Protocol version',
@@ -41,8 +41,8 @@ export const assertSupportedProtocolVersion = (
 };
 
 /**
- * Validates the supported election-manifest invariants for the shipped
- * score-voting workflow.
+ * Validates the supported election-manifest invariants for the score-voting
+ * workflow.
  *
  * @param manifest Election manifest to validate.
  */
@@ -95,7 +95,7 @@ export const validateElectionManifest = (
     return manifest;
 };
 
-/** Creates the minimal shipped election manifest. */
+/** Creates the minimal election manifest. */
 export const createElectionManifest = (
     manifest: ElectionManifest,
 ): ElectionManifest => validateElectionManifest(manifest);
@@ -130,7 +130,7 @@ export const hashElectionManifest = async (
  * @param rosterHash Canonical roster hash.
  * @param randomNonce Public random nonce.
  * @param timestamp Timestamp string included in the derivation.
- * @param protocolVersion Protocol version namespace for the derived session.
+ * @param protocolVersion Protocol namespace for the derived session.
  * @returns Lowercase hexadecimal SHA-256 digest.
  */
 export const deriveSessionId = async (
@@ -138,13 +138,13 @@ export const deriveSessionId = async (
     rosterHash: string,
     randomNonce: string,
     timestamp: string,
-    protocolVersion = SHIPPED_PROTOCOL_VERSION,
+    protocolVersion?: string,
 ): Promise<string> =>
     bytesToHex(
         await sha256(
             encodeForChallenge(
                 assertValidProtocolVersion(
-                    protocolVersion,
+                    protocolVersion ?? SHIPPED_PROTOCOL_VERSION,
                     'Session protocol version',
                 ),
                 manifestHash,

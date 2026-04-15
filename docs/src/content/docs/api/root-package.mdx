@@ -1,11 +1,11 @@
 ---
 title: Root package
-description: The supported public import surface for the shipped voting flow.
+description: The supported public import surface for the voting flow.
 sidebar:
   order: 1
 ---
 
-Use the root package for all supported public imports. The package does not ship supported public subpath entrypoints.
+Use the root package for all supported public imports. The package does not expose public subpath entrypoints.
 
 ## What lives here
 
@@ -44,7 +44,7 @@ import {
 
 ## Use the root package when
 
-- you want the shipped `ristretto255` voting workflow
+- you want the `ristretto255` voting workflow
 - you want the minimal manifest and derived majority-threshold rules
 - you want public builders and verifiers that match the published package exports
 
