@@ -1,8 +1,6 @@
-import { typedocEntryPoints } from './typedoc/public-api-docs';
-
 /** @type {import('typedoc').TypeDocOptions} */
 const config = {
-    entryPoints: typedocEntryPoints,
+    entryPoints: ['src/index.ts'],
     entryPointStrategy: 'resolve',
     alwaysCreateEntryPointModule: true,
     plugin: ['typedoc-plugin-markdown'],

@@ -7,7 +7,7 @@ import {
 import {
     combineDecryptionShares,
     prepareAggregateForDecryption,
-} from '../threshold/index';
+} from '../threshold/decrypt';
 
 import { auditSignedPayloads, type BoardAudit } from './board-audit';
 import type {
@@ -23,13 +23,13 @@ import type {
     TallyPublicationPayload,
 } from './types';
 import type { VerifiedOptionBallotAggregation } from './voting-ballot-aggregation';
-import { verifyBallotClosePayload } from './voting-ballot-close';
 import { verifyBallotSubmissionPayloadsByOption } from './voting-ballots';
 import { verifyDecryptionSharePayloadsByOption } from './voting-decryption';
 import {
     assertPhase,
     assertUniqueSortedIndices,
     assertValidOptionIndex,
+    BALLOT_CLOSE_PHASE,
     buildVotingManifestContext,
     sameNumberSet,
     TALLY_PUBLICATION_PHASE,
@@ -212,6 +212,126 @@ const findOptionDecryptionShares = (
     }
 
     return entry.decryptionShares;
+};
+
+/** Verified organizer-selected ballot cutoff and the counted ballot subset. */
+type VerifiedBallotClose = {
+    readonly countedBallotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly countedParticipantIndices: readonly number[];
+    readonly excludedParticipantIndices: readonly number[];
+    readonly payload: SignedPayload<BallotClosePayload>;
+};
+
+const completeBallotParticipants = (
+    ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[],
+    optionCount: number,
+): readonly number[] => {
+    const participantOptions = new Map<number, Set<number>>();
+
+    for (const signedPayload of ballotPayloads) {
+        const payload = signedPayload.payload;
+        assertValidOptionIndex(
+            payload.optionIndex,
+            optionCount,
+            'Ballot submission',
+        );
+
+        const options =
+            participantOptions.get(payload.participantIndex) ??
+            new Set<number>();
+        options.add(payload.optionIndex);
+        participantOptions.set(payload.participantIndex, options);
+    }
+
+    return [...participantOptions.entries()]
+        .filter(([, options]) => options.size === optionCount)
+        .map(([participantIndex]) => participantIndex)
+        .sort((left, right) => left - right);
+};
+
+/**
+ * Verifies the organizer-signed ballot cutoff and extracts the counted ballot
+ * subset used for all later decryption and tally verification.
+ */
+const verifyBallotClosePayload = (input: {
+    readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
+    readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
+    readonly manifestHash: string;
+    readonly optionCount: number;
+    readonly organizerIndex: number;
+    readonly participantCount: number;
+    readonly sessionId: string;
+    readonly threshold: number;
+}): VerifiedBallotClose => {
+    const closePayload = input.ballotClosePayload;
+    if (closePayload.payload.messageType !== 'ballot-close') {
+        throw new InvalidPayloadError(
+            'Ballot close verification only accepts ballot-close payloads',
+        );
+    }
+    const payload = closePayload.payload;
+
+    assertPhase(payload, BALLOT_CLOSE_PHASE, 'Ballot close');
+    if (payload.sessionId !== input.sessionId) {
+        throw new InvalidPayloadError(
+            'Ballot close session does not match the verification input',
+        );
+    }
+    if (payload.manifestHash !== input.manifestHash) {
+        throw new InvalidPayloadError(
+            'Ballot close manifest hash does not match the verification input',
+        );
+    }
+    if (payload.participantIndex !== input.organizerIndex) {
+        throw new InvalidPayloadError(
+            `Ballot close must be signed by organizer ${input.organizerIndex}`,
+        );
+    }
+
+    assertUniqueSortedIndices(
+        payload.countedParticipantIndices,
+        'Ballot close participant',
+    );
+    for (const participantIndex of payload.countedParticipantIndices) {
+        if (participantIndex > input.participantCount) {
+            throw new InvalidPayloadError(
+                `Ballot close participant ${participantIndex} exceeds the registration roster size ${input.participantCount}`,
+            );
+        }
+    }
+    if (payload.countedParticipantIndices.length < input.threshold) {
+        throw new InvalidPayloadError(
+            `Ballot close must include at least ${input.threshold} participants`,
+        );
+    }
+
+    const completeParticipants = completeBallotParticipants(
+        input.ballotPayloads,
+        input.optionCount,
+    );
+    const completeParticipantSet = new Set(completeParticipants);
+    for (const participantIndex of payload.countedParticipantIndices) {
+        if (!completeParticipantSet.has(participantIndex)) {
+            throw new InvalidPayloadError(
+                `Ballot close requires a complete ballot from participant ${participantIndex}`,
+            );
+        }
+    }
+
+    const countedParticipantSet = new Set(payload.countedParticipantIndices);
+    const countedBallotPayloads = input.ballotPayloads.filter((signedPayload) =>
+        countedParticipantSet.has(signedPayload.payload.participantIndex),
+    );
+    const excludedParticipantIndices = completeParticipants.filter(
+        (participantIndex) => !countedParticipantSet.has(participantIndex),
+    );
+
+    return {
+        countedBallotPayloads,
+        countedParticipantIndices: [...payload.countedParticipantIndices],
+        excludedParticipantIndices,
+        payload: closePayload,
+    };
 };
 
 /**

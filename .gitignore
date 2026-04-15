@@ -3,7 +3,6 @@ node_modules/
 *.tgz
 npm-debug.log
 pnpm-debug.log*
-.tmp/
 sh.exe.stackdump
 debug.log
 
@@ -19,9 +18,14 @@ docs/src/content/docs/api/reference/
 # Miscellaneous
 .DS_Store
 __pycache__/
+
+# Temporary files
 temp/
 temp.*
 temp-preview-*.txt
+tmp/
+tmp.*
+tmp-*
 
 # env
 .env

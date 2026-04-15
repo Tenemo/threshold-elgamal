@@ -1,3 +1,4 @@
+import { bytesToHex } from '../core/bytes';
 import {
     InvalidPayloadError,
     RISTRETTO_GROUP,
@@ -11,7 +12,6 @@ import { addEncryptedValues } from '../elgamal/additive';
 import type { ElGamalCiphertext } from '../elgamal/types';
 import { verifyDisjunctiveProof } from '../proofs/disjunctive';
 import type { DisjunctiveProof, ProofContext } from '../proofs/types';
-import { bytesToHex } from '../serialize/encoding';
 import { createVerifiedAggregateCiphertext } from '../threshold/types';
 import type { VerifiedAggregateCiphertext } from '../threshold/types';
 

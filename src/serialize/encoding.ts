@@ -1,8 +1,4 @@
-import {
-    bytesToBigInt,
-    bytesToHex as encodeBytesToHex,
-    hexToBytes as decodeHexToBytes,
-} from '../core/bytes';
+import { bytesToBigInt, hexToBytes } from '../core/bytes';
 import { utf8ToBytes } from '../core/crypto';
 import { InvalidPayloadError, InvalidScalarError } from '../core/errors';
 
@@ -18,25 +14,6 @@ const encodeLength = (length: number): Uint8Array => {
     view.setUint32(0, length, false);
     return bytes;
 };
-
-/**
- * Encodes raw bytes as lowercase hexadecimal.
- *
- * @param bytes Raw bytes to encode.
- * @returns A lowercase hexadecimal string.
- */
-export const bytesToHex = (bytes: Uint8Array): string =>
-    encodeBytesToHex(bytes);
-
-/**
- * Decodes a non-empty even-length hexadecimal string into bytes.
- *
- * @param hex Lowercase or uppercase hexadecimal input.
- * @returns Decoded bytes.
- *
- * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
- */
-export const hexToBytes = (hex: string): Uint8Array => decodeHexToBytes(hex);
 
 /**
  * Encodes a non-negative bigint as fixed-width lowercase hexadecimal.
@@ -99,7 +76,7 @@ export const bigintToFixedBytes = (
  * @throws {@link InvalidPayloadError} When the input is not valid hexadecimal.
  */
 export const fixedHexToBigInt = (hex: string): bigint => {
-    const bytes = decodeHexToBytes(
+    const bytes = hexToBytes(
         hex,
         'Fixed-width hex input must be a non-empty even-length hexadecimal string',
     );

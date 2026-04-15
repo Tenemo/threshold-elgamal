@@ -10,28 +10,31 @@ import {
 
 import config from '../typedoc.config.mjs';
 
-import {
-    apiNavigationJson,
-    docsContentRoot,
-    publicApiDocs,
-} from './public-api-docs';
+const docsContentRoot = 'docs/src/content/docs';
+const apiReferenceRoot = `${docsContentRoot}/api/reference`;
+const apiNavigationJson = `${apiReferenceRoot}/navigation.json`;
+const publicApiDocs: readonly {
+    apiIndexPage: string;
+    moduleName: string;
+}[] = [
+    {
+        apiIndexPage: `${apiReferenceRoot}/threshold-elgamal/index.md`,
+        moduleName: 'threshold-elgamal',
+    },
+] as const;
 
 const repoRoot = process.cwd();
 const docsRoot = path.resolve(repoRoot, docsContentRoot);
 const publicRoot = path.resolve(repoRoot, 'docs/public');
 const markdownRoots = ['README.md', docsContentRoot];
-const documentedPublicApi = publicApiDocs as readonly {
-    apiIndexPage: string;
-    moduleName: string;
-}[];
 const requiredApiEntryPages = [
     `${docsContentRoot}/api/index.mdx`,
     `${docsContentRoot}/api/root-package.mdx`,
-    ...documentedPublicApi.map((entry) => entry.apiIndexPage),
+    ...publicApiDocs.map((entry) => entry.apiIndexPage),
     apiNavigationJson,
 ] as const;
 const requiredApiModules = new Set(
-    documentedPublicApi.map((entry) => entry.moduleName),
+    publicApiDocs.map((entry) => entry.moduleName),
 );
 
 const markdownLinkPattern = /!?\[[^\]]*]\(([^)]+)\)/g;

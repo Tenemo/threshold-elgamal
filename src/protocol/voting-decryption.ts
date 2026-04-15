@@ -5,10 +5,8 @@ import {
 } from '../core/index';
 import { deriveTranscriptVerificationKey } from '../dkg/verification';
 import { verifyDLEQProof, type DLEQStatement } from '../proofs/dleq';
-import {
-    prepareAggregateForDecryption,
-    type DecryptionShare,
-} from '../threshold/index';
+import { prepareAggregateForDecryption } from '../threshold/decrypt';
+import type { DecryptionShare } from '../threshold/types';
 
 import { auditSignedPayloads } from './board-audit';
 import type {
