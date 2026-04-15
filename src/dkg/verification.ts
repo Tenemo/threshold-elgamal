@@ -18,8 +18,8 @@ import {
     pointMultiply,
 } from '../core/ristretto';
 import type { EncodedPoint } from '../core/types';
-import type { ProofContext } from '../proofs/index';
-import { verifySchnorrProof } from '../proofs/index';
+import { verifySchnorrProof } from '../proofs/schnorr';
+import type { ProofContext } from '../proofs/types';
 import { auditSignedPayloads } from '../protocol/board-audit';
 import {
     hashElectionManifest,

@@ -81,10 +81,8 @@
     "imports": {
         "#root": "./src/index.ts",
         "#core": "./src/core/index.ts",
-        "#proofs": "./src/proofs/index.ts",
         "#src/*": "./src/*.ts",
-        "#serialize": "./src/serialize/encoding.ts",
-        "#threshold": "./src/threshold/index.ts"
+        "#serialize": "./src/serialize/encoding.ts"
     },
     "exports": {
         ".": {

@@ -1,5 +1,6 @@
+import { bytesToHex } from '../core/bytes';
 import { utf8ToBytes } from '../core/index';
-import { bytesToHex, encodeForChallenge } from '../serialize/encoding';
+import { encodeForChallenge } from '../serialize/encoding';
 
 import { canonicalizeJson } from './canonical-json';
 import {

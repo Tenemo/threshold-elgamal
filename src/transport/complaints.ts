@@ -1,6 +1,5 @@
-import { toBufferSource } from '../core/bytes';
+import { hexToBytes, toBufferSource } from '../core/bytes';
 import { getWebCrypto } from '../core/index';
-import { hexToBytes } from '../serialize/encoding';
 
 import { deriveEnvelopeKey, encodeEnvelopeContext } from './envelopes';
 import {

@@ -1,22 +1,38 @@
 import { describe, expect, it } from 'vitest';
 
-import { createTallyPublicationPayload, generateAuthKeyPair } from '#root';
+import {
+    decryptEnvelope,
+    encryptEnvelope,
+    exportTransportPublicKey,
+    generateTransportKeyPair,
+} from '#root';
 
 describe('browser public surface', () => {
-    it('rejects duplicate decryption participant indices in tally publication payloads', async () => {
-        const auth = await generateAuthKeyPair({ extractable: true });
+    it('round-trips an encrypted envelope with browser CryptoKeys', async () => {
+        const recipient = await generateTransportKeyPair();
+        const recipientPublicKey = await exportTransportPublicKey(
+            recipient.publicKey,
+        );
+        const plaintext = new TextEncoder().encode('browser-envelope');
+        const { envelope } = await encryptEnvelope(
+            plaintext,
+            recipientPublicKey,
+            {
+                sessionId: 'browser-session',
+                rosterHash: 'browser-roster',
+                phase: 1,
+                dealerIndex: 1,
+                recipientIndex: 2,
+                envelopeId: 'browser-envelope-1',
+                payloadType: 'encrypted-dual-share',
+                protocolVersion: 'v1',
+                suite: 'X25519',
+            },
+        );
+        const decrypted = await decryptEnvelope(envelope, recipient.privateKey);
 
-        await expect(
-            createTallyPublicationPayload(auth.privateKey, {
-                sessionId: 'session',
-                manifestHash: 'aa'.repeat(32),
-                participantIndex: 1,
-                optionIndex: 1,
-                transcriptHash: 'bb'.repeat(32),
-                ballotCount: 3,
-                decryptionParticipantIndices: [1, 2, 2],
-                tally: 7n,
-            }),
-        ).rejects.toThrow('Decryption participant indices must be unique');
+        expect(new TextDecoder().decode(decrypted)).toBe('browser-envelope');
+        expect(envelope.iv).toHaveLength(24);
+        expect(envelope.ciphertext).not.toBe('');
     });
 });

@@ -7,7 +7,7 @@ import {
     createSchnorrProof,
     verifySchnorrProof,
     type ProofContext,
-} from '#proofs';
+} from '#root';
 import { encodePoint, multiplyBase } from '#src/core/ristretto';
 
 describe('Schnorr proofs', () => {

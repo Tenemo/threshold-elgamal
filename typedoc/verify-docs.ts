@@ -14,24 +14,20 @@ import {
     apiNavigationJson,
     docsContentRoot,
     publicApiDocs,
-} from './public-api-docs';
+} from './api-docs-config';
 
 const repoRoot = process.cwd();
 const docsRoot = path.resolve(repoRoot, docsContentRoot);
 const publicRoot = path.resolve(repoRoot, 'docs/public');
 const markdownRoots = ['README.md', docsContentRoot];
-const documentedPublicApi = publicApiDocs as readonly {
-    apiIndexPage: string;
-    moduleName: string;
-}[];
 const requiredApiEntryPages = [
     `${docsContentRoot}/api/index.mdx`,
     `${docsContentRoot}/api/root-package.mdx`,
-    ...documentedPublicApi.map((entry) => entry.apiIndexPage),
+    ...publicApiDocs.map((entry) => entry.apiIndexPage),
     apiNavigationJson,
 ] as const;
 const requiredApiModules = new Set(
-    documentedPublicApi.map((entry) => entry.moduleName),
+    publicApiDocs.map((entry) => entry.moduleName),
 );
 
 const markdownLinkPattern = /!?\[[^\]]*]\(([^)]+)\)/g;

@@ -1,4 +1,4 @@
-import { bytesToHex } from '../serialize/encoding';
+import { bytesToHex } from '../core/bytes';
 
 import { canonicalUnsignedPayloadBytes, payloadSlotKey } from './payloads';
 import type { ProtocolPayload } from './types';

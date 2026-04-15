@@ -1,3 +1,4 @@
+import { hexToBytes } from '../core/bytes';
 import {
     assertInSubgroupOrIdentity,
     assertScalarInZq,
@@ -24,7 +25,7 @@ import {
 } from '../elgamal/additive';
 import { babyStepGiantStep } from '../elgamal/bsgs';
 import type { ElGamalCiphertext } from '../elgamal/types';
-import { encodeForChallenge, hexToBytes } from '../serialize/encoding';
+import { encodeForChallenge } from '../serialize/encoding';
 
 import {
     createVerifiedAggregateCiphertext,

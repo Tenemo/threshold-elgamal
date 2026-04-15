@@ -5,7 +5,7 @@ import {
     apiNavigationJson,
     apiReferenceRoot,
     publicApiDocs,
-} from './public-api-docs';
+} from './api-docs-config';
 
 const repoRoot = process.cwd();
 const referenceRoot = path.resolve(repoRoot, apiReferenceRoot);

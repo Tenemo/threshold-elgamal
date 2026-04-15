@@ -1,6 +1,5 @@
-import { toBufferSource } from '../core/bytes';
+import { bytesToHex, hexToBytes, toBufferSource } from '../core/bytes';
 import { InvalidPayloadError, getWebCrypto } from '../core/index';
-import { bytesToHex, hexToBytes } from '../serialize/encoding';
 
 import type {
     EncodedTransportPrivateKey,
