@@ -1,78 +1,64 @@
 import { TextEncoder } from 'node:util';
 
 import {
+    combineDecryptionShares,
     createBallotClosePayload,
     createBallotSubmissionPayload,
+    createDecryptionShare,
     createDecryptionSharePayload,
+    createDLEQProof,
+    createDisjunctiveProof,
     createElectionManifest,
     createEncryptedDualSharePayload,
     createFeldmanCommitmentPayload,
     createKeyDerivationConfirmationPayload,
     createManifestAcceptancePayload,
     createManifestPublicationPayload,
+    createSchnorrProof,
     createPhaseCheckpointPayload,
     createPedersenCommitmentPayload,
     createRegistrationPayload,
     createTallyPublicationPayload,
+    deriveJointPublicKey,
+    derivePedersenShares,
     deriveSessionId,
+    deriveTranscriptVerificationKey,
     encryptEnvelope,
+    encryptAdditiveWithRandomness,
+    encodePedersenShareEnvelope,
     exportAuthPublicKey,
     exportTransportPublicKey,
+    generateFeldmanCommitments,
     generateAuthKeyPair,
+    generatePedersenCommitments,
+    generateTransportKeyPair,
     hashElectionManifest,
+    hashProtocolTranscript,
     hashRosterEntries,
     majorityThreshold,
+    modQ,
+    prepareAggregateForDecryption,
+    RISTRETTO_GROUP,
+    scoreVotingDomain,
     SHIPPED_PROTOCOL_VERSION,
+    signProtocolPayload,
+    verifyBallotSubmissionPayloadsByOption,
     verifyElectionCeremony,
     type BallotClosePayload,
     type BallotSubmissionPayload,
     type DecryptionSharePayload,
+    type DLEQStatement,
     type ElectionManifest,
+    type EncodedPoint,
     type EncodedAuthPublicKey,
     type EncodedTransportPublicKey,
     type EncryptedDualSharePayload,
     type KeyDerivationConfirmation,
+    type ProofContext,
     type SignedPayload,
     type TallyPublicationPayload,
     type TransportKeyPair,
-    generateTransportKeyPair,
 } from '#root';
-import {
-    type EncodedPoint,
-    InvalidShareError,
-    modQ,
-    RISTRETTO_GROUP,
-} from '#src/core/public';
-import {
-    deriveJointPublicKey,
-    deriveTranscriptVerificationKey,
-    encodePedersenShareEnvelope,
-} from '#src/dkg/public';
-import { encryptAdditiveWithRandomness } from '#src/elgamal/public';
-import {
-    createDLEQProof,
-    createDisjunctiveProof,
-    createSchnorrProof,
-    type DLEQStatement,
-    type ProofContext,
-} from '#src/proofs/public';
-import {
-    hashProtocolTranscript,
-    scoreVotingDomain,
-    signProtocolPayload,
-    verifyBallotSubmissionPayloadsByOption,
-} from '#src/protocol/public';
-import {
-    combineDecryptionShares,
-    createDecryptionShare,
-    prepareAggregateForDecryption,
-} from '#src/threshold/public';
-import type { EncodedTransportPrivateKey } from '#src/transport/types';
-import {
-    derivePedersenShares,
-    generateFeldmanCommitments,
-    generatePedersenCommitments,
-} from '#src/vss/public';
 
 export type VotingFlowParticipant = {
     readonly auth: CryptoKeyPair;
@@ -93,7 +79,9 @@ type DKGComplaintScenario = {
 };
 
 type DealerEncryptedShareEntry = {
-    readonly ephemeralPrivateKey: EncodedTransportPrivateKey;
+    readonly ephemeralPrivateKey: Awaited<
+        ReturnType<typeof encryptEnvelope>
+    >['ephemeralPrivateKey'];
     readonly payload: SignedPayload<EncryptedDualSharePayload>;
     readonly recipientIndex: number;
 };
@@ -942,7 +930,7 @@ export const runVotingFlowScenario = async (
             selectedParticipants.map(async (participantIndex) => {
                 const share = finalShares[participantIndex - 1];
                 if (optionBallots.aggregate.transcriptHash.trim() === '') {
-                    throw new InvalidShareError(
+                    throw new Error(
                         'Verified aggregate ciphertext requires a non-empty transcript hash',
                     );
                 }
@@ -950,7 +938,7 @@ export const runVotingFlowScenario = async (
                     !Number.isInteger(optionBallots.aggregate.ballotCount) ||
                     optionBallots.aggregate.ballotCount < 1
                 ) {
-                    throw new InvalidShareError(
+                    throw new Error(
                         'Verified aggregate ciphertext requires at least one accepted ballot',
                     );
                 }

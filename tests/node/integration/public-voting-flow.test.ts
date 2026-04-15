@@ -6,13 +6,14 @@ import {
     createDecryptionSharePayload,
     createTallyPublicationPayload,
     majorityThreshold,
+    RISTRETTO_GROUP,
+    signProtocolPayload,
     verifyElectionCeremony,
 } from '#root';
-import { RISTRETTO_GROUP } from '#src/core/public';
-import { encodePoint, multiplyBase } from '#src/core/ristretto';
-import { signProtocolPayload } from '#src/protocol/public';
 
 const fixtureTimeoutMs = 240_000;
+const ristrettoIdentityPoint =
+    '0000000000000000000000000000000000000000000000000000000000000000';
 
 const allParticipantIndices = (participantCount: number): readonly number[] =>
     Array.from({ length: participantCount }, (_value, offset) => offset + 1);
@@ -187,8 +188,9 @@ describe('honest-majority voting flow', () => {
                     )
                     .map((option) => option.ballots.aggregate.ciphertext.c1),
             ).toEqual(
-                Array.from({ length: identityOptionIndices.length }, () =>
-                    encodePoint(multiplyBase(0n)),
+                Array.from(
+                    { length: identityOptionIndices.length },
+                    () => ristrettoIdentityPoint,
                 ),
             );
             expect(

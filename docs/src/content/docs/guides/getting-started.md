@@ -13,7 +13,7 @@ Start with the root package. It is the workflow-facing surface for one protocol 
 - The library derives the threshold from the accepted registration roster as `k = ceil(n / 2)`.
 - Ballots are fixed to complete `1..10` score ballots.
 - The organizer closes counting with one signed `ballot-close` payload.
-- Each trustee prepares the accepted aggregate with `prepareAggregateForDecryption(...)` from `threshold-elgamal/threshold`, computes a partial reveal with `createDecryptionShare(...)` from the same module, proves it with `createDLEQProof(...)` from `threshold-elgamal/proofs`, and then signs `createDecryptionSharePayload(...)` from the root package.
+- Each trustee prepares the accepted aggregate with `prepareAggregateForDecryption(...)`, computes a partial reveal with `createDecryptionShare(...)`, proves it with `createDLEQProof(...)`, and then signs `createDecryptionSharePayload(...)`, all from the root package.
 - Tally verification must be done against the close-selected ballot set, not against a server-supplied aggregate.
 
 ## Choose the workflow you need
