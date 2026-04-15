@@ -1,19 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { RISTRETTO_GROUP } from '#core';
-import {
-    combineDecryptionShares,
-    createDLEQProof,
-    createDecryptionShare,
-    encryptAdditiveWithRandomness,
-    prepareAggregateForDecryption,
-    verifyDLEQProof,
-    type AggregateDecryptionPreparationInput,
-    type ProofContext,
-    type Share,
-} from '#root';
+import { RISTRETTO_GROUP } from '#src/core/public';
 import { encodePoint, multiplyBase } from '#src/core/ristretto';
 import { addEncryptedValues } from '#src/elgamal/additive';
+import { encryptAdditiveWithRandomness } from '#src/elgamal/public';
+import {
+    createDLEQProof,
+    type ProofContext,
+    verifyDLEQProof,
+} from '#src/proofs/public';
+import {
+    combineDecryptionShares,
+    createDecryptionShare,
+    prepareAggregateForDecryption,
+    type AggregateDecryptionPreparationInput,
+    type Share,
+} from '#src/threshold/public';
 import { createVerifiedAggregateCiphertext } from '#src/threshold/types';
 
 const jointSecret = 12_345n;

@@ -1,3 +1,6 @@
+/**
+ * Public ballot-verification entry point for the supported score-voting flow.
+ */
 import { InvalidPayloadError } from '../core/index';
 
 import { auditSignedPayloads } from './board-audit';
@@ -73,11 +76,9 @@ const verifyAuditedBallotSubmissionPayloadsByOption = async (input: {
  * Verifies typed ballot-submission payloads and recomputes one aggregate tally
  * ciphertext per manifest option.
  *
- * Signatures are expected to have been checked already against the frozen
- * registration roster.
- *
- * @param input Typed ballot verification input.
- * @returns Ordered per-option additive ballot aggregations.
+ * This is the public entry point for applications that already have
+ * signature-checked ballot payloads and want the per-option verified
+ * ciphertext aggregates that feed threshold decryption.
  */
 export const verifyBallotSubmissionPayloadsByOption = async (
     input: VerifyBallotSubmissionPayloadsByOptionInput,

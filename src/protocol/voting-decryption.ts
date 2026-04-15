@@ -1,3 +1,7 @@
+/**
+ * Public decryption-share verification entry point for the supported voting
+ * workflow.
+ */
 import {
     InvalidPayloadError,
     RISTRETTO_GROUP,
@@ -183,11 +187,9 @@ const verifyAuditedDecryptionSharePayloadsByOption = async (input: {
  * Verifies typed decryption-share payloads against the DKG transcript-derived
  * trustee keys and one locally recomputed aggregate ciphertext per option slot.
  *
- * Signatures are expected to have been checked already against the frozen
- * registration roster.
- *
- * @param input Typed decryption-share verification input.
- * @returns Verified decryption shares grouped by option.
+ * This is the public entry point for applications that have already accepted a
+ * DKG transcript and verified ballot aggregates and now need to validate the
+ * published threshold shares.
  */
 export const verifyDecryptionSharePayloadsByOption = async (
     input: VerifyDecryptionSharePayloadsByOptionInput,

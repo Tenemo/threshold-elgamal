@@ -6,16 +6,17 @@ import {
     createFeldmanCommitmentPayload,
     createKeyDerivationConfirmationPayload,
     createPhaseCheckpointPayload,
-    createSchnorrProof,
-    deriveJointPublicKey,
-    generateFeldmanCommitments,
-    hashProtocolTranscript,
-    RISTRETTO_GROUP,
     SHIPPED_PROTOCOL_VERSION,
-    signProtocolPayload,
-    verifyDKGTranscript,
     type SignedPayload,
 } from '#root';
+import { RISTRETTO_GROUP } from '#src/core/public';
+import { deriveJointPublicKey, verifyDKGTranscript } from '#src/dkg/public';
+import { createSchnorrProof } from '#src/proofs/public';
+import {
+    hashProtocolTranscript,
+    signProtocolPayload,
+} from '#src/protocol/public';
+import { generateFeldmanCommitments } from '#src/vss/public';
 
 const fixtureTimeoutMs = 240_000;
 

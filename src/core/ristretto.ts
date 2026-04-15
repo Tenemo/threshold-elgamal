@@ -1,3 +1,10 @@
+/**
+ * Low-level Ristretto255 point and scalar operations.
+ *
+ * Higher-level modules such as additive ElGamal, proofs, VSS, and threshold
+ * reconstruction build on these wrappers instead of calling the curve library
+ * directly.
+ */
 import { ristretto255, ristretto255_hasher } from '@noble/curves/ed25519.js';
 import { sha512 } from '@noble/hashes/sha2.js';
 

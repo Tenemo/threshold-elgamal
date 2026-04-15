@@ -1,3 +1,7 @@
+/**
+ * Finite-field arithmetic helpers shared by proofs, verifiable secret sharing,
+ * threshold reconstruction, and transcript verification.
+ */
 import { InvalidScalarError } from './errors';
 
 const assertPositiveModulus = (modulus: bigint): void => {

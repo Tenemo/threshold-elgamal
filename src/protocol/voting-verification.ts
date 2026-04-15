@@ -1,3 +1,10 @@
+/**
+ * Top-level full-ceremony verification for the supported voting workflow.
+ *
+ * This module is the shortest path for auditors and bulletin-board readers who
+ * want one call that replays manifest validation, board audit, DKG, ballots,
+ * decryption shares, and tally checks.
+ */
 import { InvalidPayloadError } from '../core/index';
 import { decodeScalar } from '../core/ristretto';
 import {
@@ -36,7 +43,12 @@ import {
     verifyPayloadsAgainstRegistrations,
 } from './voting-shared';
 
-/** Stable high-level failure codes for full ceremony verification. */
+/**
+ * Stable high-level failure codes for full ceremony verification.
+ *
+ * Applications can key off these codes instead of parsing free-form error
+ * strings.
+ */
 export type ElectionVerificationErrorCode =
     | 'MANIFEST_INVALID'
     | 'BOARD_INVALID'
@@ -46,7 +58,9 @@ export type ElectionVerificationErrorCode =
     | 'DECRYPTION_INVALID'
     | 'TALLY_INVALID';
 
-/** Named verification stage used by the high-level ceremony verifier. */
+/**
+ * Named verification stage used by the high-level ceremony verifier.
+ */
 export type ElectionVerificationStage =
     | 'manifest'
     | 'board'
@@ -56,7 +70,9 @@ export type ElectionVerificationStage =
     | 'decryption'
     | 'tally';
 
-/** Stable structured failure result returned by the non-throwing verifier. */
+/**
+ * Stable structured failure result returned by the non-throwing verifier.
+ */
 export type ElectionVerificationFailure = {
     readonly code: ElectionVerificationErrorCode;
     readonly stage: ElectionVerificationStage;
@@ -81,7 +97,12 @@ class ElectionVerificationError extends InvalidPayloadError {
     }
 }
 
-/** Detailed successful output from full ceremony verification. */
+/**
+ * Detailed successful output from full ceremony verification.
+ *
+ * This bundles the derived DKG material, accepted ballot set, per-option
+ * tallies, and deterministic board-audit output.
+ */
 export type VerifiedElectionCeremony = {
     readonly manifest: ElectionManifest;
     readonly manifestHash: string;
@@ -109,7 +130,11 @@ export type VerifiedElectionCeremony = {
     readonly options: readonly VerifiedPublishedOptionVotingResult[];
 };
 
-/** Non-throwing result shape for full ceremony verification. */
+/**
+ * Non-throwing result shape for full ceremony verification.
+ *
+ * Most application integrations should prefer this over exceptions.
+ */
 export type ElectionVerificationResult =
     | {
           readonly ok: true;
@@ -214,7 +239,9 @@ const findOptionDecryptionShares = (
     return entry.decryptionShares;
 };
 
-/** Verified organizer-selected ballot cutoff and the counted ballot subset. */
+/**
+ * Verified organizer-selected ballot cutoff and the counted ballot subset.
+ */
 type VerifiedBallotClose = {
     readonly countedBallotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
     readonly countedParticipantIndices: readonly number[];
@@ -339,17 +366,8 @@ const verifyBallotClosePayload = (input: {
  * DKG verification, ballot verification, decryption-share verification, and
  * per-option tally checks.
  *
- * @param input Full public ceremony input bundle.
- * @returns Detailed verified ceremony output.
- *
- * @example
- * ```ts
- * const verified = await verifyElectionCeremony(bundle);
- *
- * console.log(verified.boardAudit.overall.fingerprint);
- * console.log(verified.countedParticipantIndices);
- * console.log(verified.perOptionTallies);
- * ```
+ * This is the main verifier entry point for callers that want failures to
+ * abort immediately.
  */
 export const verifyElectionCeremony = async (
     input: VerifyElectionCeremonyInput,
@@ -605,20 +623,8 @@ export const verifyElectionCeremony = async (
  * Runs the full ceremony verifier and returns a structured success-or-failure
  * result without throwing.
  *
- * @param input Full public ceremony input bundle.
- * @returns Verified ceremony output or a stable structured failure.
- *
- * @example
- * ```ts
- * const result = await tryVerifyElectionCeremony(bundle);
- *
- * if (!result.ok) {
- *     console.error(result.error.stage, result.error.code, result.error.reason);
- *     return;
- * }
- *
- * console.log(result.verified.qualifiedParticipantIndices);
- * ```
+ * This is the preferred integration point for applications that want stable
+ * failure stages and codes instead of exception handling.
  */
 export const tryVerifyElectionCeremony = async (
     input: VerifyElectionCeremonyInput,

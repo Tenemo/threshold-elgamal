@@ -14,7 +14,7 @@ All public protocol builders return the same outer shape:
 }
 ```
 
-The `payload` object is already JSON-safe. Group elements, scalars, proofs, and signatures are string-encoded before publication. Every signed payload also carries the bound protocol version. The examples below use shortened placeholder strings for readability.
+The `payload` object is already JSON-safe. Group elements, scalars, proofs, and signatures are string-encoded before publication. Every signed payload also carries the built-in verifier namespace exported as `SHIPPED_PROTOCOL_VERSION`, so the JSON examples below show `protocolVersion: "v1"`.
 
 ## Manifest publication
 
@@ -149,7 +149,7 @@ The builder sorts and validates the participant indices before signing. Feed it 
 }
 ```
 
-The signed payload does not derive the partial share for you. First prepare the accepted aggregate with `prepareAggregateForDecryption(...)`, then compute the share with `createDecryptionShare(...)`, build the matching DLEQ proof with `createDLEQProof(...)`, and finally sign the published object with `createDecryptionSharePayload(...)`.
+The signed payload does not derive the partial share for you. First prepare the accepted aggregate with `prepareAggregateForDecryption(...)` from `threshold-elgamal/threshold`, then compute the share with `createDecryptionShare(...)` from `threshold-elgamal/threshold`, build the matching DLEQ proof with `createDLEQProof(...)` from `threshold-elgamal/proofs`, and finally sign the published object with `createDecryptionSharePayload(...)` from `threshold-elgamal`.
 
 ## Tally publication
 

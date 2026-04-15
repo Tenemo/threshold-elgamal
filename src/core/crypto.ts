@@ -1,3 +1,8 @@
+/**
+ * Runtime crypto helpers that normalize Web Crypto access for hashing,
+ * HKDF-based key derivation, and UTF-8 encoding across browser and Node
+ * runtimes.
+ */
 import { toBufferSource } from './bytes';
 import { InvalidScalarError, UnsupportedSuiteError } from './errors';
 

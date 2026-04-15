@@ -1,3 +1,9 @@
+/**
+ * Public payload-builder façade for the supported ceremony.
+ *
+ * Application-facing code normally uses this module instead of hand-assembling
+ * protocol payload objects and signatures.
+ */
 import { encodeScalar } from '../core/ristretto';
 import type { ElGamalCiphertext } from '../elgamal/types';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types';
@@ -66,7 +72,12 @@ const isEncodedFeldmanProofEntry = (
 type ProtocolPayloadByMessageType<TMessageType extends ProtocolMessageType> =
     Extract<ProtocolPayload, { readonly messageType: TMessageType }>;
 
-/** Signs one canonical protocol payload with a participant auth key. */
+/**
+ * Signs one canonical protocol payload with a participant auth key.
+ *
+ * All specialized payload builders in this module eventually route through
+ * this helper after normalizing the payload shape.
+ */
 export const signProtocolPayload = async <
     TMessageType extends ProtocolMessageType,
 >(
@@ -88,7 +99,12 @@ export const signProtocolPayload = async <
     };
 };
 
-/** Creates a signed manifest-publication payload. */
+/**
+ * Creates a signed `manifest-publication` payload.
+ *
+ * This is the first public payload in the supported ceremony and anchors the
+ * minimal manifest on the board.
+ */
 export const createManifestPublicationPayload = async (
     privateKey: CryptoKey,
     input: {
@@ -109,7 +125,12 @@ export const createManifestPublicationPayload = async (
         manifest: input.manifest,
     });
 
-/** Creates a signed registration payload for one participant. */
+/**
+ * Creates a signed `registration` payload for one participant.
+ *
+ * Registrations publish the participant's auth key and transport key and are
+ * the source of truth for the accepted roster.
+ */
 export const createRegistrationPayload = async (
     privateKey: CryptoKey,
     input: {
@@ -134,7 +155,12 @@ export const createRegistrationPayload = async (
         transportPublicKey: input.transportPublicKey,
     });
 
-/** Creates a signed manifest-acceptance payload. */
+/**
+ * Creates a signed `manifest-acceptance` payload.
+ *
+ * This records that a participant accepted the frozen manifest and the roster
+ * hash under which they were assigned an index.
+ */
 export const createManifestAcceptancePayload = async (
     privateKey: CryptoKey,
     input: {
@@ -163,7 +189,12 @@ export const createManifestAcceptancePayload = async (
               }),
     });
 
-/** Creates a signed phase-checkpoint payload over one DKG phase snapshot. */
+/**
+ * Creates a signed `phase-checkpoint` payload over one DKG phase snapshot.
+ *
+ * Checkpoints let observers replay the DKG in coarse-grained epochs while
+ * preserving deterministic transcript commitments.
+ */
 export const createPhaseCheckpointPayload = async (
     privateKey: CryptoKey,
     input: {
@@ -191,7 +222,9 @@ export const createPhaseCheckpointPayload = async (
         qualifiedParticipantIndices: [...input.qualifiedParticipantIndices],
     });
 
-/** Creates a signed Pedersen-commitment payload for DKG phase 1. */
+/**
+ * Creates a signed `pedersen-commitment` payload for DKG phase 1.
+ */
 export const createPedersenCommitmentPayload = async (
     privateKey: CryptoKey,
     input: Omit<
@@ -208,7 +241,12 @@ export const createPedersenCommitmentPayload = async (
         commitments: [...input.commitments],
     });
 
-/** Creates a signed encrypted dual-share payload for DKG phase 1. */
+/**
+ * Creates a signed `encrypted-dual-share` payload for DKG phase 1.
+ *
+ * The envelope contents are produced separately by the transport layer and are
+ * merely wrapped and signed here.
+ */
 export const createEncryptedDualSharePayload = async (
     privateKey: CryptoKey,
     input: Omit<
@@ -224,7 +262,12 @@ export const createEncryptedDualSharePayload = async (
         messageType: 'encrypted-dual-share',
     });
 
-/** Creates a signed Feldman-commitment payload for DKG phase 3. */
+/**
+ * Creates a signed `feldman-commitment` payload for DKG phase 3.
+ *
+ * This payload exposes the public Feldman commitments and their Schnorr proofs
+ * after the complaint phase has been resolved.
+ */
 export const createFeldmanCommitmentPayload = async (
     privateKey: CryptoKey,
     input: Omit<
@@ -265,7 +308,12 @@ export const createFeldmanCommitmentPayload = async (
     return signProtocolPayload(privateKey, payload);
 };
 
-/** Creates a signed key-derivation-confirmation payload for DKG phase 4. */
+/**
+ * Creates a signed `key-derivation-confirmation` payload for DKG phase 4.
+ *
+ * Trustees use this to confirm the final derived joint key and transcript
+ * digest they believe the DKG produced.
+ */
 export const createKeyDerivationConfirmationPayload = async (
     privateKey: CryptoKey,
     input: Omit<
@@ -281,7 +329,14 @@ export const createKeyDerivationConfirmationPayload = async (
         messageType: 'key-derivation-confirmation',
     });
 
-/** Creates a signed ballot payload for one participant and one option slot. */
+/**
+ * Creates a signed `ballot-submission` payload for one participant and one
+ * option slot.
+ *
+ * Higher-level application code is expected to create the ciphertext and
+ * disjunctive proof first, then hand them to this builder for encoding and
+ * signing.
+ */
 export const createBallotSubmissionPayload = async (
     privateKey: CryptoKey,
     input: Omit<
@@ -308,7 +363,12 @@ export const createBallotSubmissionPayload = async (
     return signProtocolPayload(privateKey, payload);
 };
 
-/** Creates the organizer-signed ballot cutoff payload. */
+/**
+ * Creates the organizer-signed `ballot-close` payload.
+ *
+ * This freezes which complete ballots are counted for the tally and therefore
+ * determines the accepted aggregate seen by every later decryption step.
+ */
 export const createBallotClosePayload = async (
     privateKey: CryptoKey,
     input: Omit<
@@ -334,7 +394,12 @@ export const createBallotClosePayload = async (
     });
 };
 
-/** Creates a signed threshold decryption-share payload for one option slot. */
+/**
+ * Creates a signed `decryption-share` payload for one option slot.
+ *
+ * The caller is responsible for computing the share and DLEQ proof first; this
+ * helper encodes and signs the published object.
+ */
 export const createDecryptionSharePayload = async (
     privateKey: CryptoKey,
     input: Omit<
@@ -357,7 +422,12 @@ export const createDecryptionSharePayload = async (
     return signProtocolPayload(privateKey, payload);
 };
 
-/** Creates a signed tally-publication payload for one option slot. */
+/**
+ * Creates a signed `tally-publication` payload for one option slot.
+ *
+ * This is the final organizer-facing publication step after the accepted
+ * decryption shares have been combined into a bounded plaintext tally.
+ */
 export const createTallyPublicationPayload = async (
     privateKey: CryptoKey,
     input: Omit<

@@ -1,11 +1,15 @@
 ---
 title: Root package
-description: The supported public import surface for the shipped voting flow.
+description: The supported public import surface for the voting flow.
 sidebar:
   order: 1
 ---
 
-Use the root package for all supported public imports. The package does not ship supported public subpath entrypoints.
+Use the root package for the supported voting workflow. Advanced cryptographic
+and transcript primitives also have public subpath entrypoints such as
+`threshold-elgamal/proofs`, `threshold-elgamal/threshold`,
+`threshold-elgamal/dkg`, `threshold-elgamal/vss`, `threshold-elgamal/elgamal`,
+`threshold-elgamal/protocol`, and `threshold-elgamal/core`.
 
 ## What lives here
 
@@ -13,9 +17,7 @@ Use the root package for all supported public imports. The package does not ship
 - roster hashing and session derivation
 - transport and authentication helpers
 - public builders for the standard ceremony payloads
-- GJKR transcript verification
-- ballot verification
-- tally verification
+- full public-board verification
 - full ceremony verification
 
 ## Common starting points
@@ -25,7 +27,7 @@ Use the root package for all supported public imports. The package does not ship
 - encrypted share transport: `encryptEnvelope`, `decryptEnvelope`
 - public board verification: `tryVerifyElectionCeremony`, `verifyElectionCeremony`
 - published payload construction: `createManifestPublicationPayload`, `createRegistrationPayload`, `createManifestAcceptancePayload`, `createBallotSubmissionPayload`, `createBallotClosePayload`, `createDecryptionSharePayload`, `createTallyPublicationPayload`
-- threshold reveal primitives: `createDecryptionShare`, `createDLEQProof`, `combineDecryptionShares`
+- advanced reveal primitives: `prepareAggregateForDecryption` and `combineDecryptionShares` from `threshold-elgamal/threshold`, plus `createDLEQProof` from `threshold-elgamal/proofs`
 
 ## Typical import style
 
@@ -36,7 +38,6 @@ import {
     createRegistrationPayload,
     createManifestAcceptancePayload,
     createBallotClosePayload,
-    createDecryptionShare,
     createDecryptionSharePayload,
     verifyElectionCeremony,
 } from "threshold-elgamal";
@@ -44,18 +45,30 @@ import {
 
 ## Use the root package when
 
-- you want the shipped `ristretto255` voting workflow
+- you want the `ristretto255` voting workflow
 - you want the minimal manifest and derived majority-threshold rules
-- you want public builders and verifiers that match the published package exports
+- you want the workflow-facing builders and verifiers without importing the lower-level proof, threshold, DKG, or VSS modules directly
 
-## Pair it with these guides
+## Use the submodules when
 
-- [Get started](../guides/getting-started/) for the quickest route into the public surface
-- [Verifying a public board](../guides/verifying-a-public-board/) for the verifier entry points and failure handling
+- you need direct proof helpers such as `createDLEQProof(...)` or `createSchnorrProof(...)`
+- you need direct threshold helpers such as `prepareAggregateForDecryption(...)` or `combineDecryptionShares(...)`
+- you need DKG transcript replay or trustee verification-key derivation
+- you need generic protocol signing, transcript hashing, ballot-proof verification, or protocol payload types
+- you need Feldman or Pedersen commitment/share helpers
+- you need low-level additive ElGamal, explicit error classes, or core arithmetic/constants
+
+## Related workflows
+
+- [Get started](../guides/getting-started/) for the public surface rules and setup
+- [Runtime and compatibility](../guides/runtime-and-compatibility/) for browser, Node, Web Crypto, and `bigint` requirements
 - [Browser and worker usage](../guides/browser-and-worker-usage/) for browser-native setup and transport envelopes
+- [Honest-majority voting flow](../guides/three-participant-voting-flow/) for the full ceremony path
 - [Published payload examples](../guides/published-payload-examples/) for exact JSON shapes
+- [Verifying a public board](../guides/verifying-a-public-board/) for the verifier entry points and failure handling
 
-## Explore the generated reference when
+## Generated reference coverage
 
-- you need exact signatures, types, and return shapes
-- you are wiring a full ceremony and want contract-level detail
+- exact signatures, types, and return shapes for the exported surface
+- contract-level detail for the full ceremony types
+- module-level separation between the workflow root package and the advanced public submodules

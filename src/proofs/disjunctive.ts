@@ -1,3 +1,9 @@
+/**
+ * CDS94-style disjunctive proofs for additive score ballots.
+ *
+ * Ballot payloads use this module to prove that a ciphertext encodes one value
+ * from the supported score domain without revealing which score was chosen.
+ */
 import {
     assertInSubgroup,
     assertInSubgroupOrIdentity,
@@ -86,15 +92,8 @@ const challengePayload = (
 /**
  * Creates a CDS94-style disjunctive proof for additive ElGamal plaintexts.
  *
- * @param plaintext Actual plaintext encoded in the ciphertext.
- * @param randomness Encryption randomness used for the ciphertext.
- * @param ciphertext Fresh additive ciphertext.
- * @param publicKey Additive-mode public key.
- * @param validValues Ordered set of valid plaintext values.
- * @param group Resolved group definition.
- * @param context Fiat-Shamir binding context.
- * @param randomSource Optional random source used for deterministic tests.
- * @returns Compact disjunctive proof with one branch per valid value.
+ * In the supported voting flow this is the proof attached to every
+ * `ballot-submission` payload.
  */
 export const createDisjunctiveProof = async (
     plaintext: bigint,
@@ -218,13 +217,8 @@ export const createDisjunctiveProof = async (
 /**
  * Verifies a CDS94-style disjunctive proof for additive ElGamal plaintexts.
  *
- * @param proof Compact disjunctive proof with one branch per valid value.
- * @param ciphertext Fresh additive ciphertext.
- * @param publicKey Additive-mode public key.
- * @param validValues Ordered set of valid plaintext values.
- * @param group Resolved group definition.
- * @param context Fiat-Shamir binding context.
- * @returns `true` when the proof verifies.
+ * Ballot verification uses this to reject ciphertexts that do not encode one
+ * of the allowed score values for the current option slot.
  */
 export const verifyDisjunctiveProof = async (
     proof: DisjunctiveProof,

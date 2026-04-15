@@ -6,11 +6,11 @@ import {
     createDecryptionSharePayload,
     createTallyPublicationPayload,
     majorityThreshold,
-    RISTRETTO_GROUP,
-    signProtocolPayload,
     verifyElectionCeremony,
 } from '#root';
+import { RISTRETTO_GROUP } from '#src/core/public';
 import { encodePoint, multiplyBase } from '#src/core/ristretto';
+import { signProtocolPayload } from '#src/protocol/public';
 
 const fixtureTimeoutMs = 240_000;
 

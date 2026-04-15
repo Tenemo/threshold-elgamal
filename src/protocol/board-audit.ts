@@ -1,3 +1,9 @@
+/**
+ * Deterministic bulletin-board audit for signed protocol payloads.
+ *
+ * This is the layer that collapses exact retransmissions, rejects
+ * equivocation, and produces stable digests over the accepted transcript.
+ */
 import { InvalidPayloadError } from '../core/index';
 
 import { compareProtocolPayloads } from './ordering';
@@ -22,7 +28,12 @@ type PhaseDigest = {
     readonly payloadCount: number;
 };
 
-/** Deterministic audit result for a set of signed protocol payloads. */
+/**
+ * Deterministic audit result for a set of signed protocol payloads.
+ *
+ * Higher-level verifiers consume this output instead of raw board logs so they
+ * can operate on one canonical accepted transcript.
+ */
 export type BoardAudit<TPayload extends ProtocolPayload = ProtocolPayload> = {
     readonly acceptedPayloads: readonly SignedPayload<TPayload>[];
     readonly ceremonyDigest: string;
@@ -59,8 +70,8 @@ const acceptedUnsignedPayloads = <TPayload extends ProtocolPayload>(
  * Audits signed payloads by canonical slot, rejecting equivocation and
  * collapsing only exact signed retransmissions to one representative payload.
  *
- * @param signedPayloads Signed payloads to audit.
- * @returns Deterministic audit output with accepted payloads and digests.
+ * All transcript-level verifiers run this step before they interpret the
+ * semantic contents of the board.
  */
 export const auditSignedPayloads = async <TPayload extends ProtocolPayload>(
     signedPayloads: readonly SignedPayload<TPayload>[],

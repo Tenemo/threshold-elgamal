@@ -1,3 +1,7 @@
+/**
+ * Verifiable secret-sharing commitment and share types used by the GJKR DKG
+ * implementation and transcript verifier.
+ */
 import type { EncodedPoint } from '../core/types';
 
 /** Feldman coefficient commitments `A_m = a_m G`. */

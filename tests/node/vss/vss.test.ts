@@ -6,14 +6,14 @@ import {
     RISTRETTO_GROUP,
     ThresholdViolationError,
     UnsupportedSuiteError,
-} from '#core';
+} from '#src/core/public';
 import {
     derivePedersenShares,
     generateFeldmanCommitments,
     generatePedersenCommitments,
     verifyFeldmanShare,
     verifyPedersenShare,
-} from '#root';
+} from '#src/vss/public';
 
 const deriveShares = (
     polynomial: readonly bigint[],

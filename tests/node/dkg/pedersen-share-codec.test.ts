@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import { InvalidPayloadError, RISTRETTO_GROUP } from '#src/core/public';
 import {
-    InvalidPayloadError,
-    RISTRETTO_GROUP,
     decodePedersenShareEnvelope,
     encodePedersenShareEnvelope,
-} from '#root';
+} from '#src/dkg/public';
 
 const envelopeByteLength = RISTRETTO_GROUP.scalarByteLength;
 

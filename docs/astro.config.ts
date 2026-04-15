@@ -2,9 +2,25 @@ import mdx from '@astrojs/mdx';
 import StarlightIntegration from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
 
+const normalizeBase = (value: string | undefined): string => {
+    const trimmed = (value ?? '/').trim();
+
+    if (!trimmed || trimmed === '/') {
+        return '/';
+    }
+
+    return `/${trimmed.replace(/^\/+|\/+$/g, '')}`;
+};
+
+// Serve docs from the repo subpath on GitHub Pages, but keep local runs at root.
+const docsBase = normalizeBase(
+    process.env.DOCS_BASE_PATH ??
+        (process.env.GITHUB_ACTIONS === 'true' ? '/threshold-elgamal' : '/'),
+);
+
 export default defineConfig({
     site: 'https://tenemo.github.io',
-    base: '/threshold-elgamal',
+    base: docsBase,
     integrations: [
         StarlightIntegration({
             title: 'threshold-elgamal',
@@ -24,11 +40,11 @@ export default defineConfig({
                     label: 'Guides',
                     items: [
                         'guides/getting-started',
-                        'guides/verifying-a-public-board',
-                        'guides/browser-and-worker-usage',
-                        'guides/published-payload-examples',
-                        'guides/three-participant-voting-flow',
                         'guides/runtime-and-compatibility',
+                        'guides/browser-and-worker-usage',
+                        'guides/three-participant-voting-flow',
+                        'guides/published-payload-examples',
+                        'guides/verifying-a-public-board',
                         'guides/security-and-non-goals',
                         'guides/production-voting-safety-review',
                     ],

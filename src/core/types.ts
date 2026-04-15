@@ -1,4 +1,7 @@
 /**
+ * Foundational nominal and suite types shared across the package.
+ */
+/**
  * Nominal typing helper used to distinguish compatible runtime values in the
  * type system.
  */
@@ -6,15 +9,20 @@ export type Brand<T, TBrand extends string> = T & {
     readonly __brand: TBrand;
 };
 
-/** @internal Canonical name for the shipped Ristretto255 suite. */
+/** @internal Canonical name for the built-in Ristretto255 suite. */
 export type GroupName = 'ristretto255';
-/** @internal Accepted helper input identifiers for the shipped Ristretto suite. */
+/** @internal Accepted helper input identifiers for the built-in Ristretto suite. */
 export type GroupIdentifier = GroupName;
 
-/** Canonical 32-byte Ristretto point encoding exposed at the public boundary. */
+/**
+ * Canonical 32-byte Ristretto point encoding exposed at the public boundary.
+ *
+ * Public helpers use this branded string type to distinguish encoded points
+ * from ordinary hex strings.
+ */
 export type EncodedPoint = Brand<string, 'EncodedPoint'>;
 
-/** @internal Immutable built-in group definition for the shipped suite. */
+/** @internal Immutable group definition for the built-in suite. */
 export type CryptoGroup = {
     /** Canonical suite name. */
     readonly name: GroupName;
@@ -33,7 +41,7 @@ export type CryptoGroup = {
 };
 
 /**
- * Random byte source injected into sampling helpers for deterministic testing
- * or custom runtime integration.
+ * Random byte source injected into sampling helpers for deterministic tests,
+ * reproducible vectors, or custom runtime integration.
  */
 export type RandomBytesSource = (length: number) => Uint8Array;

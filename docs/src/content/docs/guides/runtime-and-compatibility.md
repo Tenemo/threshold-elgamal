@@ -1,11 +1,11 @@
 ---
 title: Runtime and compatibility
-description: Browser, Node, Web Crypto, and BigInt expectations for the shipped honest-majority voting flow.
+description: Browser, Node, Web Crypto, and BigInt expectations for the honest-majority voting flow.
 sidebar:
   order: 4
 ---
 
-The shipped workflow is browser-native and assumes:
+The workflow is browser-native and assumes:
 
 - native `bigint`
 - Web Crypto with `crypto.subtle` and `crypto.getRandomValues`
@@ -16,23 +16,21 @@ For a concrete browser-native setup example, read [Browser and worker usage](./b
 ## Supported environments
 
 - Modern browsers must expose Web Crypto and `bigint`
-- Node must be version `24.14.1` or newer and expose `globalThis.crypto`
+- Node must satisfy the package `engines.node` requirement and expose `globalThis.crypto`
 - If Web Crypto is missing, the library raises `UnsupportedSuiteError`
 - Authentication signatures require `Ed25519`
 - Transport key agreement requires `X25519`
 - The tally, proof, VSS, and DKG path is fixed to `ristretto255`
 
-## Browser baseline
+## Browser requirements
 
-The shipped browser cryptographic path requires both Web Crypto `Ed25519` and
+The browser cryptographic path requires both Web Crypto `Ed25519` and
 `X25519`.
 
-Practical browser baseline:
-
-- Chrome and Edge `137+`
-- Firefox `130+`
-- Safari `18.4+`
-- iOS and iPadOS browsers on the Safari `18.4+` WebKit generation
+- Use modern browsers with native `bigint`
+- Require Web Crypto `Ed25519`
+- Require Web Crypto `X25519`
+- Validate your target environments with `pnpm exec tsx ./tools/ci/verify-browser-compat.ts`
 
 ## Application-owned runtime concerns
 
@@ -50,7 +48,7 @@ If you keep participant keys inside a worker, keep the `CryptoKey` objects in th
 
 ## Practical performance expectations
 
-- The current default regression ceremony size is `10` participants
+- Ceremony size materially affects CPU time, memory pressure, and network coordination
 - Larger symmetric ceremonies remain much more sensitive to mobile CPU limits and connection dropouts
 - Odd participant counts are recommended for clearer threshold semantics, but even counts are supported
 
@@ -61,4 +59,4 @@ If you keep participant keys inside a worker, keep the `CryptoKey` objects in th
 - Do not mix `number` and `bigint` in arithmetic
 - Serialize values explicitly when crossing process or network boundaries
 
-For exact function contracts, use the [API docs](../api/).
+The [API docs](../api/) list exact function contracts.

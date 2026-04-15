@@ -1,3 +1,7 @@
+/**
+ * Encode and decode helpers that bridge low-level cryptographic objects and
+ * their published protocol payload representations.
+ */
 import { decodePoint, decodeScalar, encodeScalar } from '../core/ristretto';
 import type { ElGamalCiphertext } from '../elgamal/types';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types';
@@ -89,7 +93,9 @@ export const decodeDisjunctiveProof = (
 });
 
 /**
- * Returns the fixed shipped score-voting domain `1..10`.
+ * Returns the fixed score-voting domain `1..10`.
+ *
+ * The supported voting workflow does not expose a configurable score range.
  */
 export const scoreVotingDomain = (): readonly bigint[] =>
     Object.freeze(

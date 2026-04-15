@@ -1,3 +1,9 @@
+/**
+ * Ed25519 authentication-key and signature helpers.
+ *
+ * Every published protocol payload is signed through this layer, either
+ * directly or via the higher-level protocol builders.
+ */
 import { bytesToHex, hexToBytes, toBufferSource } from '../core/bytes';
 import { getWebCrypto } from '../core/index';
 
@@ -12,7 +18,8 @@ type GenerateAuthKeyPairOptions = {
 /**
  * Generates a fresh per-ceremony authentication key pair.
  *
- * @returns Authentication key pair. The private key is extractable only when requested.
+ * Trustees use this key pair to sign every public payload they publish during
+ * setup, DKG, voting, and tally publication.
  */
 export const generateAuthKeyPair = async (
     options: GenerateAuthKeyPairOptions = {},
@@ -26,10 +33,8 @@ export const generateAuthKeyPair = async (
     );
 
 /**
- * Exports an authentication public key as SPKI hex.
- *
- * @param publicKey Authentication public key.
- * @returns Lowercase hexadecimal SPKI bytes.
+ * Exports an authentication public key as SPKI hex so it can be published in a
+ * registration payload and later imported by verifiers.
  */
 export const exportAuthPublicKey = async (
     publicKey: CryptoKey,
@@ -41,10 +46,8 @@ export const exportAuthPublicKey = async (
     ) as EncodedAuthPublicKey;
 
 /**
- * Imports an authentication public key from SPKI hex.
- *
- * @param spkiHex Lowercase hexadecimal SPKI bytes.
- * @returns Imported public key.
+ * Imports an authentication public key from the canonical published SPKI
+ * encoding.
  */
 export const importAuthPublicKey = async (
     spkiHex: EncodedAuthPublicKey,
@@ -62,9 +65,8 @@ export const importAuthPublicKey = async (
 /**
  * Signs canonical payload bytes with an authentication private key.
  *
- * @param privateKey Authentication private key.
- * @param payloadBytes Canonical unsigned payload bytes.
- * @returns Lowercase hexadecimal raw Ed25519 signature bytes.
+ * Protocol builders call this after they have frozen the payload shape and
+ * canonical serialization.
  */
 export const signPayloadBytes = async (
     privateKey: CryptoKey,
@@ -83,10 +85,8 @@ export const signPayloadBytes = async (
 /**
  * Verifies canonical payload bytes against an authentication signature.
  *
- * @param publicKey Authentication public key.
- * @param payloadBytes Canonical unsigned payload bytes.
- * @param signatureHex Lowercase hexadecimal raw Ed25519 signature bytes.
- * @returns `true` when the signature verifies.
+ * Signature verification for published board payloads ultimately routes
+ * through this helper.
  */
 export const verifyPayloadSignature = async (
     publicKey: CryptoKey,

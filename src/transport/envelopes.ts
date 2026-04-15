@@ -1,3 +1,7 @@
+/**
+ * Authenticated sender-ephemeral envelope helpers for dealer-to-recipient
+ * transport during DKG share distribution.
+ */
 import { bytesToHex, hexToBytes, toBufferSource } from '../core/bytes';
 import { getWebCrypto, hkdfSha256, randomBytes } from '../core/index';
 import { encodeForChallenge } from '../serialize/encoding';
@@ -55,10 +59,9 @@ export const deriveEnvelopeKey = async (
 /**
  * Encrypts a payload into a sender-ephemeral authenticated envelope.
  *
- * @param plaintext Raw payload bytes to encrypt.
- * @param recipientPublicKeyHex Recipient transport public key.
- * @param context Envelope binding context.
- * @returns Envelope plus the sender-ephemeral private key for complaint recovery.
+ * DKG dealers use this when publishing encrypted Pedersen shares for one
+ * recipient. The returned ephemeral private key is retained so complaint
+ * resolution can later prove what was sent.
  */
 export const encryptEnvelope = async (
     plaintext: Uint8Array,
@@ -110,9 +113,8 @@ export const encryptEnvelope = async (
 /**
  * Decrypts an authenticated envelope with the recipient transport private key.
  *
- * @param envelope Authenticated encrypted envelope.
- * @param recipientPrivateKey Recipient transport private key.
- * @returns Decrypted plaintext bytes.
+ * This is the recipient-side counterpart to {@link encryptEnvelope} and is
+ * typically followed by Pedersen share decoding.
  */
 export const decryptEnvelope = async (
     envelope: EncryptedEnvelope,

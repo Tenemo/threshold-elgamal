@@ -5,6 +5,6 @@
         "checkJs": true,
         "noEmit": true
     },
-    "include": ["src/**/*.ts", "src/**/*.d.ts", "astro.config.mjs"],
+    "include": ["src/**/*.ts", "src/**/*.d.ts", "astro.config.ts"],
     "exclude": [".astro", "dist"]
 }

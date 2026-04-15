@@ -2,13 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import { createDeterministicSource } from '../../helpers/deterministic';
 
-import { InvalidProofError, InvalidScalarError, RISTRETTO_GROUP } from '#core';
+import {
+    InvalidProofError,
+    InvalidScalarError,
+    RISTRETTO_GROUP,
+} from '#src/core/public';
+import { encodePoint, multiplyBase } from '#src/core/ristretto';
 import {
     createSchnorrProof,
-    verifySchnorrProof,
     type ProofContext,
-} from '#root';
-import { encodePoint, multiplyBase } from '#src/core/ristretto';
+    verifySchnorrProof,
+} from '#src/proofs/public';
 
 describe('Schnorr proofs', () => {
     const group = RISTRETTO_GROUP;

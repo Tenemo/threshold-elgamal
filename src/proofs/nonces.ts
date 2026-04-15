@@ -1,3 +1,9 @@
+/**
+ * Hedged nonce derivation for proof generation.
+ *
+ * The proof systems use this module so they remain safe under poor randomness
+ * while still allowing deterministic tests and vector generation.
+ */
 import { bytesToBigInt } from '../core/bytes';
 import {
     modQ,

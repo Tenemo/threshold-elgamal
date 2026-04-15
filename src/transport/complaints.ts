@@ -1,3 +1,9 @@
+/**
+ * Complaint-resolution helpers for the encrypted share-transport layer.
+ *
+ * DKG transcript verification uses this module when it needs to reconstruct
+ * the expected public challenge material for a dealer complaint.
+ */
 import { hexToBytes, toBufferSource } from '../core/bytes';
 import { getWebCrypto } from '../core/index';
 
@@ -43,10 +49,8 @@ const decryptEnvelopeFromSharedSecret = async (
  * Resolves a dealer challenge using only public transcript material plus the
  * dealer-revealed sender-ephemeral private key.
  *
- * @param envelope Committed encrypted envelope.
- * @param recipientPublicKeyHex Registered recipient transport public key.
- * @param revealedEphemeralPrivateKeyHex Revealed sender-ephemeral private key.
- * @returns Complaint resolution result.
+ * The DKG verifier uses this to decide whether a complaint indicates dealer
+ * misconduct or a complaining recipient that published an invalid accusation.
  */
 export const resolveDealerChallengeFromPublicKey = async (
     envelope: EncryptedEnvelope,

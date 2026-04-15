@@ -202,7 +202,7 @@ const main = async (): Promise<void> => {
             '---',
             `title: ${JSON.stringify(title)}`,
             isGeneratedRoot
-                ? 'description: "Export-driven symbol reference for the current package surface."'
+                ? 'description: "Export-driven symbol reference for the public API."'
                 : generatedModuleSummary !== undefined
                   ? `description: ${JSON.stringify(generatedModuleSummary)}`
                   : null,

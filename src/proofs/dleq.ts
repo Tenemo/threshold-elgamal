@@ -1,3 +1,7 @@
+/**
+ * Chaum-Pedersen equality-of-discrete-logs proofs used for threshold
+ * decryption-share publication and verification.
+ */
 import {
     assertInSubgroup,
     assertInSubgroupOrIdentity,
@@ -25,7 +29,12 @@ import {
 import { hedgedNonce } from './nonces';
 import type { DLEQProof, ProofContext } from './types';
 
-/** Statement tuple for a Chaum-Pedersen equality-of-discrete-logs proof. */
+/**
+ * Statement tuple for a Chaum-Pedersen equality-of-discrete-logs proof.
+ *
+ * In the supported voting flow this statement ties a trustee's decryption
+ * share to both the joint public key and the accepted aggregate ciphertext.
+ */
 export type DLEQStatement = {
     /** Transcript-derived trustee verification key. */
     readonly publicKey: string;
@@ -70,12 +79,9 @@ const challengePayload = (
 /**
  * Creates a compact additive-form Chaum-Pedersen proof of equal discrete logs.
  *
- * @param secret Witness scalar.
- * @param statement DLEQ statement over `(g, publicKey)` and `(c1, share)`.
- * @param group Resolved group definition.
- * @param context Fiat-Shamir binding context.
- * @param randomSource Optional random source used for deterministic tests.
- * @returns Compact DLEQ proof `(challenge, response)`.
+ * This is the proof published alongside each threshold decryption share so
+ * observers can verify that the share came from the same secret exponent as the
+ * trustee's transcript-derived verification key.
  */
 export const createDLEQProof = async (
     secret: bigint,
@@ -116,13 +122,11 @@ export const createDLEQProof = async (
 };
 
 /**
- * Verifies a compact additive-form Chaum-Pedersen proof of equal discrete logs.
+ * Verifies a compact additive-form Chaum-Pedersen proof of equal discrete
+ * logs.
  *
- * @param proof Compact DLEQ proof `(challenge, response)`.
- * @param statement DLEQ statement over `(g, publicKey)` and `(c1, share)`.
- * @param group Resolved group definition.
- * @param context Fiat-Shamir binding context.
- * @returns `true` when the proof verifies.
+ * Decryption-share verification routes through this helper after reconstructing
+ * the transcript-bound proof statement for one option slot.
  */
 export const verifyDLEQProof = async (
     proof: DLEQProof,

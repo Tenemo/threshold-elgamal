@@ -1,3 +1,7 @@
+/**
+ * Byte, hex, and buffer-shape conversion helpers used by hashing,
+ * serialization, signatures, and transport code throughout the package.
+ */
 import { InvalidPayloadError } from './errors';
 
 const hexPattern = /^[0-9a-f]+$/i;

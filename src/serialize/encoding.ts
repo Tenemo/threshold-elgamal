@@ -1,3 +1,7 @@
+/**
+ * Deterministic byte encoders used for transcript hashing, proof challenges,
+ * session identifiers, and other canonical digest inputs.
+ */
 import { bytesToBigInt, hexToBytes } from '../core/bytes';
 import { utf8ToBytes } from '../core/crypto';
 import { InvalidPayloadError, InvalidScalarError } from '../core/errors';
