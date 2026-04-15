@@ -58,12 +58,12 @@ hero:
 import {
   Card,
   CardGrid,
-  LinkButton,
   LinkCard,
   Steps,
 } from '@astrojs/starlight/components';
+import LandingActionCard from '../../components/LandingActionCard.astro';
 
-<section class="landing-section landing-section--flat">
+<section class="landing-section not-content">
   <div class="landing-section__header">
     <h2>Start with the job you need to do</h2>
     <p>
@@ -107,7 +107,7 @@ import {
   </CardGrid>
 </section>
 
-<section class="landing-section">
+<section class="landing-section not-content">
   <div class="landing-section__header">
     <h2>Use the library in one of two ways</h2>
     <p>
@@ -117,45 +117,33 @@ import {
   </div>
 
   <div class="landing-split-grid">
-    <Card title="Build protocol payloads from browser code">
-      <p>
-        Use the root package to create manifests, signed protocol messages,
-        ballots, transport envelopes, and decryption material inside browser
-        code or workers.
-      </p>
-      <ul>
-        <li>Stay on the supported root import surface.</li>
-        <li>Publish JSON-safe payloads that match the verifier.</li>
-        <li>Keep signing, transport, and serialization in one runtime story.</li>
-      </ul>
-      <div class="landing-card-actions">
-        <LinkButton href="./guides/browser-and-worker-usage/" variant="secondary">
-          Browser and worker usage
-        </LinkButton>
-      </div>
-    </Card>
+    <LandingActionCard
+      title="Build protocol payloads from browser code"
+      description="Use the root package to create manifests, signed protocol messages, ballots, transport envelopes, and decryption material inside browser code or workers."
+      bullets={[
+        'Stay on the supported root import surface.',
+        'Publish JSON-safe payloads that match the verifier.',
+        'Keep signing, transport, and serialization in one runtime story.',
+      ]}
+      href="./guides/browser-and-worker-usage/"
+      cta="Browser and worker usage"
+    />
 
-    <Card title="Verify a complete public board">
-      <p>
-        Use the verifier to validate the ceremony transcript, accepted
-        roster, encrypted ballots, threshold shares, and final tally from a
-        published board bundle.
-      </p>
-      <ul>
-        <li>Choose throwing or non-throwing verification entry points.</li>
-        <li>Handle stable failure codes instead of ad hoc string parsing.</li>
-        <li>Keep audit tooling separate from the voting client.</li>
-      </ul>
-      <div class="landing-card-actions">
-        <LinkButton href="./guides/verifying-a-public-board/" variant="secondary">
-          Verifying a public board
-        </LinkButton>
-      </div>
-    </Card>
+    <LandingActionCard
+      title="Verify a complete public board"
+      description="Use the verifier to validate the ceremony transcript, accepted roster, encrypted ballots, threshold shares, and final tally from a published board bundle."
+      bullets={[
+        'Choose throwing or non-throwing verification entry points.',
+        'Handle stable failure codes instead of ad hoc string parsing.',
+        'Keep audit tooling separate from the voting client.',
+      ]}
+      href="./guides/verifying-a-public-board/"
+      cta="Verifying a public board"
+    />
   </div>
 </section>
 
-<section class="landing-section landing-section--flow">
+<section class="landing-section not-content">
   <div class="landing-section__header">
     <h2>Follow the supported ceremony</h2>
     <p>
@@ -182,7 +170,7 @@ import {
   </div>
 </section>
 
-<section class="landing-section">
+<section class="landing-section not-content">
   <div class="landing-section__header">
     <h2>Keep the security boundary explicit</h2>
     <p>
@@ -192,7 +180,7 @@ import {
     </p>
   </div>
 
-  <div class="landing-split-grid landing-split-grid--balanced">
+  <div class="landing-split-grid">
     <Card title="Built for">
       <ul>
         <li>Browser-native TypeScript integrations and worker-based flows.</li>

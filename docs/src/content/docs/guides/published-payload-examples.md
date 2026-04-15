@@ -14,14 +14,14 @@ All public protocol builders return the same outer shape:
 }
 ```
 
-The `payload` object is already JSON-safe. Group elements, scalars, proofs, and signatures are string-encoded before publication. Every signed payload also carries a protocol namespace string. The examples below use shortened placeholder strings for readability.
+The `payload` object is already JSON-safe. Group elements, scalars, proofs, and signatures are string-encoded before publication. Every signed payload also carries the built-in verifier namespace exported as `SHIPPED_PROTOCOL_VERSION`, so the JSON examples below show `protocolVersion: "v1"`.
 
 ## Manifest publication
 
 ```json
 {
   "payload": {
-    "protocolVersion": "<protocol-namespace>",
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 0,
@@ -41,7 +41,7 @@ The `payload` object is already JSON-safe. Group elements, scalars, proofs, and 
 ```json
 {
   "payload": {
-    "protocolVersion": "<protocol-namespace>",
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 0,
@@ -60,7 +60,7 @@ The `payload` object is already JSON-safe. Group elements, scalars, proofs, and 
 ```json
 {
   "payload": {
-    "protocolVersion": "<protocol-namespace>",
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 0,
@@ -78,7 +78,7 @@ The `payload` object is already JSON-safe. Group elements, scalars, proofs, and 
 ```json
 {
   "payload": {
-    "protocolVersion": "<protocol-namespace>",
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 5,
@@ -111,7 +111,7 @@ The `payload` object is already JSON-safe. Group elements, scalars, proofs, and 
 ```json
 {
   "payload": {
-    "protocolVersion": "<protocol-namespace>",
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 6,
@@ -130,7 +130,7 @@ The builder sorts and validates the participant indices before signing. Feed it 
 ```json
 {
   "payload": {
-    "protocolVersion": "<protocol-namespace>",
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 7,
@@ -156,7 +156,7 @@ The signed payload does not derive the partial share for you. First prepare the 
 ```json
 {
   "payload": {
-    "protocolVersion": "<protocol-namespace>",
+    "protocolVersion": "v1",
     "sessionId": "6b7d...8e91",
     "manifestHash": "9e17...d34a",
     "phase": 8,

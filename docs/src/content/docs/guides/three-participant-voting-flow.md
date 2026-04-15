@@ -107,6 +107,7 @@ For the reveal path, phase `7` is not a single builder call. Each trustee first 
 ```typescript
 import {
     RISTRETTO_GROUP,
+    SHIPPED_PROTOCOL_VERSION,
     createDLEQProof,
     createDecryptionShare,
     createDecryptionSharePayload,
@@ -114,11 +115,10 @@ import {
     prepareAggregateForDecryption,
 } from "threshold-elgamal";
 
-const protocolVersion = "<protocol-namespace>";
 const preparedAggregate = prepareAggregateForDecryption({
     aggregate: optionAggregation.aggregate,
     publicKey: jointPublicKey,
-    protocolVersion,
+    protocolVersion: SHIPPED_PROTOCOL_VERSION,
     manifestHash,
     sessionId,
     optionIndex: optionAggregation.optionIndex,
@@ -142,7 +142,7 @@ const proof = await createDLEQProof(
     },
     RISTRETTO_GROUP,
     {
-        protocolVersion,
+        protocolVersion: SHIPPED_PROTOCOL_VERSION,
         suiteId: RISTRETTO_GROUP.name,
         manifestHash,
         sessionId,
@@ -167,7 +167,7 @@ const decryptionSharePayload = await createDecryptionSharePayload(
 );
 ```
 
-Reuse the same non-empty `protocolVersion` string everywhere in one ceremony.
+Reuse `SHIPPED_PROTOCOL_VERSION` everywhere in one ceremony. The verifier rejects other `protocolVersion` values.
 
 `prepareAggregateForDecryption(...)` returns the original aggregate when `c1` is already non-identity. If an accepted aggregate lands on identity `c1`, it deterministically adds a public encryption of zero so the tally stays the same while the DLEQ statement remains meaningful.
 

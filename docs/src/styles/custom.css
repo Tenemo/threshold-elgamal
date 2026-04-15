@@ -260,12 +260,38 @@
         height: 100%;
     }
 
+    html[data-has-hero] .landing-split-grid .card .title {
+        margin: 0;
+    }
+
+    html[data-has-hero] .landing-split-grid .card .body {
+        display: flex;
+        flex: 1 1 auto;
+    }
+
+    html[data-has-hero] .landing-card-body {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 100%;
+    }
+
+    html[data-has-hero] .landing-card-copy {
+        display: grid;
+        gap: 1rem;
+    }
+
+    html[data-has-hero] .landing-card-copy > p {
+        margin: 0;
+    }
+
     html[data-has-hero] .landing-card-actions {
-        margin-top: 1.25rem;
+        margin-top: auto;
     }
 
     html[data-has-hero] .landing-card-actions .sl-link-button {
-        margin: 0;
+        margin: 0 !important;
     }
 
     html[data-has-hero] .landing-steps-shell {
@@ -382,6 +408,10 @@
         html[data-has-hero] .landing-split-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
+
+        html[data-has-hero] .landing-split-grid .card .title {
+            min-height: calc(var(--sl-line-height-headings) * 2em);
+        }
     }
 
     .sl-markdown-content blockquote {
@@ -456,7 +486,7 @@
             padding-top: var(--sl-nav-height);
             border-inline-start: 1px solid var(--sl-color-hairline);
             overflow-y: auto;
-            scrollbar-width: none;
+            scrollbar-gutter: stable;
         }
 
         html[data-has-sidebar][data-has-toc] .right-sidebar-panel {
