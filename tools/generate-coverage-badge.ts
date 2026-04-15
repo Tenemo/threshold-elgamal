@@ -41,9 +41,6 @@ const summaryOutputPath = path.resolve(
 const softGreen = '5FA04E';
 
 const colorForCoverage = (percent: number): string => {
-    if (percent >= 95) {
-        return softGreen;
-    }
     if (percent >= 90) {
         return softGreen;
     }
