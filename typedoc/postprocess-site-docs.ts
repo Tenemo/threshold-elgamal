@@ -1,16 +1,11 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-const docsContentRoot = 'docs/src/content/docs';
-const apiReferenceRoot = `${docsContentRoot}/api/reference`;
-const apiNavigationJson = `${apiReferenceRoot}/navigation.json`;
-const publicApiDocs: readonly {
-    moduleName: string;
-}[] = [
-    {
-        moduleName: 'threshold-elgamal',
-    },
-] as const;
+import {
+    apiNavigationJson,
+    apiReferenceRoot,
+    publicApiDocs,
+} from './api-docs-config';
 
 const repoRoot = process.cwd();
 const referenceRoot = path.resolve(repoRoot, apiReferenceRoot);

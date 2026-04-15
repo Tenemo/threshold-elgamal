@@ -342,6 +342,29 @@ describe('honest-majority voting flow', () => {
         ).rejects.toThrow('Ballot close must include at least 2 participants');
     });
 
+    it('sorts tally publication participant indices and rejects duplicates', async () => {
+        const sortedTallyPublication = await createTallyPublicationPayload(
+            fullFixture.participants[0].auth.privateKey,
+            {
+                ...fullFixture.tallyPublications[0].payload,
+                decryptionParticipantIndices: [2, 1],
+            },
+        );
+
+        expect(
+            sortedTallyPublication.payload.decryptionParticipantIndices,
+        ).toEqual([1, 2]);
+        await expect(
+            createTallyPublicationPayload(
+                fullFixture.participants[0].auth.privateKey,
+                {
+                    ...fullFixture.tallyPublications[0].payload,
+                    decryptionParticipantIndices: [1, 2, 2],
+                },
+            ),
+        ).rejects.toThrow('Decryption participant indices must be unique');
+    });
+
     it('rejects ballot close payloads that include a participant without a complete ballot', async () => {
         const incompleteBallotClosePayload = await signProtocolPayload(
             partialFixture.participants[0].auth.privateKey,

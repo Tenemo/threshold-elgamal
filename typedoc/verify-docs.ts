@@ -10,18 +10,11 @@ import {
 
 import config from '../typedoc.config.mjs';
 
-const docsContentRoot = 'docs/src/content/docs';
-const apiReferenceRoot = `${docsContentRoot}/api/reference`;
-const apiNavigationJson = `${apiReferenceRoot}/navigation.json`;
-const publicApiDocs: readonly {
-    apiIndexPage: string;
-    moduleName: string;
-}[] = [
-    {
-        apiIndexPage: `${apiReferenceRoot}/threshold-elgamal/index.md`,
-        moduleName: 'threshold-elgamal',
-    },
-] as const;
+import {
+    apiNavigationJson,
+    docsContentRoot,
+    publicApiDocs,
+} from './api-docs-config';
 
 const repoRoot = process.cwd();
 const docsRoot = path.resolve(repoRoot, docsContentRoot);
