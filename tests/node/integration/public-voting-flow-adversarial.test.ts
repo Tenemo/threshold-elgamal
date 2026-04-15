@@ -6,6 +6,7 @@ import {
     createBallotSubmissionPayload,
     createDecryptionSharePayload,
     createTallyPublicationPayload,
+    signProtocolPayload,
     tryVerifyElectionCeremony,
     verifyElectionCeremony,
     type SignedPayload,
@@ -117,13 +118,22 @@ const expectFailure = async (
     resultPromise: ReturnType<typeof tryVerifyElectionCeremony>,
     expected: {
         readonly code:
+            | 'MANIFEST_INVALID'
             | 'BOARD_INVALID'
             | 'DKG_INVALID'
+            | 'SIGNATURE_INVALID'
             | 'BALLOT_INVALID'
             | 'DECRYPTION_INVALID'
             | 'TALLY_INVALID';
         readonly reasonFragment: string;
-        readonly stage: 'board' | 'dkg' | 'ballots' | 'decryption' | 'tally';
+        readonly stage:
+            | 'manifest'
+            | 'board'
+            | 'dkg'
+            | 'signatures'
+            | 'ballots'
+            | 'decryption'
+            | 'tally';
     },
 ): Promise<void> => {
     const result = await resultPromise;
@@ -342,6 +352,80 @@ describe('honest-majority voting flow adversarial coverage', () => {
         );
     });
 
+    it('rejects ceremonies with an invalid manifest before board replay begins', async () => {
+        await expectFailure(
+            tryVerifyElectionCeremony({
+                ...verificationInput(fullFixture),
+                manifest: {
+                    ...fullFixture.manifest,
+                    optionList: ['One', 'One', 'Three'],
+                },
+            }),
+            {
+                code: 'MANIFEST_INVALID',
+                stage: 'manifest',
+                reasonFragment: 'Duplicate option "One" is not allowed',
+            },
+        );
+    });
+
+    it('rejects signed ballot payloads whose signature bytes no longer match the registered auth key', async () => {
+        const original = findBallotPayload(fullFixture, 1, 1);
+
+        await expectFailure(
+            tryVerifyElectionCeremony(
+                verificationInput(fullFixture, {
+                    ballotPayloads: replaceSignedPayload(
+                        fullFixture.ballotPayloads,
+                        (payload) =>
+                            payload.payload.participantIndex === 1 &&
+                            payload.payload.optionIndex === 1,
+                        {
+                            ...original,
+                            signature: corruptHexTailByte(original.signature),
+                        },
+                    ),
+                }),
+            ),
+            {
+                code: 'SIGNATURE_INVALID',
+                stage: 'signatures',
+                reasonFragment:
+                    'Payload signature failed verification for participant 1 (ballot-submission)',
+            },
+        );
+    });
+
+    it('rejects published payloads that claim an unregistered participant index after DKG succeeds', async () => {
+        const original = findBallotPayload(fullFixture, 1, 1);
+        const forgedUnregisteredBallot = await signProtocolPayload(
+            fullFixture.participants[0].auth.privateKey,
+            {
+                ...original.payload,
+                participantIndex: 5,
+            },
+        );
+
+        await expectFailure(
+            tryVerifyElectionCeremony(
+                verificationInput(fullFixture, {
+                    ballotPayloads: replaceSignedPayload(
+                        fullFixture.ballotPayloads,
+                        (payload) =>
+                            payload.payload.participantIndex === 1 &&
+                            payload.payload.optionIndex === 1,
+                        forgedUnregisteredBallot,
+                    ),
+                }),
+            ),
+            {
+                code: 'SIGNATURE_INVALID',
+                stage: 'signatures',
+                reasonFragment: 'Missing registration for participant 5',
+            },
+        );
+    });
+
     it('rejects ballot payloads with a replayed proof from another option', async () => {
         const optionOneBallot = findBallotPayload(fullFixture, 1, 1);
         const forgedOptionTwoBallot = await createBallotSubmissionPayload(
@@ -405,6 +489,60 @@ describe('honest-majority voting flow adversarial coverage', () => {
         );
     });
 
+    it('rejects ceremonies when one option is missing a threshold-sized decryption subset', async () => {
+        await expectFailure(
+            tryVerifyElectionCeremony(
+                verificationInput(fullFixture, {
+                    decryptionSharePayloads:
+                        fullFixture.decryptionSharePayloads.filter(
+                            (payload) =>
+                                !(
+                                    payload.payload.optionIndex === 1 &&
+                                    payload.payload.participantIndex === 2
+                                ),
+                        ),
+                }),
+            ),
+            {
+                code: 'DECRYPTION_INVALID',
+                stage: 'decryption',
+                reasonFragment:
+                    'At least 2 decryption shares are required for option 1',
+            },
+        );
+    });
+
+    it('rejects complaint-path ceremonies when a disqualified dealer still posts a decryption share', async () => {
+        const original = findDecryptionSharePayload(complaintFixture, 1, 1);
+        const disqualifiedShare = await createDecryptionSharePayload(
+            complaintFixture.participants[3].auth.privateKey,
+            {
+                ...original.payload,
+                participantIndex: 4,
+            },
+        );
+
+        await expectFailure(
+            tryVerifyElectionCeremony(
+                verificationInput(complaintFixture, {
+                    decryptionSharePayloads: replaceSignedPayload(
+                        complaintFixture.decryptionSharePayloads,
+                        (payload) =>
+                            payload.payload.participantIndex === 1 &&
+                            payload.payload.optionIndex === 1,
+                        disqualifiedShare,
+                    ),
+                }),
+            ),
+            {
+                code: 'DECRYPTION_INVALID',
+                stage: 'decryption',
+                reasonFragment:
+                    'Decryption share came from non-qualified participant 4',
+            },
+        );
+    });
+
     it('rejects tally publications whose decryption participant set does not match the supplied shares', async () => {
         const forgedTallyPublication = await createTallyPublicationPayload(
             fullFixture.participants[0].auth.privateKey,
@@ -428,6 +566,50 @@ describe('honest-majority voting flow adversarial coverage', () => {
                 stage: 'tally',
                 reasonFragment:
                     'Tally publication decryption participant set does not match the supplied decryption shares for option 1',
+            },
+        );
+    });
+
+    it('rejects ceremonies when one tally publication is missing after successful decryption-share verification', async () => {
+        await expectFailure(
+            tryVerifyElectionCeremony(
+                verificationInput(fullFixture, {
+                    tallyPublications: fullFixture.tallyPublications.slice(1),
+                }),
+            ),
+            {
+                code: 'TALLY_INVALID',
+                stage: 'tally',
+                reasonFragment:
+                    'Expected 3 tally-publication payloads, received 2',
+            },
+        );
+    });
+
+    it('rejects conflicting tally publications for one canonical board slot as board equivocation', async () => {
+        const duplicateOptionOnePublication =
+            await createTallyPublicationPayload(
+                fullFixture.participants[0].auth.privateKey,
+                {
+                    ...fullFixture.tallyPublications[1].payload,
+                    optionIndex: 1,
+                },
+            );
+
+        await expectFailure(
+            tryVerifyElectionCeremony(
+                verificationInput(fullFixture, {
+                    tallyPublications: [
+                        fullFixture.tallyPublications[0],
+                        duplicateOptionOnePublication,
+                        fullFixture.tallyPublications[2],
+                    ],
+                }),
+            ),
+            {
+                code: 'BOARD_INVALID',
+                stage: 'board',
+                reasonFragment: 'Detected equivocation for canonical slot',
             },
         );
     });
