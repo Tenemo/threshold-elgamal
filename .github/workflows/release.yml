@@ -56,17 +56,10 @@ jobs:
             - uses: actions/checkout@v6.0.2
               with:
                   persist-credentials: false
-            - uses: pnpm/action-setup@v5.0.0
-              with:
-                  run_install: false
-            - uses: actions/setup-node@v6.3.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: pnpm
-            - run: pnpm install --frozen-lockfile
+            - uses: ./.github/actions/bootstrap-pnpm
             - run: pnpm run check
             - run: pnpm run test:node
-            - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
+            - run: pnpm run build:dist
 
     coverage:
         name: coverage
@@ -78,14 +71,7 @@ jobs:
             - uses: actions/checkout@v6.0.2
               with:
                   persist-credentials: false
-            - uses: pnpm/action-setup@v5.0.0
-              with:
-                  run_install: false
-            - uses: actions/setup-node@v6.3.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: pnpm
-            - run: pnpm install --frozen-lockfile
+            - uses: ./.github/actions/bootstrap-pnpm
             - run: pnpm run coverage:node
 
     browser:
@@ -98,14 +84,7 @@ jobs:
             - uses: actions/checkout@v6.0.2
               with:
                   persist-credentials: false
-            - uses: pnpm/action-setup@v5.0.0
-              with:
-                  run_install: false
-            - uses: actions/setup-node@v6.3.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: pnpm
-            - run: pnpm install --frozen-lockfile
+            - uses: ./.github/actions/bootstrap-pnpm
             - run: pnpm exec playwright install --with-deps chromium firefox webkit
             - run: pnpm run test:browser
             - run: pnpm exec tsx ./tools/ci/verify-browser-compat.ts
@@ -120,14 +99,7 @@ jobs:
             - uses: actions/checkout@v6.0.2
               with:
                   persist-credentials: false
-            - uses: pnpm/action-setup@v5.0.0
-              with:
-                  run_install: false
-            - uses: actions/setup-node@v6.3.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: pnpm
-            - run: pnpm install --frozen-lockfile
+            - uses: ./.github/actions/bootstrap-pnpm
             - run: pnpm run verify:docs
             - run: pnpm run docs:build:site
 
@@ -141,15 +113,8 @@ jobs:
             - uses: actions/checkout@v6.0.2
               with:
                   persist-credentials: false
-            - uses: pnpm/action-setup@v5.0.0
-              with:
-                  run_install: false
-            - uses: actions/setup-node@v6.3.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: pnpm
-            - run: pnpm install --frozen-lockfile
-            - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
+            - uses: ./.github/actions/bootstrap-pnpm
+            - run: pnpm run build:dist
             - run: pnpm run verify:docs
             - run: pnpm run docs:build:site
             - run: pnpm run smoke:pack
@@ -185,14 +150,7 @@ jobs:
               id: source
               run: echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
 
-            - uses: pnpm/action-setup@v5.0.0
-              with:
-                  run_install: false
-
-            - uses: actions/setup-node@v6.3.0
-              with:
-                  node-version-file: .nvmrc
-                  cache: pnpm
+            - uses: ./.github/actions/bootstrap-pnpm
 
             - name: bump release version
               id: metadata
@@ -255,9 +213,7 @@ jobs:
                   echo "dist_tag=${DIST_TAG}" >> "${GITHUB_OUTPUT}"
                   echo "prerelease=${PRERELEASE}" >> "${GITHUB_OUTPUT}"
 
-            - run: pnpm install --frozen-lockfile
-
-            - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
+            - run: pnpm run build:dist
             - run: pnpm run verify:docs
             - run: pnpm run docs:build:site
             - run: pnpm run smoke:pack

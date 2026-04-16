@@ -83,9 +83,7 @@ const challengePayload = (
         fixedPoint(ciphertext.c1),
         fixedPoint(ciphertext.c2),
         encodeSequenceForChallenge(
-            validValues.map((value) =>
-                fixedScalar(modQ(value, group.q), group),
-            ),
+            validValues.map((value) => fixedScalar(modQ(value, group.q))),
         ),
         commitmentSequence(commitments),
     );

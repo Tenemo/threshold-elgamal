@@ -93,10 +93,8 @@ export const contextElements = (
 
 export const fixedPoint = (value: string): Uint8Array => hexToBytes(value);
 
-export const fixedScalar = (value: bigint, group: CryptoGroup): Uint8Array => {
-    void group;
-    return hexToBytes(encodeScalar(value));
-};
+export const fixedScalar = (value: bigint): Uint8Array =>
+    hexToBytes(encodeScalar(value));
 
 export const hashChallenge = (
     payload: Uint8Array,

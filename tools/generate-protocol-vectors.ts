@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 
-import { createDeterministicSource } from '../tests/helpers/deterministic';
+import { createDeterministicSource } from './internal/deterministic';
 
 import { RISTRETTO_GROUP } from '#core';
 import {

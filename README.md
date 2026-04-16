@@ -1,6 +1,6 @@
 # threshold-elgamal
 
-[![npm downloads](https://img.shields.io/npm/dm/threshold-elgamal?color=5FA04E)](https://www.npmjs.com/package/threshold-elgamal)
+[![npm version](https://img.shields.io/npm/v/threshold-elgamal?color=5FA04E)](https://www.npmjs.com/package/threshold-elgamal) [![npm downloads](https://img.shields.io/npm/dm/threshold-elgamal?color=5FA04E)](https://www.npmjs.com/package/threshold-elgamal)
 
 ---
 

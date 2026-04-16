@@ -16,17 +16,10 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v6.0.2
-      - uses: pnpm/action-setup@v5.0.0
-        with:
-          run_install: false
-      - uses: actions/setup-node@v6.3.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/bootstrap-pnpm
       - run: pnpm run check
       - run: pnpm run test:node
-      - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
+      - run: pnpm run build:dist
 
   coverage:
     name: coverage
@@ -34,14 +27,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6.0.2
-      - uses: pnpm/action-setup@v5.0.0
-        with:
-          run_install: false
-      - uses: actions/setup-node@v6.3.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/bootstrap-pnpm
       - run: pnpm run coverage:node
 
   browser:
@@ -50,14 +36,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6.0.2
-      - uses: pnpm/action-setup@v5.0.0
-        with:
-          run_install: false
-      - uses: actions/setup-node@v6.3.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/bootstrap-pnpm
       - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm run test:browser
       - run: pnpm exec tsx ./tools/ci/verify-browser-compat.ts
@@ -68,14 +47,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6.0.2
-      - uses: pnpm/action-setup@v5.0.0
-        with:
-          run_install: false
-      - uses: actions/setup-node@v6.3.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/bootstrap-pnpm
       - run: pnpm run verify:docs
       - run: pnpm run docs:build:site
 
@@ -86,15 +58,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6.0.2
-      - uses: pnpm/action-setup@v5.0.0
-        with:
-          run_install: false
-      - uses: actions/setup-node@v6.3.0
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm exec del-cli dist && pnpm exec tsc --project tsconfig.build.json && pnpm exec tsx ./tools/build/rewrite-dist-relative-imports.ts
+      - uses: ./.github/actions/bootstrap-pnpm
+      - run: pnpm run build:dist
       - run: pnpm run verify:docs
       - run: pnpm run docs:build:site
       - run: pnpm run smoke:pack

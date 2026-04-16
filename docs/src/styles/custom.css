@@ -269,14 +269,6 @@
         flex: 1 1 auto;
     }
 
-    html[data-has-hero] .landing-card-body {
-        display: flex;
-        flex: 1 1 auto;
-        flex-direction: column;
-        justify-content: space-between;
-        min-height: 100%;
-    }
-
     html[data-has-hero] .landing-card-copy {
         display: grid;
         gap: 1rem;
@@ -284,14 +276,6 @@
 
     html[data-has-hero] .landing-card-copy > p {
         margin: 0;
-    }
-
-    html[data-has-hero] .landing-card-actions {
-        margin-top: auto;
-    }
-
-    html[data-has-hero] .landing-card-actions .sl-link-button {
-        margin: 0 !important;
     }
 
     html[data-has-hero] .landing-steps-shell {
