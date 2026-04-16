@@ -929,20 +929,6 @@ export const runVotingFlowScenario = async (
         const optionSharePayloads = await Promise.all(
             selectedParticipants.map(async (participantIndex) => {
                 const share = finalShares[participantIndex - 1];
-                if (optionBallots.aggregate.transcriptHash.trim() === '') {
-                    throw new Error(
-                        'Verified aggregate ciphertext requires a non-empty transcript hash',
-                    );
-                }
-                if (
-                    !Number.isInteger(optionBallots.aggregate.ballotCount) ||
-                    optionBallots.aggregate.ballotCount < 1
-                ) {
-                    throw new Error(
-                        'Verified aggregate ciphertext requires at least one accepted ballot',
-                    );
-                }
-
                 const verifiedShare = createDecryptionShare(
                     preparedAggregate.ciphertext,
                     share,

@@ -87,7 +87,8 @@ const modP = (value: bigint, p: bigint): bigint => mod(value, p);
 /**
  * Reduces a value into the range `0..q-1`.
  *
- * @throws InvalidScalarError When `q` is not positive.
+ * @throws {@link threshold-elgamal/core!InvalidScalarError | InvalidScalarError}
+ * When `q` is not positive.
  */
 export const modQ = (value: bigint, q: bigint): bigint => mod(value, q);
 
