@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createDeterministicSource } from '../../helpers/deterministic';
+import { createDeterministicSource } from '../../../tools/internal/deterministic';
 
 import { InvalidProofError, RISTRETTO_GROUP } from '#src/core/public';
 import { encodePoint, multiplyBase } from '#src/core/ristretto';

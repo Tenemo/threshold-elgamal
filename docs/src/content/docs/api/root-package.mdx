@@ -16,7 +16,7 @@ when you prefer imports by subsystem.
 
 ## What lives here
 
-- manifest helpers
+- manifest helpers and score-range helpers
 - roster hashing and session derivation
 - transport and authentication helpers
 - DKG, proof, and tally helpers used by the supported ceremony
@@ -26,7 +26,7 @@ when you prefer imports by subsystem.
 
 ## Common starting points
 
-- manifest and session setup: `createElectionManifest`, `hashRosterEntries`, `hashElectionManifest`, `deriveSessionId`
+- manifest and session setup: `createElectionManifest`, `scoreRangeDomain`, `hashRosterEntries`, `hashElectionManifest`, `deriveSessionId`
 - browser-side key material: `generateAuthKeyPair`, `exportAuthPublicKey`, `generateTransportKeyPair`, `exportTransportPublicKey`
 - encrypted share transport: `encryptEnvelope`, `decryptEnvelope`
 - DKG and proof flow: `generatePedersenCommitments`, `generateFeldmanCommitments`, `deriveJointPublicKey`, `createDisjunctiveProof`, `createDLEQProof`, `createSchnorrProof`
@@ -51,7 +51,7 @@ import {
 ## Use the root package when
 
 - you want the `ristretto255` voting workflow
-- you want the minimal manifest and derived majority-threshold rules
+- you want the explicit manifest, declared score range, and derived majority-threshold rules
 - you want one import surface for the full supported ceremony, including proof, threshold, DKG, and verifier steps
 
 ## Use the submodules when

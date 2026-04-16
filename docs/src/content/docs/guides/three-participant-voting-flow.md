@@ -8,10 +8,10 @@ sidebar:
 This guide describes the supported ceremony shape:
 
 1. Freeze the roster in the application and hash it.
-2. Publish the minimal manifest.
+2. Publish the explicit manifest.
 3. Collect registrations and manifest acceptances.
 4. Complete the honest-majority GJKR transcript.
-5. Publish complete score ballots.
+5. Publish complete score ballots inside the declared range.
 6. Publish one organizer-signed `ballot-close`.
 7. Publish decryption shares and tallies for the close-selected ballot set.
 8. Verify the entire ceremony from the public board.
@@ -26,7 +26,7 @@ Use `threshold-elgamal` for the full supported ceremony, including the proof, th
 - the signed public payloads exactly as posted on the board
 - the organizer's final `countedParticipantIndices` from `ballot-close`
 
-## Minimal manifest
+## Explicit manifest
 
 ```typescript
 import {
@@ -58,6 +58,7 @@ const rosterHash = await hashRosterEntries([
 const manifest = createElectionManifest({
     rosterHash,
     optionList: ["Option A", "Option B", "Option C"],
+    scoreRange: { min: 1, max: 10 },
 });
 
 const manifestHash = await hashElectionManifest(manifest);
@@ -71,7 +72,7 @@ const sessionId = await deriveSessionId(
 console.log(majorityThreshold(3)); // 2
 ```
 
-The manifest does not carry `participantCount`, `reconstructionThreshold`, publication floors, or deadline metadata. The verifier derives `n` from the accepted registration roster and derives `k` internally as `ceil(n / 2)`.
+The manifest does not carry `participantCount`, `reconstructionThreshold`, publication floors, or deadline metadata. It does carry one explicit global `scoreRange`. The verifier derives `n` from the accepted registration roster and derives `k` internally as `ceil(n / 2)`.
 
 ## Supported public flow helpers
 

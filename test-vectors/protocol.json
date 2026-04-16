@@ -5,27 +5,31 @@
     "optionList": [
       "Alpha",
       "Beta"
-    ]
+    ],
+    "scoreRange": {
+      "min": 1,
+      "max": 10
+    }
   },
-  "canonicalManifest": "{\"optionList\":[\"Alpha\",\"Beta\"],\"rosterHash\":\"roster-hash\"}",
-  "manifestHash": "755ce99e5b13e48c96cac96565825a0825a10977fdd53e388b50fca0e79c502f",
+  "canonicalManifest": "{\"optionList\":[\"Alpha\",\"Beta\"],\"rosterHash\":\"roster-hash\",\"scoreRange\":{\"max\":10,\"min\":1}}",
+  "manifestHash": "25851857d38606de192be4ae976b9de98a69585aac8e91deb18d37bededf4f12",
   "sessionInputs": {
     "left": {
-      "manifestHash": "755ce99e5b13e48c96cac96565825a0825a10977fdd53e388b50fca0e79c502f",
+      "manifestHash": "25851857d38606de192be4ae976b9de98a69585aac8e91deb18d37bededf4f12",
       "rosterHash": "roster-hash",
       "randomNonce": "nonce:a",
       "timestamp": "timestamp"
     },
     "right": {
-      "manifestHash": "755ce99e5b13e48c96cac96565825a0825a10977fdd53e388b50fca0e79c502f",
+      "manifestHash": "25851857d38606de192be4ae976b9de98a69585aac8e91deb18d37bededf4f12",
       "rosterHash": "roster-hash",
       "randomNonce": "nonce",
       "timestamp": "a:timestamp"
     }
   },
   "sessionIds": {
-    "left": "4d24dcd0c85f52889971c94b887ad1c4a27853259fd66be488b16d6d24c50d9f",
-    "right": "58ff7ab8f5a826734dbe9c9016cc3cafdce003d34a98ba9451689cd3a400a245"
+    "left": "cb2619f00d42fee6961ee23b828211672cd52c200643a139bc779107351f2b9e",
+    "right": "b5aa714af484964f0313f1a9129e0d1e790fc31fbbf7f2d39ff03b4fe57fe8b8"
   },
   "schnorr": {
     "secret": "77",
@@ -33,15 +37,15 @@
     "context": {
       "protocolVersion": "v1",
       "suiteId": "ristretto255",
-      "manifestHash": "755ce99e5b13e48c96cac96565825a0825a10977fdd53e388b50fca0e79c502f",
-      "sessionId": "4d24dcd0c85f52889971c94b887ad1c4a27853259fd66be488b16d6d24c50d9f",
+      "manifestHash": "25851857d38606de192be4ae976b9de98a69585aac8e91deb18d37bededf4f12",
+      "sessionId": "cb2619f00d42fee6961ee23b828211672cd52c200643a139bc779107351f2b9e",
       "label": "vector-schnorr",
       "participantIndex": 1,
       "coefficientIndex": 1
     },
     "proof": {
-      "challenge": "1441685168175752584398125839168356671137536993484096864257414060597488165364",
-      "response": "6023114105648455446060766550539828533401178969543725240144297345127455174860"
+      "challenge": "4700059892160264941540007947928628605968860330130932621643553800334718901219",
+      "response": "5733545022003278644468478012750052307123705233697276799971807935421248489066"
     }
   },
   "dleq": {
@@ -57,14 +61,14 @@
     "context": {
       "protocolVersion": "v1",
       "suiteId": "ristretto255",
-      "manifestHash": "755ce99e5b13e48c96cac96565825a0825a10977fdd53e388b50fca0e79c502f",
-      "sessionId": "4d24dcd0c85f52889971c94b887ad1c4a27853259fd66be488b16d6d24c50d9f",
+      "manifestHash": "25851857d38606de192be4ae976b9de98a69585aac8e91deb18d37bededf4f12",
+      "sessionId": "cb2619f00d42fee6961ee23b828211672cd52c200643a139bc779107351f2b9e",
       "label": "vector-dleq",
       "participantIndex": 2
     },
     "proof": {
-      "challenge": "7128348722298634909341034826894490722048742807710264889750982250893088885436",
-      "response": "5284184167132817682225513944944883466676238575794937475030626883175958508260"
+      "challenge": "5752903650694770051264426196799618315219240543082187635862239431428922487472",
+      "response": "4518534574980650555919925223494691288846194779543614677757083524215321494940"
     }
   },
   "disjunctive": {

@@ -7,7 +7,7 @@ sidebar:
 
 The workflow is browser-native. Use the root package directly inside the browser or inside Web Workers for the common manifest, key, and envelope flow. Grouped public submodules remain available when you prefer narrower imports by subsystem.
 
-## Minimal browser flow
+## Browser flow
 
 ```typescript
 import {
@@ -57,6 +57,7 @@ const rosterHash = await hashRosterEntries(
 const manifest = createElectionManifest({
     rosterHash,
     optionList: ["Budget", "Hiring"],
+    scoreRange: { min: 1, max: 10 },
 });
 
 const manifestHash = await hashElectionManifest(manifest);

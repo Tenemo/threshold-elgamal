@@ -11,13 +11,13 @@ This page records the library invariants.
 
 - The tally path is additive-only.
 - The built-in tally group is `ristretto255`.
-- The score domain is fixed to `1..10`.
+- The score domain is one explicit non-negative contiguous manifest range shared by every option.
 - The grouped ballot rule is fixed to complete ballots only.
 - Conflicting same-slot ballots are treated as equivocation, while byte-identical replays stay idempotent.
 
 ## Manifest and threshold rules
 
-- The public manifest shape is only `rosterHash` and `optionList`.
+- The public manifest shape is `rosterHash`, `optionList`, and `scoreRange`.
 - The accepted registration roster is the authoritative public source of `n`.
 - The library derives the threshold internally as `k = ceil(n / 2)`.
 - There is no supported public `k-of-n` configuration and no supported `n-of-n` mode.

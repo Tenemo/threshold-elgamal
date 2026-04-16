@@ -63,8 +63,8 @@ export type DisjunctiveBranch = {
 /**
  * A disjunctive proof over an ordered set of valid plaintext values.
  *
- * Ballot payloads use this to prove that an encrypted score came from the
- * allowed score domain without revealing which value was chosen.
+ * Ballot payloads use this to prove that an encrypted value came from the
+ * allowed manifest domain without revealing which value was chosen.
  */
 export type DisjunctiveProof = {
     readonly branches: readonly DisjunctiveBranch[];

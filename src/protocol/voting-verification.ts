@@ -167,6 +167,7 @@ const recomputePublishedTally = (input: {
     readonly jointPublicKey: VerifiedDKGTranscript['jointPublicKey'];
     readonly protocolVersion: string;
     readonly manifestHash: string;
+    readonly scoreRangeMax: bigint;
     readonly sessionId: string;
 }): bigint => {
     const preparedAggregate = prepareAggregateForDecryption({
@@ -181,7 +182,7 @@ const recomputePublishedTally = (input: {
     return combineDecryptionShares(
         preparedAggregate.ciphertext,
         input.decryptionShares.map((entry) => entry.share),
-        BigInt(input.ballots.aggregate.ballotCount) * 10n,
+        BigInt(input.ballots.aggregate.ballotCount) * input.scoreRangeMax,
     );
 };
 
@@ -561,6 +562,7 @@ export const verifyElectionCeremony = async (
                 jointPublicKey: dkg.jointPublicKey,
                 protocolVersion: context.protocolVersion,
                 manifestHash: context.manifestHash,
+                scoreRangeMax: context.scoreRangeMax,
                 sessionId: context.sessionId,
             });
             const publication = tallyPublicationMap.get(optionIndex);

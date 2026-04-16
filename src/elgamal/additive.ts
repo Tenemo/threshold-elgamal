@@ -22,23 +22,6 @@ import {
 
 import type { ElGamalCiphertext } from './types';
 
-type ResolvedAdditiveContext = {
-    readonly bound: bigint;
-};
-
-/** Validates an additive-mode public key against the built-in suite. */
-const assertValidAdditivePublicKey = (publicKey: string): void => {
-    assertValidPublicKey(publicKey);
-};
-
-/** Validates the caller-supplied additive plaintext bound. */
-const assertValidAdditiveBound = (bound: bigint): void =>
-    assertAdditiveBound(bound, RISTRETTO_GROUP.q);
-
-/** Validates the plaintext domain and caller-supplied bound for additive mode. */
-const assertValidAdditivePlaintext = (value: bigint, bound: bigint): void =>
-    assertPlaintextAdditive(value, bound, RISTRETTO_GROUP.q);
-
 /**
  * Validates an additive ciphertext that may already represent an aggregate.
  *
@@ -52,30 +35,14 @@ export const assertValidAdditiveCiphertext = (
     assertInSubgroupOrIdentity(ciphertext.c2);
 };
 
-const resolveAdditiveBound = (
-    bound: bigint | undefined,
-    operation: 'encryption' | 'decryption',
-): bigint => {
+const requireAdditiveBound = (bound: bigint | undefined): bigint => {
     if (typeof bound !== 'bigint') {
         throw new InvalidScalarError(
-            `Additive ${operation} requires an explicit plaintext bound`,
+            'Additive encryption requires an explicit plaintext bound',
         );
     }
 
     return bound;
-};
-
-const resolveAdditiveContext = (
-    bound: bigint | undefined,
-    operation: 'encryption' | 'decryption',
-): ResolvedAdditiveContext => {
-    const resolvedBound = resolveAdditiveBound(bound, operation);
-
-    assertValidAdditiveBound(resolvedBound);
-
-    return {
-        bound: resolvedBound,
-    };
 };
 
 const assertEncryptionRandomness = (randomness: bigint): void => {
@@ -135,10 +102,11 @@ export const encryptAdditiveWithRandomness = (
     randomness: bigint,
     bound: bigint,
 ): ElGamalCiphertext => {
-    const context = resolveAdditiveContext(bound, 'encryption');
+    const resolvedBound = requireAdditiveBound(bound);
 
-    assertValidAdditivePlaintext(message, context.bound);
-    assertValidAdditivePublicKey(publicKey);
+    assertAdditiveBound(resolvedBound, RISTRETTO_GROUP.q);
+    assertPlaintextAdditive(message, resolvedBound, RISTRETTO_GROUP.q);
+    assertValidPublicKey(publicKey);
     assertEncryptionRandomness(randomness);
 
     return encryptAdditiveWithValidatedInputs(message, publicKey, randomness);

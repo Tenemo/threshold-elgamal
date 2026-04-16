@@ -14,6 +14,7 @@ import {
 const fixtureTimeoutMs = 240_000;
 const ristrettoIdentityPoint =
     '0000000000000000000000000000000000000000000000000000000000000000';
+const defaultScoreRange = { min: 1, max: 10 } as const;
 
 const allParticipantIndices = (participantCount: number): readonly number[] =>
     Array.from({ length: participantCount }, (_value, offset) => offset + 1);
@@ -24,6 +25,7 @@ const positiveScenarios = [
         scenario: {
             participantCount: 8,
             optionCount: 5,
+            scoreRange: { min: 0, max: 5 },
             votingParticipantIndices: allParticipantIndices(8),
             closeParticipantIndices: allParticipantIndices(8),
         },
@@ -35,6 +37,7 @@ const positiveScenarios = [
         scenario: {
             participantCount: 7,
             optionCount: 4,
+            scoreRange: { min: 1, max: 5 },
             votingParticipantIndices: allParticipantIndices(6),
             closeParticipantIndices: allParticipantIndices(6),
         },
@@ -46,6 +49,7 @@ const positiveScenarios = [
         scenario: {
             participantCount: 6,
             optionCount: 3,
+            scoreRange: defaultScoreRange,
             votingParticipantIndices: allParticipantIndices(6),
             closeParticipantIndices: allParticipantIndices(4),
         },
@@ -57,6 +61,7 @@ const positiveScenarios = [
         scenario: {
             participantCount: 4,
             optionCount: 2,
+            scoreRange: defaultScoreRange,
             votingParticipantIndices: allParticipantIndices(2),
             closeParticipantIndices: allParticipantIndices(2),
         },
@@ -68,9 +73,10 @@ const positiveScenarios = [
         scenario: {
             participantCount: 3,
             optionList: ['Budget', 'Hiring', 'Operations'],
+            scoreRange: { min: 1, max: 5 },
             participantVotes: [
-                [1n, 10n, 1n],
-                [10n, 1n, 10n],
+                [1n, 5n, 1n],
+                [5n, 1n, 5n],
                 [5n, 5n, 5n],
             ],
         },
@@ -82,6 +88,7 @@ const positiveScenarios = [
         scenario: {
             participantCount: 5,
             optionList: ['Alpha', 'Beta', 'Gamma', 'Delta'],
+            scoreRange: defaultScoreRange,
             participantVotes: [
                 [1n, 10n, 3n, 8n],
                 [10n, 1n, 8n, 3n],
@@ -98,6 +105,7 @@ const positiveScenarios = [
         scenario: {
             participantCount: 3,
             optionList: ['Alpha', 'Beta'],
+            scoreRange: defaultScoreRange,
             participantVotes: [
                 [1n, 2n],
                 [3n, 4n],
@@ -113,6 +121,17 @@ const positiveScenarios = [
         expectedAcceptedCount: 3,
         identityOptionIndices: [1],
     },
+    {
+        name: 'verifies tallies above the old fixed 10-per-ballot bound',
+        scenario: {
+            participantCount: 3,
+            optionList: ['Budget'],
+            scoreRange: { min: 0, max: 12 },
+            participantVotes: [[12n], [12n], [12n]],
+        },
+        expectedExcluded: [],
+        expectedAcceptedCount: 3,
+    },
 ] as const;
 
 describe('honest-majority voting flow', () => {
@@ -124,6 +143,7 @@ describe('honest-majority voting flow', () => {
             runVotingFlowScenario({
                 participantCount: 4,
                 optionList: ['One', 'Two', 'Three'],
+                scoreRange: defaultScoreRange,
                 participantVotes: [
                     [1n, 2n, 3n],
                     [4n, 5n, 6n],
@@ -134,6 +154,7 @@ describe('honest-majority voting flow', () => {
             runVotingFlowScenario({
                 participantCount: 4,
                 optionList: ['One', 'Two', 'Three'],
+                scoreRange: defaultScoreRange,
                 participantVotes: [
                     [1n, 2n, 3n],
                     [4n, 5n, 6n],
@@ -205,6 +226,7 @@ describe('honest-majority voting flow', () => {
             runVotingFlowScenario({
                 participantCount: 3,
                 optionList: ['Alpha', 'Beta', 'Gamma'],
+                scoreRange: defaultScoreRange,
                 participantVotes: [
                     [1n, 2n, 3n],
                     [4n, 5n],
@@ -216,29 +238,48 @@ describe('honest-majority voting flow', () => {
         );
     });
 
-    it('rejects vote rows outside the shipped 1..10 score domain', async () => {
+    it('rejects vote rows outside the manifest-declared score domain', async () => {
         await expect(
             runVotingFlowScenario({
                 participantCount: 3,
                 optionList: ['Alpha', 'Beta'],
+                scoreRange: { min: 1, max: 5 },
                 participantVotes: [
                     [0n, 2n],
                     [4n, 5n],
                     [6n, 7n],
                 ],
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Participant 1 option 1 vote must stay within 1..5');
         await expect(
             runVotingFlowScenario({
                 participantCount: 3,
                 optionList: ['Alpha', 'Beta'],
+                scoreRange: { min: 1, max: 5 },
                 participantVotes: [
                     [1n, 2n],
-                    [4n, 11n],
-                    [6n, 7n],
+                    [4n, 6n],
+                    [3n, 5n],
                 ],
             }),
-        ).rejects.toThrow();
+        ).rejects.toThrow('Participant 2 option 2 vote must stay within 1..5');
+    });
+
+    it('rejects legacy full-verification inputs whose manifest omits scoreRange', async () => {
+        await expect(
+            verifyElectionCeremony({
+                manifest: {
+                    rosterHash: fullFixture.manifest.rosterHash,
+                    optionList: fullFixture.manifest.optionList,
+                } as typeof fullFixture.manifest,
+                sessionId: fullFixture.sessionId,
+                dkgTranscript: fullFixture.dkgTranscript,
+                ballotPayloads: fullFixture.ballotPayloads,
+                ballotClosePayload: fullFixture.ballotClosePayload,
+                decryptionSharePayloads: fullFixture.decryptionSharePayloads,
+                tallyPublications: fullFixture.tallyPublications,
+            }),
+        ).rejects.toThrow('Election manifest requires an explicit scoreRange');
     });
 
     it('rejects ballot close payloads signed by a non-organizer', async () => {

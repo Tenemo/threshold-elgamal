@@ -6,10 +6,12 @@ import { decodePoint, decodeScalar, encodeScalar } from '../core/ristretto';
 import type { ElGamalCiphertext } from '../elgamal/types';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types';
 
+import { validateSupportedScoreRange } from './score-range';
 import type {
     EncodedCiphertext,
     EncodedCompactProof,
     EncodedDisjunctiveProof,
+    ScoreRange,
 } from './types';
 
 /**
@@ -93,11 +95,23 @@ export const decodeDisjunctiveProof = (
 });
 
 /**
- * Returns the fixed score-voting domain `1..10`.
+ * Expands one inclusive contiguous score range into its allowed plaintext
+ * domain.
  *
- * The supported voting workflow does not expose a configurable score range.
+ * Ballot builders and verifiers pass the resulting values into the
+ * disjunctive-proof layer so each encrypted score can be proven to belong to
+ * the manifest-declared domain.
  */
-export const scoreVotingDomain = (): readonly bigint[] =>
-    Object.freeze(
-        Array.from({ length: 10 }, (_value, index) => BigInt(index + 1)),
+export const scoreRangeDomain = (scoreRange: ScoreRange): readonly bigint[] => {
+    validateSupportedScoreRange(scoreRange, {
+        min: 'Score range min',
+        max: 'Score range max',
+    });
+
+    return Object.freeze(
+        Array.from(
+            { length: scoreRange.max - scoreRange.min + 1 },
+            (_value, index) => BigInt(scoreRange.min + index),
+        ),
     );
+};

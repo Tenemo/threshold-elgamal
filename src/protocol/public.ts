@@ -18,11 +18,12 @@ export {
     type VerifiedProtocolSignatures,
 } from './verification';
 export { verifyBallotSubmissionPayloadsByOption } from './voting-ballots';
-export { scoreVotingDomain } from './voting-codecs';
+export { scoreRangeDomain } from './voting-codecs';
 export type {
     EncodedCiphertext,
     EncodedCompactProof,
     EncodedDisjunctiveProof,
     ProtocolMessageType,
     ProtocolPayload,
+    ScoreRange,
 } from './types';

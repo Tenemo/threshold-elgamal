@@ -1,9 +1,34 @@
 import { describe, expect, it } from 'vitest';
 
-import { InvalidScalarError, modInvQ, modQ } from '#core';
+import {
+    hkdfSha256,
+    InvalidScalarError,
+    modInvQ,
+    modQ,
+    utf8ToBytes,
+} from '#core';
 import { mod, modPowP } from '#src/core/bigint';
 
-describe('core scalar helpers', () => {
+describe('core math and crypto helpers', () => {
+    it('rejects invalid HKDF output lengths', async () => {
+        await expect(
+            hkdfSha256(
+                utf8ToBytes('ikm'),
+                utf8ToBytes('salt'),
+                utf8ToBytes('info'),
+                -1,
+            ),
+        ).rejects.toThrow(InvalidScalarError);
+        await expect(
+            hkdfSha256(
+                utf8ToBytes('ikm'),
+                utf8ToBytes('salt'),
+                utf8ToBytes('info'),
+                1.5,
+            ),
+        ).rejects.toThrow(InvalidScalarError);
+    });
+
     it('normalizes values into the field', () => {
         expect(modQ(-1n, 7n)).toBe(6n);
         expect(modQ(0n, 7n)).toBe(0n);

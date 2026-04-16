@@ -22,12 +22,12 @@ import { signedProtocolPayloadBytes } from './payloads';
 import type {
     DecryptionSharePayload,
     ElectionManifest,
-    ProtocolPayload,
     RegistrationPayload,
+    ProtocolPayload,
     SignedPayload,
     OptionAggregateInput,
 } from './types';
-import { scoreVotingDomain } from './voting-codecs';
+import { scoreRangeDomain } from './voting-codecs';
 
 export const BALLOT_SUBMISSION_PHASE = 5;
 export const BALLOT_CLOSE_PHASE = 6;
@@ -40,6 +40,7 @@ type VotingManifestContext = {
     readonly optionCount: number;
     readonly protocolVersion: string;
     readonly scoreDomainValues: readonly bigint[];
+    readonly scoreRangeMax: bigint;
     readonly sessionId: string;
 };
 
@@ -112,7 +113,8 @@ export const buildVotingManifestContext = async (
         manifestHash: await hashElectionManifest(validatedManifest),
         optionCount: validatedManifest.optionList.length,
         protocolVersion: SHIPPED_PROTOCOL_VERSION,
-        scoreDomainValues: scoreVotingDomain(),
+        scoreDomainValues: scoreRangeDomain(validatedManifest.scoreRange),
+        scoreRangeMax: BigInt(validatedManifest.scoreRange.max),
         sessionId,
     };
 };

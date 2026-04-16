@@ -89,15 +89,48 @@ describe('core validation', () => {
         );
     });
 
-    it('enforces the shipped ceil(n / 2) threshold for even groups', () => {
-        expect(majorityThreshold(4)).toBe(2);
+    it.each([
+        {
+            participantCount: 3,
+            threshold: 2,
+            wrongThresholds: [1, 3],
+        },
+        {
+            participantCount: 4,
+            threshold: 2,
+            wrongThresholds: [1, 3],
+        },
+        {
+            participantCount: 5,
+            threshold: 3,
+            wrongThresholds: [2, 4],
+        },
+        {
+            participantCount: 6,
+            threshold: 3,
+            wrongThresholds: [2, 4],
+        },
+    ])(
+        'derives and enforces the shipped majority threshold for n = $participantCount',
+        ({ participantCount, threshold, wrongThresholds }) => {
+            expect(majorityThreshold(participantCount)).toBe(threshold);
+            expect(() =>
+                assertMajorityThreshold(threshold, participantCount),
+            ).not.toThrow();
 
-        expect(() => assertMajorityThreshold(1, 4)).toThrow(
-            'Supported distributed threshold must equal ceil(n / 2) (expected 2 for n = 4)',
-        );
-        expect(() => assertMajorityThreshold(2, 4)).not.toThrow();
-        expect(() => assertMajorityThreshold(3, 4)).toThrow(
-            'Supported distributed threshold must equal ceil(n / 2) (expected 2 for n = 4)',
+            for (const wrongThreshold of wrongThresholds) {
+                expect(() =>
+                    assertMajorityThreshold(wrongThreshold, participantCount),
+                ).toThrow(
+                    `Supported distributed threshold must equal ceil(n / 2) (expected ${threshold} for n = ${participantCount})`,
+                );
+            }
+        },
+    );
+
+    it('preserves threshold-domain validation before the majority guard runs', () => {
+        expect(() => assertMajorityThreshold(0, 5)).toThrow(
+            'Threshold 0 must satisfy 1 <= k <= n (n = 5)',
         );
     });
 
@@ -107,25 +140,6 @@ describe('core validation', () => {
         );
         expect(() => assertMajorityThreshold(2, 2)).toThrow(
             'Distributed threshold workflows require at least three participants',
-        );
-    });
-
-    it('accepts the shipped distributed threshold range and centralizes the ceremony-size guard', () => {
-        expect(() => assertMajorityThreshold(2, 3)).not.toThrow();
-        expect(() => assertMajorityThreshold(3, 5)).not.toThrow();
-        expect(() => assertMajorityThreshold(0, 5)).toThrow(
-            'Threshold 0 must satisfy 1 <= k <= n (n = 5)',
-        );
-        expect(() => assertMajorityThreshold(2, 2)).toThrow(
-            'Distributed threshold workflows require at least three participants',
-        );
-    });
-
-    it('derives the shipped majority threshold directly from the participant count', () => {
-        expect(majorityThreshold(6)).toBe(3);
-        expect(() => assertMajorityThreshold(3, 6)).not.toThrow();
-        expect(() => assertMajorityThreshold(4, 6)).toThrow(
-            'Supported distributed threshold must equal ceil(n / 2) (expected 3 for n = 6)',
         );
     });
 });
