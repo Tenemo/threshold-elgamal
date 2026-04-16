@@ -29,12 +29,19 @@ The `payload` object is already JSON-safe. Group elements, scalars, proofs, and 
     "messageType": "manifest-publication",
     "manifest": {
       "rosterHash": "b992...70ce",
-      "optionList": ["Budget", "Hiring"]
+      "optionList": ["Budget", "Hiring"],
+      "scoreRange": {
+        "min": 1,
+        "max": 2
+      }
     }
   },
   "signature": "0bb4...43fa"
 }
 ```
+
+The manifest makes the ballot domain explicit. In this example, every ballot
+proof branch list has length `2` because the manifest range is `1..2`.
 
 ## Registration
 

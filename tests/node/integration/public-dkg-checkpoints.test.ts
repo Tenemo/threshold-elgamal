@@ -18,6 +18,7 @@ import {
 } from '#root';
 
 const fixtureTimeoutMs = 240_000;
+const defaultScoreRange = { min: 1, max: 10 } as const;
 
 type VotingFlowFixture = Awaited<ReturnType<typeof runVotingFlowScenario>>;
 
@@ -156,6 +157,7 @@ describe('public dkg checkpoints', () => {
                 runVotingFlowScenario({
                     participantCount: 4,
                     optionList: ['One', 'Two', 'Three'],
+                    scoreRange: defaultScoreRange,
                     participantVotes: [
                         [1n, 2n, 3n],
                         [4n, 5n, 6n],
@@ -167,6 +169,7 @@ describe('public dkg checkpoints', () => {
                 runVotingFlowScenario({
                     participantCount: 4,
                     optionList: ['One', 'Two', 'Three'],
+                    scoreRange: defaultScoreRange,
                     participantVotes: [
                         [1n, 2n, 3n],
                         [4n, 5n, 6n],
@@ -184,6 +187,7 @@ describe('public dkg checkpoints', () => {
                 runVotingFlowScenario({
                     participantCount: 3,
                     optionList: ['One', 'Two'],
+                    scoreRange: defaultScoreRange,
                     participantVotes: [
                         [1n, 2n],
                         [3n, 4n],

@@ -103,7 +103,7 @@ export const signProtocolPayload = async <
  * Creates a signed `manifest-publication` payload.
  *
  * This is the first public payload in the supported ceremony and anchors the
- * minimal manifest on the board.
+ * explicit manifest on the board.
  */
 export const createManifestPublicationPayload = async (
     privateKey: CryptoKey,

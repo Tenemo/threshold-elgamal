@@ -2,6 +2,7 @@
  * Encode and decode helpers that bridge low-level cryptographic objects and
  * their published protocol payload representations.
  */
+import { InvalidPayloadError } from '../core/index';
 import { decodePoint, decodeScalar, encodeScalar } from '../core/ristretto';
 import type { ElGamalCiphertext } from '../elgamal/types';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types';
@@ -10,7 +11,29 @@ import type {
     EncodedCiphertext,
     EncodedCompactProof,
     EncodedDisjunctiveProof,
+    ScoreRange,
 } from './types';
+
+const assertValidScoreRange = (scoreRange: ScoreRange): void => {
+    if (
+        !Number.isSafeInteger(scoreRange.min) ||
+        !Number.isSafeInteger(scoreRange.max)
+    ) {
+        throw new InvalidPayloadError(
+            'Score range min and max must be safe integers',
+        );
+    }
+    if (scoreRange.min < 0 || scoreRange.max < 0) {
+        throw new InvalidPayloadError(
+            'Score range min and max must be non-negative',
+        );
+    }
+    if (scoreRange.min > scoreRange.max) {
+        throw new InvalidPayloadError(
+            'Score range min must not exceed score range max',
+        );
+    }
+};
 
 /**
  * Encodes an additive ciphertext into fixed-width protocol hex.
@@ -93,11 +116,20 @@ export const decodeDisjunctiveProof = (
 });
 
 /**
- * Returns the fixed score-voting domain `1..10`.
+ * Expands one inclusive contiguous score range into its allowed plaintext
+ * domain.
  *
- * The supported voting workflow does not expose a configurable score range.
+ * Ballot builders and verifiers pass the resulting values into the
+ * disjunctive-proof layer so each encrypted score can be proven to belong to
+ * the manifest-declared domain.
  */
-export const scoreVotingDomain = (): readonly bigint[] =>
-    Object.freeze(
-        Array.from({ length: 10 }, (_value, index) => BigInt(index + 1)),
+export const scoreRangeDomain = (scoreRange: ScoreRange): readonly bigint[] => {
+    assertValidScoreRange(scoreRange);
+
+    return Object.freeze(
+        Array.from(
+            { length: scoreRange.max - scoreRange.min + 1 },
+            (_value, index) => BigInt(scoreRange.min + index),
+        ),
     );
+};

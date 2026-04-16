@@ -9,7 +9,7 @@ import { InvalidPayloadError, sha256, utf8ToBytes } from '../core/index';
 import { encodeForChallenge } from '../serialize/encoding';
 
 import { canonicalizeJson } from './canonical-json';
-import type { ElectionManifest } from './types';
+import type { ElectionManifest, ScoreRange } from './types';
 
 /**
  * Default protocol namespace used by the built-in helpers and verifier.
@@ -23,6 +23,56 @@ const assertNonEmptyString = (value: string, label: string): void => {
     if (value.trim() === '') {
         throw new InvalidPayloadError(`${label} must be a non-empty string`);
     }
+};
+
+const assertSafeInteger = (value: number, label: string): void => {
+    if (!Number.isSafeInteger(value)) {
+        throw new InvalidPayloadError(`${label} must be a safe integer`);
+    }
+};
+
+const validateScoreRange = (scoreRange: ScoreRange): ScoreRange => {
+    if (
+        typeof scoreRange !== 'object' ||
+        scoreRange === null ||
+        Array.isArray(scoreRange)
+    ) {
+        throw new InvalidPayloadError(
+            'Election manifest scoreRange must be an object with min and max bounds',
+        );
+    }
+
+    const scoreRangeRecord = scoreRange as Record<string, unknown>;
+
+    if (
+        typeof scoreRangeRecord.min !== 'number' ||
+        typeof scoreRangeRecord.max !== 'number'
+    ) {
+        throw new InvalidPayloadError(
+            'Election manifest scoreRange requires numeric min and max bounds',
+        );
+    }
+
+    assertSafeInteger(scoreRange.min, 'Election manifest scoreRange.min');
+    assertSafeInteger(scoreRange.max, 'Election manifest scoreRange.max');
+
+    if (scoreRange.min < 0) {
+        throw new InvalidPayloadError(
+            'Election manifest scoreRange.min must be non-negative',
+        );
+    }
+    if (scoreRange.max < 0) {
+        throw new InvalidPayloadError(
+            'Election manifest scoreRange.max must be non-negative',
+        );
+    }
+    if (scoreRange.min > scoreRange.max) {
+        throw new InvalidPayloadError(
+            'Election manifest scoreRange.min must not exceed scoreRange.max',
+        );
+    }
+
+    return scoreRange;
 };
 
 /**
@@ -66,14 +116,19 @@ export const assertSupportedProtocolVersion = (
  * workflow.
  *
  * The manifest is intentionally minimal: it fixes the frozen roster hash and
- * option list, while participant count and threshold are derived later from the
- * accepted registration roster.
+ * option list together with one explicit global score range, while participant
+ * count and threshold are derived later from the accepted registration roster.
  */
 export const validateElectionManifest = (
     manifest: ElectionManifest,
 ): ElectionManifest => {
     const manifestRecord = manifest as Record<string, unknown>;
     assertNonEmptyString(manifest.rosterHash, 'Roster hash');
+    if (!('scoreRange' in manifestRecord)) {
+        throw new InvalidPayloadError(
+            'Election manifest requires an explicit scoreRange',
+        );
+    }
 
     for (const legacyField of [
         'participantCount',
@@ -115,11 +170,14 @@ export const validateElectionManifest = (
         seenOptions.add(option);
     }
 
-    return manifest;
+    return {
+        ...manifest,
+        scoreRange: validateScoreRange(manifest.scoreRange),
+    };
 };
 
 /**
- * Creates the minimal election manifest after validating the supported
+ * Creates the explicit election manifest after validating the supported
  * invariants.
  */
 export const createElectionManifest = (

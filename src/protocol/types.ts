@@ -277,12 +277,25 @@ export type SignedPayload<TPayload extends ProtocolPayload = ProtocolPayload> =
 /**
  * Canonical election-manifest shape bound into protocol transcripts.
  *
- * The manifest is intentionally minimal and leaves threshold derivation to the
- * accepted registration roster.
+ * The manifest is intentionally compact: it fixes the frozen roster hash,
+ * option list, and one explicit global score range, while participant count
+ * and threshold are derived later from the accepted registration roster.
+ */
+export type ScoreRange = {
+    readonly min: number;
+    readonly max: number;
+};
+
+/**
+ * Canonical election-manifest shape bound into protocol transcripts.
+ *
+ * The score range applies uniformly to every option slot in the supported
+ * workflow.
  */
 export type ElectionManifest = {
     readonly rosterHash: string;
     readonly optionList: readonly string[];
+    readonly scoreRange: ScoreRange;
 };
 
 /**

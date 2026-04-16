@@ -39,7 +39,7 @@ import {
     modQ,
     prepareAggregateForDecryption,
     RISTRETTO_GROUP,
-    scoreVotingDomain,
+    scoreRangeDomain,
     SHIPPED_PROTOCOL_VERSION,
     signProtocolPayload,
     verifyBallotSubmissionPayloadsByOption,
@@ -55,6 +55,7 @@ import {
     type EncryptedDualSharePayload,
     type KeyDerivationConfirmation,
     type ProofContext,
+    type ScoreRange,
     type SignedPayload,
     type TallyPublicationPayload,
     type TransportKeyPair,
@@ -104,6 +105,7 @@ export type VotingFlowScenario = {
     readonly optionList?: readonly string[];
     readonly participantCount: number;
     readonly participantVotes?: readonly (readonly bigint[])[];
+    readonly scoreRange: ScoreRange;
     readonly sessionNonce?: string;
     readonly timestamp?: string;
     readonly votingParticipantIndices?: readonly number[];
@@ -168,12 +170,47 @@ const buildPolynomial = (
 const buildDefaultParticipantVotes = (
     participantCount: number,
     optionCount: number,
+    scoreRange: ScoreRange,
 ): readonly (readonly bigint[])[] =>
     Array.from({ length: participantCount }, (_value, participantOffset) =>
         Array.from({ length: optionCount }, (_entry, optionOffset) =>
-            BigInt(((participantOffset + optionOffset * 2) % 10) + 1),
+            BigInt(
+                scoreRange.min +
+                    ((participantOffset + optionOffset * 2) %
+                        (scoreRange.max - scoreRange.min + 1)),
+            ),
         ),
     );
+
+const normalizeScoreRange = (scoreRange: ScoreRange): ScoreRange => {
+    if (!Number.isSafeInteger(scoreRange.min)) {
+        throw new Error(
+            'Voting flow scenario scoreRange.min must be a safe integer',
+        );
+    }
+    if (!Number.isSafeInteger(scoreRange.max)) {
+        throw new Error(
+            'Voting flow scenario scoreRange.max must be a safe integer',
+        );
+    }
+    if (scoreRange.min < 0) {
+        throw new Error(
+            'Voting flow scenario scoreRange.min must be non-negative',
+        );
+    }
+    if (scoreRange.max < 0) {
+        throw new Error(
+            'Voting flow scenario scoreRange.max must be non-negative',
+        );
+    }
+    if (scoreRange.min > scoreRange.max) {
+        throw new Error(
+            'Voting flow scenario scoreRange.min must not exceed scoreRange.max',
+        );
+    }
+
+    return scoreRange;
+};
 
 const defaultBallotRandomness = (
     participantIndex: number,
@@ -216,10 +253,17 @@ const normalizeOptionList = (
 const normalizeParticipantVotes = (
     scenario: VotingFlowScenario,
     optionCount: number,
+    scoreRange: ScoreRange,
 ): readonly (readonly bigint[])[] => {
     const participantVotes =
         scenario.participantVotes ??
-        buildDefaultParticipantVotes(scenario.participantCount, optionCount);
+        buildDefaultParticipantVotes(
+            scenario.participantCount,
+            optionCount,
+            scoreRange,
+        );
+    const minScore = BigInt(scoreRange.min);
+    const maxScore = BigInt(scoreRange.max);
 
     if (participantVotes.length !== scenario.participantCount) {
         throw new Error(
@@ -233,6 +277,19 @@ const normalizeParticipantVotes = (
                 `Participant ${participantOffset + 1} vote row must include exactly ${optionCount} option scores`,
             );
         }
+
+        votes.forEach((vote, optionOffset) => {
+            if (typeof vote !== 'bigint') {
+                throw new Error(
+                    `Participant ${participantOffset + 1} option ${optionOffset + 1} vote must be a bigint`,
+                );
+            }
+            if (vote < minScore || vote > maxScore) {
+                throw new Error(
+                    `Participant ${participantOffset + 1} option ${optionOffset + 1} vote must stay within ${scoreRange.min}..${scoreRange.max}`,
+                );
+            }
+        });
     });
 
     return participantVotes;
@@ -590,11 +647,13 @@ const createBallotPayloads = async (input: {
     readonly publicKey: EncodedPoint;
     readonly manifestHash: string;
     readonly participantVotes: readonly (readonly bigint[])[];
+    readonly scoreRange: ScoreRange;
     readonly sessionId: string;
     readonly votingParticipantIndices: readonly number[];
 }): Promise<readonly SignedPayload<BallotSubmissionPayload>[]> => {
     const payloads: SignedPayload<BallotSubmissionPayload>[] = [];
-    const validValues = scoreVotingDomain();
+    const validValues = scoreRangeDomain(input.scoreRange);
+    const additiveBound = BigInt(input.scoreRange.max);
 
     for (const participantIndex of input.votingParticipantIndices) {
         const votes = input.participantVotes[participantIndex - 1];
@@ -613,7 +672,7 @@ const createBallotPayloads = async (input: {
                 vote,
                 input.publicKey,
                 randomness,
-                10n,
+                additiveBound,
             );
             const context: ProofContext = {
                 protocolVersion: SHIPPED_PROTOCOL_VERSION,
@@ -664,7 +723,12 @@ export const runVotingFlowScenario = async (
 
     const optionList = normalizeOptionList(scenario);
     const optionCount = optionList.length;
-    const participantVotes = normalizeParticipantVotes(scenario, optionCount);
+    const scoreRange = normalizeScoreRange(scenario.scoreRange);
+    const participantVotes = normalizeParticipantVotes(
+        scenario,
+        optionCount,
+        scoreRange,
+    );
     const ballotRandomness = normalizeBallotRandomness(scenario, optionCount);
     const votingParticipantIndices = normalizeParticipantIndices(
         scenario.votingParticipantIndices ??
@@ -691,6 +755,7 @@ export const runVotingFlowScenario = async (
     const manifest = createElectionManifest({
         rosterHash,
         optionList,
+        scoreRange,
     });
     const manifestHash = await hashElectionManifest(manifest);
     const threshold = majorityThreshold(scenario.participantCount);
@@ -884,6 +949,7 @@ export const runVotingFlowScenario = async (
         publicKey: jointPublicKey,
         manifestHash,
         participantVotes,
+        scoreRange,
         sessionId,
         votingParticipantIndices,
     });
@@ -980,7 +1046,8 @@ export const runVotingFlowScenario = async (
         const tally = combineDecryptionShares(
             preparedAggregate.ciphertext,
             optionSharePayloads.map((entry) => entry.share),
-            BigInt(optionBallots.aggregate.ballotCount) * 10n,
+            BigInt(optionBallots.aggregate.ballotCount) *
+                BigInt(scoreRange.max),
         );
 
         decryptionSharePayloads.push(

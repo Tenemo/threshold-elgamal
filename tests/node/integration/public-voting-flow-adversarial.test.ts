@@ -4,15 +4,21 @@ import { runVotingFlowScenario } from '../../../tools/internal/voting-flow-harne
 
 import {
     createBallotSubmissionPayload,
+    createDisjunctiveProof,
     createDecryptionSharePayload,
     createTallyPublicationPayload,
+    encryptAdditiveWithRandomness,
+    RISTRETTO_GROUP,
+    SHIPPED_PROTOCOL_VERSION,
     signProtocolPayload,
     tryVerifyElectionCeremony,
     verifyElectionCeremony,
+    type ProofContext,
     type SignedPayload,
 } from '#root';
 
 const fixtureTimeoutMs = 240_000;
+const defaultScoreRange = { min: 1, max: 10 } as const;
 
 type VotingFlowFixture = Awaited<ReturnType<typeof runVotingFlowScenario>>;
 type VerifiedCeremonyProjection = {
@@ -157,6 +163,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
             runVotingFlowScenario({
                 participantCount: 4,
                 optionList: ['One', 'Two', 'Three'],
+                scoreRange: defaultScoreRange,
                 participantVotes: [
                     [1n, 2n, 3n],
                     [4n, 5n, 6n],
@@ -167,6 +174,7 @@ describe('honest-majority voting flow adversarial coverage', () => {
             runVotingFlowScenario({
                 participantCount: 4,
                 optionList: ['One', 'Two', 'Three'],
+                scoreRange: defaultScoreRange,
                 participantVotes: [
                     [1n, 2n, 3n],
                     [4n, 5n, 6n],
@@ -454,6 +462,63 @@ describe('honest-majority voting flow adversarial coverage', () => {
                 stage: 'ballots',
                 reasonFragment:
                     'Ballot proof failed verification for voter 1 option 2',
+            },
+        );
+    });
+
+    it('rejects ballot payloads proven against a different score domain than the manifest declares', async () => {
+        const randomness = 41n;
+        const ciphertext = encryptAdditiveWithRandomness(
+            0n,
+            fullFixture.verified.dkg.jointPublicKey,
+            randomness,
+            10n,
+        );
+        const proofContext: ProofContext = {
+            protocolVersion: SHIPPED_PROTOCOL_VERSION,
+            suiteId: RISTRETTO_GROUP.name,
+            manifestHash: fullFixture.manifestHash,
+            sessionId: fullFixture.sessionId,
+            label: 'ballot-range-proof',
+            voterIndex: 1,
+            optionIndex: 1,
+        };
+        const forgedBallot = await createBallotSubmissionPayload(
+            fullFixture.participants[0].auth.privateKey,
+            {
+                ...findBallotPayload(fullFixture, 1, 1).payload,
+                ciphertext,
+                proof: await createDisjunctiveProof(
+                    0n,
+                    randomness,
+                    ciphertext,
+                    fullFixture.verified.dkg.jointPublicKey,
+                    Array.from({ length: 10 }, (_value, index) =>
+                        BigInt(index),
+                    ),
+                    RISTRETTO_GROUP,
+                    proofContext,
+                ),
+            },
+        );
+
+        await expectFailure(
+            tryVerifyElectionCeremony(
+                verificationInput(fullFixture, {
+                    ballotPayloads: replaceSignedPayload(
+                        fullFixture.ballotPayloads,
+                        (payload) =>
+                            payload.payload.participantIndex === 1 &&
+                            payload.payload.optionIndex === 1,
+                        forgedBallot,
+                    ),
+                }),
+            ),
+            {
+                code: 'BALLOT_INVALID',
+                stage: 'ballots',
+                reasonFragment:
+                    'Ballot proof failed verification for voter 1 option 1',
             },
         );
     });

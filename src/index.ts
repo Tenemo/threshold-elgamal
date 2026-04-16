@@ -94,7 +94,7 @@ export {
 } from './protocol/verification';
 export { hashProtocolTranscript } from './protocol/transcript';
 export { verifyBallotSubmissionPayloadsByOption } from './protocol/voting-ballots';
-export { scoreVotingDomain } from './protocol/voting-codecs';
+export { scoreRangeDomain } from './protocol/voting-codecs';
 export {
     verifyElectionCeremony,
     tryVerifyElectionCeremony,
@@ -122,6 +122,7 @@ export type {
     ProtocolMessageType,
     ProtocolPayload,
     RegistrationPayload,
+    ScoreRange,
     SignedPayload,
     TallyPublicationPayload,
     VerifyElectionCeremonyInput,

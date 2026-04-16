@@ -67,6 +67,7 @@ const rosterHash = await hashRosterEntries(
 const manifest = createElectionManifest({
     rosterHash,
     optionList: ['Option A', 'Option B'],
+    scoreRange: { min: 1, max: 10 },
 });
 const manifestHash = await hashElectionManifest(manifest);
 const sessionId = await deriveSessionId(

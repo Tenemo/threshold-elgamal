@@ -16,8 +16,8 @@
 
 - additive ElGamal on `ristretto255`
 - honest-majority GJKR DKG
-- fixed score voting in `1..10`
-- one public manifest shape: `rosterHash` and `optionList`
+- one explicit global contiguous score range per ceremony
+- one public manifest shape: `rosterHash`, `optionList`, and `scoreRange`
 - organizer-signed `ballot-close` before decryption
 - full local recomputation and full ceremony verification from the public board
 
@@ -77,10 +77,10 @@ Older browsers, stale embedded webviews, and runtimes without Web Crypto `X25519
 The supported boardroom flow is:
 
 1. Freeze the roster in the application and hash it with `hashRosterEntries(...)`.
-2. Build the minimal manifest with `createElectionManifest({ rosterHash, optionList })`.
+2. Build the manifest with `createElectionManifest({ rosterHash, optionList, scoreRange })`.
 3. Publish the manifest, registrations, and manifest acceptances.
 4. Run the honest-majority GJKR transcript.
-5. Post ballot payloads for complete `1..10` score ballots.
+5. Post ballot payloads for complete scores inside the manifest-declared range.
 6. Post one organizer-signed `ballot-close` payload that freezes which complete ballots are counted.
 7. Post threshold decryption shares and tally publications for the close-selected ballot set.
 8. Verify the whole ceremony with `verifyElectionCeremony(...)`.
@@ -129,6 +129,7 @@ const rosterHash = await hashRosterEntries([
 const manifest = createElectionManifest({
     rosterHash,
     optionList: ["Option A", "Option B"],
+    scoreRange: { min: 1, max: 10 },
 });
 
 const manifestHash = await hashElectionManifest(manifest);
@@ -206,7 +207,7 @@ The library is designed for an honest-origin, honest-client, static-adversary se
 What it tries to enforce:
 
 - additive-only tallying on `ristretto255`
-- fixed `1..10` score ballots
+- one explicit global contiguous manifest score range
 - grouped per-option ballot verification
 - mandatory local aggregate recomputation before decryption
 - organizer-visible and auditable ballot cutoff through `ballot-close`

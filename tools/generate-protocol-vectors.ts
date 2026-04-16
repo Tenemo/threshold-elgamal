@@ -9,6 +9,7 @@ import {
     deriveSessionId,
     hashElectionManifest,
     SHIPPED_PROTOCOL_VERSION,
+    scoreRangeDomain,
     type ElectionManifest,
 } from '#root';
 import {
@@ -31,9 +32,7 @@ import {
 } from '#src/protocol/voting-ballot-aggregation';
 const bigintReplacer = (_key: string, value: unknown): unknown =>
     typeof value === 'bigint' ? value.toString() : value;
-const validScores = Array.from({ length: 10 }, (_value, index) =>
-    BigInt(index + 1),
-);
+const validScores = scoreRangeDomain({ min: 1, max: 10 });
 const buildBallot = async (
     voterIndex: number,
     vote: bigint,
@@ -80,6 +79,7 @@ const main = async (): Promise<void> => {
     const manifest: ElectionManifest = createElectionManifest({
         rosterHash: 'roster-hash',
         optionList: ['Alpha', 'Beta'],
+        scoreRange: { min: 1, max: 10 },
     });
     const manifestHash = await hashElectionManifest(manifest);
     const sessionInputs = {

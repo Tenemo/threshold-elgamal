@@ -1,8 +1,9 @@
 /**
- * CDS94-style disjunctive proofs for additive score ballots.
+ * CDS94-style disjunctive proofs for additive ElGamal plaintexts drawn from an
+ * explicit finite value set.
  *
  * Ballot payloads use this module to prove that a ciphertext encodes one value
- * from the supported score domain without revealing which score was chosen.
+ * from the manifest-declared domain without revealing which value was chosen.
  */
 import {
     assertInSubgroup,
@@ -218,7 +219,7 @@ export const createDisjunctiveProof = async (
  * Verifies a CDS94-style disjunctive proof for additive ElGamal plaintexts.
  *
  * Ballot verification uses this to reject ciphertexts that do not encode one
- * of the allowed score values for the current option slot.
+ * of the allowed manifest-domain values for the current option slot.
  */
 export const verifyDisjunctiveProof = async (
     proof: DisjunctiveProof,

@@ -5,13 +5,13 @@ sidebar:
   order: 1
 ---
 
-Start with the root package. It exposes the supported public ceremony: honest-majority GJKR, fixed `1..10` score ballots, `ballot-close`, and full ceremony verification.
+Start with the root package. It exposes the supported public ceremony: honest-majority GJKR, one explicit global manifest `scoreRange`, `ballot-close`, and full ceremony verification.
 
 ## Start with these rules
 
-- The public manifest shape is only `rosterHash` and `optionList`.
+- The public manifest shape is `rosterHash`, `optionList`, and `scoreRange`.
 - The library derives the threshold from the accepted registration roster as `k = ceil(n / 2)`.
-- Ballots are fixed to complete `1..10` score ballots.
+- Ballots are complete and must stay inside the manifest-declared score range.
 - The organizer closes counting with one signed `ballot-close` payload.
 - Each trustee prepares the accepted aggregate with `prepareAggregateForDecryption(...)`, computes a partial reveal with `createDecryptionShare(...)`, proves it with `createDLEQProof(...)`, and then signs `createDecryptionSharePayload(...)`, all from the root package.
 - Tally verification must be done against the close-selected ballot set, not against a server-supplied aggregate.

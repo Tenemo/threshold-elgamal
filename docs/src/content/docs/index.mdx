@@ -18,7 +18,7 @@ hero:
                 <ol class="landing-hero-panel__list">
                   <li>Publish the manifest and accepted roster.</li>
                   <li>Run honest-majority GJKR DKG with verifiable checkpoints.</li>
-                  <li>Accept fixed <code>1..10</code> score ballots and a signed <code>ballot-close</code>.</li>
+                  <li>Accept complete ballots inside one manifest-declared <code>scoreRange</code> and a signed <code>ballot-close</code>.</li>
                   <li>Publish decryption shares, tally, and verify the full board.</li>
                 </ol>
               </div>
@@ -30,8 +30,8 @@ hero:
                 </div>
                 <div class="landing-hero-panel__fact">
                   <span class="landing-hero-panel__label">Ballots</span>
-                  <strong>Fixed score ballots</strong>
-                  <small><code>1..10</code> on every contest</small>
+                  <strong>Explicit score range</strong>
+                  <small>One global <code>scoreRange</code> per ceremony</small>
                 </div>
                 <div class="landing-hero-panel__fact">
                   <span class="landing-hero-panel__label">Runtime</span>
@@ -96,8 +96,9 @@ import LandingActionCard from "../../components/LandingActionCard.astro";
           decryption.
         </p>
         <p>
-          The supported workflow covers minimal manifest publication, GJKR DKG
-          with verifiable checkpoints, fixed <code>1..10</code> score ballots,
+          The supported workflow covers explicit manifest publication, GJKR DKG
+          with verifiable checkpoints, complete ballots inside one declared
+          score range,
           ciphertext aggregation, decryption-share publication, and full
           public-board verification.
         </p>
@@ -120,7 +121,7 @@ import LandingActionCard from "../../components/LandingActionCard.astro";
     <LinkCard
       title="Get started"
       href="./guides/getting-started/"
-      description="Use the minimal manifest, the derived majority threshold rule, and the root package."
+      description="Use the explicit manifest, the declared score range, the derived majority threshold rule, and the root package."
     />
     <LinkCard
       title="Browser and worker usage"
@@ -162,14 +163,15 @@ import LandingActionCard from "../../components/LandingActionCard.astro";
   <div class="landing-steps-shell">
     <Steps>
       1. **Publish the manifest and accepted roster.**
-         The public manifest surface is intentionally minimal: `rosterHash` and
-         `optionList`.
+         The public manifest surface is intentionally compact: `rosterHash`,
+         `optionList`, and one explicit `scoreRange`.
       2. **Run honest-majority DKG.**
          The threshold is derived from the accepted roster as `ceil(n / 2)` and
          backed by verifiable checkpoints.
-      3. **Accept fixed score ballots and close the board.**
-         Ballots always use complete `1..10` score assignments and the organizer
-         closes counting with a signed `ballot-close`.
+      3. **Accept complete ballots and close the board.**
+         Ballots always use complete score assignments inside the manifest
+         `scoreRange`, and the organizer closes counting with a signed
+         `ballot-close`.
       4. **Publish shares, tally, and verify the board.**
          The verifier checks the full ceremony transcript instead of isolated
          payload fragments.

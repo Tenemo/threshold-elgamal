@@ -98,6 +98,7 @@ const main = async (): Promise<void> => {
                 (_value, optionOffset) => `Option ${optionOffset + 1}`,
             ),
             participantCount,
+            scoreRange: { min: 1, max: 10 },
             votingParticipantIndices: Array.from(
                 { length: participantCount },
                 (_value, offset) => offset + 1,
