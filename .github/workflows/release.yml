@@ -325,7 +325,6 @@ jobs:
             - uses: actions/setup-node@v6.3.0
               with:
                   node-version-file: .nvmrc
-                  registry-url: "https://registry.npmjs.org"
 
             - uses: actions/download-artifact@v8.0.1
               with:
@@ -333,8 +332,7 @@ jobs:
                   path: .
 
             - name: publish to npm
-              env:
-                  NODE_AUTH_TOKEN: ""
+              # Trusted publishing uses OIDC for auth and generates provenance automatically.
               run: |
                   if [[ "${{ needs.prepare-release.outputs.dist_tag }}" == "latest" ]]; then
                     npm publish --ignore-scripts
