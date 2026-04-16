@@ -10,6 +10,7 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url));
@@ -119,6 +120,29 @@ const installTarball = (
     runPackageManager(packageManager, installArgs, consumerDirectory);
 };
 
+const waitForInstalledPackageEntrypoint = async (
+    consumerDirectory: string,
+): Promise<void> => {
+    const packagedEntrypoint = join(
+        consumerDirectory,
+        'node_modules',
+        'threshold-elgamal',
+        'dist',
+        'index.js',
+    );
+    const timeoutAt = Date.now() + 5_000;
+
+    while (!existsSync(packagedEntrypoint)) {
+        if (Date.now() >= timeoutAt) {
+            throw new Error(
+                `Installed package entrypoint was not available after install: ${packagedEntrypoint}`,
+            );
+        }
+
+        await delay(50);
+    }
+};
+
 const runConsumerSmoke = async (
     tempRoot: string,
     tarballPath: string,
@@ -146,6 +170,7 @@ const runConsumerSmoke = async (
     );
 
     installTarball(packageManager, tarballPath, consumerDirectory);
+    await waitForInstalledPackageEntrypoint(consumerDirectory);
 
     const commandArgs = ['smoke.mjs'];
     const commandDescription = [process.execPath, ...commandArgs].join(' ');
