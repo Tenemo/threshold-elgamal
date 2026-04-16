@@ -122,7 +122,7 @@ const positiveScenarios = [
         identityOptionIndices: [1],
     },
     {
-        name: 'verifies tallies above the old fixed 10-per-ballot bound',
+        name: 'verifies tallies for a manifest range above 10',
         scenario: {
             participantCount: 3,
             optionList: ['Budget'],

@@ -130,7 +130,7 @@ const rosterHash = await hashRosterEntries([
 const manifest = createElectionManifest({
     rosterHash,
     optionList: ["Option A", "Option B"],
-    scoreRange: { min: 1, max: 10 },
+    scoreRange: { min: 0, max: 5 },
 });
 
 const manifestHash = await hashElectionManifest(manifest);
@@ -144,6 +144,10 @@ const sessionId = await deriveSessionId(
 console.log(majorityThreshold(3)); // 2
 console.log(sessionId.length); // 64
 ```
+
+The example uses `0..5` only as one concrete score range. The supported rule is
+one manifest-declared contiguous range with non-negative bounds and
+`scoreRange.max <= 100`.
 
 If your application consumes a complete public board, start with [Verifying a public board](https://tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board/) and then move directly to the verifier entry point:
 
