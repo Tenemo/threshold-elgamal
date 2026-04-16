@@ -3,7 +3,7 @@
  *
  * This module is the shortest path for auditors and bulletin-board readers who
  * want one call that replays manifest validation, board audit, DKG, ballots,
- * decryption shares, and tally checks.
+ * the full ballot-close slot, decryption shares, and tally checks.
  */
 import { InvalidPayloadError } from '../core/index';
 import { decodeScalar } from '../core/ristretto';
@@ -364,8 +364,8 @@ const verifyBallotClosePayload = (input: {
 
 /**
  * Replays the published ceremony from manifest to tally, including board audit,
- * DKG verification, ballot verification, decryption-share verification, and
- * per-option tally checks.
+ * DKG verification, full ballot-close-slot audit, ballot verification,
+ * decryption-share verification, and per-option tally checks.
  *
  * This is the main verifier entry point for callers that want failures to
  * abort immediately.
@@ -392,9 +392,7 @@ export const verifyElectionCeremony = async (
     try {
         dkgAudit = await auditSignedPayloads(input.dkgTranscript);
         ballotAudit = await auditSignedPayloads(input.ballotPayloads);
-        ballotCloseAudit = await auditSignedPayloads([
-            input.ballotClosePayload,
-        ]);
+        ballotCloseAudit = await auditSignedPayloads(input.ballotClosePayloads);
         decryptionAudit = await auditSignedPayloads(
             input.decryptionSharePayloads,
         );

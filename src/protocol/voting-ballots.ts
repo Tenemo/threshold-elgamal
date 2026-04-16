@@ -76,9 +76,10 @@ const verifyAuditedBallotSubmissionPayloadsByOption = async (input: {
  * Verifies typed ballot-submission payloads and recomputes one aggregate tally
  * ciphertext per manifest option.
  *
- * This is the public entry point for applications that already have
- * signature-checked ballot payloads and want the per-option verified
- * ciphertext aggregates that feed threshold decryption.
+ * This is the public entry point for applications that already collected
+ * signed ballot payloads and want the per-option verified ciphertext
+ * aggregates that feed threshold decryption. The helper re-audits the signed
+ * payloads before it decodes and aggregates them.
  */
 export const verifyBallotSubmissionPayloadsByOption = async (
     input: VerifyBallotSubmissionPayloadsByOptionInput,

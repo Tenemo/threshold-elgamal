@@ -58,7 +58,7 @@ const rosterHash = await hashRosterEntries([
 const manifest = createElectionManifest({
     rosterHash,
     optionList: ["Option A", "Option B", "Option C"],
-    scoreRange: { min: 1, max: 10 },
+    scoreRange: { min: 0, max: 5 },
 });
 
 const manifestHash = await hashElectionManifest(manifest);
@@ -71,6 +71,10 @@ const sessionId = await deriveSessionId(
 
 console.log(majorityThreshold(3)); // 2
 ```
+
+This example uses `0..5` only as sample data. The supported rule is one
+manifest-declared contiguous score range with non-negative bounds and
+`scoreRange.max <= 100`.
 
 The manifest does not carry `participantCount`, `reconstructionThreshold`, publication floors, or deadline metadata. It does carry one explicit global `scoreRange`. The verifier derives `n` from the accepted registration roster and derives `k` internally as `ceil(n / 2)`.
 

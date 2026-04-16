@@ -1075,7 +1075,7 @@ export const runVotingFlowScenario = async (
         sessionId,
         dkgTranscript,
         ballotPayloads,
-        ballotClosePayload,
+        ballotClosePayloads: [ballotClosePayload],
         decryptionSharePayloads,
         tallyPublications,
     });

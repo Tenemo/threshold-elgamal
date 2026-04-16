@@ -173,7 +173,7 @@ export type FeldmanCommitmentPayload = BaseProtocolPayload & {
 };
 
 /**
- * Final key-derivation confirmation payload for the derived joint key.
+ * Final participant confirmation payload for the derived joint key.
  */
 export type KeyDerivationConfirmation = BaseProtocolPayload & {
     readonly messageType: 'key-derivation-confirmation';
@@ -348,14 +348,15 @@ export type VerifyDecryptionSharePayloadsByOptionInput = {
  * Input bundle for full ceremony verification across all published options.
  *
  * This is the top-level verifier input that an auditor or bulletin-board
- * reader supplies when replaying a full ceremony.
+ * reader supplies when replaying a full ceremony from the published board,
+ * including the full ballot-close slot instead of a preselected close record.
  */
 export type VerifyElectionCeremonyInput = {
     readonly manifest: ElectionManifest;
     readonly sessionId: string;
     readonly dkgTranscript: readonly SignedPayload[];
     readonly ballotPayloads: readonly SignedPayload<BallotSubmissionPayload>[];
-    readonly ballotClosePayload: SignedPayload<BallotClosePayload>;
+    readonly ballotClosePayloads: readonly SignedPayload<BallotClosePayload>[];
     readonly decryptionSharePayloads: readonly SignedPayload<DecryptionSharePayload>[];
     readonly tallyPublications?: readonly SignedPayload<TallyPublicationPayload>[];
 };

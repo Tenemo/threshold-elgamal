@@ -15,9 +15,11 @@ The full verifier consumes one `VerifyElectionCeremonyInput` bundle:
 - `sessionId`
 - `dkgTranscript`
 - `ballotPayloads`
-- `ballotClosePayload`
+- `ballotClosePayloads`
 - `decryptionSharePayloads`
 - `tallyPublications` if you want published tally records checked against the recomputed tallies
+
+`ballotClosePayloads` must contain the full published `ballot-close` board slot, not a prefiltered close record. The verifier audits that slot, collapses only exact retransmissions, and requires exactly one accepted close payload after audit.
 
 If `tallyPublications` is omitted or empty, the verifier still replays the DKG, ballot, and decryption-share flow and still recomputes per-option tallies locally.
 
@@ -34,7 +36,7 @@ const bundle: VerifyElectionCeremonyInput = {
     sessionId,
     dkgTranscript,
     ballotPayloads,
-    ballotClosePayload,
+    ballotClosePayloads,
     decryptionSharePayloads,
     tallyPublications,
 };
@@ -54,6 +56,15 @@ console.log(result.verified.boardAudit.overall.fingerprint);
 ```
 
 This is usually the best application entry point because it gives you a stable `stage`, `code`, and `reason` without exception handling.
+
+## What the DKG verifier assumes
+
+`verifyElectionCeremony(...)` delegates DKG validation to `verifyDKGTranscript(...)`, which currently consumes:
+
+- the public signed DKG transcript
+- `key-derivation-confirmation` payloads from every qualified participant
+
+This verifier does not implement a public post-Feldman complaint/reconstruction phase. That means the current DKG check is participant-confirmed transcript verification, not the stronger fully public-data-only variant sometimes described in the GJKR literature. Lowering confirmation acceptance to threshold-many is out of scope unless that missing public consistency machinery is added.
 
 ## Use the throwing verifier when failure should abort immediately
 

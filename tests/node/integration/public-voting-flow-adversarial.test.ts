@@ -40,7 +40,7 @@ const corruptHexTailByte = (value: string): string => {
 const verificationInput = (
     fixture: VotingFlowFixture,
     overrides: Partial<{
-        ballotClosePayload: VotingFlowFixture['ballotClosePayload'];
+        ballotClosePayloads: readonly VotingFlowFixture['ballotClosePayload'][];
         ballotPayloads: VotingFlowFixture['ballotPayloads'];
         decryptionSharePayloads: VotingFlowFixture['decryptionSharePayloads'];
         dkgTranscript: VotingFlowFixture['dkgTranscript'];
@@ -51,8 +51,9 @@ const verificationInput = (
     sessionId: fixture.sessionId,
     dkgTranscript: overrides.dkgTranscript ?? fixture.dkgTranscript,
     ballotPayloads: overrides.ballotPayloads ?? fixture.ballotPayloads,
-    ballotClosePayload:
-        overrides.ballotClosePayload ?? fixture.ballotClosePayload,
+    ballotClosePayloads: overrides.ballotClosePayloads ?? [
+        fixture.ballotClosePayload,
+    ],
     decryptionSharePayloads:
         overrides.decryptionSharePayloads ?? fixture.decryptionSharePayloads,
     tallyPublications: overrides.tallyPublications ?? fixture.tallyPublications,

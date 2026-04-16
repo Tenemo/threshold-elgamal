@@ -94,7 +94,7 @@ The cryptographic threshold is derived internally from the accepted registration
 
 There is no supported `n-of-n` mode and no supported public `k-of-n` configuration.
 
-Transcript verification requires key-derivation confirmations from every qualified participant.
+Transcript verification requires `key-derivation-confirmation` payloads from every qualified participant. In the current design those unanimous confirmations are part of verifier soundness: the library does not implement a public post-Feldman complaint/reconstruction phase, so the DKG verifier is participant-confirmed rather than fully public-data-only. Lowering confirmation acceptance to threshold-many is out of scope unless that missing public consistency machinery is added.
 
 See [Honest-majority voting flow](https://tenemo.github.io/threshold-elgamal/guides/three-participant-voting-flow/) for the full phase-by-phase transcript.
 
@@ -130,7 +130,7 @@ const rosterHash = await hashRosterEntries([
 const manifest = createElectionManifest({
     rosterHash,
     optionList: ["Option A", "Option B"],
-    scoreRange: { min: 1, max: 10 },
+    scoreRange: { min: 0, max: 5 },
 });
 
 const manifestHash = await hashElectionManifest(manifest);
@@ -145,6 +145,10 @@ console.log(majorityThreshold(3)); // 2
 console.log(sessionId.length); // 64
 ```
 
+The example uses `0..5` only as one concrete score range. The supported rule is
+one manifest-declared contiguous range with non-negative bounds and
+`scoreRange.max <= 100`.
+
 If your application consumes a complete public board, start with [Verifying a public board](https://tenemo.github.io/threshold-elgamal/guides/verifying-a-public-board/) and then move directly to the verifier entry point:
 
 ```typescript
@@ -158,7 +162,7 @@ const bundle: VerifyElectionCeremonyInput = {
     sessionId,
     dkgTranscript,
     ballotPayloads,
-    ballotClosePayload,
+    ballotClosePayloads: [ballotClosePayload],
     decryptionSharePayloads,
     tallyPublications,
 };
@@ -172,6 +176,8 @@ if (!result.ok) {
     console.log(result.verified.boardAudit.overall.fingerprint);
 }
 ```
+
+Pass the full published `ballot-close` slot in `ballotClosePayloads`, even when the normal case is one organizer payload. The verifier audits that slot, collapses only exact retransmissions, and requires exactly one accepted close record.
 
 The root package exposes the builders and lower-level helpers required for the documented ceremony, including:
 

@@ -57,7 +57,7 @@ const rosterHash = await hashRosterEntries(
 const manifest = createElectionManifest({
     rosterHash,
     optionList: ["Budget", "Hiring"],
-    scoreRange: { min: 1, max: 10 },
+    scoreRange: { min: 0, max: 5 },
 });
 
 const manifestHash = await hashElectionManifest(manifest);
@@ -127,6 +127,9 @@ console.log(registration.payload.messageType);
 console.log(acceptance.payload.messageType);
 console.log(new TextDecoder().decode(decrypted));
 ```
+
+This example uses `0..5` only as sample data. The supported rule is still one
+manifest-declared contiguous score range with `scoreRange.max <= 100`.
 
 This covers the browser-native pieces most applications need first:
 

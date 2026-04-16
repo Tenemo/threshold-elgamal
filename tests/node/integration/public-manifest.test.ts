@@ -23,7 +23,7 @@ describe('public manifest', () => {
                 '{"optionList":["Alpha","Beta"],"rosterHash":"roster-hash","scoreRange":{"max":5,"min":1}}',
         },
         {
-            name: 'legacy score width with explicit range',
+            name: 'double-digit explicit maximum',
             scoreRange: { min: 1, max: 10 },
             canonical:
                 '{"optionList":["Alpha","Beta"],"rosterHash":"roster-hash","scoreRange":{"max":10,"min":1}}',
