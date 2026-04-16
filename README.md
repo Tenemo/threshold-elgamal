@@ -17,6 +17,7 @@
 - additive ElGamal on `ristretto255`
 - honest-majority GJKR DKG
 - one explicit global contiguous score range per ceremony
+- manifest `scoreRange.max` capped at `100` to keep proofs and tally recovery tractable
 - one public manifest shape: `rosterHash`, `optionList`, and `scoreRange`
 - organizer-signed `ballot-close` before decryption
 - full local recomputation and full ceremony verification from the public board

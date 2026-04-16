@@ -2,38 +2,17 @@
  * Encode and decode helpers that bridge low-level cryptographic objects and
  * their published protocol payload representations.
  */
-import { InvalidPayloadError } from '../core/index';
 import { decodePoint, decodeScalar, encodeScalar } from '../core/ristretto';
 import type { ElGamalCiphertext } from '../elgamal/types';
 import type { DLEQProof, DisjunctiveProof } from '../proofs/types';
 
+import { validateSupportedScoreRange } from './score-range';
 import type {
     EncodedCiphertext,
     EncodedCompactProof,
     EncodedDisjunctiveProof,
     ScoreRange,
 } from './types';
-
-const assertValidScoreRange = (scoreRange: ScoreRange): void => {
-    if (
-        !Number.isSafeInteger(scoreRange.min) ||
-        !Number.isSafeInteger(scoreRange.max)
-    ) {
-        throw new InvalidPayloadError(
-            'Score range min and max must be safe integers',
-        );
-    }
-    if (scoreRange.min < 0 || scoreRange.max < 0) {
-        throw new InvalidPayloadError(
-            'Score range min and max must be non-negative',
-        );
-    }
-    if (scoreRange.min > scoreRange.max) {
-        throw new InvalidPayloadError(
-            'Score range min must not exceed score range max',
-        );
-    }
-};
 
 /**
  * Encodes an additive ciphertext into fixed-width protocol hex.
@@ -124,7 +103,10 @@ export const decodeDisjunctiveProof = (
  * the manifest-declared domain.
  */
 export const scoreRangeDomain = (scoreRange: ScoreRange): readonly bigint[] => {
-    assertValidScoreRange(scoreRange);
+    validateSupportedScoreRange(scoreRange, {
+        min: 'Score range min',
+        max: 'Score range max',
+    });
 
     return Object.freeze(
         Array.from(

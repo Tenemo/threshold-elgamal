@@ -9,6 +9,7 @@ import { InvalidPayloadError, sha256, utf8ToBytes } from '../core/index';
 import { encodeForChallenge } from '../serialize/encoding';
 
 import { canonicalizeJson } from './canonical-json';
+import { validateSupportedScoreRange } from './score-range';
 import type { ElectionManifest, ScoreRange } from './types';
 
 /**
@@ -22,12 +23,6 @@ export const SHIPPED_PROTOCOL_VERSION = 'v1';
 const assertNonEmptyString = (value: string, label: string): void => {
     if (value.trim() === '') {
         throw new InvalidPayloadError(`${label} must be a non-empty string`);
-    }
-};
-
-const assertSafeInteger = (value: number, label: string): void => {
-    if (!Number.isSafeInteger(value)) {
-        throw new InvalidPayloadError(`${label} must be a safe integer`);
     }
 };
 
@@ -53,26 +48,11 @@ const validateScoreRange = (scoreRange: ScoreRange): ScoreRange => {
         );
     }
 
-    assertSafeInteger(scoreRange.min, 'Election manifest scoreRange.min');
-    assertSafeInteger(scoreRange.max, 'Election manifest scoreRange.max');
-
-    if (scoreRange.min < 0) {
-        throw new InvalidPayloadError(
-            'Election manifest scoreRange.min must be non-negative',
-        );
-    }
-    if (scoreRange.max < 0) {
-        throw new InvalidPayloadError(
-            'Election manifest scoreRange.max must be non-negative',
-        );
-    }
-    if (scoreRange.min > scoreRange.max) {
-        throw new InvalidPayloadError(
-            'Election manifest scoreRange.min must not exceed scoreRange.max',
-        );
-    }
-
-    return scoreRange;
+    return validateSupportedScoreRange(scoreRange, {
+        comparisonMax: 'scoreRange.max',
+        min: 'Election manifest scoreRange.min',
+        max: 'Election manifest scoreRange.max',
+    });
 };
 
 /**

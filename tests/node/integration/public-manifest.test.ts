@@ -91,6 +91,7 @@ describe('public manifest', () => {
             5n,
         ]);
         expect(scoreRangeDomain({ min: 3, max: 3 })).toEqual([3n]);
+        expect(scoreRangeDomain({ min: 0, max: 100 })).toHaveLength(101);
     });
 
     it.each([
@@ -119,6 +120,11 @@ describe('public manifest', () => {
             name: 'non-integer maximum',
             scoreRange: { min: 1, max: 5.5 },
             message: 'Election manifest scoreRange.max must be a safe integer',
+        },
+        {
+            name: 'unsupported maximum',
+            scoreRange: { min: 0, max: 101 },
+            message: 'Election manifest scoreRange.max must not exceed 100',
         },
     ])('rejects invalid score ranges for $name', (entry) => {
         expect(() =>
