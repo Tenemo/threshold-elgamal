@@ -16,4 +16,4 @@ This section lists the exported symbols on the public package entrypoints.
 ## What this section contains
 
 - exact exported names, types, signatures, and return shapes for every public entrypoint
-- symbol-level details for the workflow root package and the advanced subpath modules
+- symbol-level details for the root package and the grouped public submodules

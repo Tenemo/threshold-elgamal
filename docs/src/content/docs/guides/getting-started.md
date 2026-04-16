@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-Start with the root package. It is the workflow-facing surface for one protocol story: honest-majority GJKR, fixed `1..10` score ballots, `ballot-close`, and full ceremony verification.
+Start with the root package. It exposes the supported public ceremony: honest-majority GJKR, fixed `1..10` score ballots, `ballot-close`, and full ceremony verification.
 
 ## Start with these rules
 

@@ -86,7 +86,12 @@ export {
     SHIPPED_PROTOCOL_VERSION,
     validateElectionManifest,
 } from './protocol/manifest';
-export { hashRosterEntries } from './protocol/verification';
+export {
+    hashRosterEntries,
+    verifySignedProtocolPayloads,
+    type RosterEntry,
+    type VerifiedProtocolSignatures,
+} from './protocol/verification';
 export { hashProtocolTranscript } from './protocol/transcript';
 export { verifyBallotSubmissionPayloadsByOption } from './protocol/voting-ballots';
 export { scoreVotingDomain } from './protocol/voting-codecs';
