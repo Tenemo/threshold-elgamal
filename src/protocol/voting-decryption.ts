@@ -189,7 +189,8 @@ const verifyAuditedDecryptionSharePayloadsByOption = async (input: {
  *
  * This is the public entry point for applications that have already accepted a
  * DKG transcript and verified ballot aggregates and now need to validate the
- * published threshold shares.
+ * published threshold shares. The helper re-audits the signed share payloads
+ * before it groups and verifies them.
  */
 export const verifyDecryptionSharePayloadsByOption = async (
     input: VerifyDecryptionSharePayloadsByOptionInput,

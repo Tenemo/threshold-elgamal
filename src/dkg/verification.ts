@@ -1487,10 +1487,17 @@ const verifyCheckpointedDKGTranscript = async (
 /**
  * Verifies a DKG transcript, its signatures, Feldman extraction proofs, the
  * exact claimed threshold degree, accepted complaint outcomes, the DKG
- * transcript hash, and the announced joint public key.
+ * transcript hash, the announced joint public key, and unanimous qualified
+ * participant key confirmations.
  *
  * This is the DKG-specific verifier that the full ceremony verifier delegates
- * to before it touches ballots or tally material.
+ * to before it touches ballots or tally material. It consumes a public signed
+ * transcript plus `key-derivation-confirmation` payloads from every qualified
+ * participant. It does not implement a public post-Feldman
+ * complaint/reconstruction phase, so it is a participant-confirmed transcript
+ * verifier rather than a fully public-data-only GJKR verifier. Lowering this
+ * requirement to threshold-many confirmations is out of scope unless that
+ * missing public consistency machinery is added.
  */
 export const verifyDKGTranscript = async (
     input: VerifyDKGTranscriptInput,

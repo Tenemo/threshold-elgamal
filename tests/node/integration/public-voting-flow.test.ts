@@ -275,11 +275,125 @@ describe('honest-majority voting flow', () => {
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
                 ballotPayloads: fullFixture.ballotPayloads,
-                ballotClosePayload: fullFixture.ballotClosePayload,
+                ballotClosePayloads: [fullFixture.ballotClosePayload],
                 decryptionSharePayloads: fullFixture.decryptionSharePayloads,
                 tallyPublications: fullFixture.tallyPublications,
             }),
         ).rejects.toThrow('Election manifest requires an explicit scoreRange');
+    });
+
+    it('accepts a single valid ballot-close payload wrapped as a full board slot', async () => {
+        const verified = await verifyElectionCeremony({
+            manifest: fullFixture.manifest,
+            sessionId: fullFixture.sessionId,
+            dkgTranscript: fullFixture.dkgTranscript,
+            ballotPayloads: fullFixture.ballotPayloads,
+            ballotClosePayloads: [fullFixture.ballotClosePayload],
+            decryptionSharePayloads: fullFixture.decryptionSharePayloads,
+            tallyPublications: fullFixture.tallyPublications,
+        });
+
+        expect(verified.boardAudit.ballotClose.acceptedPayloads).toEqual([
+            fullFixture.ballotClosePayload,
+        ]);
+    });
+
+    it('rejects conflicting ballot-close payloads from the same board slot during board audit', async () => {
+        const conflictingBallotClosePayload = await signProtocolPayload(
+            fullFixture.participants[0].auth.privateKey,
+            {
+                sessionId: fullFixture.sessionId,
+                manifestHash: fullFixture.manifestHash,
+                phase: 6,
+                participantIndex: fullFixture.participants[0].index,
+                messageType: 'ballot-close',
+                countedParticipantIndices: [1, 2, 3],
+            },
+        );
+
+        await expect(
+            verifyElectionCeremony({
+                manifest: fullFixture.manifest,
+                sessionId: fullFixture.sessionId,
+                dkgTranscript: fullFixture.dkgTranscript,
+                ballotPayloads: fullFixture.ballotPayloads,
+                ballotClosePayloads: [
+                    fullFixture.ballotClosePayload,
+                    conflictingBallotClosePayload,
+                ],
+                decryptionSharePayloads: fullFixture.decryptionSharePayloads,
+                tallyPublications: fullFixture.tallyPublications,
+            }),
+        ).rejects.toThrow('Detected equivocation for canonical slot');
+    });
+
+    it('accepts identical ballot-close retransmissions and collapses them to one canonical payload', async () => {
+        const verified = await verifyElectionCeremony({
+            manifest: fullFixture.manifest,
+            sessionId: fullFixture.sessionId,
+            dkgTranscript: fullFixture.dkgTranscript,
+            ballotPayloads: fullFixture.ballotPayloads,
+            ballotClosePayloads: [
+                fullFixture.ballotClosePayload,
+                fullFixture.ballotClosePayload,
+            ],
+            decryptionSharePayloads: fullFixture.decryptionSharePayloads,
+            tallyPublications: fullFixture.tallyPublications,
+        });
+
+        expect(verified.boardAudit.ballotClose.acceptedPayloads).toEqual([
+            fullFixture.ballotClosePayload,
+        ]);
+        expect(verified.boardAudit.ballotClose.slotAudit).toEqual([
+            expect.objectContaining({
+                occurrences: 2,
+                status: 'idempotent-retransmission',
+            }),
+        ]);
+    });
+
+    it('rejects ballot-close board slots with no accepted payloads', async () => {
+        await expect(
+            verifyElectionCeremony({
+                manifest: fullFixture.manifest,
+                sessionId: fullFixture.sessionId,
+                dkgTranscript: fullFixture.dkgTranscript,
+                ballotPayloads: fullFixture.ballotPayloads,
+                ballotClosePayloads: [],
+                decryptionSharePayloads: fullFixture.decryptionSharePayloads,
+                tallyPublications: fullFixture.tallyPublications,
+            }),
+        ).rejects.toThrow('Ballot close requires exactly one payload');
+    });
+
+    it('rejects ballot-close payloads that span multiple accepted slots', async () => {
+        const extraBallotClosePayload = await signProtocolPayload(
+            fullFixture.participants[0].auth.privateKey,
+            {
+                sessionId: fullFixture.sessionId,
+                manifestHash: fullFixture.manifestHash,
+                phase: 7,
+                participantIndex: fullFixture.participants[0].index,
+                messageType: 'ballot-close',
+                countedParticipantIndices:
+                    fullFixture.countedParticipantIndices,
+            },
+        );
+
+        await expect(
+            verifyElectionCeremony({
+                manifest: fullFixture.manifest,
+                sessionId: fullFixture.sessionId,
+                dkgTranscript: fullFixture.dkgTranscript,
+                ballotPayloads: fullFixture.ballotPayloads,
+                ballotClosePayloads: [
+                    fullFixture.ballotClosePayload,
+                    extraBallotClosePayload,
+                ],
+                decryptionSharePayloads: fullFixture.decryptionSharePayloads,
+                tallyPublications: fullFixture.tallyPublications,
+            }),
+        ).rejects.toThrow('Ballot close requires exactly one payload');
     });
 
     it('rejects ballot close payloads signed by a non-organizer', async () => {
@@ -302,7 +416,7 @@ describe('honest-majority voting flow', () => {
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
                 ballotPayloads: fullFixture.ballotPayloads,
-                ballotClosePayload: forgedBallotClosePayload,
+                ballotClosePayloads: [forgedBallotClosePayload],
                 decryptionSharePayloads: fullFixture.decryptionSharePayloads,
                 tallyPublications: fullFixture.tallyPublications,
             }),
@@ -339,7 +453,7 @@ describe('honest-majority voting flow', () => {
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
                 ballotPayloads: fullFixture.ballotPayloads,
-                ballotClosePayload: duplicateBallotClosePayload,
+                ballotClosePayloads: [duplicateBallotClosePayload],
                 decryptionSharePayloads: fullFixture.decryptionSharePayloads,
                 tallyPublications: fullFixture.tallyPublications,
             }),
@@ -350,7 +464,7 @@ describe('honest-majority voting flow', () => {
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
                 ballotPayloads: fullFixture.ballotPayloads,
-                ballotClosePayload: unsortedBallotClosePayload,
+                ballotClosePayloads: [unsortedBallotClosePayload],
                 decryptionSharePayloads: fullFixture.decryptionSharePayloads,
                 tallyPublications: fullFixture.tallyPublications,
             }),
@@ -378,7 +492,7 @@ describe('honest-majority voting flow', () => {
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
                 ballotPayloads: fullFixture.ballotPayloads,
-                ballotClosePayload: belowThresholdBallotClosePayload,
+                ballotClosePayloads: [belowThresholdBallotClosePayload],
                 decryptionSharePayloads: fullFixture.decryptionSharePayloads,
                 tallyPublications: fullFixture.tallyPublications,
             }),
@@ -427,7 +541,7 @@ describe('honest-majority voting flow', () => {
                 sessionId: partialFixture.sessionId,
                 dkgTranscript: partialFixture.dkgTranscript,
                 ballotPayloads: partialFixture.ballotPayloads,
-                ballotClosePayload: incompleteBallotClosePayload,
+                ballotClosePayloads: [incompleteBallotClosePayload],
                 decryptionSharePayloads: partialFixture.decryptionSharePayloads,
                 tallyPublications: partialFixture.tallyPublications,
             }),
@@ -451,7 +565,7 @@ describe('honest-majority voting flow', () => {
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
                 ballotPayloads: fullFixture.ballotPayloads,
-                ballotClosePayload: fullFixture.ballotClosePayload,
+                ballotClosePayloads: [fullFixture.ballotClosePayload],
                 decryptionSharePayloads: [
                     forgedDecryptionSharePayload,
                     ...fullFixture.decryptionSharePayloads.slice(1),
@@ -475,7 +589,7 @@ describe('honest-majority voting flow', () => {
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: transcriptWithoutConfirmations,
                 ballotPayloads: fullFixture.ballotPayloads,
-                ballotClosePayload: fullFixture.ballotClosePayload,
+                ballotClosePayloads: [fullFixture.ballotClosePayload],
                 decryptionSharePayloads: fullFixture.decryptionSharePayloads,
                 tallyPublications: fullFixture.tallyPublications,
             }),
@@ -499,7 +613,7 @@ describe('honest-majority voting flow', () => {
                 sessionId: fullFixture.sessionId,
                 dkgTranscript: fullFixture.dkgTranscript,
                 ballotPayloads: fullFixture.ballotPayloads,
-                ballotClosePayload: fullFixture.ballotClosePayload,
+                ballotClosePayloads: [fullFixture.ballotClosePayload],
                 decryptionSharePayloads: fullFixture.decryptionSharePayloads,
                 tallyPublications: [
                     forgedTallyPublication,

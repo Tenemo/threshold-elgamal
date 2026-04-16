@@ -36,7 +36,7 @@ const bundle: VerifyElectionCeremonyInput = {
     sessionId,
     dkgTranscript,
     ballotPayloads,
-    ballotClosePayload,
+    ballotClosePayloads: [ballotClosePayload],
     decryptionSharePayloads,
     tallyPublications,
 };
@@ -53,7 +53,7 @@ if (!result.ok) {
 }
 ```
 
-Use `verifyElectionCeremony(...)` when you want the same checks but prefer exceptions over a structured result.
+Use `verifyElectionCeremony(...)` when you want the same checks but prefer exceptions over a structured result. Pass the full published `ballot-close` slot in `ballotClosePayloads`, even when that slot only contains one organizer payload.
 
 ## What to persist in your application
 
