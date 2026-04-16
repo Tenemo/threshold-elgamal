@@ -46,7 +46,7 @@ describe('public manifest', () => {
                             : 1,
                 } as unknown as ElectionManifest),
             ).toThrow(
-                `Legacy manifest field "${legacyField}" is not supported on the Ristretto beta line`,
+                `Legacy manifest field "${legacyField}" is not supported by the public manifest`,
             );
         }
     });

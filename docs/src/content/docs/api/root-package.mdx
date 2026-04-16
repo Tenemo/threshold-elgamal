@@ -1,21 +1,25 @@
 ---
 title: Root package
-description: The supported public import surface for the voting flow.
+description: The supported public import surface for the full ceremony.
 sidebar:
   order: 1
 ---
 
-Use the root package for the supported voting workflow. Advanced cryptographic
-and transcript primitives also have public subpath entrypoints such as
-`threshold-elgamal/proofs`, `threshold-elgamal/threshold`,
-`threshold-elgamal/dkg`, `threshold-elgamal/vss`, `threshold-elgamal/elgamal`,
-`threshold-elgamal/protocol`, and `threshold-elgamal/core`.
+Use the root package for the full supported ceremony. It contains the manifest,
+transport, DKG, ballot-proof, decryption, tally, and verifier helpers required
+to build and verify the documented workflow end to end. Grouped public
+subpath entrypoints such as `threshold-elgamal/proofs`,
+`threshold-elgamal/threshold`, `threshold-elgamal/dkg`,
+`threshold-elgamal/vss`, `threshold-elgamal/elgamal`,
+`threshold-elgamal/protocol`, and `threshold-elgamal/core` remain available
+when you prefer imports by subsystem.
 
 ## What lives here
 
 - manifest helpers
 - roster hashing and session derivation
 - transport and authentication helpers
+- DKG, proof, and tally helpers used by the supported ceremony
 - public builders for the standard ceremony payloads
 - full public-board verification
 - full ceremony verification
@@ -25,9 +29,10 @@ and transcript primitives also have public subpath entrypoints such as
 - manifest and session setup: `createElectionManifest`, `hashRosterEntries`, `hashElectionManifest`, `deriveSessionId`
 - browser-side key material: `generateAuthKeyPair`, `exportAuthPublicKey`, `generateTransportKeyPair`, `exportTransportPublicKey`
 - encrypted share transport: `encryptEnvelope`, `decryptEnvelope`
+- DKG and proof flow: `generatePedersenCommitments`, `generateFeldmanCommitments`, `deriveJointPublicKey`, `createDisjunctiveProof`, `createDLEQProof`, `createSchnorrProof`
+- decryption and tally flow: `prepareAggregateForDecryption`, `createDecryptionShare`, `combineDecryptionShares`
 - public board verification: `tryVerifyElectionCeremony`, `verifyElectionCeremony`
 - published payload construction: `createManifestPublicationPayload`, `createRegistrationPayload`, `createManifestAcceptancePayload`, `createBallotSubmissionPayload`, `createBallotClosePayload`, `createDecryptionSharePayload`, `createTallyPublicationPayload`
-- advanced reveal primitives: `prepareAggregateForDecryption` and `combineDecryptionShares` from `threshold-elgamal/threshold`, plus `createDLEQProof` from `threshold-elgamal/proofs`
 
 ## Typical import style
 
@@ -47,16 +52,13 @@ import {
 
 - you want the `ristretto255` voting workflow
 - you want the minimal manifest and derived majority-threshold rules
-- you want the workflow-facing builders and verifiers without importing the lower-level proof, threshold, DKG, or VSS modules directly
+- you want one import surface for the full supported ceremony, including proof, threshold, DKG, and verifier steps
 
 ## Use the submodules when
 
-- you need direct proof helpers such as `createDLEQProof(...)` or `createSchnorrProof(...)`
-- you need direct threshold helpers such as `prepareAggregateForDecryption(...)` or `combineDecryptionShares(...)`
-- you need DKG transcript replay or trustee verification-key derivation
-- you need generic protocol signing, transcript hashing, ballot-proof verification, or protocol payload types
-- you need Feldman or Pedersen commitment/share helpers
-- you need low-level additive ElGamal, explicit error classes, or core arithmetic/constants
+- you prefer narrower imports grouped by subsystem
+- you want to browse the generated reference by proof, threshold, DKG, protocol, or VSS layer
+- you need explicit error classes or other core-only primitives that stay outside the main ceremony story
 
 ## Related workflows
 
@@ -71,4 +73,4 @@ import {
 
 - exact signatures, types, and return shapes for the exported surface
 - contract-level detail for the full ceremony types
-- module-level separation between the workflow root package and the advanced public submodules
+- module-level separation between the root package and the grouped public submodules

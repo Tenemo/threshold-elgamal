@@ -9,9 +9,9 @@ import {
     generateTransportKeyPair,
     hashRosterEntries,
     SHIPPED_PROTOCOL_VERSION,
+    signProtocolPayload,
+    verifySignedProtocolPayloads,
 } from '#root';
-import { signProtocolPayload } from '#src/protocol/public';
-import { verifySignedProtocolPayloads } from '#src/protocol/verification';
 
 const manifestHash = 'aa'.repeat(32);
 const sessionId = 'bb'.repeat(32);

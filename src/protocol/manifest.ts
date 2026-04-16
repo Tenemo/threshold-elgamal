@@ -93,7 +93,7 @@ export const validateElectionManifest = (
     ]) {
         if (legacyField in manifestRecord) {
             throw new InvalidPayloadError(
-                `Legacy manifest field "${legacyField}" is not supported on the Ristretto beta line`,
+                `Legacy manifest field "${legacyField}" is not supported by the public manifest`,
             );
         }
     }

@@ -171,7 +171,7 @@ if (!result.ok) {
 }
 ```
 
-The root package exposes the workflow-facing builders for the signed protocol payloads used across the documented ceremony, including:
+The root package exposes the builders and lower-level helpers required for the documented ceremony, including:
 
 - manifest publication
 - registration
@@ -186,14 +186,16 @@ The root package exposes the workflow-facing builders for the signed protocol pa
 - decryption shares
 - tally publication
 
-For the reveal path, the workflow-facing API and the advanced public submodules split responsibilities intentionally:
+The reveal path also works from the root package:
 
-- prepare the accepted aggregate with `prepareAggregateForDecryption(...)` from `threshold-elgamal/threshold`
-- compute each partial share with `createDecryptionShare(...)` from `threshold-elgamal/threshold`
-- prove it with `createDLEQProof(...)` from `threshold-elgamal/proofs`
-- publish it with `createDecryptionSharePayload(...)` from `threshold-elgamal`
+- prepare the accepted aggregate with `prepareAggregateForDecryption(...)`
+- compute each partial share with `createDecryptionShare(...)`
+- prove it with `createDLEQProof(...)`
+- publish it with `createDecryptionSharePayload(...)`
 
-After collecting a threshold subset, recover the tally with `combineDecryptionShares(...)` from `threshold-elgamal/threshold` against the prepared aggregate ciphertext.
+After collecting a threshold subset, recover the tally with `combineDecryptionShares(...)` against the prepared aggregate ciphertext.
+
+The grouped public submodules remain available when you prefer narrower imports by subsystem, but the supported full ceremony does not require them.
 
 For concrete posted JSON shapes, use [Published payload examples](https://tenemo.github.io/threshold-elgamal/guides/published-payload-examples/).
 
