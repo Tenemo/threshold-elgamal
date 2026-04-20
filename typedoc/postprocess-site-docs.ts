@@ -22,8 +22,7 @@ const moduleOrder = new Map(
 );
 
 const internalLinkPattern = /(!?\[[^\]]*])\(([^)#\s]+)(#[^)]+)?\)/g;
-const breadcrumbPattern = /^\*\*.+?\*\*\r?\n\r?\n\*\*\*\r?\n\r?\n/;
-const leadingHeadingPattern = /^# .+\r?\n\r?\n/;
+const generatedPreamblePattern = /^[\s\S]*?\r?\n# .+\r?\n\r?\n/;
 const sentenceCaseReplacements: readonly (readonly [RegExp, string])[] = [
     [/\bType Aliases\b/g, 'Type aliases'],
     [/\bType Alias\b/g, 'Type alias'],
@@ -43,8 +42,18 @@ const sentenceCaseReplacements: readonly (readonly [RegExp, string])[] = [
     [/\bExtended By\b/g, 'Extended by'],
 ] as const;
 
+const toReferenceConfigRelativePath = (configPath: string): string =>
+    path.relative(apiReferenceRoot, configPath).replace(/\\/g, '/');
+
 const toReferenceRelativePath = (absolutePath: string): string =>
     path.relative(referenceRoot, absolutePath).replace(/\\/g, '/');
+
+const moduleNameByReferencePath = new Map(
+    publicApiDocs.map((entry) => [
+        toReferenceConfigRelativePath(entry.apiPagePath),
+        entry.moduleName,
+    ]),
+);
 
 const collectMarkdownFiles = async (directory: string): Promise<string[]> => {
     const files: string[] = [];
@@ -75,8 +84,9 @@ const deriveTitleFromRelativePath = (relativePath: string): string => {
         return 'Generated reference';
     }
 
-    if (relativePath.endsWith('/index.md')) {
-        const segments = relativePath.slice(0, -'/index.md'.length).split('/');
+    const moduleName = moduleNameByReferencePath.get(relativePath);
+    if (moduleName !== undefined) {
+        const segments = moduleName.split('/');
         return segments[segments.length - 1];
     }
 
@@ -84,11 +94,11 @@ const deriveTitleFromRelativePath = (relativePath: string): string => {
 };
 
 const deriveSidebarOrder = (relativePath: string): number | undefined => {
-    if (!relativePath.endsWith('/index.md')) {
+    const moduleName = moduleNameByReferencePath.get(relativePath);
+    if (moduleName === undefined) {
         return undefined;
     }
 
-    const moduleName = relativePath.slice(0, -'/index.md'.length);
     return moduleOrder.get(moduleName);
 };
 
@@ -143,6 +153,8 @@ const normalizeNavigationTitles = (
     }));
 
 const main = async (): Promise<void> => {
+    await fs.rm(path.join(referenceRoot, 'modules.md'), { force: true });
+
     const navigation = normalizeNavigationTitles(
         JSON.parse(
             await fs.readFile(navigationPath, 'utf8'),
@@ -173,9 +185,6 @@ const main = async (): Promise<void> => {
     visitNavigation(navigation);
 
     const markdownFiles = await collectMarkdownFiles(referenceRoot);
-    const publicModules = new Set(
-        publicApiDocs.map((entry) => entry.moduleName),
-    );
 
     for (const file of markdownFiles) {
         const relativePath = toReferenceRelativePath(file);
@@ -184,17 +193,14 @@ const main = async (): Promise<void> => {
             deriveTitleFromRelativePath(relativePath);
         const order = deriveSidebarOrder(relativePath);
         const isGeneratedRoot = relativePath === 'index.md';
-        const moduleName = relativePath.endsWith('/index.md')
-            ? relativePath.slice(0, -'/index.md'.length)
-            : undefined;
+        const moduleName = moduleNameByReferencePath.get(relativePath);
         const generatedModuleSummary =
-            moduleName !== undefined && publicModules.has(moduleName)
+            moduleName !== undefined
                 ? `Generated reference page for the \`${moduleName}\` export surface.`
                 : undefined;
 
         let content = await fs.readFile(file, 'utf8');
-        content = content.replace(breadcrumbPattern, '');
-        content = content.replace(leadingHeadingPattern, '');
+        content = content.replace(generatedPreamblePattern, '');
         content = rewriteMarkdownLinks(content);
         content = rewriteSentenceCase(content);
 
