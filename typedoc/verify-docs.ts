@@ -49,6 +49,8 @@ const baseUnsafePatterns = [
     /\blink:\s*(\/(?!\/)\S*)/g,
 ] as const;
 
+const toPosixPath = (value: string): string => value.replace(/\\/g, '/');
+
 const isExternalLink = (target: string): boolean =>
     target.startsWith('#') ||
     target.startsWith('//') ||
@@ -61,7 +63,45 @@ const normalizeLinkTarget = (rawTarget: string): string => {
 };
 
 const toRepoRelativePath = (absolutePath: string): string =>
-    path.relative(repoRoot, absolutePath).replace(/\\/g, '/');
+    toPosixPath(path.relative(repoRoot, absolutePath));
+
+const toDocsRelativePath = (absolutePath: string): string =>
+    toPosixPath(path.relative(docsRoot, absolutePath));
+
+const isWithinReferenceRoot = (absolutePath: string): boolean => {
+    const relativePath = path.relative(referenceRoot, absolutePath);
+
+    return (
+        relativePath === '' ||
+        (!relativePath.startsWith('..') && !path.isAbsolute(relativePath))
+    );
+};
+
+const toDocsRoutePath = (relativePath: string): string => {
+    const normalizedPath = path.posix.normalize(relativePath);
+
+    if (normalizedPath === 'index.md' || normalizedPath === 'index.mdx') {
+        return '';
+    }
+
+    if (normalizedPath.endsWith('/index.md')) {
+        return normalizedPath.slice(0, -'index.md'.length);
+    }
+
+    if (normalizedPath.endsWith('/index.mdx')) {
+        return normalizedPath.slice(0, -'index.mdx'.length);
+    }
+
+    if (normalizedPath.endsWith('.md')) {
+        return `${normalizedPath.slice(0, -'.md'.length)}/`;
+    }
+
+    if (normalizedPath.endsWith('.mdx')) {
+        return `${normalizedPath.slice(0, -'.mdx'.length)}/`;
+    }
+
+    return normalizedPath;
+};
 
 const fileExists = async (candidate: string): Promise<boolean> => {
     try {
@@ -72,10 +112,79 @@ const fileExists = async (candidate: string): Promise<boolean> => {
     }
 };
 
+const addDocsRouteCandidates = (
+    candidates: Set<string>,
+    routeTarget: string,
+): void => {
+    const normalizedTarget = path.posix.normalize(
+        routeTarget === '' ? '.' : routeTarget,
+    );
+    const hadTrailingSlash = routeTarget.endsWith('/');
+    const extension = path.posix.extname(normalizedTarget).toLowerCase();
+
+    if (normalizedTarget === '.') {
+        candidates.add(path.resolve(docsRoot, 'index.md'));
+        candidates.add(path.resolve(docsRoot, 'index.mdx'));
+        candidates.add(path.resolve(docsRoot, 'README.md'));
+        return;
+    }
+
+    const resolvedBase = path.resolve(docsRoot, normalizedTarget);
+
+    if (extension === '.md' || extension === '.mdx') {
+        candidates.add(resolvedBase);
+        return;
+    }
+
+    if (extension === '.html') {
+        candidates.add(path.resolve(publicRoot, normalizedTarget));
+        candidates.add(
+            path.join(
+                path.dirname(resolvedBase),
+                `${path.basename(resolvedBase, '.html')}.md`,
+            ),
+        );
+        candidates.add(
+            path.join(
+                path.dirname(resolvedBase),
+                `${path.basename(resolvedBase, '.html')}.mdx`,
+            ),
+        );
+        return;
+    }
+
+    if (hadTrailingSlash || extension === '') {
+        candidates.add(`${resolvedBase}.md`);
+        candidates.add(`${resolvedBase}.mdx`);
+        candidates.add(path.join(resolvedBase, 'index.md'));
+        candidates.add(path.join(resolvedBase, 'index.mdx'));
+        candidates.add(path.join(resolvedBase, 'README.md'));
+    }
+};
+
 const resolveLinkCandidates = (
     fromFile: string,
     normalizedTarget: string,
 ): string[] => {
+    if (isWithinReferenceRoot(fromFile) && !normalizedTarget.startsWith('/')) {
+        const fromRoutePath = toDocsRoutePath(toDocsRelativePath(fromFile));
+        const resolvedRouteTarget = path.posix.normalize(
+            path.posix.join(
+                fromRoutePath === '' ? '.' : fromRoutePath,
+                normalizedTarget,
+            ),
+        );
+        const routeTarget =
+            normalizedTarget.endsWith('/') && !resolvedRouteTarget.endsWith('/')
+                ? `${resolvedRouteTarget}/`
+                : resolvedRouteTarget;
+        const candidates = new Set<string>();
+
+        addDocsRouteCandidates(candidates, routeTarget);
+
+        return [...candidates];
+    }
+
     const fromDocsRoute =
         normalizedTarget === '/' ||
         normalizedTarget.startsWith('/guides/') ||
