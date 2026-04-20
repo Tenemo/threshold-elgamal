@@ -1,7 +1,6 @@
 /** @type {import('typedoc').TypeDocOptions} */
 const config = {
     entryPoints: [
-        'src/index.ts',
         'src/protocol/public.ts',
         'src/threshold/public.ts',
         'src/proofs/public.ts',
@@ -9,12 +8,13 @@ const config = {
         'src/vss/public.ts',
         'src/elgamal/public.ts',
         'src/core/public.ts',
+        'src/index.ts',
     ],
     entryPointStrategy: 'resolve',
     alwaysCreateEntryPointModule: true,
     plugin: ['typedoc-plugin-markdown'],
     out: 'docs/src/content/docs/api/reference',
-    router: 'member',
+    router: 'module',
     readme: 'typedoc/generated-reference-intro.md',
     entryFileName: 'index.md',
     navigationJson: 'docs/src/content/docs/api/reference/navigation.json',

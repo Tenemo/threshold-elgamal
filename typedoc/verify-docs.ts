@@ -12,6 +12,7 @@ import config from '../typedoc.config.mjs';
 
 import {
     apiNavigationJson,
+    apiReferenceRoot,
     docsContentRoot,
     publicApiDocs,
 } from './api-docs-config';
@@ -19,16 +20,26 @@ import {
 const repoRoot = process.cwd();
 const docsRoot = path.resolve(repoRoot, docsContentRoot);
 const publicRoot = path.resolve(repoRoot, 'docs/public');
+const referenceRoot = path.resolve(repoRoot, apiReferenceRoot);
 const markdownRoots = ['README.md', docsContentRoot];
+const expectedGeneratedApiPagePaths = new Set([
+    'index.md',
+    ...publicApiDocs.map((entry) =>
+        path.relative(apiReferenceRoot, entry.apiPagePath).replace(/\\/g, '/'),
+    ),
+]);
+const expectedGeneratedApiNavigationPaths = new Map(
+    publicApiDocs.map((entry) => [
+        path.relative(apiReferenceRoot, entry.apiPagePath).replace(/\\/g, '/'),
+        entry.moduleName,
+    ]),
+);
 const requiredApiEntryPages = [
     `${docsContentRoot}/api/index.mdx`,
     `${docsContentRoot}/api/root-package.mdx`,
-    ...publicApiDocs.map((entry) => entry.apiIndexPage),
+    ...publicApiDocs.map((entry) => entry.apiPagePath),
     apiNavigationJson,
 ] as const;
-const requiredApiModules = new Set(
-    publicApiDocs.map((entry) => entry.moduleName),
-);
 
 const markdownLinkPattern = /!?\[[^\]]*]\(([^)]+)\)/g;
 const linkTargetPattern = /^([^\s]+)(?:\s+["'][^"']*["'])?$/;
@@ -82,6 +93,8 @@ const resolveLinkCandidates = (
     const candidates = new Set<string>([absoluteTarget]);
 
     if (normalizedTarget.endsWith('/')) {
+        candidates.add(`${absoluteTarget}.md`);
+        candidates.add(`${absoluteTarget}.mdx`);
         candidates.add(path.join(absoluteTarget, 'index.md'));
         candidates.add(path.join(absoluteTarget, 'index.mdx'));
         candidates.add(path.join(absoluteTarget, 'README.md'));
@@ -210,6 +223,30 @@ const verifyBaseAwareLinks = async (): Promise<string[]> => {
     return failures;
 };
 
+const verifyGeneratedApiLayout = async (): Promise<string[]> => {
+    const failures: string[] = [];
+    const generatedMarkdownFiles = await collectMarkdownFiles(apiReferenceRoot);
+    const seenGeneratedApiPagePaths = new Set(
+        generatedMarkdownFiles.map((file) =>
+            path.relative(referenceRoot, file).replace(/\\/g, '/'),
+        ),
+    );
+
+    for (const expectedPagePath of expectedGeneratedApiPagePaths) {
+        if (!seenGeneratedApiPagePaths.has(expectedPagePath)) {
+            failures.push(`missing generated page "${expectedPagePath}"`);
+        }
+    }
+
+    for (const seenPagePath of seenGeneratedApiPagePaths) {
+        if (!expectedGeneratedApiPagePaths.has(seenPagePath)) {
+            failures.push(`unexpected generated page "${seenPagePath}"`);
+        }
+    }
+
+    return failures;
+};
+
 const verifyApiEntryPages = async (): Promise<string[]> => {
     const failures: string[] = [];
 
@@ -232,7 +269,7 @@ const verifyApiEntryPages = async (): Promise<string[]> => {
         title?: string;
         path?: string;
     }[];
-    const seenModules = new Set<string>();
+    const seenNavigationPaths = new Set<string>();
 
     const visitNavigationItems = (
         items: readonly {
@@ -242,11 +279,8 @@ const verifyApiEntryPages = async (): Promise<string[]> => {
         }[],
     ): void => {
         for (const item of items) {
-            if (
-                typeof item.path === 'string' &&
-                item.path.endsWith('/index.md')
-            ) {
-                seenModules.add(item.path.slice(0, -'/index.md'.length));
+            if (typeof item.path === 'string') {
+                seenNavigationPaths.add(item.path);
             }
 
             if (Array.isArray(item.children)) {
@@ -263,16 +297,19 @@ const verifyApiEntryPages = async (): Promise<string[]> => {
 
     visitNavigationItems(navigationJson);
 
-    for (const moduleName of requiredApiModules) {
-        if (!seenModules.has(moduleName)) {
+    for (const [
+        navigationPathValue,
+        moduleName,
+    ] of expectedGeneratedApiNavigationPaths) {
+        if (!seenNavigationPaths.has(navigationPathValue)) {
             failures.push(`navigation.json missing module "${moduleName}"`);
         }
     }
 
-    for (const moduleName of seenModules) {
-        if (moduleName !== undefined && !requiredApiModules.has(moduleName)) {
+    for (const seenNavigationPath of seenNavigationPaths) {
+        if (!expectedGeneratedApiNavigationPaths.has(seenNavigationPath)) {
             failures.push(
-                `navigation.json contains non-exported module "${moduleName}"`,
+                `navigation.json contains unexpected path "${seenNavigationPath}"`,
             );
         }
     }
@@ -343,6 +380,7 @@ const verifyTypeDocSummaries = async (): Promise<string[]> => {
 const main = async (): Promise<void> => {
     const linkFailures = await verifyLinks();
     const baseAwareFailures = await verifyBaseAwareLinks();
+    const generatedLayoutFailures = await verifyGeneratedApiLayout();
     const apiFailures = await verifyApiEntryPages();
     const summaryFailures = await verifyTypeDocSummaries();
 
@@ -356,6 +394,13 @@ const main = async (): Promise<void> => {
     if (baseAwareFailures.length > 0) {
         failures.push('Base-unsafe internal docs links:');
         failures.push(...baseAwareFailures.map((failure) => `- ${failure}`));
+    }
+
+    if (generatedLayoutFailures.length > 0) {
+        failures.push('Generated API layout violations:');
+        failures.push(
+            ...generatedLayoutFailures.map((failure) => `- ${failure}`),
+        );
     }
 
     if (apiFailures.length > 0) {

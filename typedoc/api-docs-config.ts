@@ -3,39 +3,39 @@ export const apiReferenceRoot = `${docsContentRoot}/api/reference`;
 export const apiNavigationJson = `${apiReferenceRoot}/navigation.json`;
 
 export const publicApiDocs: readonly {
-    apiIndexPage: string;
+    apiPagePath: string;
     moduleName: string;
 }[] = [
     {
-        apiIndexPage: `${apiReferenceRoot}/threshold-elgamal/index.md`,
+        apiPagePath: `${apiReferenceRoot}/threshold-elgamal.md`,
         moduleName: 'threshold-elgamal',
     },
     {
-        apiIndexPage: `${apiReferenceRoot}/threshold-elgamal/protocol/index.md`,
+        apiPagePath: `${apiReferenceRoot}/threshold-elgamal/protocol.md`,
         moduleName: 'threshold-elgamal/protocol',
     },
     {
-        apiIndexPage: `${apiReferenceRoot}/threshold-elgamal/threshold/index.md`,
+        apiPagePath: `${apiReferenceRoot}/threshold-elgamal/threshold.md`,
         moduleName: 'threshold-elgamal/threshold',
     },
     {
-        apiIndexPage: `${apiReferenceRoot}/threshold-elgamal/proofs/index.md`,
+        apiPagePath: `${apiReferenceRoot}/threshold-elgamal/proofs.md`,
         moduleName: 'threshold-elgamal/proofs',
     },
     {
-        apiIndexPage: `${apiReferenceRoot}/threshold-elgamal/dkg/index.md`,
+        apiPagePath: `${apiReferenceRoot}/threshold-elgamal/dkg.md`,
         moduleName: 'threshold-elgamal/dkg',
     },
     {
-        apiIndexPage: `${apiReferenceRoot}/threshold-elgamal/vss/index.md`,
+        apiPagePath: `${apiReferenceRoot}/threshold-elgamal/vss.md`,
         moduleName: 'threshold-elgamal/vss',
     },
     {
-        apiIndexPage: `${apiReferenceRoot}/threshold-elgamal/elgamal/index.md`,
+        apiPagePath: `${apiReferenceRoot}/threshold-elgamal/elgamal.md`,
         moduleName: 'threshold-elgamal/elgamal',
     },
     {
-        apiIndexPage: `${apiReferenceRoot}/threshold-elgamal/core/index.md`,
+        apiPagePath: `${apiReferenceRoot}/threshold-elgamal/core.md`,
         moduleName: 'threshold-elgamal/core',
     },
 ] as const;
